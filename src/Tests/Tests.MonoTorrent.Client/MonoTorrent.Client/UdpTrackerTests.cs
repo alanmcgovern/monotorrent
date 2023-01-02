@@ -97,7 +97,7 @@ namespace MonoTorrent.Trackers
                 new IPEndPoint (IPAddress.Parse ("1.2.3.4"), 65000),
             };
 
-            trackerConnection = new UdpTrackerConnection (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"));
+            trackerConnection = new UdpTrackerConnection (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"), AddressFamily.InterNetwork);
             tracker = new Tracker (trackerConnection);
             announceparams = announceparams.WithPort (listener.LocalEndPoint.Port);
 

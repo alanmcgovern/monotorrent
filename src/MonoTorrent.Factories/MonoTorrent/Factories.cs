@@ -109,7 +109,7 @@ namespace MonoTorrent
                 new Dictionary<string, TrackerCreator> {
                     { "http", uri => new Tracker (new HttpTrackerConnection(uri, HttpClientFunc ())) },
                     { "https", uri => new Tracker (new HttpTrackerConnection(uri, HttpClientFunc ())) },
-                    { "udp", uri => new Tracker (new UdpTrackerConnection (uri)) },
+                    { "udp", uri => new Tracker (new UdpTrackerConnection (uri, System.Net.Sockets.AddressFamily.InterNetwork), new UdpTrackerConnection (uri, System.Net.Sockets.AddressFamily.InterNetworkV6)) },
                 }
             );
         }

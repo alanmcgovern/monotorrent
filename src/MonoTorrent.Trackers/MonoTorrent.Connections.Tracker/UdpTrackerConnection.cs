@@ -46,6 +46,7 @@ namespace MonoTorrent.Connections.Tracker
     {
         public bool CanScrape => true;
 
+        public AddressFamily AddressFamily { get; }
         public Uri Uri { get; }
 
         Task<long>? ConnectionIdTask { get; set; }
@@ -54,8 +55,9 @@ namespace MonoTorrent.Connections.Tracker
         public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds (15);
 
 
-        public UdpTrackerConnection (Uri announceUri)
+        public UdpTrackerConnection (Uri announceUri, AddressFamily addressFamily)
         {
+            AddressFamily = addressFamily;
             Uri = announceUri;
         }
 
@@ -173,7 +175,9 @@ namespace MonoTorrent.Connections.Tracker
                 // results in a synchronous DNS resolve. Ensure we're on a threadpool thread to avoid
                 // blocking.
                 await new ThreadSwitcher ();
-                using var udpClient = new UdpClient (Uri.Host, Uri.Port);
+                using var udpClient = new UdpClient (AddressFamily);
+                udpClient.Connect (Uri.Host, Uri.Port);
+
                 using (cts.Token.Register (() => udpClient.Dispose ())) {
                     SendAsync (udpClient, msg, cts.Token);
                     return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token).ConfigureAwait (false);

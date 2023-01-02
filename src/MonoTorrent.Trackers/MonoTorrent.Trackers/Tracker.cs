@@ -29,7 +29,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Tracker;
 
@@ -39,14 +41,14 @@ namespace MonoTorrent.Trackers
 {
     public class Tracker : ITracker
     {
-        ITrackerConnection Connection { get; }
+        IList<ITrackerConnection> Connections { get; }
 
         ValueStopwatch LastAnnounced;
         AnnounceResponse LastAnnounceResponse { get; set; }
         TrackerResponse LastResponse { get; set; }
 
         public bool CanAnnounce => true;
-        public bool CanScrape => Connection.CanScrape;
+        public bool CanScrape => Connections[0].CanScrape;
 
         public Dictionary<InfoHash, ScrapeInfo> ScrapeInfo => LastResponse.ScrapeInfo ?? new Dictionary<InfoHash, ScrapeInfo> ();
 
@@ -60,13 +62,18 @@ namespace MonoTorrent.Trackers
 
         public TrackerState Status => StatusOverride.HasValue ? StatusOverride.Value : LastResponse.State;
         public TimeSpan TimeSinceLastAnnounce => LastAnnounced.IsRunning ? LastAnnounced.Elapsed : TimeSpan.MaxValue;
-        public Uri Uri => Connection.Uri;
+        public Uri Uri => Connections[0].Uri;
 
         TrackerState? StatusOverride { get; set; }
 
         public Tracker (ITrackerConnection connection)
+           : this (new[] { connection ?? throw new ArgumentNullException (nameof (connection)) })
         {
-            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
+        }
+
+        public Tracker (params ITrackerConnection[] connections)
+        {
+            Connections = new List<ITrackerConnection> (connections ?? throw new ArgumentNullException (nameof (connections))).AsReadOnly ();
 
             LastAnnounced = new ValueStopwatch ();
             LastResponse = LastAnnounceResponse = new AnnounceResponse (TrackerState.Unknown);
@@ -76,7 +83,17 @@ namespace MonoTorrent.Trackers
         {
             try {
                 StatusOverride = TrackerState.Connecting;
-                var response = LastAnnounceResponse = await Connection.AnnounceAsync (parameters, token);
+                var responses = await Task.WhenAll (Connections.Select (c => c.AnnounceAsync (parameters, token).AsTask ()));
+                var response = responses.FirstOrDefault (t => t.State == TrackerState.Ok) ?? responses.First ();
+
+                // Combine peers from each connection (usually ipv4 and ipv6)
+                if (response.State == TrackerState.Ok) {
+                    foreach (var infohash in response.Peers.Keys) {
+                        foreach (var resp in responses.Where (t => t.State == TrackerState.Ok && t != response))
+                            response.Peers[infohash] = response.Peers[infohash].Concat (resp.Peers[infohash]).ToList ().AsReadOnly ();
+                    }
+                }
+
                 LastResponse = response;
                 return response;
             } finally {
@@ -89,7 +106,8 @@ namespace MonoTorrent.Trackers
         {
             try {
                 StatusOverride = TrackerState.Connecting;
-                var response = await Connection.ScrapeAsync (parameters, token);
+                var responses = await Task.WhenAll (Connections.Select (c => c.ScrapeAsync (parameters, token).AsTask ()));
+                var response = responses.FirstOrDefault (t => t.State == TrackerState.Ok) ?? responses.First ();
                 LastResponse = response;
                 return response;
             } finally {
