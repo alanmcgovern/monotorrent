@@ -104,7 +104,7 @@ namespace MonoTorrent.Connections.TrackerServer
                     if (data.Length < 16)
                         return; //bad request
 
-                    var request = UdpTrackerMessage.DecodeMessage (data.AsSpan (0, data.Length), MessageType.Request);
+                    var request = UdpTrackerMessage.DecodeMessage (data.AsSpan (0, data.Length), MessageType.Request, result.RemoteEndPoint.AddressFamily);
 
                     if (sendTask != null) {
                         try {
@@ -180,16 +180,16 @@ namespace MonoTorrent.Connections.TrackerServer
 
                         case ("peers"):
                             if (keypair.Value is BEncodedList)          // Non-compact response
-                                peers.AddRange (PeerDecoder.Decode ((BEncodedList) keypair.Value));
-                            else if (keypair.Value is BEncodedString)   // Compact response
-                                peers.AddRange (PeerDecoder.Decode ((BEncodedString) keypair.Value));
+                                peers.AddRange (PeerDecoder.Decode ((BEncodedList) keypair.Value, remotePeer.AddressFamily));
+                            else if (keypair.Value is BEncodedString str)   // Compact response
+                                peers.AddRange (PeerInfo.FromCompact (str.Span, remotePeer.AddressFamily));
                             break;
 
                         default:
                             break;
                     }
                 }
-                m = new AnnounceResponseMessage (announceMessage.TransactionId, interval, leechers, seeders, peers);
+                m = new AnnounceResponseMessage (remotePeer.AddressFamily, announceMessage.TransactionId, interval, leechers, seeders, peers);
             }
             byte[] data = m.Encode ();
             await client.SendAsync (data, data.Length, remotePeer);

@@ -188,7 +188,7 @@ namespace MonoTorrent.Connections.Tracker
         {
             while (!token.IsCancellationRequested) {
                 UdpReceiveResult received = await client.ReceiveAsync ();
-                var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer.AsSpan (0, received.Buffer.Length), MessageType.Response);
+                var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer.AsSpan (0, received.Buffer.Length), MessageType.Response, received.RemoteEndPoint.AddressFamily);
 
                 if (transactionId == rsp.TransactionId) {
                     if (rsp is ErrorMessage error) {

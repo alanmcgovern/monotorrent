@@ -29,26 +29,34 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 
 namespace MonoTorrent.Messages.UdpTracker
 {
     public class AnnounceResponseMessage : UdpTrackerMessage
     {
-        public override int ByteLength => (4 * 5 + Peers.Count * 6);
+        public AddressFamily AddressFamily { get; private set; }
+        public override int ByteLength => (4 * 5 + Peers.Count * Stride);
         public TimeSpan Interval { get; private set; }
         public int Leechers { get; private set; }
         public List<PeerInfo> Peers { get; private set; }
         public int Seeders { get; private set; }
+        int Stride => AddressFamily switch {
+            AddressFamily.InterNetwork => 6,
+            AddressFamily.InterNetworkV6 => 18,
+            _ => throw new NotSupportedException ()
+        };
 
-        public AnnounceResponseMessage ()
-            : this (0, TimeSpan.Zero, 0, 0, new List<PeerInfo> ())
+        public AnnounceResponseMessage (AddressFamily addressFamily)
+            : this (addressFamily, 0, TimeSpan.Zero, 0, 0, new List<PeerInfo> ())
         {
 
         }
 
-        public AnnounceResponseMessage (int transactionId, TimeSpan interval, int leechers, int seeders, List<PeerInfo> peers)
+        public AnnounceResponseMessage (AddressFamily addressFamily, int transactionId, TimeSpan interval, int leechers, int seeders, List<PeerInfo> peers)
             : base (1, transactionId)
         {
+            AddressFamily = addressFamily;
             Interval = interval;
             Leechers = leechers;
             Peers = peers;
@@ -64,7 +72,7 @@ namespace MonoTorrent.Messages.UdpTracker
             Leechers = ReadInt (ref buffer);
             Seeders = ReadInt (ref buffer);
 
-            IList<PeerInfo> peers = PeerInfo.FromCompact (buffer);
+            IList<PeerInfo> peers = PeerInfo.FromCompact (buffer, AddressFamily);
             Peers.AddRange (peers);
         }
 
@@ -79,7 +87,8 @@ namespace MonoTorrent.Messages.UdpTracker
             Write (ref buffer, Seeders);
 
             for (int i = 0; i < Peers.Count; i++)
-                Peers[i].CompactPeer (buffer.Slice (i * 6));
+                if (!Peers[i].TryWriteCompactPeer (buffer.Slice (i * Stride, Stride), out int dataWritten) || dataWritten != Stride)
+                    throw new InvalidOperationException ();
 
             return written - buffer.Length;
         }

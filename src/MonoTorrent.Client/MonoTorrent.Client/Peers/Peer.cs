@@ -130,8 +130,8 @@ namespace MonoTorrent.Client
         internal byte[] CompactPeer ()
             => Info.CompactPeer ();
 
-        internal void CompactPeer (Span<byte> buffer)
-            => Info.CompactPeer (buffer);
+        internal bool TryWriteCompactPeer (Span<byte> buffer, out int written)
+            => Info.TryWriteCompactPeer (buffer, out written);
 
         internal static BEncodedList Encode (IEnumerable<Peer> peers)
         {
