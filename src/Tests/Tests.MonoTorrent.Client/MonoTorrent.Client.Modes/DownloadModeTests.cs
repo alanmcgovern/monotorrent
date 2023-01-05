@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -97,9 +98,9 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public async Task AddPeers_PeerExchangeMessage ()
+        public async Task AddPeersV4_PeerExchangeMessage ()
         {
-            var peer = new byte[] { 192, 168, 0, 1, 100, 0, 192, 168, 0, 2, 101, 0 };
+            var peer = new byte[] { 192, 168, 0, 1, 0, 100, 192, 168, 0, 2, 0, 101 };
             var dotF = new byte[] { 0, 1 << 1 }; // 0x2 means is a seeder
             var id = PeerId.CreateNull (40, Manager.InfoHashes.V1OrV2);
             id.SupportsFastPeer = true;
@@ -119,7 +120,7 @@ namespace MonoTorrent.Client.Modes
 
                 Manager.Peers.ClearAll ();
                 var supports = new ExtensionSupports (new[] { PeerExchangeMessage.Support });
-                var exchangeMessage = new PeerExchangeMessage ().Initialize (supports, peer, dotF, default, default);
+                var exchangeMessage = new PeerExchangeMessage ().Initialize (supports, peer, dotF, default, default, default, default, default);
                 Manager.Mode = mode;
                 Manager.Mode.HandleMessage (id, exchangeMessage, default);
 
@@ -127,6 +128,48 @@ namespace MonoTorrent.Client.Modes
                 Assert.AreEqual (2, addedArgs.NewPeers, "#1");
                 Assert.IsFalse (Manager.Peers.AvailablePeers[0].IsSeeder, "#2");
                 Assert.IsTrue (Manager.Peers.AvailablePeers[1].IsSeeder, "#3");
+                StringAssert.Contains ("192.168.0.1:100", Manager.Peers.AvailablePeers[0].Info.ConnectionUri.OriginalString);
+                StringAssert.Contains ("192.168.0.2:101", Manager.Peers.AvailablePeers[1].Info.ConnectionUri.OriginalString);
+            }
+        }
+
+        [Test]
+        public async Task AddPeersV6_PeerExchangeMessage ()
+        {
+            var peer = IPAddress.Parse ("::16.0.16.0").GetAddressBytes ().Concat (new byte[] { 0, 100})
+                .Concat (IPAddress.Parse ("::32.0.32.0").GetAddressBytes ()).Concat (new byte[] { 0, 101})
+                .ToArray ();
+            var dotF = new byte[] { 0, 1 << 1 }; // 0x2 means is a seeder
+            var id = PeerId.CreateNull (40, Manager.InfoHashes.V1OrV2);
+            id.SupportsFastPeer = true;
+            id.SupportsLTMessages = true;
+
+            Mode[] modes = {
+                new DownloadMode (Manager, DiskManager, ConnectionManager, Settings),
+                new MetadataMode (Manager, DiskManager, ConnectionManager, Settings, "")
+            };
+
+            foreach (var mode in modes) {
+                var peersTask = new TaskCompletionSource<PeerExchangePeersAdded> ();
+                Manager.PeersFound += (o, e) => {
+                    if (e is PeerExchangePeersAdded args)
+                        peersTask.TrySetResult (args);
+                };
+
+                Manager.Peers.ClearAll ();
+                var supports = new ExtensionSupports (new[] { PeerExchangeMessage.Support });
+                var exchangeMessage = new PeerExchangeMessage ().Initialize (supports, default, default, default, peer, dotF, default, default);
+                Manager.Mode = mode;
+                Manager.Mode.HandleMessage (id, exchangeMessage, default);
+
+                var addedArgs = await peersTask.Task.WithTimeout ();
+                Assert.AreEqual (2, addedArgs.NewPeers, "#1");
+                Assert.IsFalse (Manager.Peers.AvailablePeers[0].IsSeeder, "#2");
+                Assert.IsTrue (Manager.Peers.AvailablePeers[1].IsSeeder, "#3");
+
+                StringAssert.Contains ("[::16.0.16.0]:100", Manager.Peers.AvailablePeers[0].Info.ConnectionUri.OriginalString);
+                StringAssert.Contains ("[::32.0.32.0]:101", Manager.Peers.AvailablePeers[1].Info.ConnectionUri.OriginalString);
+
             }
         }
 
@@ -151,7 +194,7 @@ namespace MonoTorrent.Client.Modes
             };
 
             var supports = new ExtensionSupports (new[] { PeerExchangeMessage.Support });
-            var exchangeMessage = new PeerExchangeMessage ().Initialize (supports, peer, dotF, default, default);
+            var exchangeMessage = new PeerExchangeMessage ().Initialize (supports, peer, dotF, default, default, default, default, default);
             manager.Mode.HandleMessage (id, exchangeMessage, default);
 
             var addedArgs = await peersTask.Task.WithTimeout ();
