@@ -84,7 +84,7 @@ namespace MonoTorrent.Dht.Tasks
                 // The response had some actual peers
                 if (response.Values != null) {
                     // We have actual peers!
-                    var peers = response.Values.OfType<BEncodedString> ().SelectMany (t => PeerInfo.FromCompact (t.Span)).ToArray ();
+                    var peers = response.Values.OfType<BEncodedString> ().SelectMany (t => PeerInfo.FromCompact (t.Span, Engine.AddressFamily)).ToArray ();
                     Engine.RaisePeersFound (InfoHash, peers);
                     foreach (var peer in peers)
                         FoundPeers.Add (peer);

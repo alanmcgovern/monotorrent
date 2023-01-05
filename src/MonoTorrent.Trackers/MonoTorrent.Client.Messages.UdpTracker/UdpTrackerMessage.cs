@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Net.Sockets;
 
 namespace MonoTorrent.Messages.UdpTracker
 {
@@ -42,7 +43,7 @@ namespace MonoTorrent.Messages.UdpTracker
             TransactionId = transactionId;
         }
 
-        public static UdpTrackerMessage DecodeMessage (ReadOnlySpan<byte> buffer, MessageType type)
+        public static UdpTrackerMessage DecodeMessage (ReadOnlySpan<byte> buffer, MessageType type, AddressFamily addressFamily)
         {
             UdpTrackerMessage m;
             var actionBuffer = type == MessageType.Request ? buffer.Slice (8) : buffer;
@@ -58,7 +59,7 @@ namespace MonoTorrent.Messages.UdpTracker
                     if (type == MessageType.Request)
                         m = new AnnounceMessage ();
                     else
-                        m = new AnnounceResponseMessage ();
+                        m = new AnnounceResponseMessage (addressFamily);
                     break;
                 case 2:
                     if (type == MessageType.Request)

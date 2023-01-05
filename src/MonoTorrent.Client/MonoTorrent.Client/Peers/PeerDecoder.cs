@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
 
@@ -36,15 +37,15 @@ namespace MonoTorrent
 {
     static class PeerDecoder
     {
-        public static IList<PeerInfo> Decode (BEncodedList peers)
+        public static IList<PeerInfo> Decode (BEncodedList peers, AddressFamily addressFamily)
         {
             var list = new List<PeerInfo> (peers.Count);
             foreach (BEncodedValue value in peers) {
                 try {
-                    if (value is BEncodedDictionary)
-                        list.Add (DecodeFromDict ((BEncodedDictionary) value));
-                    else if (value is BEncodedString)
-                        foreach (PeerInfo p in Decode ((BEncodedString) value))
+                    if (value is BEncodedDictionary dict)
+                        list.Add (DecodeFromDict (dict));
+                    else if (value is BEncodedString str)
+                        foreach (var p in PeerInfo.FromCompact (str.Span, addressFamily))
                             list.Add (p);
                 } catch {
                     // If something is invalid and throws an exception, ignore it
@@ -73,8 +74,5 @@ namespace MonoTorrent
             var connectionUri = new Uri ($"ipv4://{dict[IPKey]}:{dict[PortKey]}");
             return new PeerInfo (connectionUri, peerId);
         }
-
-        public static IList<PeerInfo> Decode (BEncodedString peers)
-            => PeerInfo.FromCompact (peers.Span);
     }
 }

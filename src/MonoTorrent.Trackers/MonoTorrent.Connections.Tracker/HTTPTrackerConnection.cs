@@ -33,6 +33,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -52,6 +53,8 @@ namespace MonoTorrent.Connections.Tracker
 
         static readonly Random random = new Random ();
 
+        public AddressFamily AddressFamily { get; }
+
         public bool CanScrape { get; }
 
         public Uri? ScrapeUri { get; }
@@ -69,7 +72,14 @@ namespace MonoTorrent.Connections.Tracker
         HttpClient Client { get; }
 
         public HttpTrackerConnection (Uri announceUri, HttpClient client)
+            : this(announceUri, client, AddressFamily.InterNetwork)
         {
+
+        }
+
+        public HttpTrackerConnection (Uri announceUri, HttpClient client, AddressFamily addressFamily)
+        {
+            AddressFamily = addressFamily;
             Uri = announceUri;
             Client = client;
 
@@ -282,9 +292,9 @@ namespace MonoTorrent.Connections.Tracker
 
                     case ("peers"):
                         if (keypair.Value is BEncodedList bencodedList)          // Non-compact response
-                            peers.AddRange (PeerDecoder.Decode (bencodedList));
+                            peers.AddRange (PeerDecoder.Decode (bencodedList, AddressFamily));
                         else if (keypair.Value is BEncodedString bencodedStr)   // Compact response
-                            peers.AddRange (PeerDecoder.Decode (bencodedStr));
+                            peers.AddRange (PeerInfo.FromCompact (bencodedStr.Span, AddressFamily));
                         break;
 
                     case ("failure reason"):

@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -73,6 +74,9 @@ namespace MonoTorrent.Dht
         #endregion Events
 
         internal static MainLoop MainLoop { get; } = new MainLoop ("DhtLoop");
+
+        // IPV6 - create an IPV4 and an IPV6 dht engine
+        public AddressFamily AddressFamily { get; private set; } = AddressFamily.InterNetwork;
 
         public TimeSpan AnnounceInterval => DefaultAnnounceInternal;
 

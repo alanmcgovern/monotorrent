@@ -249,7 +249,7 @@ namespace MonoTorrent.Client.Modes
                 if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaximumConnections)
                     return;
 
-                var newPeers = PeerDecoder.Decode (BEncodedString.FromMemory (message.Added));
+                var newPeers = PeerInfo.FromCompact (message.Added.Span, id.Connection.AddressBytes.Length == 16 ? System.Net.Sockets.AddressFamily.InterNetworkV6 : System.Net.Sockets.AddressFamily.InterNetwork);
                 for (int i = 0; i < newPeers.Count && i < message.AddedDotF.Length; i++)
                     newPeers[i] = new PeerInfo (newPeers[i].ConnectionUri, newPeers[i].PeerId, (message.AddedDotF.Span[i] & 0x2) == 0x2);
 

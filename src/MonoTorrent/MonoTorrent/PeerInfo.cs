@@ -28,9 +28,12 @@
 
 
 using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 using MonoTorrent.BEncoding;
@@ -44,6 +47,8 @@ namespace MonoTorrent
 
         public Uri ConnectionUri { get; }
 
+        IPEndPoint? EndPoint { get; }
+
         public PeerInfo (Uri connectionUri)
             : this (connectionUri, BEncodedString.Empty)
         {
@@ -55,7 +60,13 @@ namespace MonoTorrent
         }
 
         public PeerInfo (Uri connectionUri, BEncodedString peerId, bool maybeSeeder)
-            => (ConnectionUri, PeerId, MaybeSeeder) = (connectionUri ?? throw new ArgumentNullException (nameof (connectionUri)), peerId ?? throw new ArgumentNullException (nameof (BEncodedString)), maybeSeeder);
+            : this (connectionUri, peerId, maybeSeeder, IPAddress.TryParse (connectionUri.Host, out var ip) ? new IPEndPoint (ip, connectionUri.Port) : null)
+        {
+
+        }
+
+        internal PeerInfo (Uri connectionUri, BEncodedString peerId, bool maybeSeeder, IPEndPoint? endPoint)
+            => (ConnectionUri, PeerId, MaybeSeeder, EndPoint) = (connectionUri ?? throw new ArgumentNullException (nameof (connectionUri)), peerId ?? throw new ArgumentNullException (nameof (BEncodedString)), maybeSeeder, endPoint);
 
         public override bool Equals (object? obj)
             => Equals (obj as PeerInfo);
@@ -67,77 +78,72 @@ namespace MonoTorrent
             => ConnectionUri.GetHashCode ();
 
         public byte[] CompactPeer ()
-            => CompactPeer (ConnectionUri);
-
-        public void CompactPeer (Span<byte> buffer)
-            => CompactPeer (ConnectionUri, buffer);
-
-        public static byte[] CompactPeer (Uri uri)
         {
-            byte[] data = new byte[6];
-            CompactPeer (uri, data);
-            return data;
+            var buffer = new byte[2 + (EndPoint!.AddressFamily == AddressFamily.InterNetworkV6 ? 16 : 4)];
+            if (!TryWriteCompactPeer (ConnectionUri, buffer, out int written) || written != buffer.Length)
+                throw new InvalidOperationException ();
+            return buffer;
         }
 
-        public static void CompactPeer (Uri uri, Span<byte> buffer)
+        public bool TryWriteCompactPeer (Span<byte> buffer, out int written)
+            => TryWriteCompactPeer (ConnectionUri, buffer, out written);
+
+        bool TryWriteCompactPeer (Uri uri, Span<byte> buffer, out int written)
         {
-            foreach (char value in uri.Host.AsSpan ()) {
-                if (value == '.') {
-                    buffer = buffer.Slice (1);
-                } else if (value >= '0' && value <= '9') {
-                    buffer[0] = (byte) (buffer[0]  * 10 + (byte) (value - '0'));
-                } else {
-                    throw new NotSupportedException ("Invalid character in what should have been an ip address.");
-                }
+            if(EndPoint == null) {
+                written = 0;
+                return false;
             }
-            buffer = buffer.Slice (1);
-            BinaryPrimitives.WriteUInt16BigEndian (buffer.Slice (0, 2), (ushort) uri.Port);
+
+            if (!EndPoint.Address.TryWriteBytes (buffer, out written))
+                return false;
+
+            BinaryPrimitives.WriteUInt16BigEndian (buffer.Slice (written, 2), (ushort) uri.Port);
+            written += 2;
+            return true;
         }
 
-        public static IList<PeerInfo> FromCompact (ReadOnlySpan<byte> buffer)
+        public static IList<PeerInfo> FromCompact (ReadOnlySpan<byte> buffer, AddressFamily addressFamily)
         {
-            var sb = new StringBuilder (27);
             var list = new List<PeerInfo> ((buffer.Length / 6) + 1);
-            FromCompact (buffer, sb, list);
+            FromCompact (buffer, addressFamily, list);
             return list;
         }
 
-        public static IList<PeerInfo> FromCompact (IEnumerable<byte[]> data)
+        public static IList<PeerInfo> FromCompact (IEnumerable<byte[]> data, AddressFamily addressFamily)
         {
-            var sb = new StringBuilder (27);
             var list = new List<PeerInfo> ();
             foreach (var buffer in data)
-                FromCompact (buffer.AsSpan (), sb, list);
+                FromCompact (buffer, addressFamily, list);
             return list;
         }
 
-        static void FromCompact (ReadOnlySpan<byte> buffer, StringBuilder sb, List<PeerInfo> list)
+        static void FromCompact (ReadOnlySpan<byte> buffer, AddressFamily addressFamily, List<PeerInfo> results)
         {
-            // "Compact Response" peers are encoded in network byte order. 
-            // IP's are the first four bytes
-            // Ports are the following 2 bytes
-            var byteOrderedData = buffer;
-            int i = 0;
-            ushort port;
-            while ((i + 5) < byteOrderedData.Length) {
-                sb.Remove (0, sb.Length);
+            (var sizeOfIP, var prefix) = addressFamily switch {
+                AddressFamily.InterNetwork => (4, "ipv4://"),
+                AddressFamily.InterNetworkV6 => (16, "ipv6://"),
+                _ => throw new NotSupportedException ()
+            };
 
-                sb.Append ("ipv4://");
-                sb.Append (byteOrderedData[i++]);
-                sb.Append ('.');
-                sb.Append (byteOrderedData[i++]);
-                sb.Append ('.');
-                sb.Append (byteOrderedData[i++]);
-                sb.Append ('.');
-                sb.Append (byteOrderedData[i++]);
+            var stride = sizeOfIP + 2;
 
-                port = BinaryPrimitives.ReadUInt16BigEndian (byteOrderedData.Slice (i));
-                i += 2;
-                sb.Append (':');
-                sb.Append (port);
+            // Round it off into a multipl eof 'stride' bytes.
+            buffer = buffer.Slice (0, (buffer.Length / stride) * stride);
 
-                var uri = new Uri (sb.ToString ());
-                list.Add (new PeerInfo (uri));
+            while (buffer.Length > 0) {
+                var ipBuffer = buffer.Slice (0, sizeOfIP);
+                var portBuffer = buffer.Slice (sizeOfIP, 2);
+#if NETSTANDARD2_0
+                var ip = new IPAddress (ipBuffer.ToArray ());
+#else
+                var ip = new IPAddress (ipBuffer);
+#endif
+                var port = BinaryPrimitives.ReadUInt16BigEndian (portBuffer);
+
+                var endPoint = new IPEndPoint (ip, port);
+                results.Add (new PeerInfo (new Uri (prefix + endPoint.ToString ()), BEncodedString.Empty, false, endPoint));
+                buffer = buffer.Slice (stride);
             }
         }
     }

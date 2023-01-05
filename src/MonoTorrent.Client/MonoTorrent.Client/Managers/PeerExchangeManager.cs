@@ -93,9 +93,13 @@ namespace MonoTorrent.Client
             var added = memory.Slice (0, len * 6);
             var addedDotF = memory.Slice (added.Length, len);
 
+            int stride = 6;
+
             for (int i = 0; i < len; i++) {
                 var peer = addedPeers.Dequeue ();
-                peer.Peer.CompactPeer (added.Span.Slice (i * 6, 6));
+                if (!peer.Peer.TryWriteCompactPeer (added.Span.Slice (i * stride, stride), out int written) || written != stride)
+                    throw new NotSupportedException ();
+
                 if (EncryptionTypes.SupportsRC4 (peer.Peer.AllowedEncryption)) {
                     addedDotF.Span[i] = 0x01;
                 } else {
@@ -107,16 +111,17 @@ namespace MonoTorrent.Client
 
             // The remainder of our buffer can be filled with dropped peers.
             // We do some math to slice the remainder of the original memory
-            // buffer to an even multiple of 6. Then we calculate how many
+            // buffer to an even multiple of 'stride'. Then we calculate how many
             // peers we actually want to put in it, and then we slice it one
             // more time if we don't have enough dropped peers.
             var dropped = memory.Slice (added.Length + addedDotF.Length);
-            dropped = dropped.Slice (0, (dropped.Length / 6) * 6);
-            len = Math.Min (dropped.Length / 6, droppedPeers.Count);
-            dropped = dropped.Slice (0, len * 6);
+            dropped = dropped.Slice (0, (dropped.Length / stride) * stride);
+            len = Math.Min (dropped.Length / stride, droppedPeers.Count);
+            dropped = dropped.Slice (0, len * stride);
 
             for (int i = 0; i < len; i++)
-                droppedPeers.Dequeue ().Peer.CompactPeer (dropped.Span.Slice (i * 6, 6));
+                if (!droppedPeers.Dequeue ().Peer.TryWriteCompactPeer (dropped.Span.Slice (i * stride, stride), out int written) || written != stride)
+                    throw new NotSupportedException ();
 
             (var message, var releaser) = PeerMessage.Rent<PeerExchangeMessage> ();
             message.Initialize (new ExtensionSupports (new[] { PeerExchangeMessage.Support }), added, addedDotF, dropped, memoryReleaser);
