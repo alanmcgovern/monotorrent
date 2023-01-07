@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,6 +33,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
                 new byte[14],
                 new byte[2],
                 new byte[31],
+                new byte[12],
+                new byte[23],
+                new byte[3],
                 default
             );
             
@@ -40,9 +44,14 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             Assert.AreEqual (31, message.Dropped.Length);
 
             releaser.Dispose ();
+            // IPv4
             Assert.IsTrue (message.Added.IsEmpty);
             Assert.IsTrue (message.AddedDotF.IsEmpty);
             Assert.IsTrue (message.Dropped.IsEmpty);
+            // IPv6
+            Assert.IsTrue (message.Added6.IsEmpty);
+            Assert.IsTrue (message.Added6DotF.IsEmpty);
+            Assert.IsTrue (message.Dropped6.IsEmpty);
         }
 
 
@@ -53,13 +62,19 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             byte[] peer = { 192, 168, 0, 1, 100, 0 };
             byte[] peerDotF = { 1 | 2 }; // 1 == encryption, 2 == seeder
 
+            byte[] peer6 = IPAddress.Parse ("::1234:5678").GetAddressBytes ();
+            byte[] peer6DotF = { 1 | 2 }; // 1 == encryption, 2 == seeder
+
             var supports = new ExtensionSupports (new[] { PeerExchangeMessage.Support });
-            PeerExchangeMessage message = new PeerExchangeMessage ().Initialize (supports, peer, peerDotF, default, default);
+            PeerExchangeMessage message = new PeerExchangeMessage ().Initialize (supports, peer, peerDotF, default, peer6, peer6DotF, default, default);
 
             byte[] buffer = message.Encode ();
             PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, null).message;
             Assert.IsTrue (peer.AsSpan ().SequenceEqual (m.Added.Span), "#1");
             Assert.IsTrue (peerDotF.AsSpan ().SequenceEqual (m.AddedDotF.Span), "#2");
+
+            Assert.IsTrue (peer6.AsSpan ().SequenceEqual (m.Added6.Span), "#3");
+            Assert.IsTrue (peer6DotF.AsSpan ().SequenceEqual (m.Added6DotF.Span), "#4");
         }
 
         [Test]
@@ -71,6 +86,10 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             Assert.IsTrue (message.Added.IsEmpty, "#1");
             Assert.IsTrue (message.AddedDotF.IsEmpty, "#2");
             Assert.IsTrue (message.Dropped.IsEmpty, "#3");
+
+            Assert.IsTrue (message.Added6.IsEmpty, "#1");
+            Assert.IsTrue (message.Added6DotF.IsEmpty, "#2");
+            Assert.IsTrue (message.Dropped6.IsEmpty, "#3");
         }
     }
 }

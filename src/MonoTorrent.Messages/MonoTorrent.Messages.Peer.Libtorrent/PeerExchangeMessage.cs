@@ -42,13 +42,19 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         static readonly BEncodedString AddedDotFKey = new BEncodedString ("added.f");
         static readonly BEncodedString DroppedKey = new BEncodedString ("dropped");
 
+        static readonly BEncodedString Added6Key = new BEncodedString ("added6");
+        static readonly BEncodedString Added6DotFKey = new BEncodedString ("added6.f");
+        static readonly BEncodedString Dropped6Key = new BEncodedString ("dropped6");
+
         public override int ByteLength => 4 + 1 + 1 + peerDict.LengthInBytes ();
 
-        public ReadOnlyMemory<byte> Added  => ((BEncodedString) peerDict[AddedKey]).AsMemory ();
-
+        public ReadOnlyMemory<byte> Added => ((BEncodedString) peerDict[AddedKey]).AsMemory ();
         public ReadOnlyMemory<byte> AddedDotF => ((BEncodedString) peerDict[AddedDotFKey]).AsMemory ();
-
         public ReadOnlyMemory<byte> Dropped => ((BEncodedString) peerDict[DroppedKey]).AsMemory ();
+
+        public ReadOnlyMemory<byte> Added6 => ((BEncodedString) peerDict[Added6Key]).AsMemory ();
+        public ReadOnlyMemory<byte> Added6DotF => ((BEncodedString) peerDict[Added6DotFKey]).AsMemory ();
+        public ReadOnlyMemory<byte> Dropped6 => ((BEncodedString) peerDict[Dropped6Key]).AsMemory ();
 
         ByteBufferPool.Releaser MemoryReleaser { get; set; }
 
@@ -59,6 +65,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
                 {AddedKey, BEncodedString.Empty },
                 {AddedDotFKey, BEncodedString.Empty },
                 {DroppedKey, BEncodedString.Empty },
+                {Added6Key, BEncodedString.Empty },
+                {Added6DotFKey, BEncodedString.Empty },
+                {Dropped6Key, BEncodedString.Empty },
             };
         }
 
@@ -71,6 +80,13 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
                 peerDict.Add (AddedDotFKey, BEncodedString.Empty);
             if (!peerDict.ContainsKey (DroppedKey))
                 peerDict.Add (DroppedKey, BEncodedString.Empty);
+
+            if (!peerDict.ContainsKey (Added6Key))
+                peerDict.Add (Added6Key, BEncodedString.Empty);
+            if (!peerDict.ContainsKey (Added6DotFKey))
+                peerDict.Add (Added6DotFKey, BEncodedString.Empty);
+            if (!peerDict.ContainsKey (Dropped6Key))
+                peerDict.Add (Dropped6Key, BEncodedString.Empty);
         }
 
         public override int Encode (Span<byte> buffer)
@@ -85,27 +101,27 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             return written - buffer.Length;
         }
 
-        public PeerExchangeMessage Initialize (ExtensionSupports supportedExtensions, ReadOnlyMemory<byte> added, ReadOnlyMemory<byte> addedDotF, ReadOnlyMemory<byte> dropped, ByteBufferPool.Releaser memoryReleaser)
+        public PeerExchangeMessage Initialize (ExtensionSupports supportedExtensions, ReadOnlyMemory<byte> added, ReadOnlyMemory<byte> addedDotF, ReadOnlyMemory<byte> dropped, ReadOnlyMemory<byte> added6, ReadOnlyMemory<byte> added6DotF, ReadOnlyMemory<byte> dropped6, ByteBufferPool.Releaser memoryReleaser)
         {
             ExtensionId = supportedExtensions.MessageId (Support);
-            Initialize (added, addedDotF, dropped, memoryReleaser);
-            return this;
-        }
 
-        void Initialize (ReadOnlyMemory<byte> added, ReadOnlyMemory<byte> addedDotF, ReadOnlyMemory<byte> dropped, ByteBufferPool.Releaser memoryReleaser)
-        {
             MemoryReleaser = memoryReleaser;
             peerDict[AddedKey] = BEncodedString.FromMemory (added);
             peerDict[AddedDotFKey] = BEncodedString.FromMemory (addedDotF);
             peerDict[DroppedKey] = BEncodedString.FromMemory (dropped);
+
+            peerDict[Added6Key] = BEncodedString.FromMemory (added6);
+            peerDict[Added6DotFKey] = BEncodedString.FromMemory (added6DotF);
+            peerDict[Dropped6Key] = BEncodedString.FromMemory (dropped6);
+
+            return this;
         }
 
         protected override void Reset ()
         {
             ExtensionId = 0;
-            peerDict[AddedKey] = BEncodedString.Empty;
-            peerDict[AddedDotFKey] = BEncodedString.Empty;
-            peerDict[DroppedKey] = BEncodedString.Empty;
+            peerDict[AddedKey] = peerDict[AddedDotFKey] = peerDict[DroppedKey] = BEncodedString.Empty;
+            peerDict[Added6Key] = peerDict[Added6DotFKey] = peerDict[Dropped6Key] = BEncodedString.Empty;
             MemoryReleaser.Dispose ();
             MemoryReleaser = default;
         }
@@ -115,7 +131,10 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             var added = (BEncodedString) peerDict[AddedKey];
             int numPeers = added.Span.Length / 6;
 
-            return $"PeerExchangeMessage: {numPeers} peers";
+            var added6 = (BEncodedString) peerDict[Added6Key];
+            int numPeers6 = added.Span.Length / 18;
+
+            return $"PeerExchangeMessage: {numPeers} ipv4 peers. {numPeers6} ipv6 peers.";
         }
     }
 }

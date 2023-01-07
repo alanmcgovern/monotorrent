@@ -43,15 +43,19 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        readonly PeerId id;
+        readonly PeerId PeerId;
         readonly Queue<PeerId> addedPeers;
         readonly Queue<PeerId> droppedPeers;
+
+        readonly Queue<PeerId> added6Peers;
+        readonly Queue<PeerId> dropped6Peers;
         bool disposed;
 
         // Peers are about 7 bytes each (if you include the 'dotf' data)
         // Calculate the max peers we can fit in the buffer.
         static readonly int BufferSize = ByteBufferPool.SmallMessageBufferSize;
-        static readonly int MAX_PEERS = ByteBufferPool.SmallMessageBufferSize / 7;
+        static readonly int MAX_PEERS = BufferSize / (4 + 2 + 1); // ipv4 bytes, port bytes, 'dotf' byte 
+        static readonly int MAX_PEERS6 = BufferSize / (16 + 2 + 1); // ipv6 bytes, port bytes, 'dotf' byte
 
         IPeerExchangeSource Manager { get; }
 
@@ -62,38 +66,69 @@ namespace MonoTorrent.Client
         internal PeerExchangeManager (IPeerExchangeSource manager, PeerId id)
         {
             Manager = manager;
-            this.id = id;
+            PeerId = id;
 
             addedPeers = new Queue<PeerId> ();
             droppedPeers = new Queue<PeerId> ();
+
+            added6Peers = new Queue<PeerId> ();
+            dropped6Peers = new Queue<PeerId> ();
             manager.PeerConnected += OnAdd;
         }
 
         internal void OnAdd (object? source, PeerConnectedEventArgs args)
         {
-            addedPeers.Enqueue (args.Peer);
+            // IPv4 peers will share with IPv4 peers, IPv6 share with 
+            if (args.Peer.Uri.Scheme == "ipv4")
+                addedPeers.Enqueue (args.Peer);
+            else if (args.Peer.Uri.Scheme == "ipv6")
+                added6Peers.Enqueue (args.Peer);
         }
 
         internal void OnDrop (object? source, PeerDisconnectedEventArgs args)
         {
-            droppedPeers.Enqueue (args.Peer);
+            if (args.Peer.Uri.Scheme == "ipv4")
+                droppedPeers.Enqueue (args.Peer);
+            else if (args.Peer.Uri.Scheme == "ipv6")
+                dropped6Peers.Enqueue (args.Peer);
         }
         #endregion
-
 
         #region Methods
 
         internal void OnTick ()
         {
+            // Do nothing if PEX is disabled.
             if (!Manager.Settings.AllowPeerExchange)
                 return;
 
-            int len = (addedPeers.Count <= MAX_PEERS) ? addedPeers.Count : MAX_PEERS;
-            var memoryReleaser = MemoryPool.Default.Rent (BufferSize, out Memory<byte> memory);
-            var added = memory.Slice (0, len * 6);
-            var addedDotF = memory.Slice (added.Length, len);
+            // Do nothing if the four lists are empty.
+            if (addedPeers.Count == 0 && droppedPeers.Count == 0 && added6Peers.Count == 0 && dropped6Peers.Count == 0)
+                return;
 
-            int stride = 6;
+            // Prepare the message and it's content.
+            Memory<byte> added = default, addedDotF = default, dropped = default, added6 = default, added6DotF = default, dropped6 = default;
+            ByteBufferPool.Releaser memoryReleaser = default;
+            // Preferentially send ipv4 peers first until those lists are empty. Then send ipv6 peers.
+            // Fix this by using a larger buffer, or randomise the order in which this happens.
+            (var message, var releaser) = PeerMessage.Rent<PeerExchangeMessage> ();
+            if (addedPeers.Count > 0 || droppedPeers.Count > 0) {
+                (added, addedDotF, dropped, memoryReleaser) = Populate (6, MAX_PEERS, addedPeers, droppedPeers);
+            } else if (added6Peers.Count > 0 || dropped6Peers.Count > 0) {
+                (added, addedDotF, dropped, memoryReleaser) = Populate (18, MAX_PEERS, addedPeers, droppedPeers);
+            }
+
+            // Populate it with what we have!
+            message.Initialize (new ExtensionSupports (new[] { PeerExchangeMessage.Support }), added, addedDotF, dropped, added6, added6DotF, dropped6, memoryReleaser);
+            PeerId.MessageQueue.Enqueue (message, releaser);
+        }
+
+        static (Memory<byte> added, Memory<byte> addedDotF, Memory<byte> dropped, ByteBufferPool.Releaser memoryReleaser) Populate (int stride, int maxPeers, Queue<PeerId> addedPeers, Queue<PeerId> droppedPeers)
+        {
+            int len = (addedPeers.Count <= maxPeers) ? addedPeers.Count : maxPeers;
+            var memoryReleaser = MemoryPool.Default.Rent (BufferSize, out Memory<byte> memory);
+            var added = memory.Slice (0, len * stride);
+            var addedDotF = memory.Slice (added.Length, len);
 
             for (int i = 0; i < len; i++) {
                 var peer = addedPeers.Dequeue ();
@@ -123,9 +158,7 @@ namespace MonoTorrent.Client
                 if (!droppedPeers.Dequeue ().Peer.TryWriteCompactPeer (dropped.Span.Slice (i * stride, stride), out int written) || written != stride)
                     throw new NotSupportedException ();
 
-            (var message, var releaser) = PeerMessage.Rent<PeerExchangeMessage> ();
-            message.Initialize (new ExtensionSupports (new[] { PeerExchangeMessage.Support }), added, addedDotF, dropped, memoryReleaser);
-            id.MessageQueue.Enqueue (message, releaser);
+            return (added, addedDotF, dropped, memoryReleaser);
         }
 
         public void Dispose ()
