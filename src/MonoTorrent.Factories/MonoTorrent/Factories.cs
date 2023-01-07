@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
@@ -109,7 +110,7 @@ namespace MonoTorrent
                 new Dictionary<string, TrackerCreator> {
                     { "http", uri => new Tracker (new HttpTrackerConnection(uri, HttpClientFunc ())) },
                     { "https", uri => new Tracker (new HttpTrackerConnection(uri, HttpClientFunc ())) },
-                    { "udp", uri => new Tracker (new UdpTrackerConnection (uri, System.Net.Sockets.AddressFamily.InterNetwork), new UdpTrackerConnection (uri, System.Net.Sockets.AddressFamily.InterNetworkV6)) },
+                    { "udp", uri => new Tracker (new UdpTrackerConnection (uri, AddressFamily.InterNetwork), new UdpTrackerConnection (uri, AddressFamily.InterNetworkV6)) },
                 }
             );
         }

@@ -33,6 +33,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1034,9 +1035,9 @@ namespace MonoTorrent.Client
                 return endPoint.Port;
 
             foreach (var listener in PeerListeners) {
-                if (scheme == "ipv4" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                if (scheme == "ipv4" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork)
                     return listener.LocalEndPoint.Port;
-                if (scheme == "ipv6" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                if (scheme == "ipv6" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
                     return listener.LocalEndPoint.Port;
             }
             return null;
