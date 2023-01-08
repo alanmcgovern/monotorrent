@@ -1,5 +1,5 @@
 //
-// MultiProtocolUdpTrackerTests.cs
+// MultiProtocolHttpTrackerTests.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,7 +48,7 @@ using NUnit.Framework;
 namespace MonoTorrent.Trackers
 {
     [TestFixture]
-    public class MultiProtocolUdpTrackerTests
+    public class MultiProtocolHttpTrackerTests
     {
         static readonly TimeSpan Timeout = Debugger.IsAttached ? TimeSpan.FromDays (10) : TimeSpan.FromSeconds (10);
 
@@ -57,7 +58,7 @@ namespace MonoTorrent.Trackers
         TrackerServer.TrackerServer server;
 
         ITrackerConnection ConnectionIPv4, ConnectionIPv6;
-        List<IgnoringListener> listeners;
+        List<ITrackerListener> listeners;
         List<BEncodedString> ipv4keys, ipv6keys;
         List<InfoHash> ipv4announcedInfoHashes, ipv6announcedInfoHashes;
         List<InfoHash> ipv4scrapedInfoHashes, ipv6scrapedInfoHashes;
@@ -77,7 +78,7 @@ namespace MonoTorrent.Trackers
             server = new MonoTorrent.TrackerServer.TrackerServer ();
             server.AllowUnregisteredTorrents = true;
 
-            listeners = new List<IgnoringListener> ();
+            listeners = new List<ITrackerListener> ();
         }
 
         [TearDown]
@@ -254,13 +255,13 @@ namespace MonoTorrent.Trackers
                 CollectionAssert.Contains (peersFromAnnounce, peer);
         }
 
-        IgnoringListener AddListener (AddressFamily addressFamily)
+        ITrackerListener AddListener (AddressFamily addressFamily)
         {
-            int preferredPort = listeners.Count == 1 ? listeners[0].LocalEndPoint.Port : 0;
+            int preferredPort = 54399;
 
-            IgnoringListener listener;
+            HttpTrackerListener listener;
             if (addressFamily == AddressFamily.InterNetwork) {
-                listener = new IgnoringListener (new IPEndPoint (IPAddress.Any, preferredPort));
+                listener = new HttpTrackerListener (new IPEndPoint (IPAddress.Loopback, preferredPort));
                 listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
                     ipv4keys.Add (e.Key);
                     ipv4announcedInfoHashes.Add (e.InfoHash);
@@ -269,7 +270,7 @@ namespace MonoTorrent.Trackers
                     ipv4scrapedInfoHashes.AddRange (e.InfoHashes);
                 };
             } else if (addressFamily == AddressFamily.InterNetworkV6) {
-                listener = new IgnoringListener (new IPEndPoint (IPAddress.IPv6Any, preferredPort));
+                listener = new HttpTrackerListener (new IPEndPoint (IPAddress.IPv6Loopback, preferredPort));
                 listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
                     ipv6keys.Add (e.Key);
                     ipv6announcedInfoHashes.Add (e.InfoHash);
@@ -285,9 +286,9 @@ namespace MonoTorrent.Trackers
             listener.Start ();
             listeners.Add (listener);
 
-            var uri = new Uri ($"udp://localhost:{listener.LocalEndPoint.Port}");
-            ConnectionIPv4 = new UdpTrackerConnection (uri, AddressFamily.InterNetwork);
-            ConnectionIPv6 = new UdpTrackerConnection (uri, AddressFamily.InterNetworkV6);
+            var uri = new Uri ($"http://localhost:{preferredPort}/announce");
+            ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetworkV6);
 
             return listener;
         }

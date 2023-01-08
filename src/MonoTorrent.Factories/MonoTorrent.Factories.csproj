@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="StandardSocketsHttpHandler" Version="2.2.0.4" Condition="$(TargetFramework) == 'netcoreapp3.0' Or $(TargetFramework) == 'netstandard2.1' Or $(TargetFramework) == 'netstandard2.0'" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Connections\MonoTorrent.Connections.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" PrivateAssets="all" />

@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -62,19 +63,13 @@ namespace MonoTorrent.Connections.Tracker
         // FIXME: Make private?
         public BEncodedString? TrackerId { get; set; }
 
-        HttpClient Client { get; }
+        Func<AddressFamily, HttpClient> ClientCreator { get; }
 
-        public HttpTrackerConnection (Uri announceUri, HttpClient client)
-            : this(announceUri, client, AddressFamily.InterNetwork)
-        {
-
-        }
-
-        public HttpTrackerConnection (Uri announceUri, HttpClient client, AddressFamily addressFamily)
+        public HttpTrackerConnection (Uri announceUri, Func<AddressFamily, HttpClient> clientCreator, AddressFamily addressFamily)
         {
             AddressFamily = addressFamily;
             Uri = announceUri;
-            Client = client;
+            ClientCreator = clientCreator;
 
             string uri = announceUri.OriginalString;
             if (uri.EndsWith ("/announce", StringComparison.OrdinalIgnoreCase))
@@ -91,14 +86,15 @@ namespace MonoTorrent.Connections.Tracker
             // by profiling. Switch this to the threadpool so the querying of default
             // proxies, and any DNS requests, are definitely not run on the main thread.
             await new ThreadSwitcher ();
-
             AnnounceResponse? announceResponse = null;
+
+            using var client = ClientCreator (AddressFamily);
             foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
                 Uri announceString = CreateAnnounceString (parameters, infoHash);
                 HttpResponseMessage response;
 
                 try {
-                    response = await Client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead, token);
+                    response = await client.GetAsync (announceString, HttpCompletionOption.ResponseHeadersRead, token);
                 } catch {
                     return new AnnounceResponse (
                         state: TrackerState.Offline,
@@ -144,9 +140,9 @@ namespace MonoTorrent.Connections.Tracker
             }
 
             HttpResponseMessage response;
-
+            using var client = ClientCreator (AddressFamily);
             try {
-                response = await Client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead, token);
+                response = await client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead, token);
             } catch {
                 return new ScrapeResponse (
                     state: TrackerState.Offline,
@@ -281,9 +277,16 @@ namespace MonoTorrent.Connections.Tracker
 
                     case ("peers"):
                         if (keypair.Value is BEncodedList bencodedList)          // Non-compact response
-                            peers.AddRange (PeerDecoder.Decode (bencodedList, AddressFamily));
+                            peers.AddRange (PeerDecoder.Decode (bencodedList, AddressFamily.InterNetwork));
                         else if (keypair.Value is BEncodedString bencodedStr)   // Compact response
-                            peers.AddRange (PeerInfo.FromCompact (bencodedStr.Span, AddressFamily));
+                            peers.AddRange (PeerInfo.FromCompact (bencodedStr.Span, AddressFamily.InterNetwork));
+                        break;
+
+                    case ("peers6"):
+                        if (keypair.Value is BEncodedList bencodedList6)          // Non-compact response
+                            peers.AddRange (PeerDecoder.Decode (bencodedList6, AddressFamily.InterNetworkV6));
+                        else if (keypair.Value is BEncodedString bencodedStr)   // Compact response
+                            peers.AddRange (PeerInfo.FromCompact (bencodedStr.Span, AddressFamily.InterNetworkV6));
                         break;
 
                     case ("failure reason"):

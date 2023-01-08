@@ -169,12 +169,20 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void TestInactiveServer ()
+        public async Task TestInactiveServer ()
         {
             ((HttpPeerConnection) connection).ConnectionTimeout = TimeSpan.FromMilliseconds (100);
             listener.Stop ();
 
-            Assert.ThrowsAsync<TaskCanceledException> (ReceiveFirst);
+            try {
+                await ReceiveFirst ();
+                Assert.Fail ("An OperationCanceledException or TaskCanceledException should have been raised");
+            } catch {
+                // We get an OperationCanceledException from the built-in SocketsHttpHandler implmentation.
+                //
+                // Under any old version of the .NET framework, which uses the StandardSocketsHttpHandler nuget,
+                // the TaskCanceledException is wrapped by a HttpRequestException.
+            }
         }
 
         [Test]

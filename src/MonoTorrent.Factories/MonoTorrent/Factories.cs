@@ -33,6 +33,8 @@ using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
@@ -51,7 +53,7 @@ namespace MonoTorrent
         public delegate IBlockCache BlockCacheCreator (IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer);
         public delegate IDhtEngine DhtCreator ();
         public delegate IDhtListener DhtListenerCreator (IPEndPoint endpoint);
-        public delegate HttpClient HttpClientCreator ();
+        public delegate HttpClient HttpClientCreator (AddressFamily family);
         public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator ();
         public delegate IPeerConnection PeerConnectionCreator (Uri uri);
         public delegate IPeerConnectionListener PeerConnectionListenerCreator (IPEndPoint endPoint);
@@ -87,12 +89,9 @@ namespace MonoTorrent
             BlockCacheFunc = (writer, capacity, policy, buffer) => new MemoryCache (buffer, capacity, policy, writer);
             DhtFunc = () => new DhtEngine ();
             DhtListenerFunc = endpoint => new DhtListener (endpoint);
-            HttpClientFunc = () => {
-                var client = new HttpClient ();
-                client.DefaultRequestHeaders.Add ("User-Agent", GitInfoHelper.ClientVersion);
-                client.Timeout = TimeSpan.FromSeconds (30);
-                return client;
-            };
+
+            HttpClientFunc = HttpRequestFactory.CreateHttpClient;
+
             LocalPeerDiscoveryFunc = () => new LocalPeerDiscovery ();
             PeerConnectionFuncs = new ReadOnlyDictionary<string, PeerConnectionCreator> (
                 new Dictionary<string, PeerConnectionCreator> {
@@ -106,10 +105,13 @@ namespace MonoTorrent
             PortForwarderFunc = () => new MonoNatPortForwarder ();
             SocketConnectorFunc = () => new SocketConnector ();
             StreamingPieceRequesterFunc = () => new StreamingPieceRequester ();
+
+            // 'Convert' the bespoke delegate to a standard 'Func' delegate
+            Func<AddressFamily, HttpClient> httpCreator = t => HttpClientFunc (t);
             TrackerFuncs = new ReadOnlyDictionary<string, TrackerCreator> (
                 new Dictionary<string, TrackerCreator> {
-                    { "http", uri => new Tracker (new HttpTrackerConnection(uri, HttpClientFunc ())) },
-                    { "https", uri => new Tracker (new HttpTrackerConnection(uri, HttpClientFunc ())) },
+                    { "http", uri => new Tracker (new HttpTrackerConnection(uri, httpCreator, AddressFamily.InterNetwork), new HttpTrackerConnection(uri, httpCreator, AddressFamily.InterNetworkV6)) },
+                    { "https", uri => new Tracker (new HttpTrackerConnection(uri, httpCreator, AddressFamily.InterNetwork), new HttpTrackerConnection(uri, httpCreator, AddressFamily.InterNetworkV6)) },
                     { "udp", uri => new Tracker (new UdpTrackerConnection (uri, AddressFamily.InterNetwork), new UdpTrackerConnection (uri, AddressFamily.InterNetworkV6)) },
                 }
             );
@@ -141,8 +143,11 @@ namespace MonoTorrent
             dupe.DhtListenerFunc = creator ?? Default.DhtListenerFunc;
             return dupe;
         }
+
         public HttpClient CreateHttpClient ()
-            => HttpClientFunc ();
+            => CreateHttpClient (AddressFamily.Unspecified);
+        public HttpClient CreateHttpClient (AddressFamily addressFamily)
+            => HttpClientFunc (addressFamily);
         public Factories WithHttpClientCreator (HttpClientCreator creator)
         {
             var dupe = MemberwiseClone ();

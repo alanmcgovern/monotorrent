@@ -151,9 +151,9 @@ namespace MonoTorrent.TrackerServer
             byte[]? compactResponse = null;
             BEncodedList? nonCompactResponse = null;
 
-            (int stride, Dictionary<object, Peer> peers) = addressFamily switch {
-                AddressFamily.InterNetwork => (4 + 2, PeersIPv4),
-                AddressFamily.InterNetworkV6 => (16 + 2, PeersIPv6),
+            (int stride, Dictionary<object, Peer> peers, BEncodedString peersKey) = addressFamily switch {
+                AddressFamily.InterNetwork => (4 + 2, PeersIPv4, TrackerServer.PeersKey),
+                AddressFamily.InterNetworkV6 => (16 + 2, PeersIPv6, compact ? TrackerServer.Peers6Key : TrackerServer.PeersKey),
                 _ => throw new NotSupportedException ($"AddressFamily.{addressFamily} is unsupported")
             };
 
@@ -183,9 +183,9 @@ namespace MonoTorrent.TrackerServer
             }
 
             if (compact)
-                response.Add (TrackerServer.PeersKey, (BEncodedString) compactResponse!);
+                response.Add (peersKey, (BEncodedString) compactResponse!);
             else
-                response.Add (TrackerServer.PeersKey, nonCompactResponse!);
+                response.Add (peersKey, nonCompactResponse!);
         }
 
         internal void ClearZombiePeers (DateTime cutoff)

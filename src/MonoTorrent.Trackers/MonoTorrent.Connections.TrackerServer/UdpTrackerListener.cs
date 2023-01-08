@@ -182,7 +182,14 @@ namespace MonoTorrent.Connections.TrackerServer
                             if (keypair.Value is BEncodedList)          // Non-compact response
                                 peers.AddRange (PeerDecoder.Decode ((BEncodedList) keypair.Value, remotePeer.AddressFamily));
                             else if (keypair.Value is BEncodedString str)   // Compact response
-                                peers.AddRange (PeerInfo.FromCompact (str.Span, remotePeer.AddressFamily));
+                                peers.AddRange (PeerInfo.FromCompact (str.Span, AddressFamily.InterNetwork));
+                            break;
+
+                        case ("peers6"):
+                            if (keypair.Value is BEncodedList)          // Non-compact response
+                                peers.AddRange (PeerDecoder.Decode ((BEncodedList) keypair.Value, AddressFamily.InterNetworkV6));
+                            else if (keypair.Value is BEncodedString str)   // Compact response
+                                peers.AddRange (PeerInfo.FromCompact (str.Span, AddressFamily.InterNetworkV6));
                             break;
 
                         default:
