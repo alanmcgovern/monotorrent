@@ -163,15 +163,12 @@ namespace MonoTorrent.TrackerServer
 
         byte[] GenerateCompactPeersEntry ()
         {
-            Span<byte> addressBytes = stackalloc byte[16];
+            // ipv6 addresses are 16 bytes + 2 bytes for the port.
+            Span<byte> addressBytes = stackalloc byte[18];
             if (!ClientAddress.Address.TryWriteBytes (addressBytes, out int written))
                 throw new NotSupportedException ($"IPAddress of type {ClientAddress.AddressFamily} are unsupported");
-            addressBytes = addressBytes.Slice (0, written);
-
-            var entry = new byte[addressBytes.Length + 2];
-            addressBytes.CopyTo (entry);
-            BinaryPrimitives.WriteUInt16BigEndian (entry.AsSpan (written), (ushort) ClientAddress.Port);
-            return entry;
+            BinaryPrimitives.WriteUInt16BigEndian (addressBytes.Slice (written, 2), (ushort) ClientAddress.Port);
+            return addressBytes.Slice (0, written + 2).ToArray ();
         }
     }
 }
