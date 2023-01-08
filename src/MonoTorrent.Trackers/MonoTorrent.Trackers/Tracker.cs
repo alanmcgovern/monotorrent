@@ -88,7 +88,7 @@ namespace MonoTorrent.Trackers
 
                 // Combine peers from each connection (usually ipv4 and ipv6)
                 if (response.State == TrackerState.Ok) {
-                    foreach (var infohash in response.Peers.Keys) {
+                    foreach (var infohash in response.Peers.Keys.ToArray ()) {
                         foreach (var resp in responses.Where (t => t.State == TrackerState.Ok && t != response))
                             response.Peers[infohash] = response.Peers[infohash].Concat (resp.Peers[infohash]).ToList ().AsReadOnly ();
                     }

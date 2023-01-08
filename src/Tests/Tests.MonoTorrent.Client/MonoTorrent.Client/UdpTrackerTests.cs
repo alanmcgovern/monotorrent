@@ -68,7 +68,7 @@ namespace MonoTorrent.Trackers
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            listener = new IgnoringListener (0);
+            listener = new IgnoringListener (new IPEndPoint (IPAddress.Any, 0));
             listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
                 keys.Add (e.Key);
                 announcedInfoHashes.Add (e.InfoHash);
@@ -488,8 +488,8 @@ namespace MonoTorrent.Trackers
         public bool IncompleteConnect { get; set; }
         public bool IncompleteScrape { get; set; }
 
-        public IgnoringListener (int port)
-            : base (port)
+        public IgnoringListener (IPEndPoint endpoint)
+            : base (endpoint)
         {
 
         }
