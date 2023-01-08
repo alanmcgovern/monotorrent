@@ -190,8 +190,15 @@ namespace MonoTorrent.Connections.Tracker
 
         async Task<(UdpTrackerMessage?, string?)> ReceiveAsync (UdpClient client, int transactionId, CancellationToken token)
         {
+            UdpReceiveResult received = default;
             while (!token.IsCancellationRequested) {
-                UdpReceiveResult received = await client.ReceiveAsync ();
+                try {
+                    received = await client.ReceiveAsync ();
+                } catch (SocketException) {
+                    token.ThrowIfCancellationRequested ();
+                    // If we never receive a response, assume the tracker is offline and return an 'operationcancelled'
+                    throw new OperationCanceledException ();
+                }
                 var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer.AsSpan (0, received.Buffer.Length), MessageType.Response, received.RemoteEndPoint.AddressFamily);
 
                 if (transactionId == rsp.TransactionId) {
