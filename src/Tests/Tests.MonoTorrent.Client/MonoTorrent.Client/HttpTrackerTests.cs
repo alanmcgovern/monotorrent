@@ -149,7 +149,7 @@ namespace MonoTorrent.TrackerServer
         {
             var hybrid = new InfoHashes (new InfoHash (Enumerable.Repeat<byte>(1, 20).ToArray ()), new InfoHash (Enumerable.Repeat<byte> (2, 32).ToArray ()));
             await tracker.AnnounceAsync (announceParams.WithInfoHashes (hybrid), CancellationToken.None);
-            Assert.IsTrue (StringComparer.OrdinalIgnoreCase.Equals (keys[0], trackerConnection.Key), "#2");
+            Assert.AreEqual (int.Parse (keys[0].Text), tracker.AnnounceKey, "#2");
             Assert.AreEqual (2, announcedInfoHashes.Count);
             Assert.IsTrue (announcedInfoHashes.Contains (hybrid.V1));
             Assert.IsTrue (announcedInfoHashes.Contains (hybrid.V2.Truncate ()));
@@ -160,7 +160,7 @@ namespace MonoTorrent.TrackerServer
         {
             var v1 = new InfoHashes (new InfoHash (new byte[20]), null);
             await tracker.AnnounceAsync (announceParams.WithInfoHashes (v1), CancellationToken.None);
-            Assert.IsTrue (StringComparer.OrdinalIgnoreCase.Equals (keys[0], trackerConnection.Key), "#2");
+            Assert.AreEqual (int.Parse (keys[0].Text), tracker.AnnounceKey, "#2");
             Assert.AreEqual (1, announcedInfoHashes.Count);
             Assert.AreEqual (v1.V1, announcedInfoHashes[0]);
         }
@@ -170,7 +170,7 @@ namespace MonoTorrent.TrackerServer
         {
             var v2 = new InfoHashes (null, new InfoHash (new byte[32]));
             await tracker.AnnounceAsync (announceParams.WithInfoHashes (v2), CancellationToken.None);
-            Assert.IsTrue (StringComparer.OrdinalIgnoreCase.Equals (keys[0], trackerConnection.Key), "#2");
+            Assert.AreEqual (int.Parse (keys[0].Text), tracker.AnnounceKey, "#2");
             Assert.AreEqual (1, announcedInfoHashes.Count);
             Assert.AreEqual (v2.V2.Truncate (), announcedInfoHashes[0]);
         }
@@ -227,24 +227,10 @@ namespace MonoTorrent.TrackerServer
             // Set a key which uses characters which need escaping.
             trackerConnection = new HttpTrackerConnection (AnnounceUrl, new HttpClient ());
             tracker = new Tracker (trackerConnection);
-            trackerConnection.Key = peerId;
 
             await tracker.AnnounceAsync (announceParams, CancellationToken.None);
-            Assert.AreEqual (peerId, keys[0], "#1");
+            Assert.AreEqual (tracker.AnnounceKey.ToString (), keys[0].ToString (), "#1");
         }
-
-        [Test]
-        public async Task NullKeyTest ()
-        {
-            // Set a key which uses characters which need escaping.
-            trackerConnection = new HttpTrackerConnection (AnnounceUrl, new HttpClient ());
-            tracker = new Tracker (trackerConnection);
-            trackerConnection.Key = null;
-
-            await tracker.AnnounceAsync (announceParams, CancellationToken.None);
-            Assert.AreEqual (null, keys[0], "#1");
-        }
-
 
         [Test]
         public async Task Scrape ()

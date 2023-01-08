@@ -41,11 +41,15 @@ namespace MonoTorrent.Trackers
 {
     public class Tracker : ITracker
     {
+        static Random Random { get; } = new Random ();
+
         IList<ITrackerConnection> Connections { get; }
 
         ValueStopwatch LastAnnounced;
         AnnounceResponse LastAnnounceResponse { get; set; }
         TrackerResponse LastResponse { get; set; }
+
+        public int AnnounceKey { get; }
 
         public bool CanAnnounce => true;
         public bool CanScrape => Connections[0].CanScrape;
@@ -75,6 +79,10 @@ namespace MonoTorrent.Trackers
         {
             Connections = new List<ITrackerConnection> (connections ?? throw new ArgumentNullException (nameof (connections))).AsReadOnly ();
 
+            // Use a random integer prefixed by our identifier.
+            lock (Random)
+                AnnounceKey = Random.Next (1, int.MaxValue);
+
             LastAnnounced = new ValueStopwatch ();
             LastResponse = LastAnnounceResponse = new AnnounceResponse (TrackerState.Unknown);
         }
@@ -83,6 +91,7 @@ namespace MonoTorrent.Trackers
         {
             try {
                 StatusOverride = TrackerState.Connecting;
+                parameters = parameters.WithKey (AnnounceKey);
                 var responses = await Task.WhenAll (Connections.Select (c => c.AnnounceAsync (parameters, token).AsTask ()));
                 var response = responses.FirstOrDefault (t => t.State == TrackerState.Ok) ?? responses.First ();
 

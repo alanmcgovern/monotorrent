@@ -68,6 +68,14 @@ namespace MonoTorrent.Connections.Tracker
                     ConnectionIdTask = ConnectAsync ();
                 long connectionId = await ConnectionIdTask;
 
+                // IPV6 overrides are unsupported by the udp tracker protocol.
+                //
+                // "That means the IP address field in the request remains 32bits wide which makes this
+                // field not usable under IPv6 and thus should always be set to 0.
+                //
+                if (AddressFamily != AddressFamily.InterNetwork && parameters.IPAddress != null)
+                    parameters = parameters.WithIPAddress (null);
+
                 AnnounceResponse? announceResponse = null;
                 foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
                     var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters, infoHash);

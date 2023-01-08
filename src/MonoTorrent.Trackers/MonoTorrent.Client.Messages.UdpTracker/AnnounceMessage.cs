@@ -76,7 +76,7 @@ namespace MonoTorrent.Messages.UdpTracker
             Downloaded = parameters.BytesDownloaded;
             InfoHash = infoHash.Truncate ();
             IP = 0;
-            Key = (uint) DateTime.Now.GetHashCode (); // FIXME: Don't do this! It should be constant
+            Key = (uint) parameters.Key;
             Left = parameters.BytesLeft;
             NumWanted = 50;
             PeerId = parameters.PeerId;

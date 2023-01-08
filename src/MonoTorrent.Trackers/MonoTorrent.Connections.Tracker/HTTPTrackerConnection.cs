@@ -51,8 +51,6 @@ namespace MonoTorrent.Connections.Tracker
 
         static readonly Logger logger = Logger.Create (nameof (HttpTrackerConnection));
 
-        static readonly Random random = new Random ();
-
         public AddressFamily AddressFamily { get; }
 
         public bool CanScrape { get; }
@@ -63,11 +61,6 @@ namespace MonoTorrent.Connections.Tracker
 
         // FIXME: Make private?
         public BEncodedString? TrackerId { get; set; }
-
-        // FIXME: Make private?
-        public BEncodedString? Key { get; set; }
-
-
 
         HttpClient Client { get; }
 
@@ -90,10 +83,6 @@ namespace MonoTorrent.Connections.Tracker
                 ScrapeUri = new Uri ($"{uri.Substring (0, uri.Length - "/announce/".Length)}/scrape/");
 
             CanScrape = ScrapeUri != null;
-
-            // Use a random integer prefixed by our identifier.
-            lock (random)
-                Key = new BEncodedString ($"{GitInfoHelper.ClientVersion}-{random.Next (1, int.MaxValue)}");
         }
 
         public async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest parameters, CancellationToken token)
@@ -193,8 +182,8 @@ namespace MonoTorrent.Connections.Tracker
                 b.Add ("supportcrypto", 1);
             if (parameters.RequireEncryption)
                 b.Add ("requirecrypto", 1);
-            if (!b.Contains ("key") && Key != null)
-                b.Add ("key", Key.UrlEncode ());
+            if (!b.Contains ("key"))
+                b.Add ("key", parameters.Key);
             if (!string.IsNullOrEmpty (parameters.IPAddress))
                 b.Add ("ip", parameters.IPAddress!);
 
