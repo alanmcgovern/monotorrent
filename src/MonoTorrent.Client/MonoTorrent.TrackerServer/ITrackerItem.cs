@@ -28,7 +28,7 @@
 
 
 using System.Collections.Generic;
-
+using System.Net.Sockets;
 
 namespace MonoTorrent.TrackerServer
 {
@@ -66,6 +66,6 @@ namespace MonoTorrent.TrackerServer
         /// Return a copy of the list of peers
         /// </summary>
         /// <returns></returns>
-        List<Peer> GetPeers ();
+        List<Peer> GetPeers (AddressFamily addressFamily);
     }
 }

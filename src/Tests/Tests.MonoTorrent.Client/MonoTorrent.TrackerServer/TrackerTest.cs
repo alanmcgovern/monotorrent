@@ -30,6 +30,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
 
@@ -98,7 +99,7 @@ namespace MonoTorrent.TrackerServer
                 Assert.AreEqual (0, m.Count, "#2");
             }
 
-            foreach (Peer p in manager.GetPeers ()) {
+            foreach (Peer p in manager.GetPeers (AddressFamily.InterNetwork)) {
                 PeerDetails d = rig.Peers.Find (details =>
                     details.ClientAddress == p.ClientAddress.Address && details.Port == p.ClientAddress.Port);
                 Assert.AreEqual (d.Downloaded, p.Downloaded, "#3");
@@ -130,7 +131,7 @@ namespace MonoTorrent.TrackerServer
 
             for (i = 0; i < 4; i++) {
                 var manager = rig.Tracker.GetTrackerItem (rig.Trackables[i]);
-                List<Peer> peers = manager.GetPeers ();
+                List<Peer> peers = manager.GetPeers (AddressFamily.InterNetwork);
                 Assert.AreEqual (25, peers.Count, "#1");
 
                 foreach (Peer p in peers) {
@@ -152,7 +153,7 @@ namespace MonoTorrent.TrackerServer
             rig.Peers[0].ClientAddress = IPAddress.Broadcast;
             rig.Listener.Handle (rig.Peers[0], TorrentEvent.Started, rig.Trackables[0]);
 
-            Assert.AreEqual (1, rig.Tracker.GetTrackerItem (rig.Trackables[0]).GetPeers ().Count, "#1");
+            Assert.AreEqual (1, rig.Tracker.GetTrackerItem (rig.Trackables[0]).GetPeers (AddressFamily.InterNetwork).Count, "#1");
         }
 
         [Test]

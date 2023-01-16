@@ -46,6 +46,7 @@ namespace MonoTorrent.Connections.Tracker
     {
         public bool CanScrape => true;
 
+        public AddressFamily AddressFamily { get; }
         public Uri Uri { get; }
 
         Task<long>? ConnectionIdTask { get; set; }
@@ -54,8 +55,9 @@ namespace MonoTorrent.Connections.Tracker
         public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds (15);
 
 
-        public UdpTrackerConnection (Uri announceUri)
+        public UdpTrackerConnection (Uri announceUri, AddressFamily addressFamily)
         {
+            AddressFamily = addressFamily;
             Uri = announceUri;
         }
 
@@ -65,6 +67,14 @@ namespace MonoTorrent.Connections.Tracker
                 if (ConnectionIdTask == null || LastConnected.Elapsed > TimeSpan.FromMinutes (1))
                     ConnectionIdTask = ConnectAsync ();
                 long connectionId = await ConnectionIdTask;
+
+                // IPV6 overrides are unsupported by the udp tracker protocol.
+                //
+                // "That means the IP address field in the request remains 32bits wide which makes this
+                // field not usable under IPv6 and thus should always be set to 0.
+                //
+                if (AddressFamily != AddressFamily.InterNetwork && parameters.IPAddress != null)
+                    parameters = parameters.WithIPAddress (null);
 
                 AnnounceResponse? announceResponse = null;
                 foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
@@ -173,7 +183,9 @@ namespace MonoTorrent.Connections.Tracker
                 // results in a synchronous DNS resolve. Ensure we're on a threadpool thread to avoid
                 // blocking.
                 await new ThreadSwitcher ();
-                using var udpClient = new UdpClient (Uri.Host, Uri.Port);
+                using var udpClient = new UdpClient (AddressFamily);
+                udpClient.Connect (Uri.Host, Uri.Port);
+
                 using (cts.Token.Register (() => udpClient.Dispose ())) {
                     SendAsync (udpClient, msg, cts.Token);
                     return await ReceiveAsync (udpClient, msg.TransactionId, cts.Token).ConfigureAwait (false);
@@ -186,8 +198,15 @@ namespace MonoTorrent.Connections.Tracker
 
         async Task<(UdpTrackerMessage?, string?)> ReceiveAsync (UdpClient client, int transactionId, CancellationToken token)
         {
+            UdpReceiveResult received = default;
             while (!token.IsCancellationRequested) {
-                UdpReceiveResult received = await client.ReceiveAsync ();
+                try {
+                    received = await client.ReceiveAsync ();
+                } catch (SocketException) {
+                    token.ThrowIfCancellationRequested ();
+                    // If we never receive a response, assume the tracker is offline and return an 'operationcancelled'
+                    throw new OperationCanceledException ();
+                }
                 var rsp = UdpTrackerMessage.DecodeMessage (received.Buffer.AsSpan (0, received.Buffer.Length), MessageType.Response, received.RemoteEndPoint.AddressFamily);
 
                 if (transactionId == rsp.TransactionId) {

@@ -39,7 +39,14 @@ namespace MonoTorrent.TrackerServer
     {
         static readonly Random Random = new Random ();
 
+        /// <summary>
+        /// Used for non-compact responses and for compact ipv4 responses
+        /// </summary>
         internal static readonly BEncodedString PeersKey = "peers";
+        /// <summary>
+        /// Used for compact ipv6 responses only.
+        /// </summary>
+        internal static readonly BEncodedString Peers6Key = "peers6";
         internal static readonly BEncodedString IntervalKey = "interval";
         internal static readonly BEncodedString MinIntervalKey = "min interval";
         internal static readonly BEncodedString TrackerIdKey = "tracker id";
@@ -178,11 +185,22 @@ namespace MonoTorrent.TrackerServer
             if (trackable == null)
                 throw new ArgumentNullException (nameof (trackable));
 
+           return Add (new SimpleTorrentManager (trackable, comparer, this));
+        }
+
+        /// <summary>
+        /// Adds the trackable to the server
+        /// </summary>
+        /// <param name="trackable">The trackable to add</param>
+        /// <param name="comparer">The comparer used to decide whether two peers are the same.</param>
+        /// <returns></returns>
+        internal bool Add (SimpleTorrentManager manager)
+        {
             lock (Torrents) {
-                if (Torrents.ContainsKey (trackable.InfoHash))
+                if (Torrents.ContainsKey (manager.Trackable.InfoHash))
                     return false;
 
-                Torrents.Add (trackable.InfoHash, new SimpleTorrentManager (trackable, comparer, this));
+                Torrents.Add (manager.Trackable.InfoHash, manager);
             }
 
             return true;
@@ -285,7 +303,7 @@ namespace MonoTorrent.TrackerServer
                 manager.ClearZombiePeers (DateTime.Now.Add (-TimeoutInterval));
 
                 // Fulfill the announce request
-                manager.GetPeers (e.Response, e.NumberWanted, e.HasRequestedCompact);
+                manager.GetPeers (e.Response, e.NumberWanted, e.HasRequestedCompact, e.ClientAddress.AddressFamily);
             }
 
             e.Response.Add (IntervalKey, new BEncodedNumber ((int) AnnounceInterval.TotalSeconds));

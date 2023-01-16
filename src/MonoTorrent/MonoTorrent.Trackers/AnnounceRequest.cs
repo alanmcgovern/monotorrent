@@ -38,6 +38,7 @@ namespace MonoTorrent.Trackers
         public TorrentEvent ClientEvent { get; private set; }
         public InfoHashes InfoHashes { get; private set; }
         public string? IPAddress { get; private set; }
+        public int Key { get; private set; }
         public ReadOnlyMemory<byte> PeerId { get; private set; }
         public int Port { get; private set; }
         public bool RequireEncryption { get; private set; }
@@ -114,12 +115,22 @@ namespace MonoTorrent.Trackers
             return clone;
         }
 
-        public AnnounceRequest WithIPAddress (string ipAddress)
+        public AnnounceRequest WithIPAddress (string? ipAddress)
         {
             var clone = this;
             if (ipAddress != IPAddress) {
                 clone = (AnnounceRequest) MemberwiseClone ();
                 clone.IPAddress = ipAddress;
+            }
+            return clone;
+        }
+
+        public AnnounceRequest WithKey (int key)
+        {
+            var clone = this;
+            if (key != Key) {
+                clone = (AnnounceRequest) MemberwiseClone ();
+                clone.Key = key;
             }
             return clone;
         }

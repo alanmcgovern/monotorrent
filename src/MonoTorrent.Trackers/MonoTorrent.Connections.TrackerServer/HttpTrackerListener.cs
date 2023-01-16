@@ -46,7 +46,7 @@ namespace MonoTorrent.Connections.TrackerServer
         string Prefix { get; }
 
         public HttpTrackerListener (IPAddress address, int port)
-            : this ($"http://{address}:{port}/announce/")
+            : this (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"http://[{address}]:{port}/announce/" : $"http://{address}:{port}/announce/")
         {
 
         }

@@ -68,7 +68,7 @@ namespace MonoTorrent.Trackers
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            listener = new IgnoringListener (0);
+            listener = new IgnoringListener (new IPEndPoint (IPAddress.Any, 0));
             listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
                 keys.Add (e.Key);
                 announcedInfoHashes.Add (e.InfoHash);
@@ -97,7 +97,7 @@ namespace MonoTorrent.Trackers
                 new IPEndPoint (IPAddress.Parse ("1.2.3.4"), 65000),
             };
 
-            trackerConnection = new UdpTrackerConnection (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"));
+            trackerConnection = new UdpTrackerConnection (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"), AddressFamily.InterNetwork);
             tracker = new Tracker (trackerConnection);
             announceparams = announceparams.WithPort (listener.LocalEndPoint.Port);
 
@@ -488,8 +488,8 @@ namespace MonoTorrent.Trackers
         public bool IncompleteConnect { get; set; }
         public bool IncompleteScrape { get; set; }
 
-        public IgnoringListener (int port)
-            : base (port)
+        public IgnoringListener (IPEndPoint endpoint)
+            : base (endpoint)
         {
 
         }

@@ -30,6 +30,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
 
@@ -55,7 +57,7 @@ namespace MonoTorrent.TrackerServer
         /// <summary>
         /// The number of active peers.
         /// </summary>
-        public int Count => Peers.Count;
+        public int Count => PeersIPv4.Count + PeersIPv6.Count;
 
         /// <summary>
         /// The number of times the torrent has been fully downloaded.
@@ -75,7 +77,12 @@ namespace MonoTorrent.TrackerServer
         /// <summary>
         /// A dictionary containing all the peers
         /// </summary>
-        Dictionary<object, Peer> Peers { get; }
+        Dictionary<object, Peer> PeersIPv4 { get; }
+
+        /// <summary>
+        /// A dictionary containing all the peers
+        /// </summary>
+        Dictionary<object, Peer> PeersIPv6 { get; }
 
         /// <summary>
         /// A list which used used to reduce allocations when generating responses to announce requests.
@@ -98,7 +105,8 @@ namespace MonoTorrent.TrackerServer
             Trackable = trackable;
             Tracker = tracker;
 
-            Peers = new Dictionary<object, Peer> ();
+            PeersIPv4 = new Dictionary<object, Peer> ();
+            PeersIPv6 = new Dictionary<object, Peer> ();
             PeersList = new List<Peer> ();
             Random = new Random ();
         }
@@ -114,17 +122,22 @@ namespace MonoTorrent.TrackerServer
             if (peer == null)
                 throw new ArgumentNullException (nameof (peer));
 
+            var peers = peer.ClientAddress.AddressFamily switch {
+                AddressFamily.InterNetwork => PeersIPv4,
+                AddressFamily.InterNetworkV6 => PeersIPv6,
+                _ => throw new NotSupportedException ($"AddressFamily.{peer.ClientAddress.AddressFamily} is unsupported")
+            };
             Debug.WriteLine ($"Adding: {peer.ClientAddress}");
-            Peers.Add (peer.DictionaryKey, peer);
+            peers.Add (peer.DictionaryKey, peer);
             lock (PeersList)
                 PeersList.Clear ();
             UpdateCounts ();
         }
 
-        public List<Peer> GetPeers ()
+        public List<Peer> GetPeers (AddressFamily addressFamily)
         {
             lock (PeersList)
-                return new List<Peer> (PeersList);
+                return new List<Peer> (PeersList.Where (t => t.ClientAddress.AddressFamily == addressFamily));
         }
 
         /// <summary>
@@ -133,30 +146,36 @@ namespace MonoTorrent.TrackerServer
         /// <param name="response">The bencoded dictionary to add the peers to</param>
         /// <param name="count">The number of peers to add</param>
         /// <param name="compact">True if the peers should be in compact form</param>
-        internal void GetPeers (BEncodedDictionary response, int count, bool compact)
+        internal void GetPeers (BEncodedDictionary response, int count, bool compact, AddressFamily addressFamily)
         {
             byte[]? compactResponse = null;
             BEncodedList? nonCompactResponse = null;
 
-            int total = Math.Min (Peers.Count, count);
+            (int stride, Dictionary<object, Peer> peers, BEncodedString peersKey) = addressFamily switch {
+                AddressFamily.InterNetwork => (4 + 2, PeersIPv4, TrackerServer.PeersKey),
+                AddressFamily.InterNetworkV6 => (16 + 2, PeersIPv6, compact ? TrackerServer.Peers6Key : TrackerServer.PeersKey),
+                _ => throw new NotSupportedException ($"AddressFamily.{addressFamily} is unsupported")
+            };
+
+            int total = Math.Min (peers.Count, count);
             // If we have a compact response, we need to create a single BencodedString
             // Otherwise we need to create a bencoded list of dictionaries
             if (compact)
-                compactResponse = new byte[total * 6];
+                compactResponse = new byte[total * stride];
             else
                 nonCompactResponse = new BEncodedList (total);
 
-            int start = Random.Next (0, Peers.Count);
+            int start = Random.Next (0, peers.Count);
 
             lock (PeersList) {
-                if (PeersList.Count != Peers.Values.Count)
-                    PeersList = new List<Peer> (Peers.Values);
+                if (PeersList.Count != peers.Values.Count)
+                    PeersList = new List<Peer> (peers.Values);
             }
 
             while (total > 0) {
                 Peer current = PeersList[(start++) % PeersList.Count];
                 if (compact) {
-                    Buffer.BlockCopy (current.CompactEntry, 0, compactResponse!, (total - 1) * 6, 6);
+                    Buffer.BlockCopy (current.CompactEntry, 0, compactResponse!, (total - 1) * current.CompactEntry.Length, current.CompactEntry.Length);
                 } else {
                     nonCompactResponse!.Add (current.NonCompactEntry);
                 }
@@ -164,9 +183,9 @@ namespace MonoTorrent.TrackerServer
             }
 
             if (compact)
-                response.Add (TrackerServer.PeersKey, (BEncodedString) compactResponse!);
+                response.Add (peersKey, (BEncodedString) compactResponse!);
             else
-                response.Add (TrackerServer.PeersKey, nonCompactResponse!);
+                response.Add (peersKey, nonCompactResponse!);
         }
 
         internal void ClearZombiePeers (DateTime cutoff)
@@ -178,7 +197,8 @@ namespace MonoTorrent.TrackerServer
                         continue;
 
                     Tracker.RaisePeerTimedOut (new TimedOutEventArgs (p, this));
-                    Peers.Remove (p.DictionaryKey);
+                    PeersIPv4.Remove (p.DictionaryKey);
+                    PeersIPv6.Remove (p.DictionaryKey);
                     removed = true;
                 }
 
@@ -198,7 +218,8 @@ namespace MonoTorrent.TrackerServer
                 throw new ArgumentNullException (nameof (peer));
 
             Debug.WriteLine ($"Removing: {peer.ClientAddress}");
-            Peers.Remove (peer.DictionaryKey);
+            PeersIPv4.Remove (peer.DictionaryKey);
+            PeersIPv6.Remove (peer.DictionaryKey);
             lock (PeersList)
                 PeersList.Clear ();
             UpdateCounts ();
@@ -208,11 +229,13 @@ namespace MonoTorrent.TrackerServer
         {
             int tempComplete = 0;
             int tempIncomplete = 0;
-            foreach (Peer p in Peers.Values) {
-                if (p.HasCompleted)
-                    tempComplete++;
-                else
-                    tempIncomplete++;
+            foreach (var dict in new[] { PeersIPv4, PeersIPv6 }) {
+                foreach (Peer p in dict.Values) {
+                    if (p.HasCompleted)
+                        tempComplete++;
+                    else
+                        tempIncomplete++;
+                }
             }
 
             Complete = tempComplete;
@@ -225,8 +248,14 @@ namespace MonoTorrent.TrackerServer
         /// <param name="par"></param>
         internal void Update (AnnounceRequest par)
         {
+            var peers = par.ClientAddress.AddressFamily switch {
+                AddressFamily.InterNetwork => PeersIPv4,
+                AddressFamily.InterNetworkV6 => PeersIPv6,
+                _ => throw new NotSupportedException ($"AddressFamily.{par.ClientAddress.AddressFamily} is unsupported")
+            };
+
             object peerKey = Comparer.GetKey (par);
-            if (!Peers.TryGetValue (peerKey, out Peer? peer)) {
+            if (!peers.TryGetValue (peerKey, out Peer? peer)) {
                 peer = new Peer (par, peerKey);
                 Add (peer);
             } else {
