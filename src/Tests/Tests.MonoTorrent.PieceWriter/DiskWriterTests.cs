@@ -112,5 +112,18 @@ namespace MonoTorrent.PieceWriter
             await writer.WriteAsync (TorrentFile, 0, new byte[12]);
             Assert.AreEqual (TorrentFile.Length, new FileInfo (TorrentFile.FullPath).Length);
         }
+
+        [Test]
+        public async Task UnlimitedMaximumOpenFiles ()
+        {
+            Directory.CreateDirectory (Path.GetDirectoryName (TorrentFile.FullPath));
+            using (var file = new FileStream (TorrentFile.FullPath, FileMode.OpenOrCreate))
+                file.Write (new byte[TorrentFile.Length + 1]);
+
+            using var writer = new DiskWriter ();
+            await writer.SetMaximumOpenFilesAsync (0);
+            await writer.WriteAsync (TorrentFile, 0, new byte[12]).WithTimeout ("timed out writing");
+            Assert.AreEqual (TorrentFile.Length, new FileInfo (TorrentFile.FullPath).Length);
+        }
     }
 }

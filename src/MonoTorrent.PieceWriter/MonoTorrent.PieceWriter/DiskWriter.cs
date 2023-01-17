@@ -71,7 +71,7 @@ namespace MonoTorrent.PieceWriter
 
         static readonly int DefaultMaxOpenFiles = 196;
 
-        SemaphoreSlim Limiter { get; set; }
+        SemaphoreSlim? Limiter { get; set; }
 
         public int OpenFiles { get; private set; }
 
@@ -164,7 +164,8 @@ namespace MonoTorrent.PieceWriter
             if (offset < 0 || offset + buffer.Length > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            using (await Limiter.EnterAsync ()) {
+            var limiter = Limiter;
+            using (limiter == null ? default : await limiter.EnterAsync ()) {
                 (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
                 using (releaser)
                     if (writer != null)
@@ -181,7 +182,8 @@ namespace MonoTorrent.PieceWriter
             if (offset < 0 || offset + buffer.Length > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            using (await Limiter.EnterAsync ()) {
+            var limiter = Limiter;
+            using (limiter == null ? default : await limiter.EnterAsync ()) {
                 (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
                 using (releaser)
                     if (writer != null)
@@ -191,7 +193,7 @@ namespace MonoTorrent.PieceWriter
 
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
         {
-            Limiter = new SemaphoreSlim (maximumOpenFiles);
+            Limiter = maximumOpenFiles == 0 ? null : new SemaphoreSlim (maximumOpenFiles);
             return ReusableTask.CompletedTask;
         }
 
