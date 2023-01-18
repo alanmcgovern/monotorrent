@@ -42,6 +42,7 @@ namespace MonoTorrent.Client.Modes
         TorrentState State { get; }
         CancellationToken Token { get; }
 
+        void HandleFilePriorityChanged (ITorrentManagerFile file, Priority oldPriority);
         void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser);
         void HandlePeerConnected (PeerId id);
         void HandlePeerDisconnected (PeerId id);

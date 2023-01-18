@@ -493,6 +493,21 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task SettingPriorityRefreshesAmInterestedStatus ()
+        {
+            Manager.OnPieceHashed (0, true);
+
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode = mode;
+
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length, true, true, true, Manager.InfoHashes.V1OrV2);
+            Manager.Peers.ConnectedPeers.Add (peer);
+            foreach (var file in Manager.Files)
+                await Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
+            Assert.IsFalse (peer.AmInterested);
+        }
+
+        [Test]
         public async Task PartialProgress_UnrelatedDownloaded_AllDoNotDownload ()
         {
             Manager.OnPieceHashed (0, true);

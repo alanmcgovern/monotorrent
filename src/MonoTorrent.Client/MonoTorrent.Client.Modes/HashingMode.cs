@@ -58,6 +58,11 @@ namespace MonoTorrent.Client.Modes
             PausedCompletionSource.SetResult (null);
         }
 
+        public void HandleFilePriorityChanged (ITorrentManagerFile file, Priority oldPriority)
+        {
+            // Nothing
+        }
+
         public void Pause ()
         {
             if (State == TorrentState.HashingPaused)

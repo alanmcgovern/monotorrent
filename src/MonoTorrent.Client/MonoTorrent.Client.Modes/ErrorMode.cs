@@ -54,6 +54,11 @@ namespace MonoTorrent.Client.Modes
         public void Dispose ()
             => Cancellation.Cancel ();
 
+        public void HandleFilePriorityChanged (ITorrentManagerFile file, Priority oldPriority)
+        {
+            // Nothing
+        }
+
         public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
             => throw new NotSupportedException ();
 
