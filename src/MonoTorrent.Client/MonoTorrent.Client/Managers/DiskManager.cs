@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
 
             public int NextOffsetToHash { get; private set; }
 
-            public ReusableExclusiveSemaphore Locker;
+            public ReusableSemaphore Locker;
 
             int v2BytesRemaining = 0;
             readonly IncrementalHash SHA256Hasher;
@@ -77,7 +77,7 @@ namespace MonoTorrent.Client
             {
                 SHA1Hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA1);
                 SHA256Hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
-                Locker = new ReusableExclusiveSemaphore ();
+                Locker = new ReusableSemaphore (1);
                 Initialise ();
             }
 

@@ -58,16 +58,15 @@ namespace MonoTorrent
         }
     }
 
-
-    class ReusableExclusiveSemaphore
+    class ReusableSemaphore
     {
         static readonly Queue<ReusableTaskCompletionSource<object?>> Cache = new Queue<ReusableTaskCompletionSource<object?>> ();
 
         public readonly struct Releaser : IDisposable
         {
-            readonly ReusableExclusiveSemaphore Owner { get; }
+            readonly ReusableSemaphore Owner { get; }
 
-            internal Releaser (ReusableExclusiveSemaphore owner)
+            internal Releaser (ReusableSemaphore owner)
                 => Owner = owner;
 
             public void Dispose ()
@@ -75,14 +74,25 @@ namespace MonoTorrent
         }
 
         int activeCount;
-        Queue<ReusableTaskCompletionSource<object?>> nextWaiter = new Queue<ReusableTaskCompletionSource<object?>> ();
+        Queue<ReusableTaskCompletionSource<object?>> nextWaiter;
+
+        /// <summary>
+        /// The maximum concurrency. A value of 0 means unlimited.
+        /// </summary>
+        public int Count { get; private set; }
+
+        public ReusableSemaphore (int count)
+        {
+            Count = count;
+            nextWaiter = new Queue<ReusableTaskCompletionSource<object?>> ();
+        }
 
         public async ReusableTask<Releaser> EnterAsync ()
         {
             ReusableTaskCompletionSource<object?> task;
             lock (Cache) {
                 ++activeCount;
-                if (activeCount == 1)
+                if (activeCount <= Count || Count == 0)
                     return new Releaser (this);
 
                 task = Cache.Count > 0 ? Cache.Dequeue () : new ReusableTaskCompletionSource<object?> ();
@@ -97,7 +107,7 @@ namespace MonoTorrent
         public bool TryEnter (out Releaser value)
         {
             lock (Cache) {
-                if (activeCount == 0) {
+                if (activeCount < Count) {
                     ++activeCount;
                     value = new Releaser (this);
                     return true;
@@ -108,11 +118,32 @@ namespace MonoTorrent
             }
         }
 
+        public void ChangeCount (int newCount)
+        {
+            if (newCount < 0)
+                throw new ArgumentOutOfRangeException (nameof (newCount));
+
+            lock (Cache) {
+                // If we have increased the number of slots, kick off the required number of pending tasks
+                // to consume the new slots.
+                if (newCount == 0 || newCount > Count) {
+                    var delta = newCount - Count;
+                    while ((newCount == 0 || delta-- > 0) && nextWaiter.Count > 0)
+                        nextWaiter.Dequeue ().SetResult (null);
+                }
+                Count = newCount;
+            }
+        }
+
         void ReleaseOne ()
         {
             lock (Cache) {
                 --activeCount;
-                if (activeCount > 0)
+
+                // If the semaphore has recently decreased the number of slots, we *may* not want to
+                // start one of the queued tasks yet. We need to wait for concurrency to reduce.
+                // If we have a count of '0' then we'll never enqueue waiters as it's treated as 'unlimited'
+                if (nextWaiter.Count > 0 && (activeCount - nextWaiter.Count) < Count)
                     nextWaiter.Dequeue ().SetResult (null);
             }
         }

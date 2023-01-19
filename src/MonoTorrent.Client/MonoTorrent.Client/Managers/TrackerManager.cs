@@ -49,7 +49,7 @@ namespace MonoTorrent.Trackers
         public event EventHandler<AnnounceResponseEventArgs>? AnnounceComplete;
         public event EventHandler<ScrapeResponseEventArgs>? ScrapeComplete;
 
-        ReusableExclusiveSemaphore AnnounceLimiter { get; }
+        ReusableSemaphore AnnounceLimiter { get; }
 
         Factories Factories { get; }
 
@@ -79,7 +79,7 @@ namespace MonoTorrent.Trackers
         /// <param name="isPrivate">True if adding/removing tracker should be disallowed.</param>
         internal TrackerManager (Factories factories, ITrackerRequestFactory requestFactory, IEnumerable<IEnumerable<string>> announces, bool isPrivate)
         {
-            AnnounceLimiter = new ReusableExclusiveSemaphore ();
+            AnnounceLimiter = new ReusableSemaphore (1);
             Factories = factories;
             RequestFactory = requestFactory;
             Private = isPrivate;
@@ -168,7 +168,7 @@ namespace MonoTorrent.Trackers
             await ClientEngine.MainLoop;
 
             // Check if there are any in-progress announce requests being handled.
-            if (!AnnounceLimiter.TryEnter (out ReusableExclusiveSemaphore.Releaser releaser)) {
+            if (!AnnounceLimiter.TryEnter (out ReusableSemaphore.Releaser releaser)) {
                 // There is an in-progress announce, and this is a regular recurring announce attempt, so just bail out.
                 if (tracker is null && clientEvent == TorrentEvent.None)
                     return;

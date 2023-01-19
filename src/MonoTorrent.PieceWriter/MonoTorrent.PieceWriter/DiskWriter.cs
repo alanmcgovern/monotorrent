@@ -54,13 +54,13 @@ namespace MonoTorrent.PieceWriter
 
         class AllStreams
         {
-            public ReusableExclusiveSemaphore Locker = new ReusableExclusiveSemaphore ();
+            public ReusableSemaphore Locker = new ReusableSemaphore (1);
             public List<StreamData> Streams = new List<StreamData> ();
         }
 
         class StreamData
         {
-            public ReusableExclusiveSemaphore Locker = new ReusableExclusiveSemaphore ();
+            public ReusableSemaphore Locker = new ReusableSemaphore (1);
             public long LastUsedStamp = Stopwatch.GetTimestamp ();
             public IFileReaderWriter Stream;
 
@@ -71,7 +71,7 @@ namespace MonoTorrent.PieceWriter
 
         static readonly int DefaultMaxOpenFiles = 196;
 
-        SemaphoreSlim? Limiter { get; set; }
+        ReusableSemaphore Limiter { get; set; }
 
         public int OpenFiles { get; private set; }
 
@@ -88,7 +88,7 @@ namespace MonoTorrent.PieceWriter
         public DiskWriter (int maxOpenFiles)
         {
             MaximumOpenFiles = maxOpenFiles;
-            Limiter = new SemaphoreSlim (maxOpenFiles);
+            Limiter = new ReusableSemaphore (maxOpenFiles);
             Streams = new Dictionary<ITorrentManagerFile, AllStreams> ();
         }
 
@@ -164,8 +164,7 @@ namespace MonoTorrent.PieceWriter
             if (offset < 0 || offset + buffer.Length > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            var limiter = Limiter;
-            using (limiter == null ? default : await limiter.EnterAsync ()) {
+            using (await Limiter.EnterAsync ()) {
                 (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
                 using (releaser)
                     if (writer != null)
@@ -182,8 +181,7 @@ namespace MonoTorrent.PieceWriter
             if (offset < 0 || offset + buffer.Length > file.Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            var limiter = Limiter;
-            using (limiter == null ? default : await limiter.EnterAsync ()) {
+            using (await Limiter.EnterAsync ()) {
                 (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
                 using (releaser)
                     if (writer != null)
@@ -193,18 +191,18 @@ namespace MonoTorrent.PieceWriter
 
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
         {
-            Limiter = maximumOpenFiles == 0 ? null : new SemaphoreSlim (maximumOpenFiles);
+            Limiter.ChangeCount (maximumOpenFiles);
             return ReusableTask.CompletedTask;
         }
 
-        internal async ReusableTask<(IFileReaderWriter, ReusableExclusiveSemaphore.Releaser)> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
+        internal async ReusableTask<(IFileReaderWriter, ReusableSemaphore.Releaser)> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
         {
             if (!Streams.TryGetValue (file, out AllStreams? allStreams))
                 allStreams = Streams[file] = new AllStreams ();
 
             using var releaser = await allStreams.Locker.EnterAsync ();
             foreach (var existing in allStreams.Streams) {
-                if (existing.Locker.TryEnter (out ReusableExclusiveSemaphore.Releaser r)) {
+                if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
                     if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream.CanWrite) {
                         existing.LastUsedStamp = Stopwatch.GetTimestamp ();
                         return (existing.Stream, r);
