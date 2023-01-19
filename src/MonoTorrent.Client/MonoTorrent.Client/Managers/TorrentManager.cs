@@ -95,6 +95,7 @@ namespace MonoTorrent.Client
 
             // If the old priority, or new priority, is 'DoNotDownload' then the selector needs to be refreshed
             bool needsToUpdateSelector = file.Priority == Priority.DoNotDownload || priority == Priority.DoNotDownload;
+            var oldPriority = file.Priority;
             ((TorrentFileInfo) file).Priority = priority;
 
             if (needsToUpdateSelector) {
@@ -109,6 +110,8 @@ namespace MonoTorrent.Client
                         PartialProgressSelector.SetTrue ((f.StartPieceIndex, f.EndPieceIndex));
                 }
             }
+
+            Mode.HandleFilePriorityChanged (file, oldPriority);
         }
 
         /// <summary>

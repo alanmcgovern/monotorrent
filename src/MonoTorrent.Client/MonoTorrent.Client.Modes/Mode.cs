@@ -54,7 +54,8 @@ namespace MonoTorrent.Client.Modes
         static readonly SHA1 AllowedFastHasher = SHA1.Create ();
 
         bool hashingPendingFiles;
-
+        ValueStopwatch lastSendHaveMessage;
+        ValueStopwatch lastRefreshAllPeers;
 
         protected CancellationTokenSource Cancellation { get; }
         protected ConnectionManager ConnectionManager { get; }
@@ -78,6 +79,11 @@ namespace MonoTorrent.Client.Modes
             Settings = settings;
 
             Unchoker = unchoker ?? new ChokeUnchokeManager (new TorrentManagerUnchokeable (manager));
+        }
+
+        public virtual void HandleFilePriorityChanged (ITorrentManagerFile file, Priority oldPriority)
+        {
+
         }
 
         public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
@@ -577,7 +583,16 @@ namespace MonoTorrent.Client.Modes
         protected void PreLogicTick (int counter)
         {
             SendAnnounces ();
-            CloseConnectionsForStalePeers ();
+
+            // The 'AmInterested' status is dependent on whether or not the set of IPiecePicker's
+            // associated with the TorrentManager determine if any pieces are ready to be requested.
+            // There's no event which will be raised each time this occurs, so just periodically
+            // refresh peers.
+            if (!lastRefreshAllPeers.IsRunning || lastRefreshAllPeers.Elapsed > TimeSpan.FromSeconds (5)) {
+                lastRefreshAllPeers = ValueStopwatch.StartNew ();
+                RefreshAmInterestedStatusForAllPeers ();
+                CloseConnectionsForStalePeers ();
+            }
             Manager.Peers.UpdatePeerCounts ();
 
             //Execute initial logic for individual peers
@@ -611,8 +626,6 @@ namespace MonoTorrent.Client.Modes
 
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 var id = Manager.Peers.ConnectedPeers[i];
-                if (id.Connection == null)
-                    continue;
 
                 if (!id.LastPeerExchangeReview.IsRunning || id.LastPeerExchangeReview.Elapsed > TimeSpan.FromMinutes (1)) {
                     id.PeerExchangeManager?.OnTick ();
@@ -629,8 +642,6 @@ namespace MonoTorrent.Client.Modes
 
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
                 var id = Manager.Peers.ConnectedPeers[i];
-                if (id.Connection == null)
-                    continue;
 
                 ConnectionManager.TryProcessQueue (Manager, id);
 
@@ -778,8 +789,6 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        ValueStopwatch lastSendHaveMessage;
-
         void SendHaveMessagesToAll ()
         {
             if (Manager.finishedPieces.Count == 0 || (lastSendHaveMessage.IsRunning && lastSendHaveMessage.ElapsedMilliseconds < 5000))
@@ -799,11 +808,15 @@ namespace MonoTorrent.Client.Modes
                     peer.MessageQueue.Enqueue (bundle, releaser);
             }
 
+            Manager.finishedPieces.Clear ();
+        }
+
+        protected void RefreshAmInterestedStatusForAllPeers ()
+        {
             foreach (PeerId peer in Manager.Peers.ConnectedPeers) {
                 bool isInteresting = Manager.PieceManager.IsInteresting (peer);
                 SetAmInterestedStatus (peer, isInteresting);
             }
-            Manager.finishedPieces.Clear ();
         }
 
         public void Dispose ()

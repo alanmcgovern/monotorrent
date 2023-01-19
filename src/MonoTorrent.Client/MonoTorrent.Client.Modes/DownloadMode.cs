@@ -59,6 +59,9 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
+        public override void HandleFilePriorityChanged (ITorrentManagerFile file, Priority oldPriority)
+            => RefreshAmInterestedStatusForAllPeers ();
+
         public override bool ShouldConnect (Peer peer)
         {
             return !(peer.IsSeeder && Manager.HasMetadata && Manager.Complete);
