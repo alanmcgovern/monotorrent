@@ -50,7 +50,7 @@ namespace MonoTorrent.Connections.Peer
         {
             base.Start (token);
 
-            var listener = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var listener = new Socket (OriginalEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             var connectArgs = new SocketAsyncEventArgs ();
             token.Register (() => {
                 listener.Close ();

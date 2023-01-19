@@ -85,7 +85,7 @@ namespace MonoTorrent.Connections.Peer
             if (uri == null) {
                 var endpoint = (IPEndPoint) socket!.RemoteEndPoint!;
                 uri = socket.AddressFamily switch {
-                    AddressFamily.InterNetwork => new Uri ($"ipv6://{endpoint}"),
+                    AddressFamily.InterNetwork => new Uri ($"ipv4://{endpoint}"),
                     AddressFamily.InterNetworkV6 => new Uri ($"ipv6://{endpoint}"),
                     _ => throw new NotSupportedException ($"AddressFamily.{socket.AddressFamily} is unsupported")
                 };

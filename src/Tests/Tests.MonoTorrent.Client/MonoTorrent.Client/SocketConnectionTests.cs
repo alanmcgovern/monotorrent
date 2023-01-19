@@ -57,6 +57,13 @@ namespace MonoTorrent.Client
 
             Incoming = new SocketPeerConnection (s1a, true);
             Outgoing = new SocketPeerConnection (s1b, false);
+
+            Assert.AreEqual (AddressFamily.InterNetwork, s1a.AddressFamily);
+            Assert.AreEqual (AddressFamily.InterNetwork, s1b.AddressFamily);
+
+            Assert.AreEqual ("ipv4", Incoming.Uri.Scheme);
+            Assert.AreEqual ("ipv4", Outgoing.Uri.Scheme);
+
             socketListener.Stop ();
         }
 
@@ -75,6 +82,13 @@ namespace MonoTorrent.Client
 
             using var incoming = new SocketPeerConnection (s1a, true);
             using var outgoing = new SocketPeerConnection (s1b, false);
+
+            Assert.AreEqual (AddressFamily.InterNetworkV6, s1a.AddressFamily);
+            Assert.AreEqual (AddressFamily.InterNetworkV6, s1b.AddressFamily);
+
+            Assert.AreEqual ("ipv6", incoming.Uri.Scheme);
+            Assert.AreEqual ("ipv6", outgoing.Uri.Scheme);
+
             socketListener.Stop ();
         }
 
