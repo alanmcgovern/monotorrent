@@ -784,9 +784,6 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
 
-            if (Mode is StoppingMode)
-                throw new TorrentException ("The manager cannot be stopped while it is already in the Stopping state.");
-
             if (State == TorrentState.Error) {
                 Error = null;
                 Mode = new StoppedMode ();
