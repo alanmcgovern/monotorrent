@@ -239,8 +239,15 @@ namespace Tests.MonoTorrent.IntegrationTests
             if (!_httpSeeder.IsListening)
                 return;
 
-            HttpListenerContext ctx = _httpSeeder.EndGetContext (ar);
-            _httpSeeder.BeginGetContext (OnHttpContext, ar.AsyncState);
+            HttpListenerContext ctx;
+
+            try {
+                ctx = _httpSeeder.EndGetContext (ar);
+                _httpSeeder.BeginGetContext (OnHttpContext, ar.AsyncState);
+            } catch {
+                // Do nothing!
+                return;
+            }
 
             var localPath = ctx.Request.Url.LocalPath;
             string relativeSeedingPath = $"/{_webSeedPrefix}/{_torrentName}/";
