@@ -143,7 +143,7 @@ namespace MonoTorrent.PieceWriter
                 throw new ArgumentNullException (nameof (file));
 
             if (Streams.TryGetValue (file, out AllStreams? data)) {
-                using var releaser = await data.Locker.EnterAsync ().ConfigureAwait (false);
+                using var releaser = await data.Locker.EnterAsync ();
                 await CloseAllAsync (data);
 
                 if (File.Exists (file.FullPath)) {
@@ -217,12 +217,15 @@ namespace MonoTorrent.PieceWriter
                     Directory.CreateDirectory (parentDirectory);
                 NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
             }
+
+            // Create the stream data and acquire the lock immediately, so any async invocation of MaybeRemoveOldestStream can't kill the stream. 
             var data = new StreamData (new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite));
+            var dataReleaser = await data.Locker.EnterAsync ();
             allStreams.Streams.Add (data);
             OpenFiles++;
 
-            MaybeRemoveOldestStream ();
-            return (data.Stream, await data.Locker.EnterAsync ());
+            MaybeRemoveOldestStreams ();
+            return (data.Stream, dataReleaser);
         }
 
         public void Dispose ()
@@ -236,7 +239,7 @@ namespace MonoTorrent.PieceWriter
             OpenFiles = 0;
         }
 
-        async void MaybeRemoveOldestStream ()
+        void MaybeRemoveOldestStreams ()
         {
             while (MaximumOpenFiles != 0 && OpenFiles > MaximumOpenFiles) {
                 AllStreams? oldestAllStreams = null;
@@ -252,12 +255,17 @@ namespace MonoTorrent.PieceWriter
                 }
 
                 if (oldestAllStreams != null && oldestStream != null) {
-                    using var releaser = await oldestStream.Locker.EnterAsync ();
-                    oldestStream.Stream.Dispose ();
                     OpenFiles--;
                     oldestAllStreams.Streams.Remove (oldestStream);
+                    AsyncDispose (oldestStream);
                 }
             }
+        }
+
+        async void AsyncDispose(StreamData streamData)
+        {
+            using (await streamData.Locker.EnterAsync ())
+                streamData.Stream?.Dispose ();
         }
     }
 }
