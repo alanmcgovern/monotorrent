@@ -455,27 +455,28 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal Task MoveFileAsync (ITorrentManagerFile file, string newPath)
-            => MoveFileAsync ((TorrentFileInfo) file, newPath);
+        internal Task MoveFileAsync (ITorrentManagerFile file, (string newPath, string downloadComplete, string downloadIncomplete) paths)
+            => MoveFileAsync ((TorrentFileInfo) file, paths);
 
-        internal Task MoveFileAsync (TorrentFileInfo file, string newPath)
-            => MoveFileAsync (file, newPath, false);
+        internal Task MoveFileAsync (TorrentFileInfo file, (string newPath, string downloadComplete, string downloadIncomplete) paths)
+            => MoveFileAsync (file, paths, false);
 
         internal async Task MoveFilesAsync (IList<ITorrentManagerFile> files, string newRoot, bool overwrite)
         {
-            foreach (TorrentFileInfo file in files)
-                await MoveFileAsync (file, Path.Combine (newRoot, file.Path), overwrite);
+            foreach (TorrentFileInfo file in files) {
+                var paths = TorrentFileInfo.GetNewPaths (Path.GetFullPath (Path.Combine (newRoot, file.Path)), Settings.UsePartialFiles, file.Path == file.DownloadCompleteFullPath);
+                await MoveFileAsync (file, paths, overwrite);
+            }
         }
 
-        async Task MoveFileAsync (TorrentFileInfo file, string newPath, bool overwrite)
+        async Task MoveFileAsync (TorrentFileInfo file, (string newPath, string downloadCompletePath, string downloadIncompletePath) paths, bool overwrite)
         {
             await IOLoop;
 
-            newPath = Path.GetFullPath (newPath);
-            if (newPath != file.FullPath && await Cache.Writer.ExistsAsync (file)) {
-                await Cache.Writer.MoveAsync (file, newPath, false);
+            if (paths.newPath != file.FullPath && await Cache.Writer.ExistsAsync (file)) {
+                await Cache.Writer.MoveAsync (file, paths.newPath, false);
             }
-            file.FullPath = newPath;
+            file.UpdatePaths (paths);
         }
 
         internal async ReusableTask<bool> ReadAsync (ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer)

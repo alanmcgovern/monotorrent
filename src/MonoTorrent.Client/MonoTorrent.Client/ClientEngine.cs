@@ -95,7 +95,11 @@ namespace MonoTorrent.Client
                         TorrentFileInfo torrentFile;
                         torrentFile = (TorrentFileInfo) manager.Files.Single (t => t.Path == ((BEncodedString) file[nameof (torrentFile.Path)]).Text);
                         torrentFile.Priority = (Priority) Enum.Parse (typeof (Priority), file[nameof (torrentFile.Priority)].ToString ()!);
-                        torrentFile.FullPath = ((BEncodedString) file[nameof (torrentFile.FullPath)]).Text;
+                        torrentFile.UpdatePaths ((
+                            newPath: ((BEncodedString) file[nameof (torrentFile.FullPath)]).Text,
+                            downloadCompletePath: ((BEncodedString) file[nameof (torrentFile.DownloadCompleteFullPath)]).Text,
+                            downloadIncompletePath: ((BEncodedString) file[nameof (torrentFile.DownloadIncompleteFullPath)]).Text
+                        ));
                     }
                 } else {
                     var magnetLink = MagnetLink.Parse (torrent[nameof (manager.MagnetLink)].ToString ()!);
@@ -127,6 +131,8 @@ namespace MonoTorrent.Client
                     dict[nameof (t.Files)] = new BEncodedList (t.Files.Select (file =>
                        new BEncodedDictionary {
                             { nameof(file.FullPath), (BEncodedString) file.FullPath },
+                            { nameof(file.DownloadCompleteFullPath), (BEncodedString) file.DownloadCompleteFullPath },
+                            { nameof(file.DownloadIncompleteFullPath), (BEncodedString) file.DownloadIncompleteFullPath },
                             { nameof(file.Path), (BEncodedString) file.Path },
                             { nameof(file.Priority), (BEncodedString) file.Priority.ToString () },
                        }

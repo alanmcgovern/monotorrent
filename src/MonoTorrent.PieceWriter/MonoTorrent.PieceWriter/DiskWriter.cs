@@ -142,17 +142,19 @@ namespace MonoTorrent.PieceWriter
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
 
-            if (Streams.TryGetValue (file, out AllStreams? data)) {
-                using var releaser = await data.Locker.EnterAsync ();
-                await CloseAllAsync (data);
+            if (!Streams.TryGetValue (file, out AllStreams? data))
+                Streams[file] = data = new AllStreams ();
 
-                if (File.Exists (file.FullPath)) {
-                    if (overwrite)
-                        File.Delete (newPath);
+            using var releaser = await data.Locker.EnterAsync ();
+            await CloseAllAsync (data).ConfigureAwait (false);
 
-                    Directory.CreateDirectory (Path.GetDirectoryName (newPath)!);
-                    File.Move (file.FullPath, newPath);
-                }
+            await new ThreadSwitcher ();
+            if (File.Exists (file.FullPath)) {
+                if (overwrite)
+                    File.Delete (newPath);
+
+                Directory.CreateDirectory (Path.GetDirectoryName (newPath)!);
+                File.Move (file.FullPath, newPath);
             }
         }
 

@@ -599,7 +599,8 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                await Engine!.DiskManager.MoveFileAsync (file, path);
+                var paths = TorrentFileInfo.GetNewPaths (Path.GetFullPath (path), Engine.Settings.UsePartialFiles, file.Path == file.DownloadCompleteFullPath);
+                await Engine!.DiskManager.MoveFileAsync (file, paths);
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);
                 throw;
@@ -661,8 +662,11 @@ namespace MonoTorrent.Client
             // All files marked as 'Normal' priority by default so 'PartialProgressSelector'
             // should be set to 'true' for each piece as all files are being downloaded.
             Files = Torrent.Files.Select (file => {
-                var downloadCompleteFullPath = Path.Combine (ContainingDirectory, TorrentFileInfo.PathAndFileNameEscape (file.Path));
-                var downloadIncompleteFullPath = downloadCompleteFullPath + TorrentFileInfo.IncompleteFileSuffix;
+
+                // Generate the paths when 'UsePartialFiles' is enabled.
+                var paths = TorrentFileInfo.GetNewPaths (Path.Combine (ContainingDirectory, TorrentFileInfo.PathAndFileNameEscape (file.Path)), usePartialFiles: true, isComplete: true);
+                var downloadCompleteFullPath = paths.completePath;
+                var downloadIncompleteFullPath = paths.incompletePath;
 
                 // FIXME: Is this the best place to futz with actually moving files?
                 if (!Engine!.Settings.UsePartialFiles) {
@@ -673,10 +677,8 @@ namespace MonoTorrent.Client
                 }
 
                 var currentPath = File.Exists (downloadCompleteFullPath) ? downloadCompleteFullPath : downloadIncompleteFullPath;
-                var torrentFileInfo = new TorrentFileInfo (file, currentPath) {
-                    DownloadCompleteFullPath = downloadCompleteFullPath,
-                    DownloadIncompleteFullPath = downloadIncompleteFullPath
-                };
+                var torrentFileInfo = new TorrentFileInfo (file, currentPath);
+                torrentFileInfo.UpdatePaths ((currentPath, downloadCompleteFullPath, downloadIncompleteFullPath));
                 if (file.Length == 0)
                     torrentFileInfo.BitField[0] = true;
                 return torrentFileInfo;
@@ -991,7 +993,7 @@ namespace MonoTorrent.Client
         internal async ReusableTask UpdateUsePartialFiles (bool usePartialFiles)
         {
             foreach (TorrentFileInfo file in Files)
-                file.DownloadIncompleteFullPath = file.DownloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "");
+                file.UpdatePaths ((file.FullPath, file.DownloadCompleteFullPath, file.DownloadCompleteFullPath  + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "")));
             await RefreshPartialDownloadFilePaths (0, Files.Count);
         }
 
@@ -1002,10 +1004,10 @@ namespace MonoTorrent.Client
             for (int i = fileStartIndex; i < fileStartIndex + count; i++) {
                 if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath) {
                     tasks ??= new List<Task> ();
-                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], files[i].DownloadCompleteFullPath));
+                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (files[i].DownloadCompleteFullPath, files[i].DownloadCompleteFullPath, files[i].DownloadIncompleteFullPath)));
                 } else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath) {
                     tasks ??= new List<Task> ();
-                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], files[i].DownloadIncompleteFullPath));
+                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (files[i].DownloadIncompleteFullPath, files[i].DownloadCompleteFullPath, files[i].DownloadIncompleteFullPath)));
                 }
             }
             if (tasks != null)
