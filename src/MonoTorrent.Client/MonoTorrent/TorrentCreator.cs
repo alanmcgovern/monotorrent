@@ -235,7 +235,7 @@ namespace MonoTorrent
             if (mappings.Count == 0)
                 throw new ArgumentException ("The file source must contain one or more files", nameof (fileSource));
 
-            mappings.Sort ((left, right) => left.Destination.CompareTo (right.Destination));
+            mappings.Sort ((left, right) => StringComparer.Ordinal.Compare (left.Destination, right.Destination));
             Validate (mappings);
 
             return await CreateAsync (fileSource.TorrentName, fileSource, token);
@@ -263,7 +263,7 @@ namespace MonoTorrent
             // Hybrid and V2 torrents *must* hash files in the same order as they end up being stored in the bencoded dictionary,
             // which means they must be alphabetical.
             if (Type.HasV2 ())
-                rawFiles = rawFiles.OrderBy (t => t.Destination).ToArray ();
+                rawFiles = rawFiles.OrderBy (t => t.Destination, StringComparer.Ordinal).ToArray ();
 
             // The last file never has padding bytes
             rawFiles[rawFiles.Length - 1].padding = 0;
