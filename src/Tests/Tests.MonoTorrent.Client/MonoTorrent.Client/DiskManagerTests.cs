@@ -338,10 +338,11 @@ namespace MonoTorrent.Client
             var file = TorrentFileInfo.Create (Constants.BlockSize, 123456).Single ();
             Assert.IsFalse (File.Exists (file.FullPath));
 
-            await manager.MoveFileAsync (file, ("NewFullPath", "NewFullPath", "NewIncompletePath"));
-            Assert.AreEqual (Path.GetFullPath ("NewPath"), file.FullPath);
-            Assert.AreEqual (Path.GetFullPath ("NewPath"), file.DownloadCompleteFullPath);
-            Assert.AreEqual (Path.GetFullPath ("NewPath"), file.DownloadIncompleteFullPath);
+            var newFullPath = Path.GetFullPath ("NewFullPath");
+            await manager.MoveFileAsync (file, (newFullPath, newFullPath, newFullPath));
+            Assert.AreEqual (newFullPath, file.FullPath);
+            Assert.AreEqual (newFullPath, file.DownloadCompleteFullPath);
+            Assert.AreEqual (newFullPath, file.DownloadIncompleteFullPath);
             Assert.IsFalse (File.Exists (file.FullPath));
         }
 
