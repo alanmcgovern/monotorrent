@@ -338,8 +338,11 @@ namespace MonoTorrent.Client
             var file = TorrentFileInfo.Create (Constants.BlockSize, 123456).Single ();
             Assert.IsFalse (File.Exists (file.FullPath));
 
-            await manager.MoveFileAsync (file, "NewPath");
-            Assert.AreEqual (Path.GetFullPath ("NewPath"), file.FullPath);
+            var newFullPath = Path.GetFullPath ("NewFullPath");
+            await manager.MoveFileAsync (file, (newFullPath, newFullPath, newFullPath));
+            Assert.AreEqual (newFullPath, file.FullPath);
+            Assert.AreEqual (newFullPath, file.DownloadCompleteFullPath);
+            Assert.AreEqual (newFullPath, file.DownloadIncompleteFullPath);
             Assert.IsFalse (File.Exists (file.FullPath));
         }
 
@@ -353,7 +356,7 @@ namespace MonoTorrent.Client
             using var writer = new TestPieceWriter ();
             using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
-            await manager.MoveFileAsync (file, file.FullPath);
+            await manager.MoveFileAsync (file, (file.FullPath, file.FullPath, file.FullPath + TorrentFileInfo.IncompleteFileSuffix));
             Assert.IsTrue (File.Exists (file.FullPath));
         }
 
@@ -368,7 +371,7 @@ namespace MonoTorrent.Client
             using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             var fullPath = Path.Combine (tmp.Path, "New", "Path", "file.txt");
-            await manager.MoveFileAsync (file, fullPath);
+            await manager.MoveFileAsync (file, (fullPath, fullPath, fullPath + TorrentFileInfo.IncompleteFileSuffix));
             Assert.AreEqual (fullPath, file.FullPath);
         }
 

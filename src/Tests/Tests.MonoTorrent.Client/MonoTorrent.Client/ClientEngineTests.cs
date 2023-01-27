@@ -192,6 +192,44 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        [TestCase (true)]
+        [TestCase (false)]
+        public async Task UsePartialFiles_InitiallyOff_ChangeFullPath_ToggleOn (bool createFile)
+        {
+            var pieceLength = Constants.BlockSize * 4;
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (usePartialFiles: false));
+            var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
+
+            using var tempDir = TempDir.Create ();
+            var manager = await engine.AddAsync (torrent, tempDir.Path);
+            Assert.AreEqual (manager.Files[0].DownloadCompleteFullPath, manager.Files[0].DownloadIncompleteFullPath);
+
+            var newPath = Path.GetFullPath (Path.Combine (tempDir.Path, "new_full_path.fake"));
+
+            await manager.MoveFileAsync (manager.Files[0], newPath);
+            Assert.AreEqual (newPath, manager.Files[0].FullPath);
+            Assert.AreEqual (newPath, manager.Files[0].DownloadCompleteFullPath);
+            Assert.AreEqual (newPath, manager.Files[0].DownloadIncompleteFullPath);
+
+            if (createFile)
+                File.Create (manager.Files[0].FullPath).Dispose ();
+
+            var settings = new EngineSettingsBuilder (engine.Settings) { UsePartialFiles = true }.ToSettings ();
+            await engine.UpdateSettingsAsync (settings);
+            Assert.AreEqual (newPath + TorrentFileInfo.IncompleteFileSuffix, manager.Files[0].FullPath);
+            Assert.AreEqual (newPath, manager.Files[0].DownloadCompleteFullPath);
+            Assert.AreEqual (newPath + TorrentFileInfo.IncompleteFileSuffix, manager.Files[0].DownloadIncompleteFullPath);
+
+            if (createFile) {
+                Assert.IsFalse (File.Exists (newPath));
+                Assert.IsTrue (File.Exists (newPath + TorrentFileInfo.IncompleteFileSuffix));
+            } else {
+                Assert.IsFalse (File.Exists (newPath));
+                Assert.IsFalse (File.Exists (newPath + TorrentFileInfo.IncompleteFileSuffix));
+            }
+        }
+
+        [Test]
         public async Task UsePartialFiles_InitiallyOff_ToggleOn ()
         {
             var pieceLength = Constants.BlockSize * 4;
@@ -219,6 +257,44 @@ namespace MonoTorrent.Client
             var settings = new EngineSettingsBuilder (engine.Settings) { UsePartialFiles = false }.ToSettings ();
             await engine.UpdateSettingsAsync (settings);
             Assert.AreEqual (manager.Files[0].DownloadCompleteFullPath, manager.Files[0].DownloadIncompleteFullPath);
+        }
+
+        [Test]
+        [TestCase (true)]
+        [TestCase (false)]
+        public async Task UsePartialFiles_InitiallyOn_ChangeFullPath_ToggleOff (bool createFile)
+        {
+            var pieceLength = Constants.BlockSize * 4;
+            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (usePartialFiles: true));
+            var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
+
+            using var tempDir = TempDir.Create ();
+            var manager = await engine.AddAsync (torrent, tempDir.Path);
+            Assert.AreNotEqual (manager.Files[0].DownloadCompleteFullPath, manager.Files[0].DownloadIncompleteFullPath);
+
+            var newPath = Path.GetFullPath (Path.Combine (tempDir.Path, "new_full_path.fake"));
+
+            await manager.MoveFileAsync (manager.Files[0], newPath);
+            Assert.AreEqual (newPath + TorrentFileInfo.IncompleteFileSuffix, manager.Files[0].FullPath);
+            Assert.AreEqual (newPath, manager.Files[0].DownloadCompleteFullPath);
+            Assert.AreEqual (newPath + TorrentFileInfo.IncompleteFileSuffix, manager.Files[0].DownloadIncompleteFullPath);
+
+            if (createFile)
+                File.Create (manager.Files[0].FullPath).Dispose ();
+
+            var settings = new EngineSettingsBuilder (engine.Settings) { UsePartialFiles = false }.ToSettings ();
+            await engine.UpdateSettingsAsync (settings);
+            Assert.AreEqual (newPath, manager.Files[0].FullPath);
+            Assert.AreEqual (newPath, manager.Files[0].DownloadCompleteFullPath);
+            Assert.AreEqual (newPath, manager.Files[0].DownloadIncompleteFullPath);
+
+            if (createFile) {
+                Assert.IsFalse (File.Exists (newPath + TorrentFileInfo.IncompleteFileSuffix));
+                Assert.IsTrue (File.Exists (newPath));
+            } else {
+                Assert.IsFalse (File.Exists (newPath));
+                Assert.IsFalse (File.Exists (newPath + TorrentFileInfo.IncompleteFileSuffix));
+            }
         }
 
         [Test]

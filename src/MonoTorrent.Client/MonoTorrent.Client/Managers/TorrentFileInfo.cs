@@ -29,6 +29,7 @@
 
 using System;
 using System.Linq;
+using System.Runtime;
 
 namespace MonoTorrent.Client
 {
@@ -36,11 +37,11 @@ namespace MonoTorrent.Client
     {
         public static string IncompleteFileSuffix => ".!mt";
 
-        public string DownloadCompleteFullPath { get; set; }
+        public string DownloadCompleteFullPath { get; private set; }
 
-        public string DownloadIncompleteFullPath { get; set; }
+        public string DownloadIncompleteFullPath { get; private set; }
 
-        public string FullPath { get; set; }
+        public string FullPath { get; private set; }
 
         ITorrentFile TorrentFile { get; }
 
@@ -108,6 +109,22 @@ namespace MonoTorrent.Client
             foreach (var illegal in System.IO.Path.GetInvalidFileNameChars ())
                 filename = filename.Replace ($"{illegal}", $"_{Convert.ToString (illegal, 16)}_");
             return System.IO.Path.Combine (dir, filename);
+        }
+
+        internal static (string path, string completePath, string incompletePath) GetNewPaths (string newPath, bool usePartialFiles, bool isComplete)
+        {
+            var downloadCompleteFullPath = newPath;
+            var downloadIncompleteFullPath = downloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "");
+            newPath = isComplete ? downloadCompleteFullPath : downloadIncompleteFullPath;
+
+            return (newPath, downloadCompleteFullPath, downloadIncompleteFullPath);
+        }
+
+        internal void UpdatePaths ((string newPath, string downloadCompletePath, string downloadIncompletePath) paths)
+        {
+            FullPath = paths.newPath;
+            DownloadCompleteFullPath = paths.downloadCompletePath;
+            DownloadIncompleteFullPath = paths.downloadIncompletePath;
         }
     }
 }
