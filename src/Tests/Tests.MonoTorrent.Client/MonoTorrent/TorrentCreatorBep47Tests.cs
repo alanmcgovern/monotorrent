@@ -74,6 +74,25 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        [TestCase(TorrentType.V1Only)]
+        [TestCase(TorrentType.V1OnlyWithPaddingFiles)]
+        [TestCase(TorrentType.V1V2Hybrid)]
+        [TestCase(TorrentType.V2Only)]
+        public async Task CreateHybridWithUnusualFilenames (TorrentType type)
+        {
+            var files = new Source {
+                TorrentName = "asd",
+                Files = new[] {
+                    new FileMapping("ASDkfsdjgsdSDFGsj.asd", "ASDkfsdjgsdSDFGsj.asd", (long)(PieceLength * 2.30)),
+                    new FileMapping("aSvzxkaSqp AZXDCaj asdASDjas ASDl.aaaaaa", "aSvzxkaSqp AZXDCaj asdASDjas ASDl.aaaaaa", (long)(PieceLength * 36.5)),
+                    new FileMapping("[aaaaa aaaaaaaaa]aaaaaa a aaaaaaaa.aaaaa", "[aaaaa aaaaaaaaa]aaaaaa a aaaaaaaa.aaaaa", (long)(PieceLength * 3.17)),
+                }
+            };
+            var torrent = await CreateTestBenc (type, files);
+            Assert.DoesNotThrow (() => Torrent.Load (torrent));
+        }
+
+        [Test]
         public async Task FileLengthSameAsPieceLength ([Values (TorrentType.V1Only, TorrentType.V1V2Hybrid)] TorrentType type)
         {
             var files = new Source {
