@@ -219,6 +219,9 @@ namespace MonoTorrent.Client
 
         public bool HashChecked { get; private set; }
 
+        /// <summary>
+        /// The number of times a piece is downloaded, but is corrupt and fails the hashcheck and must be re-downloaded.
+        /// </summary>
         public int HashFails { get; internal set; }
 
         public bool HasMetadata => Torrent != null;
