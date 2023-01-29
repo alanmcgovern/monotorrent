@@ -78,7 +78,7 @@ namespace MonoTorrent.Common
         [TestCase(TorrentType.V1OnlyWithPaddingFiles)]
         [TestCase(TorrentType.V1V2Hybrid)]
         [TestCase(TorrentType.V2Only)]
-        public async Task CreateHybridWithUnusualFilenames (TorrentType type)
+        public async Task CreateWithUnusualFilenames (TorrentType type)
         {
             var files = new Source {
                 TorrentName = "asd",
@@ -90,6 +90,45 @@ namespace MonoTorrent.Common
             };
             var torrent = await CreateTestBenc (type, files);
             Assert.DoesNotThrow (() => Torrent.Load (torrent));
+        }
+
+        [Test]
+        [TestCase (TorrentType.V1Only)]
+        [TestCase (TorrentType.V1OnlyWithPaddingFiles)]
+        [TestCase (TorrentType.V1V2Hybrid)]
+        [TestCase (TorrentType.V2Only)]
+        public async Task CreateWithManyEmptyFiles (TorrentType type)
+        {
+            var files = new Source {
+                TorrentName = "asd",
+                Files = new[] {
+                    new FileMapping("a", "a", 0),
+                    new FileMapping("b", "b", PieceLength),
+                    new FileMapping("c", "c", 0),
+                    new FileMapping("d1", "d1", PieceLength / 2),
+                    new FileMapping("d2", "d2", PieceLength / 2),
+                    new FileMapping("e", "e", 0),
+                    new FileMapping("f", "f", 0),
+                    new FileMapping("g", "g", PieceLength + 1),
+                    new FileMapping("h", "h", 0),
+                }
+            };
+
+            var torrent = Torrent.Load (await CreateTestBenc (type, files));
+            foreach(var emptyFile in files.Files.Where (t => t.Length == 0)) {
+                var file = torrent.Files.Single (t => t.Path == emptyFile.Destination);
+                Assert.AreEqual (0, file.Length);
+                Assert.AreEqual (0, file.OffsetInTorrent);
+                Assert.AreEqual (0, file.StartPieceIndex);
+                Assert.AreEqual (0, file.EndPieceIndex);
+                Assert.AreEqual (0, file.Padding);
+                Assert.IsTrue (file.PiecesRoot.IsEmpty);
+            }
+            var expectedPadding = type == TorrentType.V1OnlyWithPaddingFiles || type == TorrentType.V1V2Hybrid ? PieceLength / 2 : 0;
+            Assert.AreEqual (0, torrent.Files.Single (t => t.Path == "b").Padding);
+            Assert.AreEqual (expectedPadding, torrent.Files.Single (t => t.Path == "d1").Padding);
+            Assert.AreEqual (expectedPadding, torrent.Files.Single (t => t.Path == "d2").Padding);
+            Assert.AreEqual (0, torrent.Files.Single (t => t.Path == "g").Padding);
         }
 
         [Test]
