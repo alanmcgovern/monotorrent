@@ -36,22 +36,23 @@ namespace MonoTorrent.Trackers
         public long BytesLeft { get; private set; }
         public long BytesUploaded { get; private set; }
         public TorrentEvent ClientEvent { get; private set; }
+        Func<string, (string?, int)> EndpointFunc { get; set; }
         public InfoHashes InfoHashes { get; private set; }
-        public string? IPAddress { get; private set; }
         public int Key { get; private set; }
         public ReadOnlyMemory<byte> PeerId { get; private set; }
-        public int Port { get; private set; }
         public bool RequireEncryption { get; private set; }
         public bool SupportsEncryption { get; private set; }
+
 
         public AnnounceRequest (InfoHashes infoHashes)
         {
             InfoHashes = infoHashes;
+            EndpointFunc = type => (null, -1);
         }
 
         public AnnounceRequest (long bytesDownloaded, long bytesUploaded, long bytesLeft,
                            TorrentEvent clientEvent, InfoHashes infoHashes, bool requireEncryption,
-                           ReadOnlyMemory<byte> peerId, string? ipAddress, int port, bool supportsEncryption)
+                           ReadOnlyMemory<byte> peerId, Func<string, (string?, int)> endpointFunc, bool supportsEncryption)
         {
             BytesDownloaded = bytesDownloaded;
             BytesUploaded = bytesUploaded;
@@ -60,10 +61,12 @@ namespace MonoTorrent.Trackers
             InfoHashes = infoHashes;
             RequireEncryption = requireEncryption;
             PeerId = peerId;
-            IPAddress = ipAddress;
-            Port = port;
+            EndpointFunc = endpointFunc;
             SupportsEncryption = supportsEncryption;
         }
+
+        public (string? address, int port) GetReportedAddress (string type)
+            => EndpointFunc (type);
 
         public AnnounceRequest WithBytesDownloaded (long bytesDownloaded)
         {
@@ -105,22 +108,22 @@ namespace MonoTorrent.Trackers
             return clone;
         }
 
+        public AnnounceRequest WithReportedEndPointFunc (Func<string, (string?, int)> func)
+        {
+            var clone = this;
+            if (EndpointFunc != func) {
+                clone = (AnnounceRequest) MemberwiseClone ();
+                clone.EndpointFunc = func;
+            }
+            return clone;
+        }
+
         public AnnounceRequest WithInfoHashes (InfoHashes infoHashes)
         {
             var clone = this;
             if (infoHashes != InfoHashes) {
                 clone = (AnnounceRequest) MemberwiseClone ();
                 clone.InfoHashes = infoHashes;
-            }
-            return clone;
-        }
-
-        public AnnounceRequest WithIPAddress (string? ipAddress)
-        {
-            var clone = this;
-            if (ipAddress != IPAddress) {
-                clone = (AnnounceRequest) MemberwiseClone ();
-                clone.IPAddress = ipAddress;
             }
             return clone;
         }
@@ -141,16 +144,6 @@ namespace MonoTorrent.Trackers
             if (!peerId.Equals (PeerId)) {
                 clone = (AnnounceRequest) MemberwiseClone ();
                 clone.PeerId = peerId;
-            }
-            return clone;
-        }
-
-        public AnnounceRequest WithPort (int port)
-        {
-            var clone = this;
-            if (port != Port) {
-                clone = (AnnounceRequest) MemberwiseClone ();
-                clone.Port = port;
             }
             return clone;
         }

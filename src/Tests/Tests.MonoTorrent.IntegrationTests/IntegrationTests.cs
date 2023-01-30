@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,9 +19,34 @@ using NUnit.Framework;
 namespace Tests.MonoTorrent.IntegrationTests
 {
     [TestFixture]
-    public class IntegrationTests
+    public class IPv4IntegrationTests : IntegrationTestsBase
+    {
+        public IPv4IntegrationTests ()
+            : base (IPAddress.Any, IPAddress.Loopback)
+        {
+
+        }
+    }
+
+    [TestFixture]
+    public class IPv6IntegrationTests : IntegrationTestsBase
+    {
+        public IPv6IntegrationTests ()
+            : base (IPAddress.IPv6Any, IPAddress.IPv6Loopback)
+        {
+
+        }
+    }
+
+    public abstract class IntegrationTestsBase
     {
         static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (20);
+
+        public IPAddress AnyAddress { get; }
+        public IPAddress LoopbackAddress { get; }
+
+        protected IntegrationTestsBase (IPAddress anyAddress, IPAddress loopbackAddress)
+            => (AnyAddress, LoopbackAddress) = (anyAddress, loopbackAddress);
 
         [OneTimeSetUp]
         public void FixtureSetup ()
@@ -152,9 +178,9 @@ namespace Tests.MonoTorrent.IntegrationTests
             var fileSource = new TorrentFileSource (_seederDir.FullName);
             fileSource.TorrentName = _torrentName;
             TorrentCreator torrentCreator = new TorrentCreator (torrentType);
-            torrentCreator.Announce = $"http://localhost:{_trackerPort}/announce";
+            torrentCreator.Announce = $"http://{new IPEndPoint (LoopbackAddress, _trackerPort)}/announce";
             if (useWebSeedDownload) {
-                torrentCreator.GetrightHttpSeeds.Add ($"http://localhost:{_webSeedPort}/{_webSeedPrefix}/");
+                torrentCreator.GetrightHttpSeeds.Add ($"http://{new IPEndPoint (LoopbackAddress, _webSeedPort)}/{_webSeedPrefix}/");
             }
             var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
             var torrent = Torrent.Load (encodedTorrent);
@@ -200,7 +226,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         {
             var tracker = new TrackerServer ();
             tracker.AllowUnregisteredTorrents = true;
-            var listenAddress = $"http://127.0.0.1:{port}/";
+            var listenAddress = $"http://{new IPEndPoint (LoopbackAddress, port)}/";
 
             var listener = TrackerListenerFactory.CreateHttp (listenAddress);
             tracker.RegisterListener (listener);
@@ -211,10 +237,11 @@ namespace Tests.MonoTorrent.IntegrationTests
         private ClientEngine GetEngine (int port)
         {
             // Give an example of how settings can be modified for the engine.
+            var type = AnyAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
             var settingBuilder = new EngineSettingsBuilder {
                 // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port) } },
-                ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Parse ("127.0.0.1"), 0) } },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, port) } },
+                ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } },
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
                 DhtEndPoint = null,
@@ -228,7 +255,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         private HttpListener CreateWebSeeder ()
         {
             HttpListener listener = new HttpListener ();
-            listener.Prefixes.Add ($"http://localhost:{_webSeedPort}/");
+            listener.Prefixes.Add ($"http://{new IPEndPoint(LoopbackAddress, _webSeedPort)}/");
             listener.Start ();
             listener.BeginGetContext (OnHttpContext, listener);
             return listener;

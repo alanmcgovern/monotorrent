@@ -52,7 +52,7 @@ namespace MonoTorrent.Trackers
         static readonly InfoHashes InfoHashes = InfoHashes.FromV1 (new InfoHash (Enumerable.Repeat ((byte) 254, 20).ToArray ()));
 
         AnnounceRequest announceparams = new AnnounceRequest (100, 50, int.MaxValue,
-            TorrentEvent.Completed, InfoHashes, false, PeerId, null, 1515, false);
+            TorrentEvent.Completed, InfoHashes, false, PeerId, t => (null, 1515), false);
 
         readonly ScrapeRequest scrapeParams = new ScrapeRequest (InfoHashes);
         TrackerServer.TrackerServer server;
@@ -99,7 +99,6 @@ namespace MonoTorrent.Trackers
 
             trackerConnection = new UdpTrackerConnection (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"), AddressFamily.InterNetwork);
             tracker = new Tracker (trackerConnection);
-            announceparams = announceparams.WithPort (listener.LocalEndPoint.Port);
 
             listener.IgnoreAnnounces = false;
             listener.IgnoreConnects = false;
@@ -124,7 +123,7 @@ namespace MonoTorrent.Trackers
         [Test]
         public void AnnounceMessageTest ()
         {
-            AnnounceMessage m = new AnnounceMessage (0, 12345, announceparams, announceparams.InfoHashes.V1OrV2);
+            AnnounceMessage m = new AnnounceMessage (0, 12345, announceparams, announceparams.InfoHashes.V1OrV2, listener.LocalEndPoint.Port);
             AnnounceMessage d = (AnnounceMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Request, AddressFamily.InterNetwork);
             Check (m, MessageType.Request);
 

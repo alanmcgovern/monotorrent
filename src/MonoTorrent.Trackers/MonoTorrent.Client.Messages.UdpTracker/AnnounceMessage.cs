@@ -61,12 +61,12 @@ namespace MonoTorrent.Messages.UdpTracker
         public long Uploaded { get; set; }
 
         public AnnounceMessage ()
-            : this (0, 0, null, null!)
+            : this (0, 0, null, null!, 0)
         {
 
         }
 
-        public AnnounceMessage (int transactionId, long connectionId, AnnounceRequest? parameters, InfoHash infoHash)
+        public AnnounceMessage (int transactionId, long connectionId, AnnounceRequest? parameters, InfoHash infoHash, int port)
             : base (1, transactionId)
         {
             ConnectionId = connectionId;
@@ -80,7 +80,7 @@ namespace MonoTorrent.Messages.UdpTracker
             Left = parameters.BytesLeft;
             NumWanted = 50;
             PeerId = parameters.PeerId;
-            Port = (ushort) parameters.Port;
+            Port = (ushort) port;
             TorrentEvent = parameters.ClientEvent;
             Uploaded = parameters.BytesUploaded;
         }

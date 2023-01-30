@@ -73,12 +73,11 @@ namespace MonoTorrent.Connections.Tracker
                 // "That means the IP address field in the request remains 32bits wide which makes this
                 // field not usable under IPv6 and thus should always be set to 0.
                 //
-                if (AddressFamily != AddressFamily.InterNetwork && parameters.IPAddress != null)
-                    parameters = parameters.WithIPAddress (null);
 
+                var port = parameters.GetReportedAddress (AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6").port;
                 AnnounceResponse? announceResponse = null;
                 foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
-                    var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters, infoHash);
+                    var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters, infoHash, port);
                     (var response, var errorString) = await SendAndReceiveAsync (message);
 
                     // Did we receive an 'ErrorMessage' from the tracker? If so, propagate the failure

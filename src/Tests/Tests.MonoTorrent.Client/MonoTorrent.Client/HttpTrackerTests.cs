@@ -104,7 +104,7 @@ namespace MonoTorrent.TrackerServer
 
             infoHash = new InfoHash (infoHashBytes.Concat (infoHashBytes).ToArray ());
             announceParams = new MonoTorrent.Trackers.AnnounceRequest (InfoHashes.FromV1 (infoHash))
-                .WithPort (5555)
+                .WithReportedEndPointFunc(t => (null, 5555))
                 .WithPeerId (peerId.Span.ToArray ());
 
             scrapeParams = new MonoTorrent.Trackers.ScrapeRequest (InfoHashes.FromV1 (infoHash));
@@ -256,19 +256,19 @@ namespace MonoTorrent.TrackerServer
             Assert.AreEqual (0, tracker.ScrapeInfo[infoHash].Incomplete, "#2");
             Assert.AreEqual (0, tracker.ScrapeInfo[infoHash].Downloaded, "#3");
 
-            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 100, TorrentEvent.Started, infoHashes, false, new BEncodedString ("peer1").Span.ToArray (), null, 1, false), CancellationToken.None);
+            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 100, TorrentEvent.Started, infoHashes, false, new BEncodedString ("peer1").Span.ToArray (), t => (null, 1), false), CancellationToken.None);
             await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (0, tracker.ScrapeInfo[infoHash].Complete, "#4");
             Assert.AreEqual (1, tracker.ScrapeInfo[infoHash].Incomplete, "#5");
             Assert.AreEqual (0, tracker.ScrapeInfo[infoHash].Downloaded, "#6");
 
-            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 0, TorrentEvent.Started, infoHashes, false, new BEncodedString ("peer2").Span.ToArray (), null, 2, false), CancellationToken.None);
+            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 0, TorrentEvent.Started, infoHashes, false, new BEncodedString ("peer2").Span.ToArray (), t => (null, 2), false), CancellationToken.None);
             await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (1, tracker.ScrapeInfo[infoHash].Complete, "#7");
             Assert.AreEqual (1, tracker.ScrapeInfo[infoHash].Incomplete, "#8");
             Assert.AreEqual (0, tracker.ScrapeInfo[infoHash].Downloaded, "#9");
 
-            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 0, TorrentEvent.Completed, infoHashes, false, new BEncodedString ("peer3").Span.ToArray (), null, 3, false), CancellationToken.None);
+            await tracker.AnnounceAsync (new MonoTorrent.Trackers.AnnounceRequest (0, 0, 0, TorrentEvent.Completed, infoHashes, false, new BEncodedString ("peer3").Span.ToArray (), t => (null, 3), false), CancellationToken.None);
             await tracker.ScrapeAsync (scrapeParams, CancellationToken.None);
             Assert.AreEqual (2, tracker.ScrapeInfo[infoHash].Complete, "#10");
             Assert.AreEqual (1, tracker.ScrapeInfo[infoHash].Incomplete, "#11");
