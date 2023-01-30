@@ -54,7 +54,6 @@ namespace MonoTorrent.Trackers
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
             Func<string, (string?, int)> reportedAddressFunc = type => {
-                // IPV6 support - If we need to do an ipv4 announce *and* an ipv6 announce, where's the best place for this to live?
                 string? ip = null;
                 int port = engine.GetOverrideOrActualListenPort (type).GetValueOrDefault (-1);
                 if (engine.Settings.ReportedListenEndPoints.TryGetValue (type, out var reportedAddress))
