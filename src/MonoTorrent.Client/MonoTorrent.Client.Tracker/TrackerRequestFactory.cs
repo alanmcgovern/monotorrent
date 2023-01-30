@@ -27,6 +27,8 @@
 //
 
 
+using System;
+
 using MonoTorrent.Client;
 using MonoTorrent.Connections;
 
@@ -51,11 +53,14 @@ namespace MonoTorrent.Trackers
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
-            // IPV6 support - If we need to do an ipv4 announce *and* an ipv6 announce, where's the best place for this to live?
-            string? ip = null;
-            int port = engine.GetOverrideOrActualListenPort ("ipv4").GetValueOrDefault (-1);
-            if (engine.Settings.ReportedListenEndPoints.TryGetValue ("ipv4", out var reportedAddress))
-                ip = reportedAddress.Address.ToString ();
+            Func<string, (string?, int)> reportedAddressFunc = type => {
+                // IPV6 support - If we need to do an ipv4 announce *and* an ipv6 announce, where's the best place for this to live?
+                string? ip = null;
+                int port = engine.GetOverrideOrActualListenPort ("ipv6").GetValueOrDefault (-1);
+                if (engine.Settings.ReportedListenEndPoints.TryGetValue ("ipv6", out var reportedAddress))
+                    ip = reportedAddress.Address.ToString ();
+                return (ip, port);
+            };
 
             // FIXME: In metadata mode we need to pretend we need to download data otherwise
             // tracker optimisations might result in no peers being sent back.
@@ -67,7 +72,7 @@ namespace MonoTorrent.Trackers
                                           Manager.Monitor.DataBytesSent,
                                           bytesLeft,
                                           clientEvent, Manager.InfoHashes, requireEncryption, Manager.Engine!.PeerId.AsMemory (),
-                                          ip, port, supportsEncryption);
+                                          reportedAddressFunc, supportsEncryption);
         }
 
         public ScrapeRequest CreateScrape ()

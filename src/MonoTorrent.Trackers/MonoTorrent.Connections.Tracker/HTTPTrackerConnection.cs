@@ -164,10 +164,12 @@ namespace MonoTorrent.Connections.Tracker
 
         Uri CreateAnnounceString (AnnounceRequest parameters, InfoHash infoHash)
         {
+            (string? ipAddress, int port) = parameters.GetReportedAddress (AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6");
+
             var b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", infoHash.Truncate ().UrlEncode ())
              .Add ("peer_id", BEncodedString.FromMemory (parameters.PeerId).UrlEncode ())
-             .Add ("port", parameters.Port)
+             .Add ("port", port)
              .Add ("uploaded", parameters.BytesUploaded)
              .Add ("downloaded", parameters.BytesDownloaded)
              .Add ("left", parameters.BytesLeft)
@@ -180,8 +182,8 @@ namespace MonoTorrent.Connections.Tracker
                 b.Add ("requirecrypto", 1);
             if (!b.Contains ("key"))
                 b.Add ("key", parameters.Key);
-            if (!string.IsNullOrEmpty (parameters.IPAddress))
-                b.Add ("ip", parameters.IPAddress!);
+            if (!string.IsNullOrEmpty (ipAddress))
+                b.Add ("ip", ipAddress!);
 
             // If we have not successfully sent the started event to this tier, override the passed in started event
             // Otherwise append the event if it is not "none"

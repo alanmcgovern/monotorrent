@@ -80,7 +80,7 @@ namespace MonoTorrent.TrackerServer
                 var infoHash = InfoHashes.FromV1 (new InfoHash (buffer));
                 TrackerTier tier = new TrackerTier (Factories.Default, new[] { uri.ToString () });
                 var parameters = new MonoTorrent.Trackers.AnnounceRequest (0, 0, 0, TorrentEvent.Started,
-                                                                       infoHash, false, new BEncodedString (new string ('1', 20)).Span.ToArray (), "", 1411, false);
+                                                                       infoHash, false, new BEncodedString (new string ('1', 20)).Span.ToArray (), t => ("", 1411), false);
                 Assert.IsTrue (tier.ActiveTracker.CanScrape);
                 await tier.Trackers[0].AnnounceAsync (parameters, CancellationToken.None);
             }

@@ -62,7 +62,7 @@ namespace MonoTorrent.Trackers
         List<InfoHash> ipv4announcedInfoHashes, ipv6announcedInfoHashes;
         List<InfoHash> ipv4scrapedInfoHashes, ipv6scrapedInfoHashes;
 
-        AnnounceRequest announceparams = new AnnounceRequest (100, 50, 12345, TorrentEvent.Completed, InfoHashes.FromV1(InfoHash), false, PeerId, null, 1515, false);
+        AnnounceRequest announceparams = new AnnounceRequest (100, 50, 12345, TorrentEvent.Completed, InfoHashes.FromV1(InfoHash), false, PeerId, t => (null, 1515), false);
 
         [SetUp]
         public void Setup ()
