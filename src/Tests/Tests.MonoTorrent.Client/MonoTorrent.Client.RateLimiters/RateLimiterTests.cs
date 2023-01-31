@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.RateLimiters
         public void ChunkSizeLargerThanRateLimit ()
         {
             var rateLimiter = new RateLimiter ();
-            rateLimiter.UpdateChunks (10, 10, 10);
+            rateLimiter.UpdateChunks (10);
 
             // We can process any size chunk as long as there's some rate limit left
             Assert.IsTrue (rateLimiter.TryProcess (11));

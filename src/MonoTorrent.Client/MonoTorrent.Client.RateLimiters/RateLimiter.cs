@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Threading;
 
 namespace MonoTorrent.Client.RateLimiters
@@ -36,39 +37,17 @@ namespace MonoTorrent.Client.RateLimiters
         long savedError;
         long chunks;
 
-        public int? PreferredChunkSize { get; private set; }
-
         public bool Unlimited { get; set; }
 
         public RateLimiter ()
         {
-            UpdateChunks (0, 0, null);
+            UpdateChunks (0);
         }
 
-        public void UpdateChunks (long maxRate, long actualRate, int? preferredChunkSize)
+        public void UpdateChunks (long maxRate)
         {
-            PreferredChunkSize = preferredChunkSize;
             Unlimited = maxRate == 0;
-            if (Unlimited)
-                return;
-
-            // From experimentation, i found that increasing by 5% gives more accuate rate limiting
-            // for peer communications. For disk access and whatnot, a 5% overshoot is fine.
-            maxRate = (long) (maxRate * 1.05);
-            long errorRateDown = maxRate - actualRate;
-            long delta = (long) (0.4 * errorRateDown + 0.6 * savedError);
-            savedError = errorRateDown;
-
-            long increaseAmount = maxRate + delta;
-            Interlocked.Add (ref chunks, increaseAmount);
-            if (chunks > (maxRate * 1.2))
-                Interlocked.Exchange (ref chunks, (int) (maxRate * 1.2));
-
-            if (chunks < (maxRate / 2))
-                Interlocked.Exchange (ref chunks, (maxRate / 2));
-
-            if (maxRate == 0)
-                chunks = 0;
+            Interlocked.Exchange(ref chunks, maxRate);
         }
 
         public bool TryProcess (long amount)
@@ -79,7 +58,7 @@ namespace MonoTorrent.Client.RateLimiters
             long c;
             do {
                 c = Interlocked.Read (ref chunks);
-                if (c < 0)
+                if (c <= 0)
                     return false;
 
             } while (Interlocked.CompareExchange (ref chunks, c - amount, c) != c);

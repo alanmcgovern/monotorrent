@@ -37,16 +37,6 @@ namespace MonoTorrent.Client.RateLimiters
     {
         readonly List<IRateLimiter> limiters;
 
-        public int? PreferredChunkSize {
-            get {
-                int? preferredChunkSize = null;
-                for (int i = 0; i < limiters.Count; i++)
-                    if (limiters[i].PreferredChunkSize.HasValue)
-                        preferredChunkSize = preferredChunkSize.HasValue ? Math.Min (limiters[i].PreferredChunkSize!.Value, preferredChunkSize.Value) : limiters[i].PreferredChunkSize!.Value;
-                return preferredChunkSize;
-            }
-        }
-
         public bool Unlimited {
             get {
                 for (int i = 0; i < limiters.Count; i++)

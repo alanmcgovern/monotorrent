@@ -661,8 +661,8 @@ namespace MonoTorrent.Client
             WriterReadMonitor.Tick (delta);
             WriterWriteMonitor.Tick (delta);
 
-            WriteLimiter.UpdateChunks (Settings.MaximumDiskWriteRate, WriteRate, null);
-            ReadLimiter.UpdateChunks (Settings.MaximumDiskReadRate, ReadRate, null);
+            WriteLimiter.UpdateChunks (Settings.MaximumDiskWriteRate);
+            ReadLimiter.UpdateChunks (Settings.MaximumDiskReadRate);
 
             ReusableTask processTask = ProcessBufferedIOAsync ();
             return waitForBufferedIO ? processTask : ReusableTask.CompletedTask;
