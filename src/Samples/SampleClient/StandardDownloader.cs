@@ -22,29 +22,36 @@ namespace ClientSample
         public StandardDownloader (ClientEngine engine)
         {
             Engine = engine;
-            Listener = new Top10Listener (10);
+            Listener = new Top10Listener (50);
         }
 
         async Task CreateTorrent(string path)
         {
+            const string announce = "http://[fe80::cf9b:da81:df12:ea94]:12345/announce";
             const string sourcePath = @"c:\stuff_to_seed";
             if (!Directory.Exists (sourcePath))
                 return;
 
-            var creator = new TorrentCreator ();
-            creator.Announce = "http://[fe80::46dc:9b3d:bc61:79a7]/announce";
-            var data = await creator.CreateAsync (new TorrentFileSource (sourcePath));
-            File.WriteAllBytes (path, data.Encode ());
-
-            await CreateTracker (creator.Announce);
+            if (!File.Exists (path)) {
+                var creator = new TorrentCreator ();
+                creator.Announce = announce;
+                var data = await creator.CreateAsync (new TorrentFileSource (sourcePath));
+                File.WriteAllBytes (path, data.Encode ());
+            }
+            CreateTracker (announce);
         }
 
         TrackerServer Tracker;
-        async Task CreateTracker (string announce)
+        void CreateTracker (string announce)
         {
-            Tracker = new TrackerServer ();
+            Tracker = new TrackerServer {
+                AllowUnregisteredTorrents = true
+            };
             var listener = new HttpTrackerListener (announce + "/");
             listener.Start ();
+            listener.AnnounceReceived += (o, e) => {
+                Console.WriteLine ($"Announce received from: {e.ClientAddress}");
+            };
             Tracker.RegisterListener (listener);
         }
 
@@ -95,34 +102,33 @@ namespace ClientSample
                 Console.WriteLine ("Exiting...");
                 return;
             }
-
             // For each torrent manager we loaded and stored in our list, hook into the events
             // in the torrent manager and start the engine.
             foreach (TorrentManager manager in Engine.Torrents) {
                 manager.PeerConnected += (o, e) => {
                     lock (Listener)
-                        Listener.WriteLine ($"Connection succeeded: {e.Peer.Uri}");
+                        Console.WriteLine ($"Connection succeeded: {e.Peer.Uri}");
                 };
                 manager.ConnectionAttemptFailed += (o, e) => {
                     lock (Listener)
-                        Listener.WriteLine (
+                        Console.WriteLine (
                             $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason}");
                 };
                 // Every time a piece is hashed, this is fired.
                 manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
                     lock (Listener)
-                        Listener.WriteLine ($"Piece Hashed: {e.PieceIndex} - {(e.HashPassed ? "Pass" : "Fail")}");
+                        Console.WriteLine ($"Piece Hashed: {e.PieceIndex} - {(e.HashPassed ? "Pass" : "Fail")}");
                 };
 
                 // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
                 manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
                     lock (Listener)
-                        Listener.WriteLine ($"OldState: {e.OldState} NewState: {e.NewState}");
+                        Console.WriteLine ($"OldState: {e.OldState} NewState: {e.NewState}");
                 };
 
                 // Every time the tracker's state changes, this is fired
                 manager.TrackerManager.AnnounceComplete += (sender, e) => {
-                    Listener.WriteLine ($"{e.Successful}: {e.Tracker.Uri}");
+                    Console.WriteLine ($"{e.Successful}: {e.Tracker.Uri}");
                 };
 
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding.
@@ -191,9 +197,9 @@ namespace ClientSample
                         foreach (var file in manager.Files)
                             AppendFormat (sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
                 }
-                Console.Clear ();
-                Console.WriteLine (sb.ToString ());
-                Listener.ExportTo (Console.Out);
+                //Console.Clear ();
+                //Console.WriteLine (sb.ToString ());
+                //Listener.ExportTo (Console.Out);
 
                 await Task.Delay (5000, token);
             }
@@ -202,7 +208,7 @@ namespace ClientSample
         void Manager_PeersFound (object sender, PeersAddedEventArgs e)
         {
             lock (Listener)
-                Listener.WriteLine ($"Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");//throw new Exception("The method or operation is not implemented.");
+                Console.WriteLine ($"Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");//throw new Exception("The method or operation is not implemented.");
         }
 
         void AppendSeparator (StringBuilder sb)

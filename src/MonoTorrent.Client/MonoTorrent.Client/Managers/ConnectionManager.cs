@@ -297,7 +297,9 @@ namespace MonoTorrent.Client
                         }
                     }
 
+                    logger.Info ($"Receiving from {connection.Uri}: <Unknown>");
                     (PeerMessage message, PeerMessage.Releaser releaser) = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager, currentBuffer).ConfigureAwait (false);
+                    logger.Info ($"Received {connection.Uri}: {message}");
                     HandleReceivedMessage (id, torrentManager, message, releaser);
                 }
             } catch {
@@ -435,7 +437,7 @@ namespace MonoTorrent.Client
 
                 // We've sent our handshake so begin our looping to receive incoming message
                 ReceiveMessagesAsync (id.Connection, id.Decryptor, manager.DownloadLimiters, id.Monitor, manager, id);
-                logger.InfoFormatted ("Incoming connection fully accepted", id.Uri);
+                logger.InfoFormatted ("Incoming connection fully accepted: {0}", id.Uri);
                 return true;
             } catch (Exception ex) {
                 logger.Exception (ex, "Error handling incoming connection");
@@ -482,7 +484,9 @@ namespace MonoTorrent.Client
                         Interlocked.Increment (ref id.piecesSent);
                     }
 
+                    logger.Info ($"Sending to {id.Connection.Uri}: {msg}");
                     await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor, buffer).ConfigureAwait (false);
+                    logger.Info ($"Sent to {id.Connection.Uri}: {msg}");
                     if (msg is PieceMessage)
                         Interlocked.Decrement (ref id.isRequestingPiecesCount);
 
