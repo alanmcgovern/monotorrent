@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
@@ -71,7 +72,9 @@ namespace MonoTorrent
             else
                 peerId = BEncodedString.Empty;
 
-            var connectionUri = new Uri ($"ipv4://{dict[IPKey]}:{dict[PortKey]}");
+            var ipAddress = IPAddress.Parse (((BEncodedString)dict[IPKey]).Text);
+            int port = (int)((BEncodedNumber) dict[PortKey]).Number;
+            var connectionUri = new Uri ($"{(ipAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6")}://{new IPEndPoint (ipAddress, port)}");
             return new PeerInfo (connectionUri, peerId);
         }
     }
