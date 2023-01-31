@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 
 using MonoTorrent;
 using MonoTorrent.Client;
+using MonoTorrent.Connections.TrackerServer;
 using MonoTorrent.Logging;
+using MonoTorrent.TrackerServer;
 
 namespace ClientSample
 {
@@ -23,6 +25,29 @@ namespace ClientSample
             Listener = new Top10Listener (10);
         }
 
+        async Task CreateTorrent(string path)
+        {
+            const string sourcePath = @"c:\stuff_to_seed";
+            if (!Directory.Exists (sourcePath))
+                return;
+
+            var creator = new TorrentCreator ();
+            creator.Announce = "http://[fe80::46dc:9b3d:bc61:79a7]/announce";
+            var data = await creator.CreateAsync (new TorrentFileSource (sourcePath));
+            File.WriteAllBytes (path, data.Encode ());
+
+            await CreateTracker (creator.Announce);
+        }
+
+        TrackerServer Tracker;
+        async Task CreateTracker (string announce)
+        {
+            Tracker = new TrackerServer ();
+            var listener = new HttpTrackerListener (announce + "/");
+            listener.Start ();
+            Tracker.RegisterListener (listener);
+        }
+
         public async Task DownloadAsync (CancellationToken token)
         {
             // Torrents will be downloaded to this directory
@@ -30,6 +55,8 @@ namespace ClientSample
 
             // .torrent files will be loaded from this directory (if any exist)
             var torrentsPath = Path.Combine (Environment.CurrentDirectory, "Torrents");
+
+            await CreateTorrent (Path.Combine (torrentsPath, "foobar.torrent"));
 
 #if DEBUG
             LoggerFactory.Register (className => new TextLogger (Console.Out, className));
@@ -95,7 +122,7 @@ namespace ClientSample
 
                 // Every time the tracker's state changes, this is fired
                 manager.TrackerManager.AnnounceComplete += (sender, e) => {
-                    Listener.WriteLine ($"{e.Successful}: {e.Tracker}");
+                    Listener.WriteLine ($"{e.Successful}: {e.Tracker.Uri}");
                 };
 
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding.
