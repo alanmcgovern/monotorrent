@@ -126,6 +126,42 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void DecodeDictionaryIPv6_WithCorruptEntry ()
+        {
+            List<PeerInfo> actual = new List<PeerInfo> {
+                new PeerInfo (new Uri ("ipv6://[::1]:1234")),
+                new PeerInfo (new Uri ("ipv6://[::1234:2345:3456]:5451")),
+                new PeerInfo (new Uri ("ipv6://[fe80::08ef]:5555")),
+            };
+
+            var list = new BEncodedList ();
+            foreach (PeerInfo p in actual) {
+                list.Add (new BEncodedDictionary {
+                    {"ip", (BEncodedString) p.ConnectionUri.Host},
+                    {"port", (BEncodedNumber) p.ConnectionUri.Port},
+                    {"peer id", p.PeerId}
+                });
+            }
+
+            // Add a corrupt port and ip
+            list.Add (new BEncodedDictionary {
+                {"ip", (BEncodedString) "fake"},
+                {"port", (BEncodedNumber) 1234},
+                {"peer id", (BEncodedString) "bad ip"}
+            });
+
+            list.Add (new BEncodedDictionary {
+                {"ip", (BEncodedString) "::1"},
+                {"port", (BEncodedNumber) 12345678},
+                {"peer id", (BEncodedString) "bad port"}
+            });
+
+            // non-compact responses do not need the AddressFamily hint, and ipv6 address will parse correctly regardless of the value of the hint flag.
+            VerifyDecodedPeers (PeerDecoder.Decode (list, AddressFamily.InterNetwork), actual);
+            VerifyDecodedPeers (PeerDecoder.Decode (list, AddressFamily.InterNetworkV6), actual);
+        }
+
+        [Test]
         public void DecodeCompact ()
         {
             int stride = 6;
@@ -141,7 +177,7 @@ namespace MonoTorrent.Client
         {
             var peerId = new BEncodedString (Enumerable.Repeat ((byte) 255, 20).ToArray ());
             var dict = new BEncodedDictionary {
-                {"ip", (BEncodedString) "1237.1.2.3"},
+                {"ip", (BEncodedString) "127.1.2.3"},
                 {"port", (BEncodedNumber) 12345}
             };
             dict["peer id"] = peerId;
@@ -206,11 +242,18 @@ namespace MonoTorrent.Client
             Assert.AreEqual (one.GetHashCode (), otherOne.GetHashCode (), "#2");
         }
 
-        private void VerifyDecodedPeers (IList<PeerInfo> decoded)
+        void VerifyDecodedPeers (IList<PeerInfo> decoded)
         {
             Assert.AreEqual (peers.Count, decoded.Count, "#1");
             foreach (PeerInfo dec in decoded)
                 Assert.IsTrue (peers.Exists (p => p.ConnectionUri.Equals (dec.ConnectionUri)));
+        }
+
+        static void VerifyDecodedPeers (IList<PeerInfo> decoded, List<PeerInfo> actual)
+        {
+            Assert.AreEqual (actual.Count, decoded.Count, "#1");
+            foreach (PeerInfo dec in decoded)
+                Assert.IsTrue (actual.Exists (p => p.ConnectionUri.Equals (dec.ConnectionUri)));
         }
     }
 }
