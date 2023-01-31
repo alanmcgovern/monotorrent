@@ -602,7 +602,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                var paths = TorrentFileInfo.GetNewPaths (Path.GetFullPath (path), Engine.Settings.UsePartialFiles, file.Path == file.DownloadCompleteFullPath);
+                var paths = TorrentFileInfo.GetNewPaths (Path.GetFullPath (path), Engine!.Settings.UsePartialFiles, file.Path == file.DownloadCompleteFullPath);
                 await Engine!.DiskManager.MoveFileAsync (file, paths);
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);

@@ -34,7 +34,6 @@ namespace MonoTorrent.Client.RateLimiters
 {
     sealed class RateLimiter : IRateLimiter
     {
-        long savedError;
         long chunks;
 
         public bool Unlimited { get; set; }
