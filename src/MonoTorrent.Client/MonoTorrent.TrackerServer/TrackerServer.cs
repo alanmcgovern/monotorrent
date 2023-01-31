@@ -191,8 +191,7 @@ namespace MonoTorrent.TrackerServer
         /// <summary>
         /// Adds the trackable to the server
         /// </summary>
-        /// <param name="trackable">The trackable to add</param>
-        /// <param name="comparer">The comparer used to decide whether two peers are the same.</param>
+        /// <param name="manager">.</param>
         /// <returns></returns>
         internal bool Add (SimpleTorrentManager manager)
         {

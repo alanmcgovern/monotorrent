@@ -602,7 +602,7 @@ namespace MonoTorrent.Client
                 throw new TorrentException ("Cannot move files when the torrent is active");
 
             try {
-                var paths = TorrentFileInfo.GetNewPaths (Path.GetFullPath (path), Engine.Settings.UsePartialFiles, file.Path == file.DownloadCompleteFullPath);
+                var paths = TorrentFileInfo.GetNewPaths (Path.GetFullPath (path), Engine!.Settings.UsePartialFiles, file.Path == file.DownloadCompleteFullPath);
                 await Engine!.DiskManager.MoveFileAsync (file, paths);
             } catch (Exception ex) {
                 TrySetError (Reason.WriteFailure, ex);
@@ -1034,8 +1034,8 @@ namespace MonoTorrent.Client
         internal void UpdateLimiters ()
         {
             if (Engine != null) {
-                DownloadLimiter.UpdateChunks (Settings.MaximumDownloadRate, Monitor.DownloadRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumDownloadRate, Settings.MaximumDownloadRate));
-                UploadLimiter.UpdateChunks (Settings.MaximumUploadRate, Monitor.UploadRate, ClientEngine.PreferredChunkSize (Engine.Settings.MaximumUploadRate, Settings.MaximumUploadRate));
+                DownloadLimiter.UpdateChunks (Settings.MaximumDownloadRate);
+                UploadLimiter.UpdateChunks (Settings.MaximumUploadRate);
             }
         }
         #endregion Internal Methods

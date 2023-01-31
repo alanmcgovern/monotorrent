@@ -126,24 +126,6 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task ReceiveData_RateLimited ()
-        {
-            // Allow 1 megabyte worth of data
-            var oneMegabyte = 1 * 1024 * 1024;
-            var limiter = new RateLimiter ();
-            limiter.UpdateChunks (oneMegabyte, oneMegabyte, NetworkIO.ChunkLength);
-
-            using var r1 = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> sendBuffer);
-            using var r2 = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> receiveBuffer);
-
-            await Outgoing.SendAsync (sendBuffer);
-            await NetworkIO.ReceiveAsync (Incoming, receiveBuffer, limiter, null, null);
-
-            var expectedChunks = (int) Math.Ceiling (oneMegabyte / (double) NetworkIO.ChunkLength);
-            Assert.AreEqual (expectedChunks, Incoming.Receives.Count, "#1");
-        }
-
-        [Test]
         public async Task ReceiveData_Unlimited ()
         {
             var oneMegabyte = 1 * 1024 * 1024;
@@ -229,21 +211,6 @@ namespace MonoTorrent.Client
         public async Task SendData ()
         {
             await DoSend (false, false);
-        }
-
-        [Test]
-        public async Task SendData_RateLimited ()
-        {
-            // Allow 1 megabyte worth of data
-            var oneMegabyte = 1 * 1024 * 1024;
-            var limiter = new RateLimiter ();
-            limiter.UpdateChunks (oneMegabyte, oneMegabyte, NetworkIO.ChunkLength);
-
-            using var releaser = MemoryPool.Default.Rent (oneMegabyte, out Memory<byte> buffer);
-            await NetworkIO.SendAsync (Incoming, buffer, limiter, null, null);
-
-            var expectedChunks = (int) Math.Ceiling (oneMegabyte / (double) NetworkIO.ChunkLength);
-            Assert.AreEqual (expectedChunks, Incoming.Sends.Count, "#1");
         }
 
         [Test]

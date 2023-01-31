@@ -129,15 +129,14 @@ namespace MonoTorrent.Client
             while (buffer.Length > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
-                int shouldRead = unlimited || !rateLimiter!.PreferredChunkSize.HasValue ? buffer.Length : Math.Min (rateLimiter.PreferredChunkSize.Value, buffer.Length);
 
-                if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
+                if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (buffer.Length)) {
                     var tcs = new ReusableTaskCompletionSource<int> ();
                     lock (receiveQueue)
                         receiveQueue.Enqueue (new QueuedIO (connection, buffer, rateLimiter, tcs));
                     transferred = await tcs.Task.ConfigureAwait (false);
                 } else {
-                    transferred = await connection.ReceiveAsync (buffer.Slice (0, shouldRead)).ConfigureAwait (false);
+                    transferred = await connection.ReceiveAsync (buffer).ConfigureAwait (false);
                 }
 
                 if (transferred == 0)
@@ -162,15 +161,14 @@ namespace MonoTorrent.Client
             while (buffer.Length > 0) {
                 int transferred;
                 bool unlimited = rateLimiter?.Unlimited ?? true;
-                int shouldRead = unlimited || !rateLimiter!.PreferredChunkSize.HasValue ? buffer.Length : Math.Min (rateLimiter.PreferredChunkSize.Value, buffer.Length);
 
-                if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (shouldRead)) {
+                if (rateLimiter != null && !unlimited && !rateLimiter.TryProcess (buffer.Length)) {
                     var tcs = new ReusableTaskCompletionSource<int> ();
                     lock (sendQueue)
-                        sendQueue.Enqueue (new QueuedIO (connection, buffer.Slice (0, shouldRead), rateLimiter, tcs));
+                        sendQueue.Enqueue (new QueuedIO (connection, buffer, rateLimiter, tcs));
                     transferred = await tcs.Task.ConfigureAwait (false);
                 } else {
-                    transferred = await connection.SendAsync (buffer.Slice (0, shouldRead)).ConfigureAwait (false);
+                    transferred = await connection.SendAsync (buffer).ConfigureAwait (false);
                 }
 
                 if (transferred == 0)

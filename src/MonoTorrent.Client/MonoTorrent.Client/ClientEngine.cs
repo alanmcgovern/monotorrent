@@ -773,37 +773,13 @@ namespace MonoTorrent.Client
 
         #region Private/Internal methods
 
-
-        internal static int? PreferredChunkSize (int maxSpeedEngine, int maxSpeedTorrent)
-        {
-            // Unlimited
-            if (maxSpeedEngine == 0 && maxSpeedTorrent == 0)
-                return null;
-
-            int maxSpeed;
-            if (maxSpeedEngine != 0 && maxSpeedTorrent != 0)
-                maxSpeed = Math.Min (maxSpeedEngine, maxSpeedTorrent);
-            else
-                maxSpeed = Math.Max (maxSpeedEngine, maxSpeedTorrent);
-
-            // The max we transmit for a single socket call is 16kB as that is the size of a
-            // single block. If the transfer rate is unlimited, or we can transfer greater
-            // than 256kB/sec then continue using 'unlimited' sized chunks. Otherwise restrict
-            // individual calls to 4kB to try and keep things reasonably evenly distributed.
-            if (maxSpeed == 0 || maxSpeed > 16 * 16 * 1024)
-                return null;
-
-            // If the limit is below 256 kB/sec then we can communicate in 4kB chunks
-            return 4096 + 32;
-        }
-
         void LogicTick ()
         {
             tickCount++;
 
             if (tickCount % 2 == 0) {
-                downloadLimiter.UpdateChunks (Settings.MaximumDownloadRate, TotalDownloadRate, PreferredChunkSize (Settings.MaximumDownloadRate, 0));
-                uploadLimiter.UpdateChunks (Settings.MaximumUploadRate, TotalUploadRate, PreferredChunkSize (Settings.MaximumUploadRate, 0));
+                downloadLimiter.UpdateChunks (Settings.MaximumDownloadRate);
+                uploadLimiter.UpdateChunks (Settings.MaximumUploadRate);
             }
 
             ConnectionManager.CancelPendingConnects ();
