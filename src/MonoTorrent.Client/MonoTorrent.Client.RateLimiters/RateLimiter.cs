@@ -79,7 +79,7 @@ namespace MonoTorrent.Client.RateLimiters
             long c;
             do {
                 c = Interlocked.Read (ref chunks);
-                if (c < amount)
+                if (c < 0)
                     return false;
 
             } while (Interlocked.CompareExchange (ref chunks, c - amount, c) != c);
