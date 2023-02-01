@@ -226,7 +226,7 @@ namespace MonoTorrent.Client.Modes
                     // match we should close the connection. I *think* uTorrent doesn't randomise peerids
                     // for private torrents. It's not documented very well. We may need to relax this check
                     // if other clients randomize for private torrents.
-                    logger.Info (id.Connection, "HandShake.Handle - Invalid peerid");
+                    logger.InfoFormatted (id.Connection, "HandShake.Handle - Invalid peerid. Expected '{0}' but received '{1}'", id.Peer.Info.PeerId, message.PeerId);
                     throw new TorrentException ("Supplied PeerID didn't match the one the tracker gave us");
                 } else {
                     // We don't care about the mismatch for public torrents. uTorrent randomizes its PeerId, as do other clients.
