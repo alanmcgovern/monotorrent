@@ -24,6 +24,7 @@ This is a list of all the BEPs which have been implemented in MonoTorrent. A ful
 
 * BEP 5  - [DHT Protocol](http://www.bittorrent.org/beps/bep_0005.html)
 * BEP 6  - [Fast Extension](http://www.bittorrent.org/beps/bep_0006.html)
+* BEP 7  - [IPv6 Tracker Extension](http://www.bittorrent.org/beps/bep_0007.html)
 * BEP 9  - [Extension for Peers to Send Metadata Files](http://www.bittorrent.org/beps/bep_0009.html)
 * BEP 10 - [Extension Protocol](http://www.bittorrent.org/beps/bep_0010.html)
 * BEP 11 - [Peer Exchange (PEX)](http://www.bittorrent.org/beps/bep_0011.html)
