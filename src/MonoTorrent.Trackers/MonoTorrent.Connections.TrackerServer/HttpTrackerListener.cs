@@ -32,16 +32,15 @@ using System.Net;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Connections.TrackerServer
 {
     public class HttpTrackerListener : TrackerListener
     {
+        static readonly Logger logger = Logger.Create (nameof (HttpTrackerListener));
+
         CancellationTokenSource Cancellation { get; set; }
-
-        public bool IncompleteAnnounce { get; set; }
-
-        public bool IncompleteScrape { get; set; }
 
         string Prefix { get; }
 
@@ -94,31 +93,46 @@ namespace MonoTorrent.Connections.TrackerServer
         async void GetContextAsync (HttpListener listener, CancellationToken token)
         {
             while (!token.IsCancellationRequested) {
+                HttpListenerContext context;
                 try {
-                    HttpListenerContext context = await listener.GetContextAsync ().ConfigureAwait (false);
-                    ProcessContextAsync (context, token);
-                } catch {
+                    context = await listener.GetContextAsync ().ConfigureAwait (false);
+                } catch (Exception ex) {
+                    logger.Exception (ex, "Error accepting request from client");
+                    continue;
                 }
+                ProcessContextAsync (context, token);
             }
         }
 
-        async void ProcessContextAsync (HttpListenerContext context, CancellationToken token)
+        protected virtual async void ProcessContextAsync (HttpListenerContext context, CancellationToken token)
         {
-            using (context.Response) {
-                bool isScrape = context.Request.RawUrl!.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
+            int statusCode;
+            byte[] response;
+            bool isScrape = context.Request.RawUrl!.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
 
-                if (IncompleteAnnounce || IncompleteScrape) {
-                    await context.Response.OutputStream.WriteAsync (new byte[1024], 0, 1024, token);
-                    return;
+            using (context.Response) {
+                try {
+                    var responseData = Handle (context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
+                    response = responseData.Encode ();
+                    statusCode = (int) HttpStatusCode.OK;
+                } catch (Exception ex) {
+                    response = Array.Empty<byte> ();
+                    statusCode = (int) HttpStatusCode.InternalServerError;
+                    if (isScrape)
+                        logger.Exception (ex, "Error processing scrape from peer");
+                    else
+                        logger.Exception (ex, "Error processing announce from peer");
                 }
 
-                BEncodedValue responseData = Handle (context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
-
-                byte[] response = responseData.Encode ();
-                context.Response.ContentType = "text/plain";
-                context.Response.StatusCode = 200;
-                context.Response.ContentLength64 = response.LongLength;
-                await context.Response.OutputStream.WriteAsync (response, 0, response.Length, token);
+                try {
+                    context.Response.StatusCode = statusCode;
+                    context.Response.ContentLength64 = response.LongLength;
+                    if (response.Length > 0)
+                        context.Response.ContentType = "text/plain";
+                    await context.Response.OutputStream.WriteAsync (response, 0, response.Length, token);
+                } catch (Exception ex) {
+                    logger.Exception (ex, "Error sending response back to the client");
+                }
             }
         }
     }
