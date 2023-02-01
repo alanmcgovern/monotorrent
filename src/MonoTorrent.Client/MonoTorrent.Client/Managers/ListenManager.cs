@@ -145,6 +145,9 @@ namespace MonoTorrent.Client
 
             var peer = new Peer (peerInfo, man.InfoHashes.Expand (message.InfoHash));
             peer.UpdatePeerId (message.PeerId);
+
+            logger.InfoFormatted (connection, "[incoming] Received handshake with peer_id '{0}'", message.PeerId);
+
             var id = new PeerId (peer, connection, new BitField (man.Bitfield.Length).SetAll (false)) {
                 Decryptor = decryptor,
                 Encryptor = encryptor

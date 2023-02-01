@@ -199,6 +199,8 @@ namespace MonoTorrent.Client
             try {
                 // Create a handshake message to send to the peer
                 var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100);
+                logger.InfoFormatted (id.Connection, "[outgoing] Sending handshake message with peer id '{0}'", LocalPeerId);
+
                 var preferredEncryption = EncryptionTypes.GetPreferredEncryption (id.Peer.AllowedEncryption, Settings.AllowedEncryption);
                 if (preferredEncryption.Count == 0)
                     throw new NotSupportedException ("The peer and the engine do not agree on any encryption methods");
@@ -226,6 +228,7 @@ namespace MonoTorrent.Client
             try {
                 // Receive their handshake
                 HandshakeMessage handshake = await PeerIO.ReceiveHandshakeAsync (id.Connection, id.Decryptor);
+                logger.InfoFormatted (id.Connection, "[outgoing] Received handshake message with peer id '{0}'", handshake.PeerId);
                 manager.Mode.HandleMessage (id, handshake, default);
             } catch {
                 // If we choose plaintext and it resulted in the connection being closed, remove it from the list.
