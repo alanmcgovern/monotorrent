@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -49,10 +50,34 @@ namespace MonoTorrent.TrackerServer
     [TestFixture]
     public class HttpTrackerTests
     {
+        class CustomHttpTrackerListener: HttpTrackerListener
+        {
+
+            public bool IncompleteAnnounce { get; set; }
+
+            public bool IncompleteScrape { get; set; }
+
+            public CustomHttpTrackerListener (string prefix)
+                : base (prefix)
+            {
+
+            }
+
+            protected override async void ProcessContextAsync (HttpListenerContext context, CancellationToken token)
+            {
+                if (IncompleteAnnounce || IncompleteScrape) {
+                    using (context.Response)
+                        await context.Response.OutputStream.WriteAsync (new byte[1024], 0, 1024, token);
+                } else {
+                    base.ProcessContextAsync (context, token);
+                }
+            }
+        }
+
         MonoTorrent.Trackers.AnnounceRequest announceParams;
         MonoTorrent.Trackers.ScrapeRequest scrapeParams;
         TrackerServer server;
-        HttpTrackerListener listener;
+        CustomHttpTrackerListener listener;
         string ListeningPrefix => "http://127.0.0.1:47124/";
         Uri AnnounceUrl => new Uri ($"{ListeningPrefix}announce");
         HttpTrackerConnection trackerConnection;
@@ -71,7 +96,7 @@ namespace MonoTorrent.TrackerServer
         {
             peerId = new BEncodedString (Enumerable.Repeat ((byte) 254, 20).ToArray ());
             trackerId = Enumerable.Repeat ((byte) 255, 20).ToArray ();
-            listener = new HttpTrackerListener (ListeningPrefix);
+            listener = new CustomHttpTrackerListener (ListeningPrefix);
             listener.AnnounceReceived += delegate (object o, AnnounceRequest e) {
                 keys.Add (e.Key);
                 announcedInfoHashes.Add (e.InfoHash);
