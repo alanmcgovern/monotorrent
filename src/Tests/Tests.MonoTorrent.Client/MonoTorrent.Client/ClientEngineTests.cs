@@ -462,6 +462,9 @@ namespace MonoTorrent.Client
                 Assert.IsTrue (File.Exists (rig.Manager.Files[0].FullPath));
                 Assert.IsTrue (rig.Manager.Files[0].BitField.AllTrue);
 
+                // Files can be moved after they have been created.
+                await rig.Manager.MoveFileAsync (rig.Manager.Files[0], rig.Manager.Files[0].FullPath + "new_path");
+
                 await rig.Manager.StopAsync ();
                 Assert.IsTrue (stoppedState.Wait (5000), "Stopped");
                 File.Delete (rig.Manager.Files[0].FullPath);
