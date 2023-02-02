@@ -34,7 +34,17 @@ namespace MonoTorrent.Connections.Peer
 {
     public interface IPeerConnectionListener : IListener
     {
+        /// <summary>
+        /// The EndPoint to which the Listener is bound.
+        /// </summary>
         IPEndPoint? LocalEndPoint { get; }
+
+        /// <summary>
+        /// The EndPoint to which the Listener will attempt to be bound. If the preferred endpoint has it's port set to 0, then
+        /// the actual port the listener is bound to will be set in the <see cref="LocalEndPoint"/> property after <see cref="IListener.Start"/>
+        /// has been invoked.
+        /// </summary>
+        IPEndPoint PreferredLocalEndPoint { get; }
 
         event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
     }

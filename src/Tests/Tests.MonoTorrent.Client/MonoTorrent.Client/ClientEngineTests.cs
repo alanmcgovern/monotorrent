@@ -29,9 +29,13 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+
+using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 
 using NUnit.Framework;
 
@@ -323,6 +327,51 @@ namespace MonoTorrent.Client
             using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
             var first = engine.DownloadMetadataAsync (link, CancellationToken.None);
             Assert.ThrowsAsync<TorrentException> (() => engine.DownloadMetadataAsync (link, CancellationToken.None));
+        }
+
+        class FakeListener : IPeerConnectionListener
+        {
+            public IPEndPoint LocalEndPoint { get; set; }
+            public IPEndPoint PreferredLocalEndPoint { get; set; }
+            public ListenerStatus Status { get; }
+
+            public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
+            public event EventHandler<EventArgs> StatusChanged;
+
+            public FakeListener (int port)
+                => (PreferredLocalEndPoint) = (new IPEndPoint (IPAddress.Any, port));
+
+            public void Start ()
+            {
+            }
+
+            public void Stop ()
+            {
+            }
+        }
+
+        [Test]
+        public void GetPortFromListener_ipv4 ()
+        {
+            var listener = new FakeListener (0);
+            var settingsBuilder = new EngineSettingsBuilder { ListenEndPoints = new System.Collections.Generic.Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, 0) } } };
+            var engine = new ClientEngine (settingsBuilder.ToSettings (), Factories.Default.WithPeerConnectionListenerCreator (t => listener));
+            Assert.AreSame (engine.PeerListeners.Single (), listener);
+
+            // a port of zero isn't an actual listen port. The listener is not bound.
+            listener.LocalEndPoint = null;
+            listener.PreferredLocalEndPoint = new IPEndPoint (IPAddress.Any, 0);
+            Assert.AreEqual (null, engine.GetOverrideOrActualListenPort ("ipv4"));
+
+            // The listener is unbound, but it should eventually bind to 1221
+            listener.LocalEndPoint = null;
+            listener.PreferredLocalEndPoint = new IPEndPoint (IPAddress.Any, 1221);
+            Assert.AreEqual (1221, engine.GetOverrideOrActualListenPort ("ipv4"));
+
+            // The bound port is 1423, the preferred is zero
+            listener.LocalEndPoint = new IPEndPoint (IPAddress.Any, 1425);
+            listener.PreferredLocalEndPoint = new IPEndPoint (IPAddress.Any, 0);
+            Assert.AreEqual (1425, engine.GetOverrideOrActualListenPort ("ipv4"));
         }
 
         [Test]

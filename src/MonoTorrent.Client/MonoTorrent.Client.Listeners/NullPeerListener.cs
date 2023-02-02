@@ -42,6 +42,7 @@ namespace MonoTorrent.Client.Listeners
         public event EventHandler<EventArgs>? StatusChanged;
 #pragma warning restore 0067
 
+        public IPEndPoint PreferredLocalEndPoint { get; } = new IPEndPoint (IPAddress.None, 0);
         public IPEndPoint? LocalEndPoint => null;
 
         public ListenerStatus Status => ListenerStatus.NotListening;

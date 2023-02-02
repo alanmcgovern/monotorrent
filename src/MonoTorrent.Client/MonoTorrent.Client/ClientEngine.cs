@@ -1013,15 +1013,28 @@ namespace MonoTorrent.Client
         internal int? GetOverrideOrActualListenPort (string scheme)
         {
             // If the override is set to non-zero, use it. Otherwise use the actual port.
-            if (Settings.ReportedListenEndPoints.TryGetValue(scheme, out var endPoint) && endPoint.Port != 0)
-                return endPoint.Port;
+            if (Settings.ReportedListenEndPoints.TryGetValue (scheme, out var reportedEndPoint) && reportedEndPoint.Port != 0)
+                return reportedEndPoint.Port;
 
-            foreach (var listener in PeerListeners) {
-                if (scheme == "ipv4" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork)
-                    return listener.LocalEndPoint.Port;
-                if (scheme == "ipv6" && listener.LocalEndPoint != null && listener.LocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
-                    return listener.LocalEndPoint.Port;
+            // Try to get the actual port first.
+            foreach (var endPoint in PeerListeners.Select (t => t.LocalEndPoint!).Where (t => t != null)) {
+                if (scheme == "ipv4" && endPoint.AddressFamily == AddressFamily.InterNetwork)
+                    return endPoint.Port;
+                if (scheme == "ipv6" && endPoint.AddressFamily == AddressFamily.InterNetworkV6)
+                    return endPoint.Port;
             }
+
+            // If there was a listener but it hadn't successfully bound to a port, return the preferred port port... if it's non-zero.
+            foreach (var endPoint in PeerListeners.Select (t => t.PreferredLocalEndPoint!).Where (t => t != null)) {
+                if (scheme == "ipv4" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetwork)
+                    return endPoint.Port;
+                if (scheme == "ipv6" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetworkV6)
+                    return endPoint.Port;
+            }
+
+            // If we get here there are either no listeners, or none were bound to a local port, or the preferred port is set to '0' (which means
+            // we don't know it's port yet because the listener isn't running. This *should* never happen as we should only be running announces
+            // while the engine is active, which means the listener should still be running.)
             return null;
         }
     }
