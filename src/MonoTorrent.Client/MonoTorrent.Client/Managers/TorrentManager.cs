@@ -598,9 +598,6 @@ namespace MonoTorrent.Client
             CheckRegisteredAndDisposed ();
             CheckMetadata ();
 
-            if (State != TorrentState.Stopped)
-                throw new TorrentException ("Cannot move files when the torrent is active");
-
             try {
                 var paths = TorrentFileInfo.GetNewPaths (Path.GetFullPath (path), Engine!.Settings.UsePartialFiles, file.Path == file.DownloadCompleteFullPath);
                 await Engine!.DiskManager.MoveFileAsync (file, paths);
