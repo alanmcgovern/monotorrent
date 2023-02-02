@@ -75,6 +75,10 @@ namespace MonoTorrent.Trackers
             ipv4scrapedInfoHashes = new List<InfoHash> ();
             ipv6scrapedInfoHashes = new List<InfoHash> ();
 
+            var uri = new Uri ($"http://localhost:123/announce");
+            ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetworkV6);
+
             server = new MonoTorrent.TrackerServer.TrackerServer ();
             server.AllowUnregisteredTorrents = true;
 
@@ -255,40 +259,51 @@ namespace MonoTorrent.Trackers
                 CollectionAssert.Contains (peersFromAnnounce, peer);
         }
 
+        int preferredPort = 54399;
         ITrackerListener AddListener (AddressFamily addressFamily)
         {
-            int preferredPort = 54399;
+            HttpTrackerListener listener = null;
 
-            HttpTrackerListener listener;
-            if (addressFamily == AddressFamily.InterNetwork) {
-                listener = new HttpTrackerListener (new IPEndPoint (IPAddress.Loopback, preferredPort));
-                listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
-                    ipv4keys.Add (e.Key);
-                    ipv4announcedInfoHashes.Add (e.InfoHash);
-                };
-                listener.ScrapeReceived += (o, e) => {
-                    ipv4scrapedInfoHashes.AddRange (e.InfoHashes);
-                };
-            } else if (addressFamily == AddressFamily.InterNetworkV6) {
-                listener = new HttpTrackerListener (new IPEndPoint (IPAddress.IPv6Loopback, preferredPort));
-                listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
-                    ipv6keys.Add (e.Key);
-                    ipv6announcedInfoHashes.Add (e.InfoHash);
-                };
-                listener.ScrapeReceived += (o, e) => {
-                    ipv6scrapedInfoHashes.AddRange (e.InfoHashes);
-                };
-            } else {
-                throw new NotSupportedException ();
+            // Try to work around port-in-use issues in CI. Urgh. This is awful :P 
+            for (int i = 0; i < 10; i++) {
+                preferredPort++;
+
+                if (addressFamily == AddressFamily.InterNetwork) {
+                    listener = new HttpTrackerListener (new IPEndPoint (IPAddress.Loopback, preferredPort));
+                    listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
+                        ipv4keys.Add (e.Key);
+                        ipv4announcedInfoHashes.Add (e.InfoHash);
+                    };
+                    listener.ScrapeReceived += (o, e) => {
+                        ipv4scrapedInfoHashes.AddRange (e.InfoHashes);
+                    };
+                } else if (addressFamily == AddressFamily.InterNetworkV6) {
+                    listener = new HttpTrackerListener (new IPEndPoint (IPAddress.IPv6Loopback, preferredPort));
+                    listener.AnnounceReceived += delegate (object o, MonoTorrent.TrackerServer.AnnounceRequest e) {
+                        ipv6keys.Add (e.Key);
+                        ipv6announcedInfoHashes.Add (e.InfoHash);
+                    };
+                    listener.ScrapeReceived += (o, e) => {
+                        ipv6scrapedInfoHashes.AddRange (e.InfoHashes);
+                    };
+                } else {
+                    throw new NotSupportedException ();
+                }
+                try {
+                    listener.Start ();
+                } catch {
+                    continue;
+                }
+                server.RegisterListener (listener);
+                listeners.Add (listener);
+                break;
             }
 
-            server.RegisterListener (listener);
-            listener.Start ();
-            listeners.Add (listener);
-
             var uri = new Uri ($"http://localhost:{preferredPort}/announce");
-            ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
-            ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetworkV6);
+            if (addressFamily == AddressFamily.InterNetwork)
+                ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            if (addressFamily == AddressFamily.InterNetworkV6)
+                ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetworkV6);
 
             return listener;
         }
