@@ -249,6 +249,7 @@ namespace MonoTorrent.Client
         public event EventHandler<EventArgs> StatusChanged;
 
         public IPEndPoint LocalEndPoint => null;
+        public IPEndPoint PreferredLocalEndPoint { get; } = new IPEndPoint (IPAddress.None, 0);
 
         public ListenerStatus Status { get; private set; }
 

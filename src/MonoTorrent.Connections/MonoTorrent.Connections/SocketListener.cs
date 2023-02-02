@@ -36,11 +36,11 @@ namespace MonoTorrent.Connections
     {
         public IPEndPoint? LocalEndPoint { get; protected set; }
 
-        protected IPEndPoint OriginalEndPoint { get; set; }
+        public IPEndPoint PreferredLocalEndPoint { get; set; }
 
         protected SocketListener (IPEndPoint endPoint)
         {
-            OriginalEndPoint = endPoint;
+            PreferredLocalEndPoint = endPoint;
         }
 
         protected override void Start (CancellationToken token)

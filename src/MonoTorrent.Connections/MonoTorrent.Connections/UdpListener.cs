@@ -59,7 +59,7 @@ namespace MonoTorrent.Connections
         {
             base.Start (token);
 
-            UdpClient client = Client = new UdpClient (OriginalEndPoint);
+            UdpClient client = Client = new UdpClient (PreferredLocalEndPoint);
             LocalEndPoint = (IPEndPoint?) client.Client.LocalEndPoint;
             token.Register (() => {
                 client.Dispose ();
