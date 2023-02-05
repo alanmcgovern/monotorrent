@@ -75,6 +75,15 @@ namespace MonoTorrent.Client
         public int MaximumUploadRate { get; }
 
         /// <summary>
+        /// The BitTorrent specification requires that clients which initiate an outgoing connection to
+        /// a remote peer must close that connection if the remote peer reports a different 'peer_id' than
+        /// it previously reported to the tracker. Several prominant BitTorrent clients/libraries, such as
+        /// libtorrent, randomise their peer id. Additionally, if the announce request requests a compact
+        /// response, the peer id will not be known anyway. Defaults to <see langword="false"/>.
+        /// </summary>
+        public bool RequirePeerIdToMatch { get; }
+
+        /// <summary>
         /// The number of peers which can be uploaded to concurrently for this torrent. A value of 0 means unlimited. defaults to 8.
         /// </summary>
         public int UploadSlots { get; } = 8;
@@ -102,7 +111,7 @@ namespace MonoTorrent.Client
 
         }
 
-        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadRate, int maximumUploadRate, int uploadSlots, bool createContainingDirectory)
+        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadRate, int maximumUploadRate, int uploadSlots, bool createContainingDirectory, bool requirePeerIdToMatch)
         {
             AllowDht = allowDht;
             AllowInitialSeeding = allowInitialSeeding;
@@ -111,6 +120,7 @@ namespace MonoTorrent.Client
             MaximumConnections = maximumConnections;
             MaximumDownloadRate = maximumDownloadRate;
             MaximumUploadRate = maximumUploadRate;
+            RequirePeerIdToMatch = requirePeerIdToMatch;
             UploadSlots = uploadSlots;
         }
 
@@ -127,6 +137,7 @@ namespace MonoTorrent.Client
                 && MaximumConnections == other.MaximumConnections
                 && MaximumDownloadRate == other.MaximumDownloadRate
                 && MaximumUploadRate == other.MaximumUploadRate
+                && RequirePeerIdToMatch == other.RequirePeerIdToMatch
                 && UploadSlots == other.UploadSlots;
         }
 
