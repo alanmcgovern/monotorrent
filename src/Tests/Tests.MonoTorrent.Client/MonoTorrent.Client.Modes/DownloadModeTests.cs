@@ -311,17 +311,38 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
-        public async Task MismatchedPeerId_PrivateTorrent ()
+        public async Task MismatchedPeerId_RequiredToMatch ()
         {
             var torrent = TestRig.CreatePrivate ();
             using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
-            var manager = await engine.AddAsync (torrent, "");
+
+            var settings = new TorrentSettingsBuilder {
+                RequirePeerIdToMatch = true,
+            }.ToSettings ();
+            var manager = await engine.AddAsync (torrent, "", settings);
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
             var peer = PeerId.CreateNull (manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
             var handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2, new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ()), Constants.ProtocolStringV100, false);
 
             Assert.Throws<TorrentException> (() => manager.Mode.HandleMessage (peer, handshake, default));
+        }
+
+        [Test]
+        public async Task MismatchedPeerId_PrivateTorrent ()
+        {
+            var torrent = TestRig.CreatePrivate ();
+            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            Manager = await engine.AddAsync (torrent, "");
+
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            var peer = PeerId.CreateNull (Manager.Bitfield.Length, Manager.InfoHashes.V1OrV2);
+
+            var actualPeerId = new BEncodedString (Enumerable.Repeat ('c', 20).ToArray ());
+            var handshake = new HandshakeMessage (Manager.InfoHashes.V1OrV2, actualPeerId, Constants.ProtocolStringV100, false);
+
+            Assert.DoesNotThrow (() => Manager.Mode.HandleMessage (peer, handshake, default));
+            Assert.AreEqual (peer.PeerID, handshake.PeerId);
         }
 
         [Test]

@@ -221,11 +221,11 @@ namespace MonoTorrent.Client.Modes
 
             // If the peer id's don't match, dump the connection. This is due to peers faking usually
             if (!id.Peer.Info.PeerId.Equals (message.PeerId)) {
-                if (Manager.HasMetadata && Manager.Torrent!.IsPrivate) {
-                    // If this is a private torrent we should be careful about peerids. If they don't
-                    // match we should close the connection. I *think* uTorrent doesn't randomise peerids
-                    // for private torrents. It's not documented very well. We may need to relax this check
-                    // if other clients randomize for private torrents.
+                if (Manager.Settings.RequirePeerIdToMatch) {
+                    // Several prominent clients randomise peer ids (at the least, everything based on libtorrent)
+                    // so closing connections when the peer id does not match risks blocking compatibility with many
+                    // clients. Additionally, MonoTorrent has long been configured to default to compact tracker responses
+                    // so the odds of having the peer ID are slim.
                     logger.InfoFormatted (id.Connection, "HandShake.Handle - Invalid peerid. Expected '{0}' but received '{1}'", id.Peer.Info.PeerId, message.PeerId);
                     throw new TorrentException ("Supplied PeerID didn't match the one the tracker gave us");
                 } else {

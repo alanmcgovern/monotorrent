@@ -89,6 +89,15 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
+        /// The BitTorrent specification requires that clients which initiate an outgoing connection to
+        /// a remote peer must close that connection if the remote peer reports a different 'peer_id' than
+        /// it previously reported to the tracker. Several prominant BitTorrent clients/libraries, such as
+        /// libtorrent, randomise their peer id. Additionally, if the announce request requests a compact
+        /// response, the peer id will not be known anyway. Defaults to <see langword="false"/>.
+        /// </summary>
+        public bool RequirePeerIdToMatch { get; set; }
+
+        /// <summary>
         /// The number of peers which can be uploaded to concurrently for this torrent. A value of 0 means unlimited. defaults to 8.
         /// </summary>
         public int UploadSlots {
@@ -111,6 +120,7 @@ namespace MonoTorrent.Client
             MaximumConnections = settings.MaximumConnections;
             MaximumDownloadRate = settings.MaximumDownloadRate;
             MaximumUploadRate = settings.MaximumUploadRate;
+            RequirePeerIdToMatch = settings.RequirePeerIdToMatch;
             UploadSlots = settings.UploadSlots;
         }
 
@@ -124,6 +134,7 @@ namespace MonoTorrent.Client
                 maximumConnections: MaximumConnections,
                 maximumDownloadRate: MaximumDownloadRate,
                 maximumUploadRate: MaximumUploadRate,
+                requirePeerIdToMatch: RequirePeerIdToMatch,
                 uploadSlots: UploadSlots
             );
         }
