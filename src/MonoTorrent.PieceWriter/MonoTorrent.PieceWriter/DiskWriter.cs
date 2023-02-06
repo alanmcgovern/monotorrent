@@ -266,7 +266,7 @@ namespace MonoTorrent.PieceWriter
 
         async void AsyncDispose(StreamData streamData)
         {
-            using (await streamData.Locker.EnterAsync ())
+            using (await streamData.Locker.EnterAsync ().ConfigureAwait (false))
                 streamData.Stream?.Dispose ();
         }
     }
