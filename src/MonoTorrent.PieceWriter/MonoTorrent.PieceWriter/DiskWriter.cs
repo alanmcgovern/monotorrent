@@ -246,19 +246,23 @@ namespace MonoTorrent.PieceWriter
             while (MaximumOpenFiles != 0 && OpenFiles > MaximumOpenFiles) {
                 AllStreams? oldestAllStreams = null;
                 StreamData? oldestStream = null;
+                ITorrentManagerFile? oldestKey = null;
 
-                foreach (var allStream in Streams.Values) {
-                    foreach (var stream in allStream.Streams) {
+                foreach (var keypair in Streams) {
+                    foreach (var stream in keypair.Value.Streams) {
                         if (oldestStream == null || oldestStream.LastUsedStamp > stream.LastUsedStamp) {
                             oldestStream = stream;
-                            oldestAllStreams = allStream;
+                            oldestKey = keypair.Key;
+                            oldestAllStreams = keypair.Value;
                         }
                     }
                 }
 
-                if (oldestAllStreams != null && oldestStream != null) {
+                if (oldestAllStreams != null && oldestStream != null && oldestKey != null) {
                     OpenFiles--;
                     oldestAllStreams.Streams.Remove (oldestStream);
+                    if (oldestAllStreams.Streams.Count == 0)
+                        Streams.Remove (oldestKey);
                     AsyncDispose (oldestStream);
                 }
             }
@@ -266,7 +270,7 @@ namespace MonoTorrent.PieceWriter
 
         async void AsyncDispose(StreamData streamData)
         {
-            using (await streamData.Locker.EnterAsync ())
+            using (await streamData.Locker.EnterAsync ().ConfigureAwait (false))
                 streamData.Stream?.Dispose ();
         }
     }

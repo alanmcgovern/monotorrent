@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.PieceWriter;
@@ -71,7 +72,7 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
+        public virtual ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
             return ReusableTask.FromResult (0);
         }
@@ -81,7 +82,7 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
-        public ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
+        public virtual ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
         {
             return ReusableTask.CompletedTask;
         }
@@ -435,6 +436,66 @@ namespace MonoTorrent.Client
             await manager.MoveFilesAsync (new[] { file }, tmp.Path, true);
             Assert.AreEqual (Path.Combine (tmp.Path, file.Path), file.FullPath);
             Assert.IsTrue (File.Exists (file.FullPath));
+        }
+
+
+        class AsyncReader : TestPieceWriter
+        {
+            public override async ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
+            {
+                DiskManager.IOLoop.CheckThread ();
+                await new ThreadSwitcher ();
+                return buffer.Length;
+            }
+        }
+
+        [Test]
+        public void ReadIsThreadSafe ()
+        {
+            using var tmp = TempDir.Create ();
+            var fileData = new TestTorrentData {
+                TorrentInfo = new TestTorrentInfo {
+                    InfoHashes = this.fileData.InfoHashes,
+                    Name = "name",
+                    Size = 2 * 100,
+                    PieceLength = Constants.BlockSize * 2,
+                    Files = TorrentFileInfo.Create (Constants.BlockSize * 2, Enumerable.Repeat (2L, 100).ToArray ()).ToArray ()
+                }
+            };
+
+            using var writer = new AsyncReader ();
+            using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
+
+            Assert.DoesNotThrowAsync (() => manager.ReadAsync (fileData, new BlockInfo (0, 0, 200), new byte[200]).AsTask ());
+        }
+
+        class AsyncWriter : TestPieceWriter
+        {
+            public override async ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
+            {
+                DiskManager.IOLoop.CheckThread ();
+                await new ThreadSwitcher ();
+            }
+        }
+
+        [Test]
+        public void WriteIsThreadSafe ()
+        {
+            using var tmp = TempDir.Create ();
+            var fileData = new TestTorrentData {
+                TorrentInfo = new TestTorrentInfo {
+                    InfoHashes = this.fileData.InfoHashes,
+                    Name = "name",
+                    Size = 2 * 100,
+                    PieceLength = Constants.BlockSize * 2,
+                    Files = TorrentFileInfo.Create (Constants.BlockSize * 2, Enumerable.Repeat (2L, 100).ToArray ()).ToArray ()
+                }
+            };
+
+            using var writer = new AsyncWriter ();
+            using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
+
+            Assert.DoesNotThrowAsync(() => manager.WriteAsync (fileData, new BlockInfo (0, 0, 200), new byte[200]).AsTask ());
         }
 
         [Test]
