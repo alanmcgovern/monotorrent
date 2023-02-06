@@ -174,7 +174,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        static readonly MainLoop IOLoop = new MainLoop ("Disk IO");
+        static internal readonly MainLoop IOLoop = new MainLoop ("Disk IO");
 
         // These are fields so we can use threadsafe Interlocked operations to add/subtract.
         int pendingWriteBytes;
