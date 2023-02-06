@@ -88,7 +88,7 @@ namespace MonoTorrent.PieceWriter
         }
 
         [Test]
-        public async Task TruncateLargeFile_ThenRead ()
+        public async Task TruncateLargeFile_NotTruncatedWhenReading ()
         {
             Directory.CreateDirectory (Path.GetDirectoryName (TorrentFile.FullPath));
             using (var file = new FileStream (TorrentFile.FullPath, FileMode.OpenOrCreate))
@@ -97,6 +97,19 @@ namespace MonoTorrent.PieceWriter
             // This should implicitly truncate.
             using var writer = new DiskWriter ();
             await writer.ReadAsync (TorrentFile, 0, new byte[12]);
+            Assert.AreEqual (TorrentFile.Length + 1, new FileInfo (TorrentFile.FullPath).Length);
+        }
+
+        [Test]
+        public async Task TruncateLargeFile_TruncatedWhenWriting ()
+        {
+            Directory.CreateDirectory (Path.GetDirectoryName (TorrentFile.FullPath));
+            using (var file = new FileStream (TorrentFile.FullPath, FileMode.OpenOrCreate))
+                file.Write (new byte[TorrentFile.Length + 1]);
+
+            // This should implicitly truncate.
+            using var writer = new DiskWriter ();
+            await writer.WriteAsync (TorrentFile, 0, new byte[12]);
             Assert.AreEqual (TorrentFile.Length, new FileInfo (TorrentFile.FullPath).Length);
         }
 

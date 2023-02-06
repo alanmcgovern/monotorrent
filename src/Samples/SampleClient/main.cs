@@ -52,12 +52,12 @@ namespace ClientSample
 
                 // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
                 ListenEndPoints = new Dictionary<string, IPEndPoint> {
-                    { "ipv4", new IPEndPoint (IPAddress.Any, 55123) },
-                    { "ipv6", new IPEndPoint (IPAddress.IPv6Any, 55123) }
+                    { "ipv4", new IPEndPoint (IPAddress.Any, 55124) },
+                    { "ipv6", new IPEndPoint (IPAddress.IPv6Any, 55124) }
                 },
 
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
-                DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),
+                DhtEndPoint = null,//new IPEndPoint (IPAddress.Any, 55123),
 
 
                 // Wildcards such as these are supported as long as the underlying .NET framework version, and the operating system, supports them:

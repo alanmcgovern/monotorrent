@@ -35,6 +35,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
+using Microsoft.Win32.SafeHandles;
+
 using ReusableTasks;
 
 namespace MonoTorrent.PieceWriter
@@ -52,17 +54,33 @@ namespace MonoTorrent.PieceWriter
                 => obj.GetHashCode ();
         }
 
-        class AllStreams
+        class AllStreams : IDisposable
         {
             public ReusableSemaphore Locker = new ReusableSemaphore (1);
             public List<StreamData> Streams = new List<StreamData> ();
+
+#if NET6_0_OR_GREATER
+            public SafeFileHandle? ReadHandle { get; internal set; }
+            public SafeFileHandle? ReadWriteHandle { get; internal set; }
+#endif
+            public void Dispose ()
+            {
+#if NET6_0_OR_GREATER
+                ReadHandle?.Dispose ();
+                ReadWriteHandle?.Dispose ();
+#endif
+            }
         }
 
         class StreamData
         {
             public ReusableSemaphore Locker = new ReusableSemaphore (1);
             public long LastUsedStamp = Stopwatch.GetTimestamp ();
-            public IFileReaderWriter Stream;
+            public IFileReaderWriter? Stream;
+
+            public StreamData ()
+            {
+            }
 
             public StreamData (IFileReaderWriter stream)
                 => Stream = stream;
@@ -98,8 +116,12 @@ namespace MonoTorrent.PieceWriter
                 throw new ArgumentNullException (nameof (file));
 
             if (Streams.TryGetValue (file, out AllStreams? allStreams)) {
-                using (await allStreams.Locker.EnterAsync ())
+                    Streams.Remove (file);
+
+                using (await allStreams.Locker.EnterAsync ()) {
                     await CloseAllAsync (allStreams);
+                    allStreams.Dispose ();
+                }
             }
         }
 
@@ -107,7 +129,7 @@ namespace MonoTorrent.PieceWriter
         {
             foreach (var data in allStreams.Streams) {
                 using (await data.Locker.EnterAsync ()) {
-                    data.Stream.Dispose ();
+                    data.Stream?.Dispose ();
                     OpenFiles--;
                 }
             }
@@ -131,7 +153,8 @@ namespace MonoTorrent.PieceWriter
                 using var releaser = await allStreams.Locker.EnterAsync ();
                 foreach (var data in allStreams.Streams) {
                     using (await data.Locker.EnterAsync ()) {
-                        await data.Stream.FlushAsync ();
+                        if (!(data.Stream is null))
+                            await data.Stream.FlushAsync ();
                     }
                 }
             }
@@ -202,39 +225,77 @@ namespace MonoTorrent.PieceWriter
             if (!Streams.TryGetValue (file, out AllStreams? allStreams))
                 allStreams = Streams[file] = new AllStreams ();
 
-            using var releaser = await allStreams.Locker.EnterAsync ();
-            foreach (var existing in allStreams.Streams) {
-                if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
-                    if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream.CanWrite) {
-                        existing.LastUsedStamp = Stopwatch.GetTimestamp ();
-                        return (existing.Stream, r);
-                    } else {
-                        r.Dispose ();
+            StreamData data;
+            ReusableSemaphore.Releaser dataReleaser;
+            using (var releaser = await allStreams.Locker.EnterAsync ()) {
+                foreach (var existing in allStreams.Streams) {
+                    if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
+                        if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream!.CanWrite) {
+                            existing.LastUsedStamp = Stopwatch.GetTimestamp ();
+                            return (existing.Stream!, r);
+                        } else {
+                            r.Dispose ();
+                        }
                     }
                 }
+
+                // Create the stream data and acquire the lock immediately, so any async invocation of MaybeRemoveOldestStream can't kill the stream.
+                // The actual `Stream` object will be created later, after the lock is dropped.
+                data = new StreamData ();
+                dataReleaser = await data.Locker.EnterAsync ();
+
+                allStreams.Streams.Add (data);
+                OpenFiles++;
+                MaybeRemoveOldestStreams ();
             }
 
-            if (!File.Exists (file.FullPath)) {
-                if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
-                    Directory.CreateDirectory (parentDirectory);
-                NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
+            // The next few lines are disk IO heavy - so explictly transfer to a background thread for this!
+            await new ThreadSwitcher ();
+
+            // If multiple concurrent write requests are made to a file which does not yet exist on-disk,
+            // serialize access so the sparse file can be safely created before anything actually opens
+            // the file.
+            try {
+                lock (allStreams) {
+                    if (!File.Exists (file.FullPath)) {
+                        if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
+                            Directory.CreateDirectory (parentDirectory);
+                        NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
+                    } else if (access.HasFlag (FileAccess.Write)) {
+                        FileReaderWriterHelper.MaybeTruncate (file.FullPath, file.Length);
+                    }
+                }
+#if NET6_0_OR_GREATER
+                if (access == FileAccess.Read) {
+                    if (allStreams.ReadHandle is null)
+                        allStreams.ReadHandle = File.OpenHandle (file.FullPath, FileMode.OpenOrCreate, access, FileShare.ReadWrite, FileOptions.None);
+                    data.Stream = new RandomFileReaderWriter (allStreams.ReadHandle, file.Length, access);
+                }
+                else if (access == FileAccess.ReadWrite) {
+                    if (allStreams.ReadWriteHandle is null)
+                        allStreams.ReadWriteHandle = File.OpenHandle (file.FullPath, FileMode.OpenOrCreate, access, FileShare.ReadWrite, FileOptions.None);
+                    data.Stream = new RandomFileReaderWriter (allStreams.ReadWriteHandle, file.Length, access);
+                } else {
+                    throw new NotSupportedException ();
+                }
+#else
+                data.Stream = new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite);
+#endif
+                return (data.Stream, dataReleaser);
+            } catch {
+                using var safetyRelease = await allStreams.Locker.EnterAsync ();
+                allStreams.Streams.Remove (data);
+                dataReleaser.Dispose ();
+                throw;
             }
-
-            // Create the stream data and acquire the lock immediately, so any async invocation of MaybeRemoveOldestStream can't kill the stream. 
-            var data = new StreamData (new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite));
-            var dataReleaser = await data.Locker.EnterAsync ();
-            allStreams.Streams.Add (data);
-            OpenFiles++;
-
-            MaybeRemoveOldestStreams ();
-            return (data.Stream, dataReleaser);
         }
 
         public void Dispose ()
         {
             foreach (var stream in Streams.Values) {
                 foreach (var v in stream.Streams)
-                    v.Stream.Dispose ();
+                    v.Stream?.Dispose ();
+                stream.Dispose ();
             }
 
             Streams.Clear ();
@@ -261,17 +322,22 @@ namespace MonoTorrent.PieceWriter
                 if (oldestAllStreams != null && oldestStream != null && oldestKey != null) {
                     OpenFiles--;
                     oldestAllStreams.Streams.Remove (oldestStream);
-                    if (oldestAllStreams.Streams.Count == 0)
+                    if (oldestAllStreams.Streams.Count == 0) {
                         Streams.Remove (oldestKey);
-                    AsyncDispose (oldestStream);
+                        AsyncDispose (oldestStream, oldestAllStreams);
+                    } else {
+                        AsyncDispose (oldestStream, null);
+                    }
                 }
             }
         }
 
-        async void AsyncDispose(StreamData streamData)
+        async void AsyncDispose(StreamData streamData, AllStreams? allStreams)
         {
             using (await streamData.Locker.EnterAsync ().ConfigureAwait (false))
                 streamData.Stream?.Dispose ();
+
+            allStreams?.Dispose ();
         }
     }
 }
