@@ -183,7 +183,7 @@ namespace MonoTorrent.Client
         public int? ManualBytesSent { get; set; }
         public string Name => IsIncoming ? "Incoming" : "Outgoing";
         public bool SlowConnection { get; set; }
-        public Uri Uri => new Uri ("ipv4://127.0.0.1:1234");
+        public Uri Uri => new Uri ("tcp://127.0.0.1:1234");
 
         public List<int> Receives { get; } = new List<int> ();
         public List<int> Sends { get; } = new List<int> ();
@@ -368,7 +368,7 @@ namespace MonoTorrent.Client
             StringBuilder sb = new StringBuilder ();
             for (int i = 0; i < 20; i++)
                 sb.Append ((char) Random.Next ('a', 'z'));
-            Peer peer = new Peer (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{(port++)}"), sb.ToString ()), new InfoHash (new byte[20]));
+            Peer peer = new Peer (new PeerInfo (new Uri ($"tcp://127.0.0.1:{(port++)}"), sb.ToString ()), new InfoHash (new byte[20]));
             PeerId id = new PeerId (peer, NullConnection.Incoming, new BitField (Manager.Torrent.PieceCount ()).SetAll (false));
             id.SupportsFastPeer = supportsFastPeer;
             id.MessageQueue.SetReady ();
@@ -420,14 +420,14 @@ namespace MonoTorrent.Client
                 .WithDhtListenerCreator (port => new NullDhtListener ())
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
-                .WithTrackerCreator ("custom", uri => new Tracker (new CustomTrackerConnection (uri)))
+                .WithTrackerCreator (uri => uri.Scheme == "custom" ? new Tracker (new CustomTrackerConnection (uri)) : Factories.Default.CreateTracker (uri))
                 ;
 
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
                 dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
                 cacheDirectory: cacheDir,
-                listenEndPoints: new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, 12345) } }
+                listenEndPoints: new Dictionary<ConnectionType, IList<IPEndPoint>> { { ConnectionType.Tcp, new[] { new IPEndPoint (IPAddress.Any, 12345) } } }
             ), factories);
             if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
                 Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);

@@ -46,7 +46,7 @@ namespace MonoTorrent.Connections.Tracker
     {
         public bool CanScrape => true;
 
-        public AddressFamily AddressFamily { get; }
+        public ConnectionMode ConnectionMode { get; }
         public Uri Uri { get; }
 
         Task<long>? ConnectionIdTask { get; set; }
@@ -55,9 +55,9 @@ namespace MonoTorrent.Connections.Tracker
         public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds (15);
 
 
-        public UdpTrackerConnection (Uri announceUri, AddressFamily addressFamily)
+        public UdpTrackerConnection (Uri announceUri, ConnectionMode mode)
         {
-            AddressFamily = addressFamily;
+            ConnectionMode = mode;
             Uri = announceUri;
         }
 
@@ -73,8 +73,7 @@ namespace MonoTorrent.Connections.Tracker
                 // "That means the IP address field in the request remains 32bits wide which makes this
                 // field not usable under IPv6 and thus should always be set to 0.
                 //
-
-                var port = parameters.GetReportedAddress (AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6").port;
+                var port = parameters.GetReportedAddress (ConnectionMode).port;
                 AnnounceResponse? announceResponse = null;
                 foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
                     var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters, infoHash, port);
@@ -182,7 +181,11 @@ namespace MonoTorrent.Connections.Tracker
                 // results in a synchronous DNS resolve. Ensure we're on a threadpool thread to avoid
                 // blocking.
                 await new ThreadSwitcher ();
-                using var udpClient = new UdpClient (AddressFamily);
+                using var udpClient = new UdpClient (ConnectionMode switch {
+                    ConnectionMode.IPv4 => AddressFamily.InterNetwork,
+                    ConnectionMode.IPv6 => AddressFamily.InterNetworkV6,
+                    _ => throw new NotSupportedException ($"ConnectionMode.{ConnectionMode} unsupported by {nameof (UdpTrackerConnection)}")
+                });
                 udpClient.Connect (Uri.Host, Uri.Port);
 
                 using (cts.Token.Register (() => udpClient.Dispose ())) {

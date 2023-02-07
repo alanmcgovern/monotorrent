@@ -27,6 +27,9 @@
 //
 
 
+using System.Collections.Generic;
+using System.Net;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
@@ -56,10 +59,8 @@ namespace MonoTorrent.Client
         public void WithReportedAddress ()
         {
             var settings = new EngineSettingsBuilder {
-                ReportedListenEndPoints = new System.Collections.Generic.Dictionary<string, System.Net.IPEndPoint> {
-                    { "custom", new System.Net.IPEndPoint (System.Net.IPAddress.Any, 12345) },
-                    { "ipv6", new System.Net.IPEndPoint (System.Net.IPAddress.IPv6Any, 3456) },
-                    { "ipv4", new System.Net.IPEndPoint (System.Net.IPAddress.Loopback, 6798) },
+                ReportedListenEndPoints = new System.Collections.Generic.Dictionary<ConnectionType, IList<IPEndPoint>> {
+                    { ConnectionType.Tcp, new [] { new IPEndPoint (System.Net.IPAddress.IPv6Any, 3456),  new IPEndPoint (System.Net.IPAddress.Loopback, 6798) } },
                 }
             }.ToSettings ();
 

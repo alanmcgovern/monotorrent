@@ -48,21 +48,29 @@ using MonoTorrent.Trackers;
 
 namespace MonoTorrent
 {
+
+
     public partial class Factories
     {
+        public delegate ITracker? TrackerCreator (Uri uri);
+        public delegate IPeerConnection? PeerConnectionCreator (Uri uri);
+
+
         public delegate IBlockCache BlockCacheCreator (IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer);
+
         public delegate IDhtEngine DhtCreator ();
         public delegate IDhtListener DhtListenerCreator (IPEndPoint endpoint);
-        public delegate HttpClient HttpClientCreator (AddressFamily family);
+
+        public delegate HttpClient HttpClientCreator (ConnectionMode mode);
+
         public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator ();
-        public delegate IPeerConnection PeerConnectionCreator (Uri uri);
         public delegate IPeerConnectionListener PeerConnectionListenerCreator (IPEndPoint endPoint);
+
         public delegate IPieceRequester PieceRequesterCreator (PieceRequesterSettings settings);
         public delegate IPieceWriter PieceWriterCreator (int maxOpenFiles);
         public delegate IPortForwarder PortForwarderCreator ();
         public delegate ISocketConnector SocketConnectorCreator ();
         public delegate IStreamingPieceRequester StreamingPieceRequesterCreator ();
-        public delegate ITracker TrackerCreator (Uri uri);
     }
 
     public partial class Factories
@@ -74,7 +82,7 @@ namespace MonoTorrent
         DhtListenerCreator DhtListenerFunc { get; set; }
         LocalPeerDiscoveryCreator LocalPeerDiscoveryFunc { get; set; }
         HttpClientCreator HttpClientFunc { get; set; }
-        ReadOnlyDictionary<string, PeerConnectionCreator> PeerConnectionFuncs { get; set; }
+        PeerConnectionCreator PeerConnectionFunc { get; set; }
         PeerConnectionListenerCreator PeerConnectionListenerFunc { get; set; }
         PieceRequesterCreator PieceRequesterFunc { get; set; }
         PieceWriterCreator PieceWriterFunc { get; set; }
@@ -82,7 +90,7 @@ namespace MonoTorrent
         SocketConnectorCreator SocketConnectorFunc { get; set; }
         StreamingPieceRequesterCreator StreamingPieceRequesterFunc { get; set; }
 
-        ReadOnlyDictionary<string, TrackerCreator> TrackerFuncs { get; set; }
+        TrackerCreator TrackerFunc { get; set; }
 
         public Factories ()
         {
@@ -93,12 +101,12 @@ namespace MonoTorrent
             HttpClientFunc = HttpRequestFactory.CreateHttpClient;
 
             LocalPeerDiscoveryFunc = () => new LocalPeerDiscovery ();
-            PeerConnectionFuncs = new ReadOnlyDictionary<string, PeerConnectionCreator> (
-                new Dictionary<string, PeerConnectionCreator> {
-                    { "ipv4", uri => new SocketPeerConnection (uri, new SocketConnector ()) },
-                    { "ipv6", uri => new SocketPeerConnection (uri, new SocketConnector ()) },
-                }
-            );
+            PeerConnectionFunc = uri => {
+                if (uri.Scheme.Equals ("tcp", StringComparison.OrdinalIgnoreCase))
+                    return new SocketPeerConnection (uri, new SocketConnector ());
+                return null;
+            };
+
             PeerConnectionListenerFunc = endPoint => new PeerConnectionListener (endPoint);
             PieceRequesterFunc = settings => new StandardPieceRequester (settings);
             PieceWriterFunc = maxOpenFiles => new DiskWriter (maxOpenFiles);
@@ -107,14 +115,14 @@ namespace MonoTorrent
             StreamingPieceRequesterFunc = () => new StreamingPieceRequester ();
 
             // 'Convert' the bespoke delegate to a standard 'Func' delegate
-            Func<AddressFamily, HttpClient> httpCreator = t => HttpClientFunc (t);
-            TrackerFuncs = new ReadOnlyDictionary<string, TrackerCreator> (
-                new Dictionary<string, TrackerCreator> {
-                    { "http", uri => new Tracker (new HttpTrackerConnection(uri, httpCreator, AddressFamily.InterNetwork), new HttpTrackerConnection(uri, httpCreator, AddressFamily.InterNetworkV6)) },
-                    { "https", uri => new Tracker (new HttpTrackerConnection(uri, httpCreator, AddressFamily.InterNetwork), new HttpTrackerConnection(uri, httpCreator, AddressFamily.InterNetworkV6)) },
-                    { "udp", uri => new Tracker (new UdpTrackerConnection (uri, AddressFamily.InterNetwork), new UdpTrackerConnection (uri, AddressFamily.InterNetworkV6)) },
-                }
-            );
+            Func<ConnectionMode, HttpClient> httpCreator = t => HttpClientFunc (t);
+            TrackerFunc = uri => {
+                if (uri.Scheme.Equals ("http", StringComparison.OrdinalIgnoreCase) || uri.Scheme.Equals ("https", StringComparison.OrdinalIgnoreCase))
+                    return new Tracker (new HttpTrackerConnection (uri, httpCreator, ConnectionMode.IPv4), new HttpTrackerConnection (uri, httpCreator, ConnectionMode.IPv6));
+                else if (uri.Scheme.Equals ("udp", StringComparison.OrdinalIgnoreCase))
+                    return new Tracker (new UdpTrackerConnection (uri, ConnectionMode.IPv4), new UdpTrackerConnection (uri, ConnectionMode.IPv6));
+                return null;
+            };
         }
 
         public IBlockCache CreateBlockCache (IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer)
@@ -145,9 +153,9 @@ namespace MonoTorrent
         }
 
         public HttpClient CreateHttpClient ()
-            => CreateHttpClient (AddressFamily.Unspecified);
-        public HttpClient CreateHttpClient (AddressFamily addressFamily)
-            => HttpClientFunc (addressFamily);
+            => CreateHttpClient (ConnectionMode.DualMode);
+        public HttpClient CreateHttpClient (ConnectionMode mode)
+            => HttpClientFunc (mode);
         public Factories WithHttpClientCreator (HttpClientCreator creator)
         {
             var dupe = MemberwiseClone ();
@@ -167,26 +175,17 @@ namespace MonoTorrent
         public IPeerConnection? CreatePeerConnection (Uri uri)
         {
             try {
-                if (PeerConnectionFuncs.TryGetValue (uri.Scheme, out var creator))
-                    return creator (uri);
+                return PeerConnectionFunc (uri);
             } catch {
 
             }
             return null;
         }
-        public Factories WithPeerConnectionCreator (string scheme, PeerConnectionCreator creator)
+
+        public Factories WithPeerConnectionCreator (PeerConnectionCreator creator)
         {
-            var dict = new Dictionary<string, PeerConnectionCreator> (PeerConnectionFuncs);
-            if (creator == null && Default.PeerConnectionFuncs.ContainsKey (scheme))
-                creator = Default.PeerConnectionFuncs[scheme];
-
-            if (creator == null)
-                dict.Remove (scheme);
-            else
-                dict[scheme] = creator;
-
             var dupe = MemberwiseClone ();
-            dupe.PeerConnectionFuncs = new ReadOnlyDictionary<string, PeerConnectionCreator> (dict);
+            dupe.PeerConnectionFunc = creator;
             return dupe;
         }
 
@@ -249,28 +248,20 @@ namespace MonoTorrent
         public ITracker? CreateTracker (Uri uri)
         {
             try {
-                if (TrackerFuncs.TryGetValue (uri.Scheme, out var creator))
-                    return creator (uri);
+                return TrackerFunc (uri);
             } catch {
 
             }
             return null;
         }
-        public Factories WithTrackerCreator (string scheme, TrackerCreator creator)
+
+        public Factories WithTrackerCreator (TrackerCreator creator)
         {
-            var dict = new Dictionary<string, TrackerCreator> (TrackerFuncs);
-            if (creator == null && Default.TrackerFuncs.ContainsKey (scheme))
-                creator = Default.TrackerFuncs[scheme];
-
-            if (creator == null)
-                dict.Remove (scheme);
-            else
-                dict[scheme] = creator;
-
             var dupe = MemberwiseClone ();
-            dupe.TrackerFuncs = new ReadOnlyDictionary<string, TrackerCreator> (dict);
+            dupe.TrackerFunc = creator;
             return dupe;
         }
+
         new Factories MemberwiseClone ()
             => (Factories) base.MemberwiseClone ();
     }

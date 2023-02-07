@@ -97,7 +97,7 @@ namespace MonoTorrent.Trackers
                 new IPEndPoint (IPAddress.Parse ("1.2.3.4"), 65000),
             };
 
-            trackerConnection = new UdpTrackerConnection (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"), AddressFamily.InterNetwork);
+            trackerConnection = new UdpTrackerConnection (new Uri ($"udp://127.0.0.1:{listener.LocalEndPoint.Port}/announce/"), ConnectionMode.IPv4);
             tracker = new Tracker (trackerConnection);
 
             listener.IgnoreAnnounces = false;
@@ -136,7 +136,7 @@ namespace MonoTorrent.Trackers
         [Test]
         public void AnnounceResponseTest ()
         {
-            var peers = peerEndpoints.Select (t => new PeerInfo (new Uri ($"ipv4://{t.Address}:{t.Port}"))).ToList ();
+            var peers = peerEndpoints.Select (t => new PeerInfo (new Uri ($"tcp://{t.Address}:{t.Port}"))).ToList ();
             AnnounceResponseMessage m = new AnnounceResponseMessage (AddressFamily.InterNetwork, 12345, TimeSpan.FromSeconds (10), 43, 65, peers);
             AnnounceResponseMessage d = (AnnounceResponseMessage) UdpTrackerMessage.DecodeMessage (m.Encode (), MessageType.Response, AddressFamily.InterNetwork);
             Check (m, MessageType.Response);

@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.Modes
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Constants.BlockSize * 2);
             Manager.SetTrackerManager (TrackerManager);
-            Peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://123.123.123.123:12345")), Manager.InfoHashes.V1OrV2), conn.Outgoing, new BitField (Manager.Torrent.PieceCount ()));
+            Peer = new PeerId (new Peer (new PeerInfo (new Uri ("tcp://123.123.123.123:12345")), Manager.InfoHashes.V1OrV2), conn.Outgoing, new BitField (Manager.Torrent.PieceCount ()));
         }
 
         [TearDown]
@@ -91,7 +91,7 @@ namespace MonoTorrent.Client.Modes
 
             var peers = new List<PeerInfo> ();
             for (int i = 0; i < Manager.Settings.MaximumPeerDetails + 100; i++)
-                peers.Add (new PeerInfo (new Uri ($"ipv4://192.168.0.1:{i + 1000}"), Array.Empty<byte> ()));
+                peers.Add (new PeerInfo (new Uri ($"tcp://192.168.0.1:{i + 1000}"), Array.Empty<byte> ()));
             var added = await Manager.AddPeersAsync (peers);
             Assert.AreEqual (added, Manager.Settings.MaximumPeerDetails, "#1");
             Assert.AreEqual (added, Manager.Peers.AvailablePeers.Count, "#2");
@@ -217,7 +217,7 @@ namespace MonoTorrent.Client.Modes
             };
 
             await TrackerManager.AddTrackerAsync (new Uri ("http://test.tracker"));
-            var peers = new[] { new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), new BEncodedString ("One")), new PeerInfo (new Uri ("ipv4://2.2.2.2:2222"), new BEncodedString ("Two")) };
+            var peers = new[] { new PeerInfo (new Uri ("tcp://1.1.1.1:1111"), new BEncodedString ("One")), new PeerInfo (new Uri ("tcp://2.2.2.2:2222"), new BEncodedString ("Two")) };
             TrackerManager.RaiseAnnounceComplete (TrackerManager.Tiers.Single ().ActiveTracker, true, new Dictionary<InfoHash, IList<PeerInfo>> { {manager.InfoHashes.V1OrV2, peers } } );
 
             var addedArgs = await peersTask.Task.WithTimeout ();

@@ -164,9 +164,8 @@ namespace MonoTorrent.Client
         /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any and IPAddress.AnyIPv6,
         /// both with port 0.
         /// </summary>
-        public IDictionary<string, IPEndPoint> ListenEndPoints { get; } = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> {
-            {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
-            {"ipv6", new IPEndPoint (IPAddress.IPv6Any, 0) }
+        public IDictionary<ConnectionType, IList<IPEndPoint>> ListenEndPoints { get; } = new ReadOnlyDictionary<ConnectionType, IList<IPEndPoint>> (new Dictionary<ConnectionType, IList<IPEndPoint>> {
+            { ConnectionType.Tcp, Array.AsReadOnly (new [] { new IPEndPoint (IPAddress.Any, 0), new IPEndPoint (IPAddress.IPv6Any, 0) }) }
         });
 
         /// <summary>
@@ -216,7 +215,7 @@ namespace MonoTorrent.Client
         /// Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public IDictionary<string, IPEndPoint> ReportedListenEndPoints { get; } = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> ());
+        public IDictionary<ConnectionType, IList<IPEndPoint>> ReportedListenEndPoints { get; } = new ReadOnlyDictionary<ConnectionType, IList<IPEndPoint>> (new Dictionary<ConnectionType, IList<IPEndPoint>> ());
 
         /// <summary>
         /// When blocks have been requested from a peer, the connection to that peer will be closed and the
@@ -265,9 +264,9 @@ namespace MonoTorrent.Client
         internal EngineSettings (
             IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
-            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, Dictionary<string, IPEndPoint> listenEndPoints,
+            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, Dictionary<ConnectionType, IList<IPEndPoint>> listenEndPoints,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
-            int maximumOpenFiles, int maximumUploadRate, IDictionary<string, IPEndPoint> reportedListenEndPoints, bool usePartialFiles,
+            int maximumOpenFiles, int maximumUploadRate, Dictionary<ConnectionType, IList<IPEndPoint>> reportedListenEndPoints, bool usePartialFiles,
             TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
             string httpStreamingPrefix)
         {
@@ -286,7 +285,7 @@ namespace MonoTorrent.Client
             ConnectionTimeout = connectionTimeout;
             FastResumeMode = fastResumeMode;
             HttpStreamingPrefix = httpStreamingPrefix;
-            ListenEndPoints = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> (listenEndPoints));
+            ListenEndPoints = new ReadOnlyDictionary<ConnectionType, IList<IPEndPoint>> (listenEndPoints.ToDictionary (k => k.Key, v => (IList<IPEndPoint>) new List<IPEndPoint> (v.Value).AsReadOnly ()));
             MaximumConnections = maximumConnections;
             MaximumDiskReadRate = maximumDiskReadRate;
             MaximumDiskWriteRate = maximumDiskWriteRate;
@@ -294,7 +293,7 @@ namespace MonoTorrent.Client
             MaximumHalfOpenConnections = maximumHalfOpenConnections;
             MaximumOpenFiles = maximumOpenFiles;
             MaximumUploadRate = maximumUploadRate;
-            ReportedListenEndPoints = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> (reportedListenEndPoints));
+            ReportedListenEndPoints = new ReadOnlyDictionary<ConnectionType, IList<IPEndPoint>> (reportedListenEndPoints.ToDictionary (k => k.Key, v => (IList<IPEndPoint>) new List<IPEndPoint> (v.Value).AsReadOnly ()));
             StaleRequestTimeout = staleRequestTimeout;
             UsePartialFiles = usePartialFiles;
             WebSeedConnectionTimeout = webSeedConnectionTimeout;
@@ -356,12 +355,12 @@ namespace MonoTorrent.Client
                    ;
         }
 
-        bool AreEquivalent (IDictionary<string, IPEndPoint> first, IDictionary<string, IPEndPoint> second)
+        bool AreEquivalent (IDictionary<ConnectionType, IList<IPEndPoint>> first, IDictionary<ConnectionType, IList<IPEndPoint>> second)
         {
             if (first.Count != second.Count)
                 return false;
             foreach (var v in first)
-                if (!second.TryGetValue (v.Key, out var value) || !v.Value.Equals (value))
+                if (!second.TryGetValue (v.Key, out var value) || !v.Value.SequenceEqual (value))
                     return false;
             return true;
         }

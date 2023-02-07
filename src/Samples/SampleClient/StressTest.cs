@@ -170,7 +170,7 @@ namespace ClientSample
             var seeder = new ClientEngine (
                 new EngineSettingsBuilder {
                     AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText },
-                    ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } },
+                    ListenEndPoints = new Dictionary<ConnectionType, IList<IPEndPoint>> { { ConnectionType.Tcp, new[] { new IPEndPoint (IPAddress.Any, port++) } } },
                     DhtEndPoint = null,
                     AllowLocalPeerDiscovery = false,
                 }.ToSettings (),
@@ -191,7 +191,7 @@ namespace ClientSample
                     new EngineSettingsBuilder {
                         AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText },
                         DiskCacheBytes = DataSize,
-                        ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } },
+                        ListenEndPoints = new Dictionary<ConnectionType, IList<IPEndPoint>> { { ConnectionType.Tcp, new[] { new IPEndPoint (IPAddress.Any, p) } } },
                         DhtEndPoint = null,
                         AllowLocalPeerDiscovery = false,
                         CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")

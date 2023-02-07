@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
         public void Setup ()
         {
             Factories = Factories.Default
-                .WithTrackerCreator ("custom", uri => new CustomTracker (new CustomTrackerConnection (uri)));
+                .WithTrackerCreator (uri => uri.Scheme == "custom" ? new CustomTracker (new CustomTrackerConnection (uri)) : Factories.Default.CreateTracker (uri));
             trackerManager = new TrackerManager (Factories, new RequestFactory (), trackerUrls, true);
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
         }
@@ -147,7 +147,7 @@ namespace MonoTorrent.Client
         {
             foreach (var tier in trackers)
                 foreach (var tracker in tier)
-                    tracker.Connection.AddPeer (new Peer (new PeerInfo (new Uri ("ipv4://127.123.123.123:12312"), "peerid"), InfoHash.FromMemory (new byte[20])));
+                    tracker.Connection.AddPeer (new Peer (new PeerInfo (new Uri ("tcp://127.123.123.123:12312"), "peerid"), InfoHash.FromMemory (new byte[20])));
 
             var tcs = new TaskCompletionSource<AnnounceResponseEventArgs> ();
             trackerManager.AnnounceComplete += (o, e) => tcs.TrySetResult (e);
@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
         public async Task Announce_RateLimitedAnnounceAttempts ()
         {
             var factories = Factories.Default
-                .WithTrackerCreator ("custom", uri => new RateLimitingTracker (new RateLimitingTrackerConnection ()));
+                .WithTrackerCreator (uri => uri.Scheme == "custom" ? new RateLimitingTracker (new RateLimitingTrackerConnection ()) : Factories.Default.CreateTracker (uri));
 
             var tier = new[] { new[] { $"custom://tracker/announce" } };
             var trackerManager = new TrackerManager (factories, new RequestFactory (), tier, true);
@@ -276,7 +276,7 @@ namespace MonoTorrent.Client
         public void Announce_RateLimitedTierAnnounces ()
         {
             var factories = Factories.Default
-                .WithTrackerCreator ("custom", uri => new RateLimitingTracker (new RateLimitingTrackerConnection ()));
+                .WithTrackerCreator (uri => uri.Scheme == "custom" ? new RateLimitingTracker (new RateLimitingTrackerConnection ()) : Factories.Default.CreateTracker (uri));
 
             // Create 100 tracker tiers.
             var urls = Enumerable.Range (0, 100).Select (t => new[] { $"custom://tracker{t}/announce" }).ToArray ();

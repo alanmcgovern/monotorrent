@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
@@ -21,11 +22,11 @@ namespace MonoTorrent
         static readonly HttpMessageHandler CachedIPv6HttpClient = CreateHttpClientHandler (AddressFamily.InterNetworkV6);
         static readonly HttpMessageHandler CachedAnyHttpClient = CreateHttpClientHandler (AddressFamily.Unspecified);
 
-        public static HttpClient CreateHttpClient (AddressFamily family)
+        public static HttpClient CreateHttpClient (ConnectionMode mode)
         {
-            var handler = family switch {
-                AddressFamily.InterNetwork => CachedIPv4HttpClient,
-                AddressFamily.InterNetworkV6 => CachedIPv6HttpClient,
+            var handler = mode switch {
+                ConnectionMode.IPv4 => CachedIPv4HttpClient,
+                ConnectionMode.IPv6 => CachedIPv6HttpClient,
                 _ => CachedAnyHttpClient
             };
 

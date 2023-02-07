@@ -67,7 +67,7 @@ namespace MonoTorrent.Client
             var listener = new TcpListener (IPAddress.Loopback, 0);
             listener.Start ();
             try {
-                using var c = Factories.Default.CreatePeerConnection (new Uri ($"ipv4://127.0.0.1:{((IPEndPoint) listener.LocalEndpoint).Port}"));
+                using var c = Factories.Default.CreatePeerConnection (new Uri ($"tcp://127.0.0.1:{((IPEndPoint) listener.LocalEndpoint).Port}"));
                 var connectTask = NetworkIO.ConnectAsync (c);
 
                 var receivingSocket = await listener.AcceptSocketAsync ().WithTimeout ();
@@ -80,7 +80,7 @@ namespace MonoTorrent.Client
         [Test]
         public void DisposeBeforeConnect ()
         {
-            using var c = Factories.Default.CreatePeerConnection (new Uri ($"ipv4://127.0.0.1:12345"));
+            using var c = Factories.Default.CreatePeerConnection (new Uri ($"tcp://127.0.0.1:12345"));
             c.Dispose ();
             Assert.ThrowsAsync<ObjectDisposedException> (async () => await NetworkIO.ConnectAsync (c));
         }
@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
             var listener = new TcpListener (IPAddress.Loopback, 0);
             listener.Start ();
             try {
-                using var c = Factories.Default.CreatePeerConnection (new Uri ($"ipv4://127.0.0.1:{((IPEndPoint) listener.LocalEndpoint).Port}"));
+                using var c = Factories.Default.CreatePeerConnection (new Uri ($"tcp://127.0.0.1:{((IPEndPoint) listener.LocalEndpoint).Port}"));
                 var connectTask = NetworkIO.ConnectAsync (c);
 
                 var receivingSocket = await listener.AcceptSocketAsync ().WithTimeout ();
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client
             var listener = new TcpListener (IPAddress.Loopback, 0);
             listener.Start ();
             try {
-                using var c = Factories.Default.CreatePeerConnection (new Uri ($"ipv4://127.0.0.1:{((IPEndPoint) listener.LocalEndpoint).Port}"));
+                using var c = Factories.Default.CreatePeerConnection (new Uri ($"tcp://127.0.0.1:{((IPEndPoint) listener.LocalEndpoint).Port}"));
                 var connectTask = NetworkIO.ConnectAsync (c);
 
                 var receivingSocket = await listener.AcceptSocketAsync ().WithTimeout ();

@@ -254,10 +254,10 @@ namespace MonoTorrent.Client
         public void ConnectDisconnect ()
         {
             var peers = new[] {
-                new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5353"), new string ('a', 20)), rig.Manager.InfoHashes.V1OrV2),
-                new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5354"), new string ('b', 20)), rig.Manager.InfoHashes.V1OrV2),
-                new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5355"), new string ('c', 20)), rig.Manager.InfoHashes.V1OrV2),
-                new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5356"), new string ('d', 20)), rig.Manager.InfoHashes.V1OrV2)
+                new Peer (new PeerInfo (new Uri ("tcp://127.0.0.5:5353"), new string ('a', 20)), rig.Manager.InfoHashes.V1OrV2),
+                new Peer (new PeerInfo (new Uri ("tcp://127.0.0.5:5354"), new string ('b', 20)), rig.Manager.InfoHashes.V1OrV2),
+                new Peer (new PeerInfo (new Uri ("tcp://127.0.0.5:5355"), new string ('c', 20)), rig.Manager.InfoHashes.V1OrV2),
+                new Peer (new PeerInfo (new Uri ("tcp://127.0.0.5:5356"), new string ('d', 20)), rig.Manager.InfoHashes.V1OrV2)
             };
             PeerId a = new PeerId (peers[0], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));
             PeerId b = new PeerId (peers[1], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()));

@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
             bool automaticFastResume = false,
             bool autoSaveLoadMagnetLinkMetadata = true,
             IPEndPoint? dhtEndPoint = null,
-            Dictionary<string, IPEndPoint>? listenEndPoints = null,
+            Dictionary<ConnectionType, IList<IPEndPoint>>? listenEndPoints = null,
             string? cacheDirectory = null,
             bool usePartialFiles = false)
         {
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
                 AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata,
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location)!, "test_cache_dir"),
                 DhtEndPoint = dhtEndPoint,
-                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? new Dictionary<string, IPEndPoint> ()),
+                ListenEndPoints = new Dictionary<ConnectionType, IList<IPEndPoint>> (listenEndPoints ?? new Dictionary<ConnectionType, IList<IPEndPoint>> ()),
                 UsePartialFiles = usePartialFiles,
             }.ToSettings ();
         }
@@ -218,7 +218,7 @@ namespace MonoTorrent.Client
         /// The TCP port the engine should listen on for incoming connections. Use 0 to choose a random
         /// available port. Choose -1 to disable listening for incoming connections. Defaults to 0.
         /// </summary>
-        public Dictionary<string, IPEndPoint> ListenEndPoints { get; set; }
+        public Dictionary<ConnectionType, IList<IPEndPoint>> ListenEndPoints { get; set; }
 
         /// <summary>
         /// The maximum number of concurrent open connections overall. Defaults to 150.
@@ -288,7 +288,7 @@ namespace MonoTorrent.Client
         /// Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public Dictionary<string, IPEndPoint> ReportedListenEndPoints { get; set; }
+        public Dictionary<ConnectionType, IList<IPEndPoint>> ReportedListenEndPoints { get; set; }
 
         /// <summary>
         /// When blocks have been requested from a peer, the connection to that peer will be closed and the
@@ -356,8 +356,8 @@ namespace MonoTorrent.Client
             DiskCachePolicy = settings.DiskCachePolicy;
             FastResumeMode = settings.FastResumeMode;
             httpStreamingPrefix = settings.HttpStreamingPrefix;
-            ListenEndPoints = new Dictionary<string, IPEndPoint> (settings.ListenEndPoints);
-            ReportedListenEndPoints = new Dictionary<string, IPEndPoint> (settings.ReportedListenEndPoints);
+            ListenEndPoints = new Dictionary<ConnectionType, IList<IPEndPoint>> (settings.ListenEndPoints);
+            ReportedListenEndPoints = new Dictionary<ConnectionType, IList<IPEndPoint>> (settings.ReportedListenEndPoints);
             MaximumConnections = settings.MaximumConnections;
             MaximumDiskReadRate = settings.MaximumDiskReadRate;
             MaximumDiskWriteRate = settings.MaximumDiskWriteRate;

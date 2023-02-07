@@ -286,8 +286,8 @@ namespace MonoTorrent.Trackers
             listeners.Add (listener);
 
             var uri = new Uri ($"udp://localhost:{listener.LocalEndPoint.Port}");
-            ConnectionIPv4 = new UdpTrackerConnection (uri, AddressFamily.InterNetwork);
-            ConnectionIPv6 = new UdpTrackerConnection (uri, AddressFamily.InterNetworkV6);
+            ConnectionIPv4 = new UdpTrackerConnection (uri, ConnectionMode.IPv4);
+            ConnectionIPv6 = new UdpTrackerConnection (uri, ConnectionMode.IPv6);
 
             return listener;
         }

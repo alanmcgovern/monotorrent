@@ -73,8 +73,8 @@ namespace MonoTorrent.Connections
 
         public async ReusableTask<Socket> ConnectAsync (Uri uri, CancellationToken token)
         {
-            var socket = new Socket ((uri.Scheme == "ipv4") ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             var endPoint = new IPEndPoint (IPAddress.Parse (uri.Host), uri.Port);
+            var socket = new Socket (endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             using var registration = token.Register (SocketDisposer, socket);
             var tcs = new ReusableTaskCompletionSource<int> ();

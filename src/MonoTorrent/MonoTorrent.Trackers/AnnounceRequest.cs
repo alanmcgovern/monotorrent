@@ -36,7 +36,7 @@ namespace MonoTorrent.Trackers
         public long BytesLeft { get; private set; }
         public long BytesUploaded { get; private set; }
         public TorrentEvent ClientEvent { get; private set; }
-        Func<string, (string?, int)> EndpointFunc { get; set; }
+        Func<ConnectionMode, (string?, int)> EndpointFunc { get; set; }
         public InfoHashes InfoHashes { get; private set; }
         public int Key { get; private set; }
         public ReadOnlyMemory<byte> PeerId { get; private set; }
@@ -52,7 +52,7 @@ namespace MonoTorrent.Trackers
 
         public AnnounceRequest (long bytesDownloaded, long bytesUploaded, long bytesLeft,
                            TorrentEvent clientEvent, InfoHashes infoHashes, bool requireEncryption,
-                           ReadOnlyMemory<byte> peerId, Func<string, (string?, int)> endpointFunc, bool supportsEncryption)
+                           ReadOnlyMemory<byte> peerId, Func<ConnectionMode, (string?, int)> endpointFunc, bool supportsEncryption)
         {
             BytesDownloaded = bytesDownloaded;
             BytesUploaded = bytesUploaded;
@@ -65,8 +65,8 @@ namespace MonoTorrent.Trackers
             SupportsEncryption = supportsEncryption;
         }
 
-        public (string? address, int port) GetReportedAddress (string type)
-            => EndpointFunc (type);
+        public (string? address, int port) GetReportedAddress (ConnectionMode mode)
+            => EndpointFunc (mode);
 
         public AnnounceRequest WithBytesDownloaded (long bytesDownloaded)
         {
@@ -108,7 +108,7 @@ namespace MonoTorrent.Trackers
             return clone;
         }
 
-        public AnnounceRequest WithReportedEndPointFunc (Func<string, (string?, int)> func)
+        public AnnounceRequest WithReportedEndPointFunc (Func<ConnectionMode, (string?, int)> func)
         {
             var clone = this;
             if (EndpointFunc != func) {

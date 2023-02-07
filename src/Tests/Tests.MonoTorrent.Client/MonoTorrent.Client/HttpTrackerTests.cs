@@ -121,7 +121,7 @@ namespace MonoTorrent.TrackerServer
                 AllowUnregisteredTorrents = true
             };
             server.RegisterListener (listener);
-            trackerConnection = new HttpTrackerConnection (AnnounceUrl, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            trackerConnection = new HttpTrackerConnection (AnnounceUrl, Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
             tracker = new Tracker (trackerConnection);
 
             var infoHashBytes = new[] { ' ', '%', '&', '?', '&', '&', '?', '5', '1', '=' }
@@ -151,21 +151,21 @@ namespace MonoTorrent.TrackerServer
         [Test]
         public void CanAnnounceOrScrapeTest ()
         {
-            HttpTrackerConnection t = new HttpTrackerConnection (new Uri ("http://mytracker.com/myurl"), Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            HttpTrackerConnection t = new HttpTrackerConnection (new Uri ("http://mytracker.com/myurl"), Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
             Assert.IsFalse (t.CanScrape, "#1");
 
-            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/yeah"), Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/yeah"), Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
             Assert.IsFalse (t.CanScrape, "#2");
 
-            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce"), Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce"), Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
             Assert.IsTrue (t.CanScrape, "#3");
             Assert.AreEqual (t.ScrapeUri, new Uri ("http://mytracker.com/scrape"));
 
-            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/yeah/announce"), Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/yeah/announce"), Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
             Assert.IsTrue (t.CanScrape, "#4");
             Assert.AreEqual ("http://mytracker.com/announce/yeah/scrape", t.ScrapeUri.ToString (), "#4c");
 
-            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/"), Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            t = new HttpTrackerConnection (new Uri ("http://mytracker.com/announce/"), Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
             Assert.IsTrue (t.CanScrape, "#5");
             Assert.AreEqual (t.ScrapeUri, new Uri ("http://mytracker.com/scrape/"));
         }
@@ -243,7 +243,7 @@ namespace MonoTorrent.TrackerServer
                 handler.Timeout = TimeSpan.FromMilliseconds (1);
                 return handler;
             });
-            trackerConnection = new HttpTrackerConnection (AnnounceUrl, factories.CreateHttpClient, AddressFamily.InterNetwork);
+            trackerConnection = new HttpTrackerConnection (AnnounceUrl, factories.CreateHttpClient, ConnectionMode.IPv4);
             tracker = new Tracker (trackerConnection);
 
             try {
@@ -259,7 +259,7 @@ namespace MonoTorrent.TrackerServer
         public async Task KeyTest ()
         {
             // Set a key which uses characters which need escaping.
-            trackerConnection = new HttpTrackerConnection (AnnounceUrl, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+            trackerConnection = new HttpTrackerConnection (AnnounceUrl, Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
             tracker = new Tracker (trackerConnection);
 
             await tracker.AnnounceAsync (announceParams, CancellationToken.None);

@@ -28,8 +28,11 @@
 
 
 using System;
+using System.Linq;
+using System.Net.Sockets;
 
 using MonoTorrent.Client;
+using MonoTorrent.Client.Modes;
 using MonoTorrent.Connections;
 
 namespace MonoTorrent.Trackers
@@ -53,11 +56,17 @@ namespace MonoTorrent.Trackers
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
-            Func<string, (string?, int)> reportedAddressFunc = type => {
+            Func<ConnectionMode, (string?, int)> reportedAddressFunc = mode => {
                 string? ip = null;
-                int port = engine.GetOverrideOrActualListenPort (type).GetValueOrDefault (-1);
-                if (engine.Settings.ReportedListenEndPoints.TryGetValue (type, out var reportedAddress))
-                    ip = reportedAddress.Address.ToString ();
+                var addresssFamily = mode switch {
+                    ConnectionMode.IPv4 => AddressFamily.InterNetwork,
+                    ConnectionMode.IPv6 => AddressFamily.InterNetworkV6,
+                    _ => throw new NotSupportedException ($"AddressFamily.{mode} not supported by {nameof (TrackerRequestFactory)}.{nameof (CreateAnnounce)}")
+                };
+
+                int port = engine.GetOverrideOrActualListenPort (ConnectionType.Tcp, mode).GetValueOrDefault (-1);
+                if (engine.Settings.ReportedListenEndPoints.TryGetValue (ConnectionType.Tcp, out var reportedAddresses))
+                    ip = reportedAddresses.Where (t => t.AddressFamily == addresssFamily).FirstOrDefault ()?.Address.ToString ();
                 return (ip, port);
             };
 

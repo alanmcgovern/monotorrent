@@ -76,8 +76,8 @@ namespace MonoTorrent.Trackers
             ipv6scrapedInfoHashes = new List<InfoHash> ();
 
             var uri = new Uri ($"http://localhost:123/announce");
-            ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
-            ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetworkV6);
+            ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
+            ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
 
             server = new MonoTorrent.TrackerServer.TrackerServer ();
             server.AllowUnregisteredTorrents = true;
@@ -301,9 +301,9 @@ namespace MonoTorrent.Trackers
 
             var uri = new Uri ($"http://localhost:{preferredPort}/announce");
             if (addressFamily == AddressFamily.InterNetwork)
-                ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+                ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, ConnectionMode.IPv4);
             if (addressFamily == AddressFamily.InterNetworkV6)
-                ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetworkV6);
+                ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, ConnectionMode.IPv6);
 
             return listener;
         }

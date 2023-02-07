@@ -52,7 +52,7 @@ namespace MonoTorrent.Connections.Tracker
 
         static readonly Logger logger = Logger.Create (nameof (HttpTrackerConnection));
 
-        public AddressFamily AddressFamily { get; }
+        public ConnectionMode ConnectionMode { get; }
 
         public bool CanScrape { get; }
 
@@ -63,11 +63,11 @@ namespace MonoTorrent.Connections.Tracker
         // FIXME: Make private?
         public BEncodedString? TrackerId { get; set; }
 
-        Func<AddressFamily, HttpClient> ClientCreator { get; }
+        Func<ConnectionMode, HttpClient> ClientCreator { get; }
 
-        public HttpTrackerConnection (Uri announceUri, Func<AddressFamily, HttpClient> clientCreator, AddressFamily addressFamily)
+        public HttpTrackerConnection (Uri announceUri, Func<ConnectionMode, HttpClient> clientCreator, ConnectionMode mode)
         {
-            AddressFamily = addressFamily;
+            ConnectionMode = mode;
             Uri = announceUri;
             ClientCreator = clientCreator;
 
@@ -88,7 +88,7 @@ namespace MonoTorrent.Connections.Tracker
             await new ThreadSwitcher ();
             AnnounceResponse? announceResponse = null;
 
-            using var client = ClientCreator (AddressFamily);
+            using var client = ClientCreator (ConnectionMode);
             foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
                 Uri announceString = CreateAnnounceString (parameters, infoHash);
                 HttpResponseMessage response;
@@ -140,7 +140,7 @@ namespace MonoTorrent.Connections.Tracker
             }
 
             HttpResponseMessage response;
-            using var client = ClientCreator (AddressFamily);
+            using var client = ClientCreator (ConnectionMode);
             try {
                 response = await client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead, token);
             } catch {
@@ -164,7 +164,7 @@ namespace MonoTorrent.Connections.Tracker
 
         Uri CreateAnnounceString (AnnounceRequest parameters, InfoHash infoHash)
         {
-            (string? ipAddress, int port) = parameters.GetReportedAddress (AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6");
+            (string? ipAddress, int port) = parameters.GetReportedAddress (ConnectionMode);
 
             var b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", infoHash.Truncate ().UrlEncode ())

@@ -121,8 +121,8 @@ namespace MonoTorrent
         static void FromCompact (ReadOnlySpan<byte> buffer, AddressFamily addressFamily, List<PeerInfo> results)
         {
             (var sizeOfIP, var prefix) = addressFamily switch {
-                AddressFamily.InterNetwork => (4, "ipv4://"),
-                AddressFamily.InterNetworkV6 => (16, "ipv6://"),
+                AddressFamily.InterNetwork => (4, "tcp://"),
+                AddressFamily.InterNetworkV6 => (16, "tcp://"),
                 _ => throw new NotSupportedException ()
             };
 

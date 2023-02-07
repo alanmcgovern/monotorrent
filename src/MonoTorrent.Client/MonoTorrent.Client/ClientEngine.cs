@@ -321,7 +321,9 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            PeerListeners = Array.AsReadOnly (settings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)).ToArray ());
+            PeerListeners = Array.Empty<IPeerConnectionListener> ();
+            if (settings.ListenEndPoints.TryGetValue (ConnectionType.Tcp, out var endpoints))
+                PeerListeners = Array.AsReadOnly (endpoints.Select (t => Factories.CreatePeerConnectionListener (t)).ToArray ());
             listenManager.SetListeners (PeerListeners);
 
             DhtListener = (settings.DhtEndPoint == null ? null : Factories.CreateDhtListener (settings.DhtEndPoint)) ?? new NullDhtListener ();
@@ -720,11 +722,11 @@ namespace MonoTorrent.Client
 
                 // IPV6: Also report to an ipv6 DHT node
                 if (manager.InfoHashes.V1 != null) {
-                    DhtEngine.Announce (manager.InfoHashes.V1, GetOverrideOrActualListenPort ("ipv4") ?? -1);
+                    DhtEngine.Announce (manager.InfoHashes.V1, GetOverrideOrActualListenPort (ConnectionMode.IPv4) ?? -1);
                     DhtEngine.GetPeers (manager.InfoHashes.V1);
                 }
                 if (manager.InfoHashes.V2 != null) {
-                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), GetOverrideOrActualListenPort ("ipv4") ?? -1);
+                    DhtEngine.Announce (manager.InfoHashes.V2.Truncate (), GetOverrideOrActualListenPort (ConnectionMode.IPv4) ?? -1);
                     DhtEngine.GetPeers (manager.InfoHashes.V2.Truncate ());
                 }
             }
@@ -856,7 +858,7 @@ namespace MonoTorrent.Client
             await Task.WhenAll (maps);
         }
 
-        async ReusableTask UnmapAndStopPeerListeners()
+        async ReusableTask UnmapAndStopPeerListeners ()
         {
             var unmaps = PeerListeners
                     .Select (t => t.LocalEndPoint!)
@@ -1010,31 +1012,32 @@ namespace MonoTorrent.Client
             return new BEncodedString (sb.ToString ());
         }
 
-        internal int? GetOverrideOrActualListenPort (string scheme)
+        internal int? GetOverrideOrActualListenPort (ConnectionType type, ConnectionMode mode)
         {
             // If the override is set to non-zero, use it. Otherwise use the actual port.
-            if (Settings.ReportedListenEndPoints.TryGetValue (scheme, out var reportedEndPoint) && reportedEndPoint.Port != 0)
-                return reportedEndPoint.Port;
+            AddressFamily family = mode switch {
+                ConnectionMode.IPv4 => AddressFamily.InterNetwork,
+                ConnectionMode.IPv6 => AddressFamily.InterNetworkV6,
+                _ => throw new NotSupportedException ($"ConnectionMode.{mode} is unsupported by {nameof (ClientEngine)}.{nameof (GetOverrideOrActualListenPort)}")
+            };
 
-            // Try to get the actual port first.
-            foreach (var endPoint in PeerListeners.Select (t => t.LocalEndPoint!).Where (t => t != null)) {
-                if (scheme == "ipv4" && endPoint.AddressFamily == AddressFamily.InterNetwork)
-                    return endPoint.Port;
-                if (scheme == "ipv6" && endPoint.AddressFamily == AddressFamily.InterNetworkV6)
-                    return endPoint.Port;
+            if (Settings.ReportedListenEndPoints.TryGetValue(type, out var endpoints)) {
+                var endpoint = endpoints.Where (t => t.AddressFamily == family && t.Port != 0).FirstOrDefault ();
+                if (endpoint != null)
+                    return endpoint.Port;
             }
+
+            // Try to get the actual bound port first.
+            foreach (var endPoint in PeerListeners.Select (t => t.LocalEndPoint!).Where (t => t != null && t.AddressFamily == family))
+                return endPoint.Port;
 
             // If there was a listener but it hadn't successfully bound to a port, return the preferred port port... if it's non-zero.
-            foreach (var endPoint in PeerListeners.Select (t => t.PreferredLocalEndPoint!).Where (t => t != null)) {
-                if (scheme == "ipv4" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetwork)
-                    return endPoint.Port;
-                if (scheme == "ipv6" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetworkV6)
-                    return endPoint.Port;
-            }
+            foreach (var endPoint in PeerListeners.Select (t => t.PreferredLocalEndPoint!).Where (t => t != null && t.AddressFamily == family && t.Port != 0))
+                return endPoint.Port;
 
             // If we get here there are either no listeners, or none were bound to a local port, or the preferred port is set to '0' (which means
             // we don't know it's port yet because the listener isn't running. This *should* never happen as we should only be running announces
-            // while the engine is active, which means the listener should still be running.)
+            // while the engine is active, which means the listener should still be running).
             return null;
         }
     }
