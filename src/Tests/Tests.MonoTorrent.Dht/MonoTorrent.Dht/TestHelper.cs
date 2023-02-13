@@ -12,7 +12,7 @@ namespace MonoTorrent.Dht
             id[19] = 7;
 
             nodes = new List<NodeId> ();
-            RoutingTable table = new RoutingTable (new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0)));
+            RoutingTable table = new RoutingTable (new NodeId (id));
 
             for (int i = 0; i <= 30; i++) {
                 if (i == 7)
@@ -25,8 +25,8 @@ namespace MonoTorrent.Dht
             }
 
             nodes.Sort (delegate (NodeId left, NodeId right) {
-                NodeId dLeft = left ^ table.LocalNode.Id;
-                NodeId dRight = right ^ table.LocalNode.Id;
+                NodeId dLeft = left ^ table.LocalNodeId;
+                NodeId dRight = right ^ table.LocalNodeId;
                 return dLeft.CompareTo (dRight);
             });
 

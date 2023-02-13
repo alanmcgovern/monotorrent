@@ -75,7 +75,7 @@ namespace MonoTorrent.Dht.Messages
             DhtMessage response;
             if (engine.TokenManager.VerifyToken (node, Token)) {
                 engine.Torrents[InfoHash].Add (node);
-                response = new AnnouncePeerResponse (engine.RoutingTable.LocalNode.Id, TransactionId);
+                response = new AnnouncePeerResponse (engine.RoutingTable.LocalNodeId, TransactionId);
             } else
                 response = new ErrorMessage (TransactionId, ErrorCode.ProtocolError, "Invalid or expired token received");
 

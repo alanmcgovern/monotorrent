@@ -56,7 +56,7 @@ namespace MonoTorrent.Dht.Messages
         {
             base.Handle (engine, node);
 
-            var m = new PingResponse (engine.RoutingTable.LocalNode.Id, TransactionId!);
+            var m = new PingResponse (engine.RoutingTable.LocalNodeId, TransactionId!);
             engine.MessageLoop.EnqueueSend (m, node, node.EndPoint);
         }
     }

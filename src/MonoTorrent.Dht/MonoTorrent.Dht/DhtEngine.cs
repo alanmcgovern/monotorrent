@@ -89,7 +89,7 @@ namespace MonoTorrent.Dht
         public DhtState State { get; private set; }
 
         internal TimeSpan BucketRefreshTimeout { get; set; }
-        internal NodeId LocalId => RoutingTable.LocalNode.Id;
+        internal NodeId LocalId => RoutingTable.LocalNodeId;
         internal MessageLoop MessageLoop { get; }
         public int NodeCount => RoutingTable.CountNodes ();
         IEnumerable<Node> PendingNodes { get; set; }
@@ -136,7 +136,7 @@ namespace MonoTorrent.Dht
         }
 
         internal async Task Add (Node node)
-            => await SendQueryAsync (new Ping (RoutingTable.LocalNode.Id), node);
+            => await SendQueryAsync (new Ping (RoutingTable.LocalNodeId), node);
 
         public async void Announce (InfoHash infoHash, int port)
         {

@@ -11,16 +11,13 @@ namespace MonoTorrent.Dht
     {
         byte[] id;
         RoutingTable table;
-        Node n;
 
         [SetUp]
         public void Setup ()
         {
             id = new byte[20];
             id[1] = 128;
-            n = new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0));
-            table = new RoutingTable (n);
-            table.Add (n);
+            table = new RoutingTable (new NodeId (id));
         }
 
         [Test]
@@ -65,7 +62,7 @@ namespace MonoTorrent.Dht
             TestHelper.ManyNodes (out table, out List<NodeId> nodes);
 
 
-            var closest = table.GetClosest (table.LocalNode.Id).ToList ();
+            var closest = table.GetClosest (table.LocalNodeId).ToList ();
             Assert.AreEqual (8, closest.Count, "#1");
             for (int i = 0; i < 8; i++)
                 Assert.IsTrue (closest.Exists (node => nodes[i].Equals (closest[i].Id)));

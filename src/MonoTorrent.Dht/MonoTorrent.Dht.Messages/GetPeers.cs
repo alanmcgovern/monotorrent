@@ -60,7 +60,7 @@ namespace MonoTorrent.Dht.Messages
             base.Handle (engine, node);
 
             BEncodedString token = engine.TokenManager.GenerateToken (node);
-            var response = new GetPeersResponse (engine.RoutingTable.LocalNode.Id, TransactionId, token);
+            var response = new GetPeersResponse (engine.RoutingTable.LocalNodeId, TransactionId, token);
             if (engine.Torrents.ContainsKey (InfoHash)) {
                 var list = new BEncodedList ();
                 foreach (Node n in engine.Torrents[InfoHash])

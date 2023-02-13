@@ -37,21 +37,20 @@ namespace MonoTorrent.Dht
     {
         internal List<Bucket> Buckets { get; private set; }
 
-        public Node LocalNode { get; }
+        public NodeId LocalNodeId { get; }
 
         public bool NeedsBootstrap => CountNodes () < 10;
 
         public RoutingTable ()
-            : this (new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0)))
+            : this (NodeId.Create ())
         {
 
         }
 
-        public RoutingTable (Node localNode)
+        public RoutingTable (NodeId localNodeId)
         {
             Buckets = new List<Bucket> ();
-            LocalNode = localNode ?? throw new ArgumentNullException (nameof (localNode));
-            LocalNode.Seen ();
+            LocalNodeId = localNodeId;
             Add (new Bucket ());
         }
 
@@ -70,7 +69,7 @@ namespace MonoTorrent.Dht
                 return false;
 
             bool added = bucket.Add (node);
-            if (!added && bucket.CanContain (LocalNode))
+            if (!added && bucket.CanContain (LocalNodeId))
                 if (Split (bucket))
                     return Add (node, raiseNodeAdded);
 
