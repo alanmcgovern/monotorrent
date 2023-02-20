@@ -27,6 +27,7 @@
 //
 
 
+using System.Net.Sockets;
 using System.Text;
 
 using MonoTorrent.BEncoding;
@@ -51,7 +52,7 @@ namespace MonoTorrent.Dht
         public void Setup ()
         {
             DhtMessage.UseVersionKey = false;
-            DhtMessageFactory = new DhtMessageFactory ();
+            DhtMessageFactory = new DhtMessageFactory (AddressFamily.InterNetwork);
         }
 
         [TearDown]
@@ -67,7 +68,7 @@ namespace MonoTorrent.Dht
         {
             Node n = new Node (NodeId.Create (), null);
             n.Token = token;
-            AnnouncePeer m = new AnnouncePeer (id, infohash, 6881, token);
+            AnnouncePeer m = new AnnouncePeer (AddressFamily.InterNetwork, id, infohash, 6881, token);
             m.TransactionId = transactionId;
 
             Compare (m, "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe");
@@ -76,7 +77,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void AnnouncePeerResponseEncode ()
         {
-            AnnouncePeerResponse m = new AnnouncePeerResponse (infohash, transactionId);
+            AnnouncePeerResponse m = new AnnouncePeerResponse (AddressFamily.InterNetwork, infohash, transactionId);
 
             Compare (m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re");
         }
@@ -84,7 +85,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void FindNodeEncode ()
         {
-            FindNode m = new FindNode (id, infohash);
+            FindNode m = new FindNode (AddressFamily.InterNetwork, id, infohash);
             m.TransactionId = transactionId;
 
             Compare (m, "d1:ad2:id20:abcdefghij01234567896:target20:mnopqrstuvwxyz123456e1:q9:find_node1:t2:aa1:y1:qe");
@@ -94,7 +95,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void FindNodeResponseEncode ()
         {
-            FindNodeResponse m = new FindNodeResponse (id, transactionId);
+            FindNodeResponse m = new FindNodeResponse (AddressFamily.InterNetwork, id, transactionId);
             m.Nodes = "def456...";
 
             Compare (m, "d1:rd2:id20:abcdefghij01234567895:nodes9:def456...e1:t2:aa1:y1:re");
@@ -103,7 +104,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void GetPeersEncode ()
         {
-            GetPeers m = new GetPeers (id, infohash);
+            GetPeers m = new GetPeers (AddressFamily.InterNetwork, id, infohash);
             m.TransactionId = transactionId;
 
             Compare (m, "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz123456e1:q9:get_peers1:t2:aa1:y1:qe");
@@ -113,7 +114,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void GetPeersResponseEncode ()
         {
-            GetPeersResponse m = new GetPeersResponse (id, transactionId, token);
+            GetPeersResponse m = new GetPeersResponse (AddressFamily.InterNetwork, id, transactionId, token);
             m.Values = new BEncodedList ();
             m.Values.Add ((BEncodedString) "axje.u");
             m.Values.Add ((BEncodedString) "idhtnm");
@@ -123,7 +124,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void PingEncode ()
         {
-            Ping m = new Ping (id);
+            Ping m = new Ping (AddressFamily.InterNetwork, id);
             m.TransactionId = transactionId;
 
             Compare (m, "d1:ad2:id20:abcdefghij0123456789e1:q4:ping1:t2:aa1:y1:qe");
@@ -133,7 +134,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void PingResponseEncode ()
         {
-            PingResponse m = new PingResponse (infohash, transactionId);
+            PingResponse m = new PingResponse (AddressFamily.InterNetwork, infohash, transactionId);
 
             Compare (m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re");
         }

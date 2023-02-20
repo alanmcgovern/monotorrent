@@ -28,6 +28,7 @@
 
 
 using System.Collections.Generic;
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
 
@@ -46,23 +47,23 @@ namespace MonoTorrent.Dht.Messages
 
         internal BEncodedString Token => (BEncodedString) Parameters[TokenKey];
 
-        public AnnouncePeer (NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedValue token)
-            : base (id, QueryName)
+        public AnnouncePeer (AddressFamily addressFamily, NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedValue token)
+            : base (addressFamily, id, QueryName)
         {
             Parameters.Add (InfoHashKey, BEncodedString.FromMemory (infoHash.AsMemory ()));
             Parameters.Add (PortKey, port);
             Parameters.Add (TokenKey, token);
         }
 
-        public AnnouncePeer (BEncodedDictionary d)
-            : base (d)
+        public AnnouncePeer (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
 
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
         {
-            return new AnnouncePeerResponse (parameters);
+            return new AnnouncePeerResponse (AddressFamily, parameters);
         }
 
         public override void Handle (DhtEngine engine, Node node)
@@ -75,9 +76,9 @@ namespace MonoTorrent.Dht.Messages
             DhtMessage response;
             if (engine.TokenManager.VerifyToken (node, Token)) {
                 engine.Torrents[InfoHash].Add (node);
-                response = new AnnouncePeerResponse (engine.RoutingTable.LocalNodeId, TransactionId);
+                response = new AnnouncePeerResponse (engine.AddressFamily, engine.RoutingTable.LocalNodeId, TransactionId);
             } else
-                response = new ErrorMessage (TransactionId, ErrorCode.ProtocolError, "Invalid or expired token received");
+                response = new ErrorMessage (engine.AddressFamily, TransactionId, ErrorCode.ProtocolError, "Invalid or expired token received");
 
             engine.MessageLoop.EnqueueSend (response, node, node.EndPoint);
         }

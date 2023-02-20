@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
 
@@ -68,14 +69,14 @@ namespace MonoTorrent.Dht.Messages
             }
         }
 
-        public GetPeersResponse (NodeId id, BEncodedValue transactionId, BEncodedString token)
-            : base (id, transactionId)
+        public GetPeersResponse (AddressFamily addressFamily, NodeId id, BEncodedValue transactionId, BEncodedString token)
+            : base (addressFamily, id, transactionId)
         {
             Parameters.Add (TokenKey, token);
         }
 
-        public GetPeersResponse (BEncodedDictionary d)
-            : base (d)
+        public GetPeersResponse (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
 
         }

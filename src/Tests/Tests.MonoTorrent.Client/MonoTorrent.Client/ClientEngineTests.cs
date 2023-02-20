@@ -49,8 +49,8 @@ namespace MonoTorrent.Client
         public async Task AddPeers_Dht ()
         {
             var dht = new ManualDhtEngine ();
-            var factories = Factories.Default.WithDhtCreator (() => dht);
-            var settings = EngineSettingsBuilder.CreateForTests (dhtEndPoint: new IPEndPoint (IPAddress.Any, 1234));
+            var factories = Factories.Default.WithDhtCreator (addressFamily => dht);
+            var settings = EngineSettingsBuilder.CreateForTests (dhtEndPoints: new[] { new IPEndPoint (IPAddress.Any, 1234) });
 
             using var engine = new ClientEngine (settings, factories);
             var manager = await engine.AddAsync (new MagnetLink (InfoHash.FromMemory (new byte[20])), "asd");
@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
 
             var manager = await rig.Engine.AddAsync (editor.ToTorrent (), "path", new TorrentSettings ());
 
-            var dht = (ManualDhtEngine) rig.Engine.DhtEngine;
+            var dht = (ManualDhtEngine) rig.Engine.DhtEngine.IPv4Dht;
 
             var tcs = new TaskCompletionSource<DhtPeersAdded> ();
             manager.PeersFound += (o, e) => {

@@ -27,6 +27,8 @@
 //
 
 
+using System.Net.Sockets;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
@@ -38,21 +40,21 @@ namespace MonoTorrent.Dht.Messages
 
         public NodeId InfoHash => new NodeId ((BEncodedString) Parameters[InfoHashKey]);
 
-        public GetPeers (NodeId id, NodeId infohash)
-            : base (id, QueryName)
+        public GetPeers (AddressFamily addressFamily, NodeId id, NodeId infohash)
+            : base (addressFamily, id, QueryName)
         {
             Parameters.Add (InfoHashKey, BEncodedString.FromMemory (infohash.AsMemory ()));
         }
 
-        public GetPeers (BEncodedDictionary d)
-            : base (d)
+        public GetPeers (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
 
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
         {
-            return new GetPeersResponse (parameters);
+            return new GetPeersResponse (AddressFamily, parameters);
         }
 
         public override void Handle (DhtEngine engine, Node node)
@@ -60,7 +62,7 @@ namespace MonoTorrent.Dht.Messages
             base.Handle (engine, node);
 
             BEncodedString token = engine.TokenManager.GenerateToken (node);
-            var response = new GetPeersResponse (engine.RoutingTable.LocalNodeId, TransactionId, token);
+            var response = new GetPeersResponse (engine.AddressFamily, engine.RoutingTable.LocalNodeId, TransactionId, token);
             if (engine.Torrents.ContainsKey (InfoHash)) {
                 var list = new BEncodedList ();
                 foreach (Node n in engine.Torrents[InfoHash])

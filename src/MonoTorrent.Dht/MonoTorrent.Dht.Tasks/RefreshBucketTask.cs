@@ -52,7 +52,7 @@ namespace MonoTorrent.Dht.Tasks
             bucket.SortBySeen ();
 
             foreach (Node node in bucket.Nodes.ToArray ()) {
-                var message = new FindNode (engine.LocalId, node.Id);
+                var message = new FindNode (engine.AddressFamily, engine.LocalId, node.Id);
 
                 SendQueryEventArgs args = await engine.SendQueryAsync (message, node);
                 if (!args.TimedOut)

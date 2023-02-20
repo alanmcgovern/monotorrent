@@ -171,7 +171,7 @@ namespace ClientSample
                 new EngineSettingsBuilder {
                     AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText },
                     ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } },
-                    DhtEndPoint = null,
+                    DhtEndPoints = null,
                     AllowLocalPeerDiscovery = false,
                 }.ToSettings (),
                 Factories.Default.WithBlockCacheCreator ((IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer) => {
@@ -192,7 +192,7 @@ namespace ClientSample
                         AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText },
                         DiskCacheBytes = DataSize,
                         ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } },
-                        DhtEndPoint = null,
+                        DhtEndPoints = null,
                         AllowLocalPeerDiscovery = false,
                         CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")
                     }.ToSettings (),

@@ -27,6 +27,8 @@
 //
 
 
+using System.Net.Sockets;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
@@ -35,28 +37,28 @@ namespace MonoTorrent.Dht.Messages
     {
         static readonly BEncodedString QueryName = new BEncodedString ("ping");
 
-        public Ping (NodeId id)
-            : base (id, QueryName)
+        public Ping (AddressFamily addressFamily, NodeId id)
+            : base (addressFamily, id, QueryName)
         {
 
         }
 
-        public Ping (BEncodedDictionary d)
-            : base (d)
+        public Ping (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
 
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
         {
-            return new PingResponse (parameters);
+            return new PingResponse (AddressFamily, parameters);
         }
 
         public override void Handle (DhtEngine engine, Node node)
         {
             base.Handle (engine, node);
 
-            var m = new PingResponse (engine.RoutingTable.LocalNodeId, TransactionId!);
+            var m = new PingResponse (engine.AddressFamily, engine.RoutingTable.LocalNodeId, TransactionId!);
             engine.MessageLoop.EnqueueSend (m, node, node.EndPoint);
         }
     }

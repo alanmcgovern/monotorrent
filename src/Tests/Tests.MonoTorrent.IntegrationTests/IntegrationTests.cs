@@ -244,7 +244,7 @@ namespace Tests.MonoTorrent.IntegrationTests
                 ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } },
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
-                DhtEndPoint = null,
+                DhtEndPoints = null,
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
             };

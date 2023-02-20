@@ -419,8 +419,8 @@ namespace MonoTorrent.Client
             MetadataMode = metadataMode;
             var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
             var factories = Factories.Default
-                .WithDhtCreator (() => new ManualDhtEngine ())
-                .WithDhtListenerCreator (port => new NullDhtListener ())
+                .WithDhtCreator (addressFamily => new ManualDhtEngine ())
+                .WithDhtListenerCreator (endpoint => new NullDhtListener (endpoint))
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
                 .WithTrackerCreator ("custom", uri => new Tracker (new CustomTrackerConnection (uri)))
@@ -428,7 +428,7 @@ namespace MonoTorrent.Client
 
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
-                dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
+                dhtEndPoints: new[] { new IPEndPoint (IPAddress.Any, 12345) },
                 cacheDirectory: cacheDir,
                 listenEndPoints: new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, 12345) } }
             ), factories);

@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Dht;
@@ -38,6 +39,7 @@ namespace MonoTorrent.Client
 {
     public class ManualDhtEngine : IDhtEngine
     {
+        public AddressFamily AddressFamily { get; }
         public TimeSpan AnnounceInterval { get; }
         public bool Disposed { get; private set; }
         public TimeSpan MinimumAnnounceInterval { get; }

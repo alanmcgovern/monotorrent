@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Dht;
@@ -58,17 +59,12 @@ namespace MonoTorrent.Dht
         long UploadRate { get; }
     }
 
-    public interface IDhtEngine : IDisposable
+    public interface IDhtEngine : IDht, IDisposable
     {
         event EventHandler<PeersFoundEventArgs> PeersFound;
-        event EventHandler StateChanged;
 
-        TimeSpan AnnounceInterval { get; }
+        AddressFamily AddressFamily { get; }
         bool Disposed { get; }
-        ITransferMonitor Monitor { get; }
-        TimeSpan MinimumAnnounceInterval { get; }
-        int NodeCount { get; }
-        DhtState State { get; }
 
         void Add (IEnumerable<ReadOnlyMemory<byte>> nodes);
         void Announce (InfoHash infoHash, int port);

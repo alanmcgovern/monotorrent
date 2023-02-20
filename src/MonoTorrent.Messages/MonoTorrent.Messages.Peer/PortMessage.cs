@@ -32,9 +32,9 @@ using System;
 namespace MonoTorrent.Messages.Peer
 {
     /// <summary>
-    /// Represents a "Port" message
+    /// Represents a "Port" message, indicating which UDP port the client is using for DHT communications.
     /// </summary>
-    public class PortMessage : PeerMessage, IRentable
+    public class DhtPortMessage : PeerMessage, IRentable
     {
         const int messageLength = 3;
         internal const byte MessageId = 9;
@@ -54,11 +54,11 @@ namespace MonoTorrent.Messages.Peer
 
 
         #region Constructors
-        public PortMessage ()
+        public DhtPortMessage ()
         {
         }
 
-        public PortMessage (ushort port)
+        public DhtPortMessage (ushort port)
         {
             this.port = port;
         }
@@ -86,7 +86,7 @@ namespace MonoTorrent.Messages.Peer
 
         public override bool Equals (object? obj)
         {
-            return (!(obj is PortMessage msg)) ? false : (port == msg.port);
+            return (!(obj is DhtPortMessage msg)) ? false : (port == msg.port);
         }
 
         public override int GetHashCode ()
