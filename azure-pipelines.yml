@@ -15,6 +15,23 @@ variables:
   configuration: 'Release'
 
 steps:
+# Install some versions so tests can run
+# Use .NET Core 5.0
+- task: UseDotNet@2
+  inputs:
+    packageType: 'runtime'
+    version: '3.1.x'
+
+- task: UseDotNet@2
+  inputs:
+    packageType: 'runtime'
+    version: '5.x'
+
+- task: UseDotNet@2
+  inputs:
+    packageType: 'runtime'
+    version: '6.x'
+
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
