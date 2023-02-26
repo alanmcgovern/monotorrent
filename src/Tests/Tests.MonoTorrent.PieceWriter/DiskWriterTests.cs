@@ -38,6 +38,11 @@ using NUnit.Framework;
 
 namespace MonoTorrent.PieceWriter
 {
+    static class TestLoop
+    {
+        public static MainLoop Current { get; } = new MainLoop ("test loop");
+    }
+
     public class DiskWriterTests
     {
         string Temp { get; set; }
@@ -71,6 +76,7 @@ namespace MonoTorrent.PieceWriter
         [Test]
         public async Task CloseFileAsync_Opened ()
         {
+            await TestLoop.Current;
             using var writer = new DiskWriter ();
 
             await writer.WriteAsync (TorrentFile, 0, new byte[10]);
@@ -81,8 +87,10 @@ namespace MonoTorrent.PieceWriter
         }
 
         [Test]
-        public void CloseFileAsync_Unopened ()
+        public async Task CloseFileAsync_Unopened ()
         {
+            await TestLoop.Current;
+
             using var writer = new DiskWriter ();
             Assert.DoesNotThrowAsync (async () => await writer.CloseAsync (TorrentFile));
         }
@@ -90,6 +98,8 @@ namespace MonoTorrent.PieceWriter
         [Test]
         public async Task TruncateLargeFile_ThenRead ()
         {
+            await TestLoop.Current;
+
             Directory.CreateDirectory (Path.GetDirectoryName (TorrentFile.FullPath));
             using (var file = new FileStream (TorrentFile.FullPath, FileMode.OpenOrCreate))
                 file.Write (new byte[TorrentFile.Length + 1]);
@@ -103,6 +113,8 @@ namespace MonoTorrent.PieceWriter
         [Test]
         public async Task TruncateLargeFile_ThenWrite ()
         {
+            await TestLoop.Current;
+
             Directory.CreateDirectory (Path.GetDirectoryName (TorrentFile.FullPath));
             using (var file = new FileStream (TorrentFile.FullPath, FileMode.OpenOrCreate))
                 file.Write (new byte[TorrentFile.Length + 1]);
@@ -116,6 +128,8 @@ namespace MonoTorrent.PieceWriter
         [Test]
         public async Task UnlimitedMaximumOpenFiles_Constructor ()
         {
+            await TestLoop.Current;
+
             using var writer = new DiskWriter (0);
             await writer.WriteAsync (TorrentFile, 0, new byte[12]).WithTimeout ("timed out writing");
             Assert.AreEqual (12, new FileInfo (TorrentFile.FullPath).Length);
@@ -124,6 +138,8 @@ namespace MonoTorrent.PieceWriter
         [Test]
         public async Task UnlimitedMaximumOpenFiles ()
         {
+            await TestLoop.Current;
+
             using var writer = new DiskWriter ();
             await writer.SetMaximumOpenFilesAsync (0);
             await writer.WriteAsync (TorrentFile, 0, new byte[12]).WithTimeout ("timed out writing");
@@ -133,6 +149,8 @@ namespace MonoTorrent.PieceWriter
         [Test]
         public async Task WriteMoreFilesThanMaximum()
         {
+            await TestLoop.Current;
+
             using var writer = new DiskWriter (2);
             var files = TorrentFileInfo.Create (Constants.BlockSize * 4,
                 Enumerable.Range (0, 10).Select (t => ($"test_{t}.file", (long) 12345, Path.Combine (Temp, $"test{t}.file"))).ToArray ()

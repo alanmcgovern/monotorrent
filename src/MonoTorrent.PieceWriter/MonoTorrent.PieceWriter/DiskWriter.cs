@@ -34,6 +34,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
+
+using MonoTorrent.Client;
 
 using ReusableTasks;
 
@@ -94,6 +97,8 @@ namespace MonoTorrent.PieceWriter
 
         public async ReusableTask CloseAsync (ITorrentManagerFile file)
         {
+            ThrowIfNoSyncContext ();
+
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
 
@@ -105,6 +110,8 @@ namespace MonoTorrent.PieceWriter
 
         async ReusableTask CloseAllAsync (AllStreams allStreams)
         {
+            ThrowIfNoSyncContext ();
+
             foreach (var data in allStreams.Streams) {
                 using (await data.Locker.EnterAsync ()) {
                     data.Stream.Dispose ();
@@ -124,6 +131,8 @@ namespace MonoTorrent.PieceWriter
 
         public async ReusableTask FlushAsync (ITorrentManagerFile file)
         {
+            ThrowIfNoSyncContext ();
+
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
 
@@ -139,6 +148,8 @@ namespace MonoTorrent.PieceWriter
 
         public async ReusableTask MoveAsync (ITorrentManagerFile file, string newPath, bool overwrite)
         {
+            ThrowIfNoSyncContext ();
+
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
 
@@ -160,6 +171,8 @@ namespace MonoTorrent.PieceWriter
 
         public async ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
+            ThrowIfNoSyncContext ();
+
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
 
@@ -177,6 +190,8 @@ namespace MonoTorrent.PieceWriter
 
         public async ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
         {
+            ThrowIfNoSyncContext ();
+
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
 
@@ -186,8 +201,7 @@ namespace MonoTorrent.PieceWriter
             using (await Limiter.EnterAsync ()) {
                 (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
                 using (releaser)
-                    if (writer != null)
-                        await writer.WriteAsync (buffer, offset).ConfigureAwait (false);
+                    await writer.WriteAsync (buffer, offset).ConfigureAwait (false);
             }
         }
 
@@ -272,6 +286,13 @@ namespace MonoTorrent.PieceWriter
         {
             using (await streamData.Locker.EnterAsync ().ConfigureAwait (false))
                 streamData.Stream?.Dispose ();
+        }
+
+        [Conditional ("DEBUG")]
+        void ThrowIfNoSyncContext ()
+        {
+            if (SynchronizationContext.Current is null)
+                throw new InvalidOperationException ();
         }
     }
 }
