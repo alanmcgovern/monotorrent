@@ -47,6 +47,8 @@ namespace MonoTorrent.Client
 
         public bool Disposed => false;
 
+        public IPEndPoint EndPoint => new IPEndPoint (IPAddress.Parse (Uri.Host), Uri.Port);
+
         public bool IsIncoming { get; }
 
         public Uri Uri => new Uri ($"ipv4://1.2.3.4:5678");

@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -183,7 +184,8 @@ namespace MonoTorrent.Client
         public int? ManualBytesSent { get; set; }
         public string Name => IsIncoming ? "Incoming" : "Outgoing";
         public bool SlowConnection { get; set; }
-        public Uri Uri => new Uri ("ipv4://127.0.0.1:1234");
+        public IPEndPoint EndPoint => new IPEndPoint (IPAddress.Parse (Uri.Host), Uri.Port);
+        public Uri Uri { get; set; }
 
         public List<int> Receives { get; } = new List<int> ();
         public List<int> Sends { get; } = new List<int> ();
@@ -201,11 +203,12 @@ namespace MonoTorrent.Client
         /// </summary>
         public ConnectionMonitor Monitor { get; } = new ConnectionMonitor ();
 
-        public CustomConnection (Stream readStream, Stream writeStream, bool isIncoming)
+        public CustomConnection (Stream readStream, Stream writeStream, bool isIncoming, Uri uri = null)
         {
             ReadStream = readStream;
             WriteStream = writeStream;
             IsIncoming = isIncoming;
+            Uri = uri ?? new Uri ("ipv4://127.0.0.1:1234");
         }
 
         public ReusableTask ConnectAsync ()

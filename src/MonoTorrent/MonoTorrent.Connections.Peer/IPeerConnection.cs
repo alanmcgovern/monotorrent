@@ -43,6 +43,11 @@ namespace MonoTorrent.Connections.Peer
 
         bool Disposed { get; }
 
+        /// <summary>
+        /// The endpoint of the remote peer. Will be null for web seeds or http seeds.
+        /// </summary>
+        IPEndPoint? EndPoint { get; }
+
         bool IsIncoming { get; }
 
         ReusableTask ConnectAsync ();

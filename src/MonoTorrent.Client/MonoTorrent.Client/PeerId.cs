@@ -46,6 +46,7 @@ namespace MonoTorrent.Client
         public ReadOnlyMemory<byte> AddressBytes { get; } = Array.Empty<byte> ();
         public bool CanReconnect { get; }
         public bool Disposed { get; private set; }
+        public IPEndPoint? EndPoint => null;
         public bool IsIncoming { get; }
         public Uri Uri { get; } = new Uri ("test://1234.com:3434");
 

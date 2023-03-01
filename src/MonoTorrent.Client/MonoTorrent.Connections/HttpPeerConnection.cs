@@ -135,6 +135,8 @@ namespace MonoTorrent.Connections.Peer
 
         WebResponse? DataStreamResponse { get; set; }
 
+        public IPEndPoint? EndPoint { get; } = null;
+
         public bool IsIncoming => false;
 
         ITorrentManagerInfo TorrentData { get; set; }
