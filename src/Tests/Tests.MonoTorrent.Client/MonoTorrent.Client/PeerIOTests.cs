@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Peer.Encryption;
@@ -46,7 +47,7 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
-            pair = new ConnectionPair ().WithTimeout ();
+            pair = new ConnectionPair (AddressFamily.InterNetwork).WithTimeout ();
         }
 
         [TearDown]
