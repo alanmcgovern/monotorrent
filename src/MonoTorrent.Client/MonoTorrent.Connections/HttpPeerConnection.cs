@@ -357,9 +357,9 @@ namespace MonoTorrent.Connections.Peer
                     break;
 
                 // We want data from a later file
-                if (startOffset >= file.Length) {
-                    startOffset -= file.Length;
-                    endOffset -= file.Length;
+                if (startOffset >= file.Length + file.Padding) {
+                    startOffset -= file.Length + file.Padding;
+                    endOffset -= file.Length + file.Padding;
                 }
                 // We want data from the end of the current file and from the next few files
                 else if (endOffset >= file.Length) {
