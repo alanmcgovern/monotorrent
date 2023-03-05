@@ -308,10 +308,7 @@ namespace MonoTorrent.Connections.Peer
             List<BlockInfo> bundle = DecodeMessages (socketBuffer.Span);
             if (bundle.Count > 0) {
                 RequestMessages.AddRange (bundle);
-                // The RequestMessages are always sequential
-                BlockInfo start = RequestMessages[0];
-                BlockInfo end = RequestMessages[RequestMessages.Count - 1];
-                CreateWebRequests (start, end);
+                CreateWebRequests (RequestMessages.ToArray ());
             } else {
                 return socketBuffer.Length;
             }
@@ -334,8 +331,26 @@ namespace MonoTorrent.Connections.Peer
             return messages;
         }
 
+        void CreateWebRequests (BlockInfo[] blocks)
+        {
+            if (blocks.Length > 0) {
+                BlockInfo startBlock = blocks[0];
+                BlockInfo currentBlock = startBlock;
+                for (int i = 1; i < blocks.Length; i++) {
+                    BlockInfo previousBlock = blocks[i - 1];
+                    currentBlock = blocks[i];
+                    long endOffsetOfPreviousEndBlock = TorrentData.TorrentInfo!.PieceIndexToByteOffset (previousBlock.PieceIndex) + previousBlock.StartOffset + previousBlock.RequestLength;
+                    long startOffsetOfCurrentBlock = TorrentData.TorrentInfo!.PieceIndexToByteOffset (currentBlock.PieceIndex) + currentBlock.StartOffset;
+                    if (endOffsetOfPreviousEndBlock != startOffsetOfCurrentBlock) {
+                        CreateWebRequestsForSequentialRange (startBlock, previousBlock);
+                        startBlock = currentBlock;
+                    }
+                }
+                CreateWebRequestsForSequentialRange (startBlock, currentBlock);
+            }
+        }
 
-        void CreateWebRequests (BlockInfo start, BlockInfo end)
+        void CreateWebRequestsForSequentialRange (BlockInfo start, BlockInfo end)
         {
             // Properly handle the case where we have multiple files
             // This is only implemented for single file torrents
