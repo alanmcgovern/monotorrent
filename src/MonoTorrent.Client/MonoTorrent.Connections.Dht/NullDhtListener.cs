@@ -29,25 +29,27 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Connections.Dht
 {
     class NullDhtListener : IDhtListener
     {
+        public static IDhtListener IPv4 { get; } = new NullDhtListener (new IPEndPoint (IPAddress.Any, 0));
+        public static IDhtListener IPv6 { get; } = new NullDhtListener (new IPEndPoint (IPAddress.IPv6Any, 0));
+
 #pragma warning disable 0067
         public event Action<byte[], IPEndPoint>? MessageReceived;
         public event EventHandler<EventArgs>? StatusChanged;
 #pragma warning restore 0067
 
-        public NullDhtListener ()
-        {
-
-        }
-
         public IPEndPoint? LocalEndPoint { get; }
-
+        public IPEndPoint PreferredLocalEndPoint { get; }
         public ListenerStatus Status { get; } = ListenerStatus.NotListening;
+
+        public NullDhtListener (IPEndPoint endPoint)
+            => (PreferredLocalEndPoint) = endPoint;
 
         public Task SendAsync (byte[] buffer, IPEndPoint endpoint)
         {

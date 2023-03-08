@@ -101,8 +101,8 @@ namespace MonoTorrent.Client.Modes
                 HandleHaveMessage (id, have);
             else if (message is RequestMessage request)
                 HandleRequestMessage (id, request);
-            else if (message is PortMessage port)
-                HandlePortMessage (id, port);
+            else if (message is DhtPortMessage port)
+                HandleDhtPortMessage (id, port);
             else if (message is PieceMessage piece)
                 HandlePieceMessage (id, piece, releaser);
             else if (message is NotInterestedMessage notinterested)
@@ -466,9 +466,9 @@ namespace MonoTorrent.Client.Modes
                 Manager.finishedPieces.Enqueue (block.PieceIndex);
         }
 
-        protected virtual void HandlePortMessage (PeerId id, PortMessage message)
+        protected virtual void HandleDhtPortMessage (PeerId id, DhtPortMessage message)
         {
-            id.Port = (ushort) message.Port;
+            id.DhtPort = (ushort) message.Port;
         }
 
         protected virtual void HandleRequestMessage (PeerId id, RequestMessage message)

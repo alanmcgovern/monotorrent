@@ -61,6 +61,7 @@ namespace MonoTorrent.Dht
         internal SpeedMonitor ReceiveMonitor { get; } = new SpeedMonitor ();
     }
 
+
     public class DhtEngine : IDisposable, IDhtEngine
     {
         static readonly TimeSpan DefaultAnnounceInternal = TimeSpan.FromMinutes (10);
@@ -75,9 +76,6 @@ namespace MonoTorrent.Dht
 
         internal static MainLoop MainLoop { get; } = new MainLoop ("DhtLoop");
 
-        // IPV6 - create an IPV4 and an IPV6 dht engine
-        public AddressFamily AddressFamily { get; private set; } = AddressFamily.InterNetwork;
-
         public TimeSpan AnnounceInterval => DefaultAnnounceInternal;
 
         public bool Disposed { get; private set; }
@@ -87,7 +85,7 @@ namespace MonoTorrent.Dht
         public TimeSpan MinimumAnnounceInterval => DefaultMinimumAnnounceInterval;
 
         public DhtState State { get; private set; }
-
+        public AddressFamily AddressFamily { get; }
         internal TimeSpan BucketRefreshTimeout { get; set; }
         internal NodeId LocalId => RoutingTable.LocalNodeId;
         internal MessageLoop MessageLoop { get; }
@@ -97,9 +95,18 @@ namespace MonoTorrent.Dht
         internal TokenManager TokenManager { get; }
         internal Dictionary<NodeId, List<Node>> Torrents { get; }
 
-        public DhtEngine ()
+        public DhtEngine (AddressFamily addressFamily)
+            : this(addressFamily, new TransferMonitor ())
         {
-            var monitor = new TransferMonitor ();
+
+        }
+
+        internal DhtEngine (AddressFamily addressFamily, TransferMonitor monitor)
+        {
+            if (addressFamily != AddressFamily.InterNetwork && addressFamily != AddressFamily.InterNetworkV6)
+                throw new NotSupportedException (nameof (addressFamily));
+
+            AddressFamily = addressFamily;
             BucketRefreshTimeout = TimeSpan.FromMinutes (15);
             MessageLoop = new MessageLoop (this, monitor);
             Monitor = monitor;
@@ -136,7 +143,7 @@ namespace MonoTorrent.Dht
         }
 
         internal async Task Add (Node node)
-            => await SendQueryAsync (new Ping (RoutingTable.LocalNodeId), node);
+            => await SendQueryAsync (new Ping (AddressFamily, RoutingTable.LocalNodeId), node);
 
         public async void Announce (InfoHash infoHash, int port)
         {
@@ -229,9 +236,14 @@ namespace MonoTorrent.Dht
 
         public async Task<ReadOnlyMemory<byte>> SaveNodesAsync ()
         {
-            await MainLoop;
-
             var details = new BEncodedList ();
+            await SaveNodesAsync (details).ConfigureAwait (false);
+            return details.Encode ();
+        }
+
+        internal async Task SaveNodesAsync (BEncodedList details)
+        {
+            await MainLoop;
 
             foreach (Bucket b in RoutingTable.Buckets) {
                 foreach (Node n in b.Nodes)
@@ -242,8 +254,6 @@ namespace MonoTorrent.Dht
                     if (b.Replacement.State != NodeState.Bad)
                         details.Add (b.Replacement.CompactNode ());
             }
-
-            return details.Encode ();
         }
 
         internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
@@ -325,8 +335,11 @@ namespace MonoTorrent.Dht
 
         public async Task SetListenerAsync (IDhtListener listener)
         {
+            if (listener.PreferredLocalEndPoint.AddressFamily != AddressFamily)
+                throw new NotSupportedException ($"This DhtEngine is configured for {AddressFamily} connections. A listener of type {listener.PreferredLocalEndPoint.AddressFamily} was provided");
+
             await MainLoop;
-            await MessageLoop.SetListener (listener);
+            await MessageLoop.SetListenerAsync (listener);
         }
     }
 }

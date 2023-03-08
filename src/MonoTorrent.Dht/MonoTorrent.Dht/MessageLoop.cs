@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -113,7 +114,7 @@ namespace MonoTorrent.Dht
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
             Monitor = monitor;
-            DhtMessageFactory = new DhtMessageFactory ();
+            DhtMessageFactory = new DhtMessageFactory (engine.AddressFamily);
             Listener = new NullDhtListener ();
             ReceiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>> ();
             SendQueue = new Queue<SendDetails> ();
@@ -206,7 +207,7 @@ namespace MonoTorrent.Dht
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            DhtMessageFactory = new DhtMessageFactory ();
+            DhtMessageFactory = new DhtMessageFactory (Engine.AddressFamily);
             if (Listener.Status != ListenerStatus.Listening)
                 Listener.Start ();
         }
@@ -214,8 +215,8 @@ namespace MonoTorrent.Dht
         internal void Stop ()
         {
             DhtEngine.MainLoop.CheckThread ();
-
-            DhtMessageFactory = new DhtMessageFactory ();
+            
+            DhtMessageFactory = new DhtMessageFactory (Engine.AddressFamily);
             SendQueue.Clear ();
             ReceiveQueue.Clear ();
             WaitingResponse.Clear ();
@@ -287,22 +288,23 @@ namespace MonoTorrent.Dht
                     RaiseMessageSent (node, node.EndPoint, (QueryMessage) query.Message!, error);
                 }
             } catch (MessageException) {
-                var error = new ErrorMessage (message.TransactionId, ErrorCode.GenericError, "Unexpected error responding to the message");
+                var error = new ErrorMessage (Engine.AddressFamily, message.TransactionId, ErrorCode.GenericError, "Unexpected error responding to the message");
                 query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node!, query.Destination!, (QueryMessage) query.Message!, error));
             } catch (Exception) {
-                var error = new ErrorMessage (message.TransactionId, ErrorCode.GenericError, "Unexpected exception responding to the message");
+                var error = new ErrorMessage (Engine.AddressFamily, message.TransactionId, ErrorCode.GenericError, "Unexpected exception responding to the message");
                 query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node!, query.Destination!, (QueryMessage) query.Message!, error));
                 EnqueueSend (error, null, source);
             }
         }
 
-        internal ReusableTask SetListener (IDhtListener listener)
+        internal ReusableTask SetListenerAsync (IDhtListener listener)
         {
             DhtEngine.MainLoop.CheckThread ();
 
             Listener.MessageReceived -= MessageReceived;
-            Listener = listener ?? new NullDhtListener ();
+            Listener = listener;
             Listener.MessageReceived += MessageReceived;
+
             return ReusableTask.CompletedTask;
         }
 

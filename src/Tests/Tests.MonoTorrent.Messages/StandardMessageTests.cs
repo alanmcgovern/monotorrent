@@ -268,13 +268,13 @@ namespace MonoTorrent.Messages.Peer
         [Test]
         public void PortEncoding ()
         {
-            int length = new PortMessage (2500).Encode (buffer.AsSpan (offset));
+            int length = new DhtPortMessage (2500).Encode (buffer.AsSpan (offset));
             Assert.AreEqual ("00-00-00-03-09-09-C4", BitConverter.ToString (buffer, offset, length));
         }
         [Test]
         public void PortDecoding ()
         {
-            EncodeDecode (new PortMessage (5452));
+            EncodeDecode (new DhtPortMessage (5452));
         }
 
 

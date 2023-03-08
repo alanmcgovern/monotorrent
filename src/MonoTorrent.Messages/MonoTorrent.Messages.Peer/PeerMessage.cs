@@ -114,7 +114,7 @@ namespace MonoTorrent.Messages.Peer
             Register (RequestMessage.MessageId, _ => PeerMessageCache<RequestMessage>.GetOrCreate ());
             Register (PieceMessage.MessageId, _ => PeerMessageCache<PieceMessage>.GetOrCreate ());
             Register (CancelMessage.MessageId, _ => PeerMessageCache<CancelMessage>.GetOrCreate ());
-            Register (PortMessage.MessageId, _ => PeerMessageCache<PortMessage>.GetOrCreate ());
+            Register (DhtPortMessage.MessageId, _ => PeerMessageCache<DhtPortMessage>.GetOrCreate ());
 
             // Cacheable FastMessages
             Register (AllowedFastMessage.MessageId, _ => PeerMessageCache<AllowedFastMessage>.GetOrCreate ());

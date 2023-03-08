@@ -27,20 +27,22 @@
 //
 
 
+using System.Net.Sockets;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
     sealed class AnnouncePeerResponse : ResponseMessage
     {
-        public AnnouncePeerResponse (NodeId id, BEncodedValue transactionId)
-            : base (id, transactionId)
+        public AnnouncePeerResponse (AddressFamily addressFamily, NodeId id, BEncodedValue transactionId)
+            : base (addressFamily, id, transactionId)
         {
 
         }
 
-        public AnnouncePeerResponse (BEncodedDictionary d)
-            : base (d)
+        public AnnouncePeerResponse (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
 
         }

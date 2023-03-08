@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections;
@@ -54,7 +55,7 @@ namespace MonoTorrent.Client.Modes
         [SetUp]
         public void Setup ()
         {
-            conn = new ConnectionPair ().WithTimeout ();
+            conn = new ConnectionPair (AddressFamily.InterNetwork).WithTimeout ();
             PieceWriter = new TestWriter ();
             TrackerManager = new ManualTrackerManager ();
 

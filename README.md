@@ -39,6 +39,7 @@ This is a list of all the BEPs which have been implemented in MonoTorrent. A ful
 ## Draft BEPs
 
 * BEP 16 - [Superseeding](http://www.bittorrent.org/beps/bep_0016.html)
+* BEP 32 - [BitTorrent DHT Extensions for IPv6](http://www.bittorrent.org/beps/bep_0032.html)
 * BEP 48 - [Tracker Protocol Extension: Scrape](http://www.bittorrent.org/beps/bep_0048.html)
 * BEP 47 - [Padding files and extended file attributes](https://www.bittorrent.org/beps/bep_0047.html)
 * BEP 52 - [The BitTorrent Protocol Specification v2](https://www.bittorrent.org/beps/bep_0052.html)

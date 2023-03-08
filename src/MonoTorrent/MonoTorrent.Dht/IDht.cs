@@ -29,9 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using MonoTorrent.Dht;
-
-namespace MonoTorrent.Client
+namespace MonoTorrent.Dht
 {
     public interface IDht
     {

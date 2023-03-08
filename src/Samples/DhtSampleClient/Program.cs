@@ -14,7 +14,7 @@ namespace ClientSample
         static async Task Main (string[] args)
         {
             // Create a DHT engine, and register a listener on port 15000
-            var engine = new DhtEngine ();
+            var engine = new DhtEngine (System.Net.Sockets.AddressFamily.InterNetwork);
             var listener = new DhtListener (new IPEndPoint (IPAddress.Any, 15000));
             await engine.SetListenerAsync (listener);
 

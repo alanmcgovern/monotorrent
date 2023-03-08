@@ -203,7 +203,7 @@ namespace MonoTorrent.Client
         internal MessageQueue MessageQueue { get; set; }
         internal Peer Peer { get; }
         internal PeerExchangeManager? PeerExchangeManager { get; set; }
-        internal ushort Port { get; set; }
+        internal ushort DhtPort { get; set; }
         internal List<int> SuggestedPieces { get; }
 
         #endregion Properties

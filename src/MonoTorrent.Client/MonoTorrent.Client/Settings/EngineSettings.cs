@@ -33,6 +33,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 
 using MonoTorrent.Connections;
 using MonoTorrent.Dht;
@@ -126,10 +127,15 @@ namespace MonoTorrent.Client
         public CachePolicy DiskCachePolicy { get; } = CachePolicy.WritesOnly;
 
         /// <summary>
-        /// The UDP port used for DHT communications. Set the port to 0 to choose a random available port.
-        /// Set to null to disable DHT. Defaults to IPAddress.Any with port 0.
+        /// The list of endpoints which will be used for DHT communications. An empty collection disables DHT.
+        /// By default the collection contains two IPEndPoints, binding to IPAddress.Any and IPAddress.IPv6Any using
+        /// port 0.
         /// </summary>
-        public IPEndPoint? DhtEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
+        public IList<IPEndPoint> DhtEndPoints { get; } = Array.AsReadOnly (new[] {
+            new IPEndPoint (IPAddress.Any, 0),
+            new IPEndPoint (IPAddress.IPv6Any, 0)
+        });
+
 
         /// <summary>
         /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutoSaveLoadFastResume"/>
@@ -265,7 +271,7 @@ namespace MonoTorrent.Client
         internal EngineSettings (
             IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
-            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, Dictionary<string, IPEndPoint> listenEndPoints,
+            TimeSpan connectionTimeout, IList<IPEndPoint>? dhtEndPoints, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, Dictionary<string, IPEndPoint> listenEndPoints,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
             int maximumOpenFiles, int maximumUploadRate, IDictionary<string, IPEndPoint> reportedListenEndPoints, bool usePartialFiles,
             TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
@@ -279,7 +285,7 @@ namespace MonoTorrent.Client
             AutoSaveLoadDhtCache = autoSaveLoadDhtCache;
             AutoSaveLoadFastResume = autoSaveLoadFastResume;
             AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata;
-            DhtEndPoint = dhtEndPoint;
+            DhtEndPoints = Array.AsReadOnly (dhtEndPoints?.ToArray () ?? Array.Empty<IPEndPoint> ());
             DiskCacheBytes = diskCacheBytes;
             DiskCachePolicy = diskCachePolicy;
             CacheDirectory = cacheDirectory;
@@ -302,8 +308,12 @@ namespace MonoTorrent.Client
             WebSeedSpeedTrigger = webSeedSpeedTrigger;
         }
 
-        internal string GetDhtNodeCacheFilePath ()
-            => Path.Combine (CacheDirectory, "dht_nodes.cache");
+        internal string GetDhtNodeCacheFilePath (AddressFamily family)
+            => family switch {
+                AddressFamily.InterNetwork => Path.Combine (CacheDirectory, "dht_nodes_ipv4.cache"),
+                AddressFamily.InterNetworkV6 => Path.Combine (CacheDirectory, "dht_nodes_ipv6.cache"),
+                _ => throw new NotSupportedException ($"DHT does not support AddressFamily.{family}. Only InterNetwork and InterNetworkv6 are supported.")
+            };
 
         /// <summary>
         /// Returns the full path to the <see cref="FastResume"/> file for the specified torrent. This is
@@ -334,7 +344,7 @@ namespace MonoTorrent.Client
                    && AutoSaveLoadFastResume == other.AutoSaveLoadFastResume
                    && AutoSaveLoadMagnetLinkMetadata == other.AutoSaveLoadMagnetLinkMetadata
                    && CacheDirectory == other.CacheDirectory
-                   && Equals (DhtEndPoint, other.DhtEndPoint)
+                   && DhtEndPoints.SequenceEqual (other.DhtEndPoints)
                    && DiskCacheBytes == other.DiskCacheBytes
                    && DiskCachePolicy == other.DiskCachePolicy
                    && FastResumeMode == other.FastResumeMode

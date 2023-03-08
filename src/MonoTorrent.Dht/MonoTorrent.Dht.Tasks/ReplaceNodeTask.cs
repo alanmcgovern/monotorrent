@@ -58,7 +58,7 @@ namespace MonoTorrent.Dht.Tasks
                 return;
             } else {
                 Node oldest = bucket.Nodes[0];
-                SendQueryEventArgs args = await engine.SendQueryAsync (new Ping (engine.LocalId), oldest);
+                SendQueryEventArgs args = await engine.SendQueryAsync (new Ping (engine.AddressFamily, engine.LocalId), oldest);
 
                 if (args.TimedOut) {
                     // If the node didn't respond and it's no longer in our bucket,

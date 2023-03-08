@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
 
@@ -39,20 +40,23 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString QueryNameKey = new BEncodedString ("q");
         static readonly BEncodedString MessageTypeKey = new BEncodedString ("y");
         static readonly BEncodedString TransactionIdKey = new BEncodedString ("t");
-        static readonly Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
+        static readonly Dictionary<BEncodedString, Func<AddressFamily, BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<AddressFamily, BEncodedDictionary, DhtMessage>> ();
 
         readonly Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage> ();
 
-
+        public AddressFamily AddressFamily { get; }
         public int RegisteredMessages => messages.Count;
 
         static DhtMessageFactory ()
         {
-            queryDecoders.Add (new BEncodedString ("announce_peer"), d => new AnnouncePeer (d));
-            queryDecoders.Add (new BEncodedString ("find_node"), d => new FindNode (d));
-            queryDecoders.Add (new BEncodedString ("get_peers"), d => new GetPeers (d));
-            queryDecoders.Add (new BEncodedString ("ping"), d => new Ping (d));
+            queryDecoders.Add (new BEncodedString ("announce_peer"), (family, d) => new AnnouncePeer (family, d));
+            queryDecoders.Add (new BEncodedString ("find_node"), (family, d) => new FindNode (family, d));
+            queryDecoders.Add (new BEncodedString ("get_peers"), (family, d) => new GetPeers (family, d));
+            queryDecoders.Add (new BEncodedString ("ping"), (family, d) => new Ping (family, d));
         }
+
+        public DhtMessageFactory (AddressFamily addressFamily)
+            => (AddressFamily) = (addressFamily);
 
         internal bool IsRegistered (BEncodedValue transactionId)
         {
@@ -94,9 +98,9 @@ namespace MonoTorrent.Dht.Messages
             }
 
             if (messageType.Equals (QueryMessage.QueryType)) {
-                message = queryDecoders[(BEncodedString) dictionary[QueryNameKey]] (dictionary);
+                message = queryDecoders[(BEncodedString) dictionary[QueryNameKey]] (AddressFamily, dictionary);
             } else if (messageType.Equals (ErrorMessage.ErrorType)) {
-                message = new ErrorMessage (dictionary);
+                message = new ErrorMessage (AddressFamily, dictionary);
                 messages.Remove (message.TransactionId!);
             } else {
                 var key = (BEncodedString) dictionary[TransactionIdKey];
@@ -114,7 +118,7 @@ namespace MonoTorrent.Dht.Messages
 
             // If the transaction ID is null, or invalid, we should bail out
             if (message != null && message.TransactionId == null)
-                error = "Response had a null transation ID";
+                error = "Response had a null transaction ID";
 
             // If the node ID is null, or invalid, we should bail out
             if (message != null && message.Id == null)

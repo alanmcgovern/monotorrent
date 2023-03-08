@@ -26,20 +26,22 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
+
 
 namespace MonoTorrent.Dht.Messages
 {
     sealed class PingResponse : ResponseMessage
     {
-        public PingResponse (NodeId id, BEncodedValue transactionId)
-            : base (id, transactionId)
+        public PingResponse (AddressFamily addressFamily, NodeId id, BEncodedValue transactionId)
+            : base (addressFamily, id, transactionId)
         {
         }
 
-        public PingResponse (BEncodedDictionary d)
-            : base (d)
+        public PingResponse (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
         }
     }

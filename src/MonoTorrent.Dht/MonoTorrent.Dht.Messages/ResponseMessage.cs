@@ -27,6 +27,8 @@
 //
 
 
+using System.Net.Sockets;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
@@ -40,16 +42,16 @@ namespace MonoTorrent.Dht.Messages
 
         public BEncodedDictionary Parameters => (BEncodedDictionary) properties[ReturnValuesKey];
 
-        protected ResponseMessage (NodeId id, BEncodedValue transactionId)
-            : base (ResponseType)
+        protected ResponseMessage (AddressFamily addressFamily, NodeId id, BEncodedValue transactionId)
+            : base (addressFamily, ResponseType)
         {
             properties.Add (ReturnValuesKey, new BEncodedDictionary ());
             Parameters.Add (IdKey, BEncodedString.FromMemory (id.AsMemory ()));
             TransactionId = transactionId;
         }
 
-        protected ResponseMessage (BEncodedDictionary d)
-            : base (d)
+        protected ResponseMessage (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
 
         }

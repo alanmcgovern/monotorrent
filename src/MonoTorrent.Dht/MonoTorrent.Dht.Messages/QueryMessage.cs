@@ -27,6 +27,9 @@
 //
 
 
+using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
@@ -41,14 +44,14 @@ namespace MonoTorrent.Dht.Messages
 
         protected BEncodedDictionary Parameters => (BEncodedDictionary) properties[QueryArgumentsKey];
 
-        protected QueryMessage (NodeId id, BEncodedString queryName)
-            : this (id, queryName, new BEncodedDictionary ())
+        protected QueryMessage (AddressFamily addressFamily, NodeId id, BEncodedString queryName)
+            : this (addressFamily, id, queryName, new BEncodedDictionary ())
         {
 
         }
 
-        protected QueryMessage (NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments)
-            : base (QueryType)
+        protected QueryMessage (AddressFamily addressFamily, NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments)
+            : base (addressFamily, QueryType)
         {
             properties.Add (QueryNameKey, queryName);
             properties.Add (QueryArgumentsKey, queryArguments);
@@ -56,8 +59,8 @@ namespace MonoTorrent.Dht.Messages
             Parameters.Add (IdKey, BEncodedString.FromMemory (id.AsMemory ()));
         }
 
-        protected QueryMessage (BEncodedDictionary d)
-            : base (d)
+        protected QueryMessage (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
         }
 

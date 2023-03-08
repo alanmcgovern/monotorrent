@@ -27,6 +27,7 @@
 //
 
 using System;
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
 
@@ -44,8 +45,8 @@ namespace MonoTorrent.Dht.Messages
 
         string Message => ((BEncodedString) ErrorList[1]).Text;
 
-        public ErrorMessage (BEncodedValue transactionId, ErrorCode error, string message)
-            : base (ErrorType)
+        public ErrorMessage (AddressFamily addressFamily, BEncodedValue transactionId, ErrorCode error, string message)
+            : base (addressFamily, ErrorType)
         {
             var l = new BEncodedList {
                 new BEncodedNumber ((int) error),
@@ -56,8 +57,8 @@ namespace MonoTorrent.Dht.Messages
             TransactionId = transactionId;
         }
 
-        public ErrorMessage (BEncodedDictionary d)
-            : base (d)
+        public ErrorMessage (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
 
         }

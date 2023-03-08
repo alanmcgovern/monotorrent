@@ -27,6 +27,8 @@
 //
 
 
+using System.Net.Sockets;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
@@ -40,14 +42,14 @@ namespace MonoTorrent.Dht.Messages
             set => Parameters[NodesKey] = value;
         }
 
-        public FindNodeResponse (NodeId id, BEncodedValue transactionId)
-            : base (id, transactionId)
+        public FindNodeResponse (AddressFamily addressFamily, NodeId id, BEncodedValue transactionId)
+            : base (addressFamily, id, transactionId)
         {
             Parameters.Add (NodesKey, BEncodedString.Empty);
         }
 
-        public FindNodeResponse (BEncodedDictionary d)
-            : base (d)
+        public FindNodeResponse (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
         }
     }

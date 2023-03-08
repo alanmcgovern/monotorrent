@@ -283,12 +283,23 @@ namespace MonoTorrent.Client
         public CustomConnection Incoming { get; }
         public CustomConnection Outgoing { get; }
 
-        public ConnectionPair ()
+        public ConnectionPair (AddressFamily family)
         {
             var incoming = new SocketStream ();
             var outgoing = new SocketStream ();
-            Incoming = new CustomConnection (incoming, outgoing, true);
-            Outgoing = new CustomConnection (outgoing, incoming, false);
+
+            var uriIncoming = family switch {
+                AddressFamily.InterNetwork => new Uri ("ipv4://1.2.3.4:1111"),
+                AddressFamily.InterNetworkV6 => new Uri ("ipv6://[DE:AD::BE:EF]:1111"),
+                _ => throw new NotSupportedException ()
+            };
+            var uriOutgoing = family switch {
+                AddressFamily.InterNetwork => new Uri ("ipv4://4.3.2.1:2222"),
+                AddressFamily.InterNetworkV6 => new Uri ("ipv6://[DE:AF::BE:EF]:2222"),
+                _ => throw new NotSupportedException ()
+            };
+            Incoming = new CustomConnection (incoming, outgoing, true, uriIncoming);
+            Outgoing = new CustomConnection (outgoing, incoming, false, uriOutgoing);
         }
 
         public void Dispose ()
@@ -419,8 +430,8 @@ namespace MonoTorrent.Client
             MetadataMode = metadataMode;
             var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
             var factories = Factories.Default
-                .WithDhtCreator (() => new ManualDhtEngine ())
-                .WithDhtListenerCreator (port => new NullDhtListener ())
+                .WithDhtCreator (addressFamily => new ManualDhtEngine ())
+                .WithDhtListenerCreator (endpoint => new NullDhtListener (endpoint))
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
                 .WithTrackerCreator ("custom", uri => new Tracker (new CustomTrackerConnection (uri)))
@@ -428,7 +439,7 @@ namespace MonoTorrent.Client
 
             Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
                 allowLocalPeerDiscovery: true,
-                dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
+                dhtEndPoints: new[] { new IPEndPoint (IPAddress.Any, 12345) },
                 cacheDirectory: cacheDir,
                 listenEndPoints: new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, 12345) } }
             ), factories);
