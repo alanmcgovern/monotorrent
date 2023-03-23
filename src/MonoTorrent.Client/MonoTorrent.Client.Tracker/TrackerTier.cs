@@ -153,9 +153,9 @@ namespace MonoTorrent.Trackers
                 try {
                     var response = await DoAnnounceAsync (args, tracker, token);
                     var dict = response.Peers;
-                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true, dict));
+                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, response.State == TrackerState.Ok, dict));
                     LastAnnounce = ValueStopwatch.StartNew ();
-                    LastAnnounceSucceeded = true;
+                    LastAnnounceSucceeded = response.State == TrackerState.Ok;
                     logger.InfoFormatted ("Announced to {0}", tracker.Uri);
                     return;
                 } catch {
@@ -180,7 +180,7 @@ namespace MonoTorrent.Trackers
 
             try {
                 var result = await DoAnnounceAsync (args, tracker, token);
-                AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true));
+                AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, result.State == TrackerState.Ok));
                 LastAnnounceSucceeded = true;
                 return result;
             } catch {
@@ -212,7 +212,7 @@ namespace MonoTorrent.Trackers
                     continue;
                 try {
                     LastScrapeResponse = await tracker.ScrapeAsync (args, token);
-                    ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, true));
+                    ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, LastScrapeResponse.State == TrackerState.Ok));
                 } catch {
                     ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, false));
                     token.ThrowIfCancellationRequested ();
@@ -224,7 +224,7 @@ namespace MonoTorrent.Trackers
         {
             try {
                 LastScrapeResponse = await tracker.ScrapeAsync (args, token);
-                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, true));
+                ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, LastScrapeResponse.State == TrackerState.Ok));
             } catch {
                 ScrapeComplete?.Invoke (this, new ScrapeResponseEventArgs (tracker, false));
                 token.ThrowIfCancellationRequested ();
