@@ -99,7 +99,7 @@ namespace MonoTorrent
 
         public string UrlEncode ()
         {
-            return HttpUtility.UrlEncode (Hash);
+            return HttpUtility.UrlEncode (Hash).Replace ("+", "%20");
         }
 
         public static bool operator == (InfoHash left, InfoHash right)
