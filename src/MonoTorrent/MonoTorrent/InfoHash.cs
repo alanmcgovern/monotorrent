@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Web;
 
 namespace MonoTorrent
 {
@@ -98,7 +99,7 @@ namespace MonoTorrent
 
         public string UrlEncode ()
         {
-            return UriHelper.UrlEncode (Hash);
+            return HttpUtility.UrlEncode (Hash);
         }
 
         public static bool operator == (InfoHash left, InfoHash right)
@@ -157,7 +158,7 @@ namespace MonoTorrent
         public static InfoHash UrlDecode (string infoHash)
         {
             infoHash = infoHash ?? throw new ArgumentNullException (nameof (infoHash));
-            return new InfoHash (UriHelper.UrlDecode (infoHash));
+            return new InfoHash (HttpUtility.UrlDecodeToBytes (infoHash));
         }
     }
 }
