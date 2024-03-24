@@ -36,6 +36,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
@@ -46,6 +47,8 @@ using MonoTorrent.PieceWriter;
 using MonoTorrent.PortForwarding;
 using MonoTorrent.Trackers;
 
+using ReusableTasks;
+
 namespace MonoTorrent
 {
     public partial class Factories
@@ -54,6 +57,7 @@ namespace MonoTorrent
         public delegate IDhtEngine DhtCreator ();
         public delegate IDhtListener DhtListenerCreator (IPEndPoint endpoint);
         public delegate HttpClient HttpClientCreator (AddressFamily family);
+        public delegate ReusableTask<BEncodedString> TemporaryLocalPeerIdGenerator (BEncodedString permanentLocalPeerId, InfoHash infoHash, Uri peerUri);
         public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator ();
         public delegate IPeerConnection PeerConnectionCreator (Uri uri);
         public delegate IPeerConnectionListener PeerConnectionListenerCreator (IPEndPoint endPoint);
@@ -63,6 +67,7 @@ namespace MonoTorrent
         public delegate ISocketConnector SocketConnectorCreator ();
         public delegate IStreamingPieceRequester StreamingPieceRequesterCreator ();
         public delegate ITracker TrackerCreator (Uri uri);
+        public delegate IPeerConnectionGate PeerConnectionGateCreator ();
     }
 
     public partial class Factories
@@ -72,10 +77,12 @@ namespace MonoTorrent
         BlockCacheCreator BlockCacheFunc { get; set; }
         DhtCreator DhtFunc { get; set; }
         DhtListenerCreator DhtListenerFunc { get; set; }
+        TemporaryLocalPeerIdGenerator TemporaryLocalPeerIdGeneratorFunc { get; set; }
         LocalPeerDiscoveryCreator LocalPeerDiscoveryFunc { get; set; }
         HttpClientCreator HttpClientFunc { get; set; }
         ReadOnlyDictionary<string, PeerConnectionCreator> PeerConnectionFuncs { get; set; }
         PeerConnectionListenerCreator PeerConnectionListenerFunc { get; set; }
+        PeerConnectionGateCreator PeerConnectionGateFunc { get; set; }
         PieceRequesterCreator PieceRequesterFunc { get; set; }
         PieceWriterCreator PieceWriterFunc { get; set; }
         PortForwarderCreator PortForwarderFunc { get; set; }
@@ -92,6 +99,7 @@ namespace MonoTorrent
 
             HttpClientFunc = HttpRequestFactory.CreateHttpClient;
 
+            TemporaryLocalPeerIdGeneratorFunc = (permanentLocalPeerId, _, __) => ReusableTask.FromResult (permanentLocalPeerId);
             LocalPeerDiscoveryFunc = () => new LocalPeerDiscovery ();
             PeerConnectionFuncs = new ReadOnlyDictionary<string, PeerConnectionCreator> (
                 new Dictionary<string, PeerConnectionCreator> {
@@ -100,6 +108,7 @@ namespace MonoTorrent
                 }
             );
             PeerConnectionListenerFunc = endPoint => new PeerConnectionListener (endPoint);
+            PeerConnectionGateFunc = () => new NoGating ();
             PieceRequesterFunc = settings => new StandardPieceRequester (settings);
             PieceWriterFunc = maxOpenFiles => new DiskWriter (maxOpenFiles);
             PortForwarderFunc = () => new MonoNatPortForwarder ();
@@ -164,6 +173,15 @@ namespace MonoTorrent
             return dupe;
         }
 
+        public ReusableTask<BEncodedString> CreateTemporaryLocalPeerIdAsync (BEncodedString permanentLocalPeerId, InfoHash infoHash, Uri peerUri)
+            => TemporaryLocalPeerIdGeneratorFunc (permanentLocalPeerId, infoHash, peerUri);
+        public Factories WithTemporaryLocalPeerIdGenerator (TemporaryLocalPeerIdGenerator generator)
+        {
+            var dupe = MemberwiseClone ();
+            dupe.TemporaryLocalPeerIdGeneratorFunc = generator ?? throw new ArgumentNullException (nameof(generator));
+            return dupe;
+        }
+
         public IPeerConnection? CreatePeerConnection (Uri uri)
         {
             try {
@@ -196,6 +214,14 @@ namespace MonoTorrent
         {
             var dupe = MemberwiseClone ();
             dupe.PeerConnectionListenerFunc = creator ?? Default.PeerConnectionListenerFunc;
+            return dupe;
+        }
+
+        public IPeerConnectionGate CreatePeerConnectionGate () => PeerConnectionGateFunc ();
+        public Factories WithPeerConnectionGateCreator (PeerConnectionGateCreator creator)
+        {
+            var dupe = MemberwiseClone ();
+            dupe.PeerConnectionGateFunc = creator ?? Default.PeerConnectionGateFunc;
             return dupe;
         }
 

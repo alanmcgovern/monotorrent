@@ -84,6 +84,8 @@ namespace MonoTorrent.Client
 
         Factories Factories { get; }
 
+        Dictionary<BEncodedString, int> LocalPeerIds { get; } = new Dictionary<BEncodedString, int> ();
+
         internal BEncodedString LocalPeerId { get; }
 
         /// <summary>
@@ -110,6 +112,7 @@ namespace MonoTorrent.Client
         {
             DiskManager = diskManager ?? throw new ArgumentNullException (nameof (diskManager));
             LocalPeerId = localPeerId ?? throw new ArgumentNullException (nameof (localPeerId));
+            LocalPeerIds.Add (localPeerId, 1);
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
             Factories = factories ?? throw new ArgumentNullException (nameof (factories));
 
@@ -192,14 +195,26 @@ namespace MonoTorrent.Client
                 return;
             }
 
+            BEncodedString connectAs = await Factories.CreateTemporaryLocalPeerIdAsync (LocalPeerId, id.ExpectedInfoHash, id.Uri);
+            if (connectAs is null || connectAs.Span.Length != 20) {
+                logger.Exception (
+                    new ArgumentException ("Peer ID must be exactly 20 bytes long", paramName: "temporaryLocalPeerId"),
+                    "Generated temporary peer ID was not 20 bytes long");
+                CleanupSocket (manager, id);
+                return;
+            }
+            if (!LocalPeerId.Equals (connectAs))
+                lock (LocalPeerIds)
+                    LocalPeerIds[connectAs] = LocalPeerIds.TryGetValue (connectAs, out int repeats) ? repeats + 1 : 1;
+
             manager.Peers.ActivePeers.Add (id.Peer);
             manager.Peers.ConnectedPeers.Add (id);
             Interlocked.Increment (ref openConnections);
 
             try {
                 // Create a handshake message to send to the peer
-                var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100);
-                logger.InfoFormatted (id.Connection, "[outgoing] Sending handshake message with peer id '{0}'", LocalPeerId);
+                var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), connectAs, Constants.ProtocolStringV100);
+                logger.InfoFormatted (id.Connection, "[outgoing] Sending handshake message with peer id '{0}'", connectAs);
 
                 var preferredEncryption = EncryptionTypes.GetPreferredEncryption (id.Peer.AllowedEncryption, Settings.AllowedEncryption);
                 if (preferredEncryption.Count == 0)
@@ -208,6 +223,10 @@ namespace MonoTorrent.Client
                 id.Decryptor = result.Decryptor;
                 id.Encryptor = result.Encryptor;
             } catch {
+                if (!LocalPeerId.Equals (connectAs))
+                    lock (LocalPeerIds)
+                        LocalPeerIds[connectAs] = LocalPeerIds[connectAs] - 1;
+
                 // If an exception is thrown it's because we tried to establish an encrypted connection and something went wrong
                 if (id.Peer.AllowedEncryption.Contains (EncryptionType.PlainText))
                     id.Peer.AllowedEncryption = EncryptionTypes.PlainText;
@@ -231,6 +250,10 @@ namespace MonoTorrent.Client
                 logger.InfoFormatted (id.Connection, "[outgoing] Received handshake message with peer id '{0}'", handshake.PeerId);
                 manager.Mode.HandleMessage (id, handshake, default);
             } catch {
+                if (!LocalPeerId.Equals (connectAs))
+                    lock (LocalPeerIds)
+                        LocalPeerIds[connectAs] = LocalPeerIds[connectAs] - 1;
+
                 // If we choose plaintext and it resulted in the connection being closed, remove it from the list.
                 id.Peer.AllowedEncryption = EncryptionTypes.Remove (id.Peer.AllowedEncryption, id.EncryptionType);
 
@@ -245,6 +268,10 @@ namespace MonoTorrent.Client
 
                 return;
             }
+
+            if (!LocalPeerId.Equals (connectAs))
+                lock (LocalPeerIds)
+                    LocalPeerIds[connectAs] = LocalPeerIds[connectAs] - 1;
 
             try {
                 if (id.BitField.Length != manager.Bitfield.Length)
@@ -352,7 +379,7 @@ namespace MonoTorrent.Client
                 id.Peer.CleanedUpCount++;
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
-                if (canReuse && !LocalPeerId.Equals (id.Peer.Info.PeerId)) {
+                if (canReuse && !IsSelf (id.Peer.Info.PeerId)) {
                     if (!manager.Peers.AvailablePeers.Contains (id.Peer) && id.Peer.CleanedUpCount < 5)
                         manager.Peers.AvailablePeers.Insert (0, id.Peer);
                     else if (manager.Peers.BannedPeers.Contains (id.Peer) && id.Peer.CleanedUpCount >= 5)
@@ -369,6 +396,12 @@ namespace MonoTorrent.Client
             }
 
             id.Dispose ();
+        }
+
+        bool IsSelf(BEncodedString peerId)
+        {
+            lock (LocalPeerIds)
+                return LocalPeerIds.ContainsKey(peerId);
         }
 
         /// <summary>
@@ -400,7 +433,7 @@ namespace MonoTorrent.Client
                 bool maxAlreadyOpen = OpenConnections >= Settings.MaximumConnections
                     || manager.OpenConnections >= manager.Settings.MaximumConnections;
 
-                if (LocalPeerId.Equals (id.Peer.Info.PeerId)) {
+                if (IsSelf (id.Peer.Info.PeerId)) {
                     logger.Info ("Connected to self - disconnecting");
                     CleanupSocket (manager, id);
                     return false;
