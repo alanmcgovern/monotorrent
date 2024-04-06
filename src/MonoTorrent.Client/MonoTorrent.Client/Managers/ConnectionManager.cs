@@ -195,7 +195,7 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            BEncodedString connectAs = await Factories.CreateTemporaryLocalPeerIdAsync (LocalPeerId, id.ExpectedInfoHash, id.Uri);
+            BEncodedString connectAs = await Factories.CreateTemporaryLocalPeerIdAsync (LocalPeerId, id.PeerID, id.ExpectedInfoHash, id.Uri);
             if (connectAs is null || connectAs.Span.Length != 20) {
                 logger.Exception (
                     new ArgumentException ("Peer ID must be exactly 20 bytes long", paramName: "temporaryLocalPeerId"),
