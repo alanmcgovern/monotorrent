@@ -88,6 +88,8 @@ namespace MonoTorrent.Client
 
         internal BEncodedString LocalPeerId { get; }
 
+        IPeerConnectionGate ConnectionGate { get; set; }
+
         /// <summary>
         /// The number of concurrent connection attempts
         /// </summary>
@@ -115,6 +117,8 @@ namespace MonoTorrent.Client
             LocalPeerIds.Add (localPeerId, 1);
             Settings = settings ?? throw new ArgumentNullException (nameof (settings));
             Factories = factories ?? throw new ArgumentNullException (nameof (factories));
+
+            ConnectionGate = factories.CreatePeerConnectionGate ();
 
             PendingConnects = new List<AsyncConnectState> ();
             Torrents = new List<TorrentManager> ();
@@ -249,6 +253,11 @@ namespace MonoTorrent.Client
                 HandshakeMessage handshake = await PeerIO.ReceiveHandshakeAsync (id.Connection, id.Decryptor);
                 logger.InfoFormatted (id.Connection, "[outgoing] Received handshake message with peer id '{0}'", handshake.PeerId);
                 manager.Mode.HandleMessage (id, handshake, default);
+
+                if (!await ConnectionGate.TryAcceptHandshakeAsync (LocalPeerId, id.Peer.Info, id.Connection, id.ExpectedInfoHash)) {
+                    logger.InfoFormatted (id.Connection, "[outgoing] Handshake with peer_id '{0}' rejected by the connection gate", id.PeerID);
+                    throw new TorrentException("Handshake rejected by the connection gate");
+                }
             } catch {
                 if (!LocalPeerId.Equals (connectAs))
                     lock (LocalPeerIds)
