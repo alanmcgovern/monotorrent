@@ -110,6 +110,9 @@ namespace Tests.MonoTorrent.IntegrationTests
         public async Task DownloadFileInTorrent_V2_OnlyOneNonEmptyFile () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 1);
 
         [Test]
+        public async Task DownloadFileInTorrent_V2_Empty_And_BigNonEmpty () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: true, nonEmptyFileCount: 1, fileSize: 3_000_000_000);
+
+        [Test]
         public async Task DownloadFileInTorrent_V2_ThreeNonEmptyFiles () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 3);
 
         [Test]
@@ -161,7 +164,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         [Test]
         public async Task WebSeedDownload_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
 
-        public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, bool explitlyHashCheck, int nonEmptyFileCount = 2, bool useWebSeedDownload = false, int fileSize = 5)
+        public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, bool explitlyHashCheck, int nonEmptyFileCount = 2, bool useWebSeedDownload = false, long fileSize = 5)
         {
             var emptyFile = new FileInfo (Path.Combine (_seederDir.FullName, "Empty.file"));
             if (createEmptyFile)
@@ -170,8 +173,17 @@ namespace Tests.MonoTorrent.IntegrationTests
             var nonEmptyFiles = new List<FileInfo> ();
             for (int i = 0; i < nonEmptyFileCount; i++) {
                 var nonEmptyFile = new FileInfo (Path.Combine (_seederDir.FullName, $"NonEmpty{i}.file"));
-                var fileText = new String ('a', fileSize);
-                File.WriteAllText (nonEmptyFile.FullName, fileText);
+                using (var fs = nonEmptyFile.Create ()) {
+                    long written = 0;
+                    var buffer = new byte[16*1024];
+                    for(int j = 0; j < buffer.Length; j++)
+                        buffer[j] = (byte)'a';
+                    while (written < fileSize) {
+                        var toWrite = Math.Min (fileSize - written, buffer.Length);
+                        fs.Write (buffer, 0, (int)toWrite);
+                        written += toWrite;
+                    }
+                }
                 nonEmptyFiles.Add (nonEmptyFile);
             }
 
@@ -189,15 +201,21 @@ namespace Tests.MonoTorrent.IntegrationTests
             using ClientEngine leecherEngine = GetEngine (_leecherPort);
 
             var seederIsSeeding = new TaskCompletionSource<bool> ();
-            var leecherIsSeeding = new TaskCompletionSource<object> ();
+            var leecherIsSeeding = new TaskCompletionSource<bool> ();
             EventHandler<TorrentStateChangedEventArgs> seederIsSeedingHandler = (o, e) => {
                 if (e.NewState == TorrentState.Seeding)
                     seederIsSeeding.TrySetResult (true);
+                else if (e.NewState == TorrentState.Downloading)
+                    seederIsSeeding.TrySetResult (false);
+                else if (e.NewState == TorrentState.Error)
+                    seederIsSeeding.TrySetException (e.TorrentManager.Error.Exception);
             };
 
             EventHandler<TorrentStateChangedEventArgs> leecherIsSeedingHandler = (o, e) => {
                 if (e.NewState == TorrentState.Seeding)
                     leecherIsSeeding.TrySetResult (true);
+                else if (e.NewState == TorrentState.Error)
+                    leecherIsSeeding.TrySetException (e.TorrentManager.Error.Exception);
             };
 
             var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
@@ -210,6 +228,7 @@ namespace Tests.MonoTorrent.IntegrationTests
 
             if (!useWebSeedDownload) {
                 Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task, "Seeder should be seeding after hashcheck completes");
+                Assert.True (seederManager.Complete, "Seeder should have all data");
             }
             Assert.DoesNotThrowAsync (async () => await leecherIsSeeding.Task, "Leecher should have downloaded all data");
 
