@@ -1,10 +1,10 @@
-﻿//
-// ByteBufferPool.ArraySegmentReleaser.cs
+//
+// Cache.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -29,37 +29,31 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace MonoTorrent
 {
-    public partial class MemoryPool
+    class SimpleSpinLock
     {
-        public readonly struct ArraySegmentReleaser : IDisposable
-        {
-            readonly int counter;
-            readonly ByteBuffer Buffer;
-            readonly List<ByteBuffer> Pool;
+        SpinLock Lock = new SpinLock (false);
 
-            internal ArraySegmentReleaser (List<ByteBuffer> pool, ByteBuffer buffer)
-            {
-                Pool = pool;
-                Buffer = buffer;
-                counter = Buffer.Counter;
-            }
+        public Releaser Enter ()
+        {
+            // Nothing in this library is safe after a thread abort... so let's not care too much about this.
+            bool taken = false;
+            Lock.Enter (ref taken);
+            return new Releaser (this);
+        }
+
+        public struct Releaser : IDisposable
+        {
+            SimpleSpinLock SimpleSpinLock;
+
+            internal Releaser (SimpleSpinLock ssl)
+                => SimpleSpinLock = ssl;
 
             public void Dispose ()
-            {
-                if (Buffer == null)
-                    return;
-
-                lock (Pool) {
-                    if (counter != Buffer.Counter)
-                        throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
-
-                    Buffer.Counter++;
-                    Pool.Add (Buffer);
-                }
-            }
+                => SimpleSpinLock?.Lock.Exit (false);
         }
     }
 }

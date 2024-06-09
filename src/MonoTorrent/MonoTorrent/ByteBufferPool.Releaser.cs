@@ -38,9 +38,9 @@ namespace MonoTorrent
         {
             readonly int Counter;
             readonly ByteBuffer Buffer;
-            readonly Queue<ByteBuffer> Pool;
+            readonly ByteBufferPool Pool;
 
-            internal Releaser (Queue<ByteBuffer> pool, ByteBuffer buffer)
+            internal Releaser (ByteBufferPool pool, ByteBuffer buffer)
             {
                 Pool = pool;
                 Buffer = buffer;
@@ -56,8 +56,18 @@ namespace MonoTorrent
                     throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
 
                 Buffer.Counter++;
-                lock (Pool)
-                    Pool.Enqueue (Buffer);
+
+                var size = Buffer.Segment.Count;
+                if (size == ByteBufferPool.SmallMessageBufferSize) {
+                    using (Pool.SmallMessageBuffersLock.Enter ())
+                        Pool.SmallMessageBuffers.Push (Buffer);
+                } else if (size == ByteBufferPool.LargeMessageBufferSize) {
+                    using (Pool.LargeMessageBuffersLock.Enter ())
+                        Pool.LargeMessageBuffers.Push (Buffer);
+                } else {
+                    using (Pool.MassiveBuffersLock.Enter ())
+                        Pool.MassiveBuffers.Enqueue (Buffer);
+                }
             }
         }
     }

@@ -71,12 +71,13 @@ namespace MonoTorrent
         {
             static readonly Action EmptyAction = () => { };
             static readonly Stack<ThreadSwitcherWorkItem> Cache = new Stack<ThreadSwitcherWorkItem> ();
+            static readonly SimpleSpinLock CacheLock = new SimpleSpinLock ();
 
             public Action Continuation { get; private set; } = EmptyAction;
 
             public static ThreadSwitcherWorkItem GetOrCreate (Action action)
             {
-                lock (Cache) {
+                using (CacheLock.Enter ()) {
                     if (Cache.Count == 0) {
                         return new ThreadSwitcherWorkItem { Continuation = action };
                     } else {
@@ -91,7 +92,8 @@ namespace MonoTorrent
             {
                 var continuation = Continuation;
                 Continuation = EmptyAction;
-                lock (Cache)
+
+                using (CacheLock.Enter ())
                     Cache.Push (this);
                 continuation ();
             }

@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace MonoTorrent
 {
@@ -77,24 +78,26 @@ namespace MonoTorrent
     internal class SynchronizedCache<T> : ICache<T>
     {
         ICache<T> Cache { get; }
+        SimpleSpinLock CacheLock { get; }
 
         public int Count => Cache.Count;
 
         public SynchronizedCache(ICache<T> cache)
         {
             Cache = cache ?? throw new System.ArgumentNullException(nameof(cache));
+            CacheLock = new SimpleSpinLock ();
         }
 
         public T Dequeue()
         {
-            lock (Cache)
-                return Cache.Dequeue();
+            using (CacheLock.Enter ())
+                return Cache.Dequeue ();
         }
 
-        public void Enqueue(T instance)
+        public void Enqueue (T instance)
         {
-            lock (Cache)
-                Cache.Enqueue(instance);
+            using (CacheLock.Enter ())
+                Cache.Enqueue (instance);
         }
     }
 }
