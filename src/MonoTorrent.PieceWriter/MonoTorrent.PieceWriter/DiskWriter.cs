@@ -91,7 +91,7 @@ namespace MonoTorrent.PieceWriter
         public DiskWriter (int maxOpenFiles)
         {
             MaximumOpenFiles = maxOpenFiles;
-            Limiter = new ReusableSemaphore (maxOpenFiles);
+            Limiter = new ReusableSemaphore (8); // 8 concurrent disk writer threads? Should be enough?
             Streams = new Dictionary<ITorrentManagerFile, AllStreams> ();
         }
 
@@ -207,7 +207,7 @@ namespace MonoTorrent.PieceWriter
 
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
         {
-            Limiter.ChangeCount (maximumOpenFiles);
+            MaximumOpenFiles = maximumOpenFiles;
             return ReusableTask.CompletedTask;
         }
 
