@@ -34,8 +34,6 @@ using System.Threading;
 
 using ReusableTasks;
 
-#nullable enable
-
 namespace MonoTorrent
 {
     static class SemaphoreSlimExtensions
