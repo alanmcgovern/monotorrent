@@ -192,9 +192,15 @@ namespace MonoTorrent.Connections.Tracker
             //    sb.Append("&event=started");
             //    parameters.Id.Tracker.Tier.SendingStartedEvent = true;
             //}
-            if (parameters.ClientEvent != TorrentEvent.None)
-                b.Add ("event", parameters.ClientEvent.ToString ().ToLower ());
-
+            if (parameters.ClientEvent != TorrentEvent.None) {
+                var eventString = parameters.ClientEvent switch {
+                    TorrentEvent.Started => "started",
+                    TorrentEvent.Stopped => "stopped",
+                    TorrentEvent.Completed => "completed",
+                    _ => throw new NotSupportedException ()
+                };
+                b.Add ("event", eventString);
+            }
             if (!BEncodedString.IsNullOrEmpty (TrackerId))
                 b.Add ("trackerid", TrackerId!.UrlEncode ());
 
