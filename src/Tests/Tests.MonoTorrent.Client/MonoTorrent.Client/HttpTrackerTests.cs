@@ -78,7 +78,7 @@ namespace MonoTorrent.TrackerServer
         MonoTorrent.Trackers.ScrapeRequest scrapeParams;
         TrackerServer server;
         CustomHttpTrackerListener listener;
-        string ListeningPrefix => "http://127.0.0.1:47124/";
+        string ListeningPrefix;
         Uri AnnounceUrl => new Uri ($"{ListeningPrefix}announce");
         HttpTrackerConnection trackerConnection;
         Tracker tracker;
@@ -96,16 +96,25 @@ namespace MonoTorrent.TrackerServer
         {
             peerId = new BEncodedString (Enumerable.Repeat ((byte) 254, 20).ToArray ());
             trackerId = Enumerable.Repeat ((byte) 255, 20).ToArray ();
-            listener = new CustomHttpTrackerListener (ListeningPrefix);
-            listener.AnnounceReceived += delegate (object o, AnnounceRequest e) {
-                keys.Add (e.Key);
-                announcedInfoHashes.Add (e.InfoHash);
-            };
-            listener.ScrapeReceived += (o, e) => {
-                scrapedInfoHashes.AddRange (e.InfoHashes);
-            };
+            for (int i = 47124; i < 47224; i++) {
+                try {
+                    ListeningPrefix = $"http://127.0.0.1:{i}/";
+                    listener = new CustomHttpTrackerListener (ListeningPrefix);
+                    listener.AnnounceReceived += delegate (object o, AnnounceRequest e) {
+                        keys.Add (e.Key);
+                        announcedInfoHashes.Add (e.InfoHash);
+                    };
+                    listener.ScrapeReceived += (o, e) => {
+                        scrapedInfoHashes.AddRange (e.InfoHashes);
+                    };
 
-            listener.Start ();
+                    listener.Start ();
+                    break;
+                } catch {
+                    listener?.Stop ();
+                    continue;
+                }
+            }
         }
 
         [SetUp]

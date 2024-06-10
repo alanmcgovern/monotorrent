@@ -42,15 +42,24 @@ namespace MonoTorrent.TrackerServer
     [TestFixture]
     public class TrackerTests
     {
-        readonly Uri uri = new Uri ("http://127.0.0.1:23456/announce/");
+        Uri uri = null;
         HttpTrackerListener listener;
         TrackerServer server;
-        //MonoTorrent.Client.Tracker.HTTPTracker tracker;
+
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            listener = new HttpTrackerListener (uri.OriginalString);
-            listener.Start ();
+            for (int i = 23456; i < 23556; i++) {
+                uri = new Uri ($"http://127.0.0.1:{i}/announce/");
+                try {
+                    listener = new HttpTrackerListener (uri.OriginalString);
+                    listener.Start ();
+                    break;
+                } catch {
+                    continue;
+                }
+            }
+
             server = new TrackerServer ();
             server.RegisterListener (listener);
             listener.Start ();

@@ -51,7 +51,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            (_tracker, _trackerListener) = GetTracker (_trackerPort);
+            (_tracker, _trackerListener) = GetTracker ();
             _httpSeeder = CreateWebSeeder ();
         }
 
@@ -84,10 +84,8 @@ namespace Tests.MonoTorrent.IntegrationTests
             _trackerListener.Stop ();
         }
 
-        const int _trackerPort = 40000;
-        const int _seederPort = 40001;
-        const int _leecherPort = 40002;
-        const int _webSeedPort = 40003;
+        int _webSeedPort;
+        int _trackerPort;
         const string _webSeedPrefix = "SeedUrlPrefix";
         const string _torrentName = "IntegrationTests";
 
@@ -185,8 +183,8 @@ namespace Tests.MonoTorrent.IntegrationTests
             var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
             var torrent = Torrent.Load (encodedTorrent);
 
-            using ClientEngine seederEngine = GetEngine (_seederPort);
-            using ClientEngine leecherEngine = GetEngine (_leecherPort);
+            using ClientEngine seederEngine = GetEngine (0);
+            using ClientEngine leecherEngine = GetEngine (0);
 
             var seederIsSeeding = new TaskCompletionSource<bool> ();
             var leecherIsSeeding = new TaskCompletionSource<object> ();
@@ -222,16 +220,23 @@ namespace Tests.MonoTorrent.IntegrationTests
             Assert.AreEqual (createEmptyFile, leecherEmptyFile.Exists, "Empty file should exist when created");
         }
 
-        private (TrackerServer, ITrackerListener) GetTracker (int port)
+        private (TrackerServer, ITrackerListener) GetTracker ()
         {
-            var tracker = new TrackerServer ();
-            tracker.AllowUnregisteredTorrents = true;
-            var listenAddress = $"http://{new IPEndPoint (LoopbackAddress, port)}/";
+            for (_trackerPort = 4000; _trackerPort < 4100; _trackerPort++) {
+                try {
+                    var tracker = new TrackerServer ();
+                    tracker.AllowUnregisteredTorrents = true;
+                    var listenAddress = $"http://{new IPEndPoint (LoopbackAddress, _trackerPort)}/";
 
-            var listener = TrackerListenerFactory.CreateHttp (listenAddress);
-            tracker.RegisterListener (listener);
-            listener.Start ();
-            return (tracker, listener);
+                    var listener = TrackerListenerFactory.CreateHttp (listenAddress);
+                    tracker.RegisterListener (listener);
+                    listener.Start ();
+                    return (tracker, listener);
+                } catch {
+                    continue;
+                }
+            }
+            throw new Exception ("No ports were free?");
         }
 
         private ClientEngine GetEngine (int port)
@@ -254,14 +259,20 @@ namespace Tests.MonoTorrent.IntegrationTests
 
         private HttpListener CreateWebSeeder ()
         {
-            HttpListener listener = new HttpListener ();
-            listener.Prefixes.Add ($"http://{new IPEndPoint(LoopbackAddress, _webSeedPort)}/");
-            listener.Start ();
-            listener.BeginGetContext (OnHttpContext, listener);
-            return listener;
+            for (_webSeedPort = 5000; _webSeedPort < 5100; _webSeedPort++) {
+                try {
+                    HttpListener listener = new HttpListener ();
+                    listener.Prefixes.Add ($"http://{new IPEndPoint (LoopbackAddress, _webSeedPort)}/");
+                    listener.Start ();
+                    listener.BeginGetContext (OnHttpContext, listener);
+                    return listener;
+                } catch {
+                }
+            }
+            throw new Exception ("No ports were free?");
         }
 
-        private void OnHttpContext (IAsyncResult ar)
+            private void OnHttpContext (IAsyncResult ar)
         {
             if (!_httpSeeder.IsListening)
                 return;
