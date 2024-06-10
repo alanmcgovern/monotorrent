@@ -31,13 +31,15 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
+using MonoTorrent.Client;
+
 using NUnit.Framework;
 
 using ReusableTasks;
 
 namespace MonoTorrent
 {
-    public static class TaskExtensions
+    static class TaskExtensions
     {
         static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
 
