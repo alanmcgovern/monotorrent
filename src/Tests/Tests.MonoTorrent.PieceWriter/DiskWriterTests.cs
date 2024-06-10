@@ -53,7 +53,7 @@ namespace MonoTorrent.PieceWriter
         public void Setup ()
         {
             var pieceLength = Constants.BlockSize * 2;
-            Temp = Path.GetTempPath () + "monotorrent_tests";
+            Temp = Path.Combine (Path.GetTempPath (), Path.GetRandomFileName () + "_monotorrent_tests");
 
             var files = TorrentFileInfo.Create (pieceLength,
                 ("test1.file", 12345, Path.Combine (Temp, "test1.file")),
