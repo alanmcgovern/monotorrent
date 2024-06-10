@@ -72,7 +72,7 @@ namespace MonoTorrent.PieceWriter
 #else
         public async ReusableTask FlushAsync ()
         {
-            await new ThreadSwitcher ();
+            await new EnsureThreadPool ();
             Handle.Flush ();
         }
 #endif
@@ -82,7 +82,7 @@ namespace MonoTorrent.PieceWriter
             if (offset + buffer.Length > Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            await new ThreadSwitcher ();
+            await new EnsureThreadPool ();
 #if NET6_0_OR_GREATER
             return RandomAccess.Read (Handle, buffer.Span, offset);
 #else
@@ -97,7 +97,7 @@ namespace MonoTorrent.PieceWriter
             if (offset + buffer.Length > Length)
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
-            await new ThreadSwitcher ();
+            await new EnsureThreadPool ();
 #if NET6_0_OR_GREATER
             RandomAccess.Write (Handle, buffer.Span, offset);
 #else

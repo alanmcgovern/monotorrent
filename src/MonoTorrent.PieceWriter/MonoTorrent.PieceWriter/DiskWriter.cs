@@ -159,7 +159,7 @@ namespace MonoTorrent.PieceWriter
             using var releaser = await data.Locker.EnterAsync ();
             await CloseAllAsync (data).ConfigureAwait (false);
 
-            await new ThreadSwitcher ();
+            await new EnsureThreadPool ();
             if (File.Exists (file.FullPath)) {
                 if (overwrite)
                     File.Delete (newPath);
