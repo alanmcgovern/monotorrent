@@ -370,6 +370,10 @@ namespace MonoTorrent.Client
                     int hashingCount = 0;
                     int readingCount = Math.Min (Constants.BlockSize, endOffset - startOffset);
                     var readingTask = ReadAsync (manager, new BlockInfo (pieceIndex, startOffset, readingCount), readingBuffer.Slice (0, readingCount));
+
+                    // Swap to a threadpool thread here so all the incremental hashing happens
+                    // off the main IO loop.
+                    await new EnsureThreadPool ();
                     while (startOffset != endOffset) {
                         // Wait for the reading task to complete.
                         if (!await readingTask.ConfigureAwait (false)) {
