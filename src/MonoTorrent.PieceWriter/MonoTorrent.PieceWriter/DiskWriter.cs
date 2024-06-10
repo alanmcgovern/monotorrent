@@ -65,10 +65,7 @@ namespace MonoTorrent.PieceWriter
         {
             public ReusableSemaphore Locker = new ReusableSemaphore (1);
             public long LastUsedStamp = Stopwatch.GetTimestamp ();
-            public IFileReaderWriter Stream;
-
-            public StreamData (IFileReaderWriter stream)
-                => Stream = stream;
+            public IFileReaderWriter? Stream;
         }
 
 
@@ -114,7 +111,7 @@ namespace MonoTorrent.PieceWriter
 
             foreach (var data in allStreams.Streams) {
                 using (await data.Locker.EnterAsync ()) {
-                    data.Stream.Dispose ();
+                    data.Stream?.Dispose ();
                     OpenFiles--;
                 }
             }
@@ -140,7 +137,7 @@ namespace MonoTorrent.PieceWriter
                 using var releaser = await allStreams.Locker.EnterAsync ();
                 foreach (var data in allStreams.Streams) {
                     using (await data.Locker.EnterAsync ()) {
-                        await data.Stream.FlushAsync ();
+                        await data.Stream!.FlushAsync ();
                     }
                 }
             }
@@ -216,39 +213,53 @@ namespace MonoTorrent.PieceWriter
             if (!Streams.TryGetValue (file, out AllStreams? allStreams))
                 allStreams = Streams[file] = new AllStreams ();
 
-            using var releaser = await allStreams.Locker.EnterAsync ();
-            foreach (var existing in allStreams.Streams) {
-                if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
-                    if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream.CanWrite) {
-                        existing.LastUsedStamp = Stopwatch.GetTimestamp ();
-                        return (existing.Stream, r);
-                    } else {
-                        r.Dispose ();
+            // If this completes synchronously we will want to swap threads before doing file manipulation later
+            // in the method. If we already have a cached FileStream we won't need to swap threads before returning it.
+            StreamData freshStreamData;
+            ReusableSemaphore.Releaser freshStreamDataReleaser;
+            bool shouldTruncate = false;
+            using (await allStreams.Locker.EnterAsync ()) {
+                // We should check if the on-disk file needs truncation if this is the very first time we're opening it.
+                shouldTruncate = allStreams.Streams.Count == 0;
+                foreach (var existing in allStreams.Streams) {
+                    if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
+                        if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream!.CanWrite) {
+                            existing.LastUsedStamp = Stopwatch.GetTimestamp ();
+                            return (existing.Stream!, r);
+                        } else {
+                            r.Dispose ();
+                        }
                     }
                 }
+
+                // Create the stream data and acquire the lock immediately, so any async invocation of MaybeRemoveOldestStream can't kill the stream. 
+                freshStreamData = new StreamData ();
+                freshStreamDataReleaser = await freshStreamData.Locker.EnterAsync ();
+                allStreams.Streams.Add (freshStreamData);
+                OpenFiles++;
+                MaybeRemoveOldestStreams ();
             }
+
+            // We're about to do file manipulation, so swap to a threadpool thread to avoid hanging the DiskIO loop.
+            await new EnsureThreadPool ();
 
             if (!File.Exists (file.FullPath)) {
                 if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
                     Directory.CreateDirectory (parentDirectory);
                 NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
+            } else if (shouldTruncate) {
+                // If this is the first Stream we're opening for this file and the file exists, ensure it's the correct length.
+                FileReaderWriterHelper.MaybeTruncate (file.FullPath, file.Length);
             }
-
-            // Create the stream data and acquire the lock immediately, so any async invocation of MaybeRemoveOldestStream can't kill the stream. 
-            var data = new StreamData (new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite));
-            var dataReleaser = await data.Locker.EnterAsync ();
-            allStreams.Streams.Add (data);
-            OpenFiles++;
-
-            MaybeRemoveOldestStreams ();
-            return (data.Stream, dataReleaser);
+            freshStreamData.Stream = new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite);
+            return (freshStreamData.Stream, freshStreamDataReleaser);
         }
 
         public void Dispose ()
         {
             foreach (var stream in Streams.Values) {
                 foreach (var v in stream.Streams)
-                    v.Stream.Dispose ();
+                    v.Stream?.Dispose ();
             }
 
             Streams.Clear ();

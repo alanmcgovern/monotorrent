@@ -51,7 +51,6 @@ namespace MonoTorrent.PieceWriter
 
         public RandomFileReaderWriter (string fullPath, long length, FileMode fileMode, FileAccess access, FileShare share)
         {
-            FileReaderWriterHelper.MaybeTruncate (fullPath, length);
 #if NET6_0_OR_GREATER
             Handle = File.OpenHandle (fullPath, fileMode, access, share, FileOptions.None);
 #else
