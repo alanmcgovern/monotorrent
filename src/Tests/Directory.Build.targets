@@ -6,4 +6,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)TorrentInfoHelpers.cs" Link="Linked\TorrentInfoHelpers.cs" Condition="'$(ProjectName)' != 'Tests.MonoTorrent.BEncoding'" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="ReusableTasks" Version="2.0.3" />
+  </ItemGroup>
+
 </Project>
