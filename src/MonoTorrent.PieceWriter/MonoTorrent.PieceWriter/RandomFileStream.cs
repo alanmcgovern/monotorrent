@@ -26,16 +26,10 @@ namespace MonoTorrent.PieceWriter
     {
         public static void MaybeTruncate (string fullPath, long length)
         {
-            var fileStream = new System.IO.FileStream (fullPath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.ReadWrite, 1, FileOptions.None);
-            if (fileStream.Length <= length) {
-                fileStream.Dispose ();
-                return;
+            if (new FileInfo (fullPath).Length > length) {
+                using (var fileStream = new FileStream (fullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None))
+                    fileStream.SetLength (length);
             }
-
-            fileStream.Dispose ();
-            fileStream = new FileStream (fullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None);
-            fileStream.SetLength (length);
-            fileStream.Dispose ();
         }
     }
 
