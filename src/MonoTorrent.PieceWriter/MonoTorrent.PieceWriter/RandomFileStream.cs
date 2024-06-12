@@ -51,10 +51,26 @@ namespace MonoTorrent.PieceWriter
 
         public RandomFileReaderWriter (string fullPath, long length, FileMode fileMode, FileAccess access, FileShare share)
         {
-#if NET6_0_OR_GREATER
-            Handle = File.OpenHandle (fullPath, fileMode, access, share, FileOptions.None);
-#else
+            // The "preallocate the file before creating" check is racey as another thread could create this file,
+            // so retry without setting the preallocation size if it fails.
+            // This should avoid throwing exceptions most of the time.
+
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET5_0 || NETCOREAPP3_0
+            try {
+                if (!File.Exists (fullPath))
+                    NtfsSparseFile.CreateSparse (fullPath, length);
+            } catch {
+                // who cares if we can't pre-allocate a sparse file.
+            }
             Handle = new FileStream (fullPath, fileMode, access, share, 1, FileOptions.None);
+#else
+            try {
+                if (!File.Exists (fullPath))
+                    File.OpenHandle (fullPath, fileMode, access, share, FileOptions.None, length).Dispose ();
+            } catch {
+                // who cares if we can't pre-allocate a sparse file.
+            }
+            Handle = File.OpenHandle (fullPath, fileMode, access, share, FileOptions.None);
 #endif
             CanWrite = access.HasFlag (FileAccess.Write);
             Length = length;

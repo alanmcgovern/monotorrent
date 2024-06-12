@@ -246,7 +246,6 @@ namespace MonoTorrent.PieceWriter
             if (!File.Exists (file.FullPath)) {
                 if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
                     Directory.CreateDirectory (parentDirectory);
-                NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
             } else if (shouldTruncate) {
                 // If this is the first Stream we're opening for this file and the file exists, ensure it's the correct length.
                 FileReaderWriterHelper.MaybeTruncate (file.FullPath, file.Length);
