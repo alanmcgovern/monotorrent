@@ -141,7 +141,9 @@ namespace MonoTorrent.PortForwarding
             var map = new Mono.Nat.Mapping (
                 mapping.Protocol == Protocol.Tcp ? Mono.Nat.Protocol.Tcp : Mono.Nat.Protocol.Udp,
                 mapping.PrivatePort,
-                mapping.PublicPort
+                mapping.PublicPort,
+                0,
+                $"{Assembly.GetEntryAssembly ()?.FullName} {mapping.PrivatePort}->{mapping.PublicPort} {mapping.Protocol}"
             );
 
             try {
@@ -157,7 +159,9 @@ namespace MonoTorrent.PortForwarding
             var map = new Mono.Nat.Mapping (
                 mapping.Protocol == Protocol.Tcp ? Mono.Nat.Protocol.Tcp : Mono.Nat.Protocol.Udp,
                 mapping.PrivatePort,
-                mapping.PublicPort
+                mapping.PublicPort,
+                0,
+                $"{Assembly.GetEntryAssembly ()?.FullName} {mapping.PrivatePort}->{mapping.PublicPort} {mapping.Protocol}"
             );
 
             try {

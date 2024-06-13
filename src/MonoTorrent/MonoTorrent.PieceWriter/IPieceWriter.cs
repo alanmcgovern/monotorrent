@@ -108,7 +108,11 @@ namespace MonoTorrent.PieceWriter
             return (done, todoPadding);
         }
 
-        public static async ReusableTask PaddingAwareWriteAsync (this IPieceWriter writer, ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
+        public static
+#if DEBUG
+            async
+#endif
+            ReusableTask PaddingAwareWriteAsync (this IPieceWriter writer, ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
         {
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
@@ -118,9 +122,19 @@ namespace MonoTorrent.PieceWriter
 
             (var todoFile, var todoPadding) = Partition (file, offset, buffer.Length);
 
+            // This won't show up in stacktraces in release builds due to the lack of 'await'.
+            // Hopefully that won't be confusing :p
             if (todoFile > 0) {
-                await writer.WriteAsync (file, offset, buffer.Slice (0, todoFile));
+#if DEBUG
+                await
+#else
+                return
+#endif
+                writer.WriteAsync (file, offset, buffer.Slice (0, todoFile));
             }
+#if !DEBUG
+            return default;
+#endif
         }
     }
 }

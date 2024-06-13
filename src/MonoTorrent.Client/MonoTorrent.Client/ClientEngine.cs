@@ -34,6 +34,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -57,6 +58,11 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IDisposable
     {
+        static ClientEngine ()
+        {
+            ReusableTaskMethodBuilder.MaximumCacheSize = 2048;
+        }
+
         internal static readonly MainLoop MainLoop = new MainLoop ("Client Engine Loop");
         static readonly Logger Log = Logger.Create (nameof (ClientEngine));
 
