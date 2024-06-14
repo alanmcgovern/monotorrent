@@ -143,7 +143,7 @@ namespace MonoTorrent.PortForwarding
                 mapping.PrivatePort,
                 mapping.PublicPort,
                 0,
-                $"{Assembly.GetEntryAssembly ()?.FullName} {mapping.PrivatePort}->{mapping.PublicPort} {mapping.Protocol}"
+                $"int. {mapping.PrivatePort} -> ext. {mapping.PublicPort} {mapping.Protocol}"
             );
 
             try {
@@ -161,7 +161,7 @@ namespace MonoTorrent.PortForwarding
                 mapping.PrivatePort,
                 mapping.PublicPort,
                 0,
-                $"{Assembly.GetEntryAssembly ()?.FullName} {mapping.PrivatePort}->{mapping.PublicPort} {mapping.Protocol}"
+                $"int. {mapping.PrivatePort} -> ext. {mapping.PublicPort} {mapping.Protocol}"
             );
 
             try {
