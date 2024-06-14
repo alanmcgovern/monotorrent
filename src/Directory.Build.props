@@ -37,6 +37,9 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Tests.$(AssemblyName)</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Benchmark</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>

@@ -373,11 +373,32 @@ namespace MyBenchmarks
         }
     }
 
+    [MemoryDiagnoser]
+    public class RC4Benchmark
+    {
+        static byte[] Key = new byte[32];
+        static byte[] Data = new byte[16 * 1024];
+
+        static RC4Benchmark ()
+        {
+            RandomNumberGenerator.Create ().GetBytes (Key);
+            RandomNumberGenerator.Create ().GetBytes (Data);
+        }
+
+        [Benchmark]
+        public void Encrypt16kB ()
+        {
+            var rc4 = new MonoTorrent.Connections.Peer.Encryption.RC4 (Key);
+            for (int i = 0; i < 1000; i++)
+                rc4.Encrypt (Data);
+        }
+    }
+
     public class Program
     {
         public static void Main (string[] args)
         {
-            var summary = BenchmarkRunner.Run (typeof (StandardPickerBenchmark));
+            var summary = BenchmarkRunner.Run (typeof (RC4Benchmark));
         }
     }
 }
