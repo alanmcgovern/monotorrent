@@ -40,23 +40,23 @@ namespace MonoTorrent.Connections.Peer.Encryption
     {
         static readonly Memory<byte> Discarder = new byte[1024];
 
-        readonly byte[] S;
+        readonly Memory<byte> Memory = new byte[256];
         int x;
         int y;
 
-        public RC4 (byte[] key)
+        internal RC4 (ReadOnlySpan<byte> key)
         {
-            S = new byte[256];
-            for (int i = 0; i < S.Length; i++)
-                S[i] = (byte) i;
+            var span = Memory.Span;
 
-            byte c;
+            for (int i = 0; i < span.Length; i++)
+                span[i] = (byte) i;
 
-            for (int i = 0; i <= 255; i++) {
-                x = (x + S[i] + key[i % key.Length]) % 256;
-                c = S[x];
-                S[x] = S[i];
-                S[i] = c;
+            for (int i = 0; i < span.Length; i++) {
+                x = (x + span[i] + key[i % key.Length]) & 0xFF;
+
+                byte c = span[x];
+                span[x] = span[i];
+                span[i] = c;
             }
 
             x = 0;
@@ -71,16 +71,20 @@ namespace MonoTorrent.Connections.Peer.Encryption
 
         public void Encrypt (Span<byte> buffer)
         {
-            byte c;
-            for (int i = 0; i < buffer.Length; i++) {
+            var span = Memory.Span;
+            foreach (ref byte bufi in buffer) {
                 x = (x + 1) & 0xFF;
-                y = (y + S[x]) & 0xFF;
+                ref byte refSx = ref span[x];
 
-                c = S[y];
-                S[y] = S[x];
-                S[x] = c;
+                y = (y + refSx) & 0xFF;
+                ref byte refSy = ref span[y];
 
-                buffer[i] = (byte) (buffer[i] ^ (S[(S[x] + S[y]) & 0xFF]));
+                byte sy = refSy;
+                byte sx = refSx;
+                refSy = sx;
+                refSx = sy;
+
+                bufi ^= span[(sy + sx) & 0xFF];
             }
         }
     }
