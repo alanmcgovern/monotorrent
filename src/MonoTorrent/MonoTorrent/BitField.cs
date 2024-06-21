@@ -47,7 +47,7 @@ namespace MonoTorrent
 
         public double PercentComplete => Data.PercentComplete;
 
-        internal Span<uint> Span => Data.Data;
+        internal Span<ulong> Span => Data.Data;
 
         public int TrueCount => Data.TrueCount;
 

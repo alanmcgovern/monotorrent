@@ -316,6 +316,12 @@ namespace MonoTorrent
         }
 
         [Test]
+        public void CountTrue ([Values (1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129)] int expected)
+        {
+            Assert.AreEqual (expected, new BitField (expected).SetAll (true).CountTrue (new BitField (expected).SetAll (true)));
+        }
+
+        [Test]
         public void Equals_False ()
         {
             var bf = new BitField (10).SetAll (true);
@@ -408,6 +414,19 @@ namespace MonoTorrent
                     count++;
 
             Assert.AreEqual (count, bf.TrueCount, "#3");
+        }
+
+        [Test]
+        public void Xor_Parameterised ([Values(1, 7, 8, 9, 31, 32, 33, 63, 64, 65, 127, 128, 129)] int expected)
+        {
+            ReadOnlyBitField allTrue = new BitField (expected).SetAll (true);
+            ReadOnlyBitField allFalse = new BitField (expected);
+
+            Assert.AreEqual (0, new BitField (allTrue).Xor (allTrue).CountTrue (allTrue));
+            Assert.AreEqual (0, new BitField (allTrue).Xor (allTrue).TrueCount);
+
+            Assert.AreEqual (expected, new BitField (allTrue).Xor (allFalse).CountTrue (allTrue));
+            Assert.AreEqual (expected, new BitField (allTrue).Xor (allFalse).TrueCount);
         }
 
         [Test]
