@@ -17,11 +17,11 @@ namespace MyBenchmarks
     [MemoryDiagnoser]
     public class BitfieldBenchmark
     {
-        readonly BitField BitField_S = new BitField (5);
-        readonly BitField BitField_M = new BitField (50);
-        readonly BitField BitField_L = new BitField (500);
-        readonly BitField BitField_XL = new BitField (5000);
-        readonly BitField BitField_XXL = new BitField (50000);
+        readonly ReadOnlyBitField BitField_S = new BitField (5);
+        readonly ReadOnlyBitField BitField_M = new BitField (50);
+        readonly ReadOnlyBitField BitField_L = new BitField (500);
+        readonly ReadOnlyBitField BitField_XL = new BitField (5000);
+        readonly ReadOnlyBitField BitField_XXL = new BitField (50000);
 
         readonly BitField Temp_S = new BitField (5);
         readonly BitField Temp_M = new BitField (50);
@@ -29,32 +29,53 @@ namespace MyBenchmarks
         readonly BitField Temp_XL = new BitField (5000);
         readonly BitField Temp_XXL = new BitField (50000);
 
-        BitField Selector_S = new BitField (5).SetAll (true);
-        BitField Selector_M = new BitField (50).SetAll (true);
-        BitField Selector_L = new BitField (500).SetAll (true);
-        BitField Selector_XL = new BitField (5000).SetAll (true);
-        BitField Selector_XXL = new BitField (50000).SetAll (true);
+        readonly ReadOnlyBitField Selector_S = new BitField (5).SetAll (true);
+        readonly ReadOnlyBitField Selector_M = new BitField (50).SetAll (true);
+        readonly ReadOnlyBitField Selector_L = new BitField (500).SetAll (true);
+        readonly ReadOnlyBitField Selector_XL = new BitField (5000).SetAll (true);
+        readonly ReadOnlyBitField Selector_XXL = new BitField (50000).SetAll (true);
+
+        readonly ReadOnlyBitField PartialSelector_S = new BitField (5).SetAll (true);
+        readonly ReadOnlyBitField PartialSelector_M = new BitField (50).SetAll (true);
+        readonly ReadOnlyBitField PartialSelector_L = new BitField (500).SetAll (true);
+        readonly ReadOnlyBitField PartialSelector_XL = new BitField (5000).SetAll (true);
+        readonly ReadOnlyBitField PartialSelector_XXL = new BitField (50000).SetAll (true);
 
         public BitfieldBenchmark ()
         {
-            BitField_S[1] = true;
+            BitField_S = new BitField (BitField_S).Set (1, true);
 
-            foreach (var bf in new[] { BitField_M, BitField_L, BitField_XL, BitField_XXL })
+            static ReadOnlyBitField SetSomeTrue (ReadOnlyBitField bitfield)
+            {
+                var bf = new BitField (bitfield);
                 for (int i = 31; i < bf.Length; i += 32)
                     bf[i] = true;
+                return bf;
+            }
+            BitField_M = SetSomeTrue (BitField_M);
+            BitField_L = SetSomeTrue (BitField_L);
+            BitField_XL = SetSomeTrue (BitField_XL);
+            BitField_XXL = SetSomeTrue (BitField_XXL);
+
+            static ReadOnlyBitField SetSomeFalse (ReadOnlyBitField bitfield)
+            {
+                var bf = new BitField (bitfield);
+                for (int i = 31; i < bf.Length; i += 32) {
+                    bf[i - 10] = false;
+                    bf[i] = false;
+                }
+                return bf;
+            }
+            PartialSelector_S = SetSomeFalse (new BitField (PartialSelector_S).SetAll (true));
+            PartialSelector_M = SetSomeFalse (new BitField (PartialSelector_M).SetAll (true));
+            PartialSelector_L = SetSomeFalse (new BitField (PartialSelector_L).SetAll (true));
+            PartialSelector_XL = SetSomeFalse (new BitField (PartialSelector_XL).SetAll (true));
+            PartialSelector_XXL = SetSomeFalse (new BitField (PartialSelector_XXL).SetAll (true));
         }
 
         [Benchmark]
         public void FirstTrue ()
             => BitField_L.FirstTrue ();
-
-        [Benchmark]
-        public void PopCount ()
-            => BitField_L.CountTrue (Selector_L);
-
-        [Benchmark]
-        public void NAnd ()
-            => Temp_L.From (BitField_L).NAnd (Selector_L);
 
         [Benchmark]
         public void From_S ()
@@ -65,16 +86,16 @@ namespace MyBenchmarks
             => Temp_M.From (BitField_M);
 
         [Benchmark]
-        public void From_L ()
-            => Temp_L.From (BitField_L);
+        public void NAnd_L ()
+            => Temp_L.From (BitField_L).NAnd (Selector_L);
 
         [Benchmark]
-        public void From_XL ()
-            => Temp_XL.From (BitField_XL);
+        public void NAnd_XL ()
+            => Temp_XL.From (BitField_XL).NAnd (PartialSelector_XL);
 
         [Benchmark]
-        public void From_XXL ()
-            => Temp_XXL.From (BitField_XXL);
+        public void PopCount ()
+            => BitField_L.CountTrue (Selector_L);
     }
 
     [MemoryDiagnoser]
@@ -398,7 +419,11 @@ namespace MyBenchmarks
     {
         public static void Main (string[] args)
         {
-            var summary = BenchmarkRunner.Run (typeof (RC4Benchmark));
+            BenchmarkDotNet.Configs.IConfig config = null;
+#if DEBUG
+            config = new BenchmarkDotNet.Configs.DebugInProcessConfig ();
+#endif
+            var summary = BenchmarkRunner.Run (typeof (BitfieldBenchmark), config);
         }
     }
 }
