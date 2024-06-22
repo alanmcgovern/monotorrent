@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using NUnit.Framework;
+using NUnit.Framework.Constraints;
 
 namespace MonoTorrent
 {
@@ -138,6 +139,47 @@ namespace MonoTorrent
             b[31] = false;
             b[32] = true;
             Assert.AreEqual (32, b.FirstTrue (1, 32));
+        }
+
+        [Test]
+        public void FirstFalse (
+            [Values (1, 63, 64, 65, 127, 128, 129)] int size,
+            [Values (false, true)] bool allTrue,
+            [Values (false, true)] bool invertFirst)
+        {
+            var bf = new BitField (size).SetAll (allTrue);
+
+            // There are fast paths when all elements are true or all are false.
+            // This ensures we skip those fast paths.
+            if (invertFirst)
+                bf[0] = !bf[0];
+
+            for (int i = invertFirst ? 1 : 0; i < size; i++) {
+                var index = bf.FirstFalse (i, size - 1);
+                if (allTrue)
+                    Assert.AreEqual (-1, index);
+                else
+                    Assert.AreEqual (i, index);
+            }
+        }
+
+        [Test]
+        public void FirstTrue (
+            [Values (1, 63, 64, 65, 127, 128, 129)] int size,
+            [Values (false, true)] bool allTrue,
+            [Values (false, true)] bool invertFirst)
+        {
+            var bf = new BitField (size).SetAll (allTrue);
+            if (invertFirst)
+                bf[0] = !bf[0];
+
+            for (int i = invertFirst ? 1 : 0; i < size; i++) {
+                var index = bf.FirstTrue (i, size - 1);
+                if (allTrue)
+                    Assert.AreEqual (i, index);
+                else
+                    Assert.AreEqual (-1, index);
+            }
         }
 
         [Test]

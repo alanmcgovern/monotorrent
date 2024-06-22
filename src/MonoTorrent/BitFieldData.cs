@@ -264,7 +264,7 @@ namespace MonoTorrent
             if (AllTrue)
                 return -1;
             if (AllFalse)
-                return 0;
+                return startIndex;
 
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative

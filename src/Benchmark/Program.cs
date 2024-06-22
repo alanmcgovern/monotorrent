@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -14,6 +15,113 @@ using MonoTorrent.PiecePicking;
 
 namespace MyBenchmarks
 {
+    [MemoryDiagnoser]
+    public class BitfieldBenchmark_FirstTrueOrFalse
+    {
+        [Params (true, false)]
+        public bool FirstTrue { get; set; }
+
+        [Params(50_000)]
+        public int BitFieldSize { get; set; } = 50_000;
+
+        readonly ReadOnlyBitField True_XXL_00000BitField;
+        readonly ReadOnlyBitField True_XXL_00063BitField;
+        readonly ReadOnlyBitField True_XXL_33333BitField;
+        readonly ReadOnlyBitField True_XXL_49999BitField;
+        readonly ReadOnlyBitField True_XXL_EverySeventiethTrueBitField;
+
+        readonly ReadOnlyBitField False_XXL_00000BitField;
+        readonly ReadOnlyBitField False_XXL_00063BitField;
+        readonly ReadOnlyBitField False_XXL_33333BitField;
+        readonly ReadOnlyBitField False_XXL_49999BitField;
+        readonly ReadOnlyBitField False_XXL_EverySeventiethFalseBitField;
+
+        public BitfieldBenchmark_FirstTrueOrFalse ()
+        {
+            True_XXL_00000BitField = new BitField (BitFieldSize).Set (0, true);
+            True_XXL_00063BitField = new BitField (BitFieldSize).Set (63, true);
+            True_XXL_33333BitField = new BitField (BitFieldSize).Set (33333, true);
+            True_XXL_49999BitField = new BitField (BitFieldSize).Set (49999, true);
+
+            var bf = new BitField (BitFieldSize).SetAll (false);
+            for (int i = 0; i < bf.Length; i += 70)
+                bf.Set (i, true);
+            True_XXL_EverySeventiethTrueBitField = bf;
+
+
+            False_XXL_00000BitField = new BitField (True_XXL_00000BitField).Not ();
+            False_XXL_00063BitField = new BitField (True_XXL_00063BitField).Not ();
+            False_XXL_33333BitField = new BitField (True_XXL_33333BitField).Not ();
+            False_XXL_49999BitField = new BitField (True_XXL_49999BitField).Not ();
+
+            bf = new BitField (BitFieldSize).SetAll (true);
+            for (int i = 0; i < bf.Length; i += 70)
+                bf.Set (i, false);
+            False_XXL_EverySeventiethFalseBitField = bf;
+        }
+
+        [Benchmark]
+        public void True_00000 ()
+            => _ = FirstTrue ? True_XXL_00000BitField.FirstTrue () : True_XXL_00000BitField.FirstFalse ();
+
+        [Benchmark]
+        public void True_00063 ()
+            => _ = FirstTrue ? True_XXL_00063BitField.FirstTrue () : True_XXL_00063BitField.FirstFalse ();
+
+        [Benchmark]
+        public void True_33333 ()
+            => _ = FirstTrue ? True_XXL_33333BitField.FirstTrue () : True_XXL_33333BitField.FirstFalse ();
+
+        [Benchmark]
+        public void True_49999 ()
+            => _ = FirstTrue ? True_XXL_49999BitField.FirstTrue () : True_XXL_49999BitField.FirstFalse ();
+
+        [Benchmark]
+        public void EverySeventiethTrue ()
+        {
+            // Find every index
+            int next = -1;
+            do {
+                next++;
+                if (FirstTrue)
+                    next = True_XXL_EverySeventiethTrueBitField.FirstTrue (next, True_XXL_EverySeventiethTrueBitField.Length - 1);
+                else
+                    next = True_XXL_EverySeventiethTrueBitField.FirstFalse (next, True_XXL_EverySeventiethTrueBitField.Length - 1);
+            } while (next != -1 && next < True_XXL_EverySeventiethTrueBitField.Length - 1);
+        }
+
+        [Benchmark]
+        public void False_00000 ()
+            => _ = FirstTrue ? False_XXL_00000BitField.FirstTrue () : False_XXL_00000BitField.FirstFalse ();
+
+        [Benchmark]
+        public void False_00063 ()
+            => _ = FirstTrue ? False_XXL_00063BitField.FirstTrue () : False_XXL_00063BitField.FirstFalse ();
+
+        [Benchmark]
+        public void False_33333 ()
+            => _ = FirstTrue ? False_XXL_33333BitField.FirstTrue () : False_XXL_33333BitField.FirstFalse ();
+
+        [Benchmark]
+        public void False_49999 ()
+            => _ = FirstTrue ? False_XXL_49999BitField.FirstTrue () : False_XXL_49999BitField.FirstFalse ();
+
+
+        [Benchmark]
+        public void EverySeventiethFalse ()
+        {
+            // Find every index
+            int next = -1;
+            do {
+                next++;
+                if (FirstTrue)
+                    next = False_XXL_EverySeventiethFalseBitField.FirstTrue (next, False_XXL_EverySeventiethFalseBitField.Length - 1);
+                else
+                    next = False_XXL_EverySeventiethFalseBitField.FirstFalse (next, False_XXL_EverySeventiethFalseBitField.Length - 1);
+            } while (next != -1 && next < False_XXL_EverySeventiethFalseBitField.Length - 1);
+        }
+    }
+
     [MemoryDiagnoser]
     public class BitfieldBenchmark
     {
@@ -40,12 +148,6 @@ namespace MyBenchmarks
         readonly ReadOnlyBitField PartialSelector_L = new BitField (500).SetAll (true);
         readonly ReadOnlyBitField PartialSelector_XL = new BitField (5000).SetAll (true);
         readonly ReadOnlyBitField PartialSelector_XXL = new BitField (50000).SetAll (true);
-
-        readonly ReadOnlyBitField FirstTrue_XXL_00000BitField;
-        readonly ReadOnlyBitField FirstTrue_XXL_00063BitField;
-        readonly ReadOnlyBitField FirstTrue_XXL_33333BitField;
-        readonly ReadOnlyBitField FirstTrue_XXL_49999BitField;
-        readonly ReadOnlyBitField FirstTrue_XXL_EverySeventiethBitField;
 
         public BitfieldBenchmark ()
         {
@@ -77,45 +179,6 @@ namespace MyBenchmarks
             PartialSelector_L = SetSomeFalse (new BitField (PartialSelector_L).SetAll (true));
             PartialSelector_XL = SetSomeFalse (new BitField (PartialSelector_XL).SetAll (true));
             PartialSelector_XXL = SetSomeFalse (new BitField (PartialSelector_XXL).SetAll (true));
-
-
-            var bf = new BitField (Temp_XXL).SetAll (false);
-            for (int i = 0; i < bf.Length; i += 70)
-                bf.Set (i, true);
-            FirstTrue_XXL_EverySeventiethBitField = bf;
-
-            FirstTrue_XXL_00000BitField = new BitField (Temp_XXL).SetAll (false).Set (0, true);
-            FirstTrue_XXL_00063BitField = new BitField (Temp_XXL).SetAll (false).Set (63, true);
-            FirstTrue_XXL_33333BitField = new BitField (Temp_XXL).SetAll (false).Set (33333, true);
-            FirstTrue_XXL_49999BitField = new BitField(Temp_XXL).SetAll (false).Set (49999, true);
-
-        }
-
-        [Benchmark]
-        public void FirstTrue_XXL_00000 ()
-            => FirstTrue_XXL_00000BitField.FirstTrue ();
-
-        [Benchmark]
-        public void FirstTrue_XXL_00063 ()
-            => FirstTrue_XXL_00063BitField.FirstTrue ();
-
-        [Benchmark]
-        public void FirstTrue_XXL_33333 ()
-            => FirstTrue_XXL_33333BitField.FirstTrue ();
-
-        [Benchmark]
-        public void FirstTrue_XXL_49999()
-            => FirstTrue_XXL_49999BitField.FirstTrue ();
-
-        [Benchmark]
-        public void FirstTrue_EverySeventieth ()
-        {
-            // Find every index
-            int next = -1;
-            do {
-                next++;
-                next = FirstTrue_XXL_EverySeventiethBitField.FirstTrue (next, Temp_XXL.Length - 1);
-            } while (next != -1);
         }
 
         [Benchmark]
@@ -464,7 +527,7 @@ namespace MyBenchmarks
 #if DEBUG
             config = new BenchmarkDotNet.Configs.DebugInProcessConfig ();
 #endif
-            var summary = BenchmarkRunner.Run (typeof (BitfieldBenchmark), config);
+            var summary = BenchmarkRunner.Run (typeof (BitfieldBenchmark_FirstTrueOrFalse), config);
         }
     }
 }
