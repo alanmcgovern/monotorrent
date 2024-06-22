@@ -41,6 +41,12 @@ namespace MyBenchmarks
         readonly ReadOnlyBitField PartialSelector_XL = new BitField (5000).SetAll (true);
         readonly ReadOnlyBitField PartialSelector_XXL = new BitField (50000).SetAll (true);
 
+        readonly ReadOnlyBitField FirstTrue_XXL_00000BitField;
+        readonly ReadOnlyBitField FirstTrue_XXL_00063BitField;
+        readonly ReadOnlyBitField FirstTrue_XXL_33333BitField;
+        readonly ReadOnlyBitField FirstTrue_XXL_49999BitField;
+        readonly ReadOnlyBitField FirstTrue_XXL_EverySeventiethBitField;
+
         public BitfieldBenchmark ()
         {
             BitField_S = new BitField (BitField_S).Set (1, true);
@@ -71,11 +77,46 @@ namespace MyBenchmarks
             PartialSelector_L = SetSomeFalse (new BitField (PartialSelector_L).SetAll (true));
             PartialSelector_XL = SetSomeFalse (new BitField (PartialSelector_XL).SetAll (true));
             PartialSelector_XXL = SetSomeFalse (new BitField (PartialSelector_XXL).SetAll (true));
+
+
+            var bf = new BitField (Temp_XXL).SetAll (false);
+            for (int i = 0; i < bf.Length; i += 70)
+                bf.Set (i, true);
+            FirstTrue_XXL_EverySeventiethBitField = bf;
+
+            FirstTrue_XXL_00000BitField = new BitField (Temp_XXL).SetAll (false).Set (0, true);
+            FirstTrue_XXL_00063BitField = new BitField (Temp_XXL).SetAll (false).Set (63, true);
+            FirstTrue_XXL_33333BitField = new BitField (Temp_XXL).SetAll (false).Set (33333, true);
+            FirstTrue_XXL_49999BitField = new BitField(Temp_XXL).SetAll (false).Set (49999, true);
+
         }
 
         [Benchmark]
-        public void FirstTrue ()
-            => BitField_L.FirstTrue ();
+        public void FirstTrue_XXL_00000 ()
+            => FirstTrue_XXL_00000BitField.FirstTrue ();
+
+        [Benchmark]
+        public void FirstTrue_XXL_00063 ()
+            => FirstTrue_XXL_00063BitField.FirstTrue ();
+
+        [Benchmark]
+        public void FirstTrue_XXL_33333 ()
+            => FirstTrue_XXL_33333BitField.FirstTrue ();
+
+        [Benchmark]
+        public void FirstTrue_XXL_49999()
+            => FirstTrue_XXL_49999BitField.FirstTrue ();
+
+        [Benchmark]
+        public void FirstTrue_EverySeventieth ()
+        {
+            // Find every index
+            int next = -1;
+            do {
+                next++;
+                next = FirstTrue_XXL_EverySeventiethBitField.FirstTrue (next, Temp_XXL.Length - 1);
+            } while (next != -1);
+        }
 
         [Benchmark]
         public void From_S ()
