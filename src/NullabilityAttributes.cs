@@ -30,7 +30,7 @@
 using System;
 using System.Diagnostics;
 
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET472
 namespace MonoTorrent
 {
     [AttributeUsage (AttributeTargets.Parameter, Inherited = false)]

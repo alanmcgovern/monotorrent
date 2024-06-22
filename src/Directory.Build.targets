@@ -9,7 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(ReferenceReusableTasks)' != 'false'">
-    <!-- Reference 2.0.1 or newer to get the 'async void' optimisation -->
     <PackageReference Include="ReusableTasks" Version="[3.0.0,4.0)" />
   </ItemGroup>
 
@@ -25,7 +24,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MemoryExtensions.cs" Condition="'$(UseMemoryExtensions)' == 'true'" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)BigEndianBigInteger.cs" Link="Linked\%(FileName)%(Extension)" Condition="$(ProjectName) == 'MonoTorrent.Dht' or $(ProjectName) == 'MonoTorrent.Client'" />
     <Compile Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)NullabilityAttributes.cs" Link="Linked\%(FileName)%(Extension)" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+    <Compile Include="$(MSBuildThisFileDirectory)NullabilityAttributes.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
 
