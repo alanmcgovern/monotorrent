@@ -269,10 +269,17 @@ namespace MonoTorrent
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative
             int loopEnd = Math.Min ((endIndex / StorageBitCount), Span.Length - 1);
-            for (int i = (startIndex / StorageBitCount); i <= loopEnd; i++) {
-                if (Span[i] == ulong.MaxValue)        // This one has no false values
+            int loopStart = startIndex / StorageBitCount;
+            for (int i = loopStart; i <= loopEnd; i++) {
+                ref ulong current = ref Span[i];
+                if (current == ulong.MaxValue && i != loopEnd) {        // This one has no false values
+#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NET472 && !NET5_0 && !NETCOREAPP3_0 && !NET6_0
+                    var next = Span.Slice (i + 1).IndexOfAnyExcept (ulong.MaxValue);
+                    if (next != -1)
+                        i += next;
+#endif
                     continue;
-
+                }
                 start = i * StorageBitCount;
                 end = start + StorageBitCount - 1;
 
@@ -292,7 +299,7 @@ namespace MonoTorrent
                     mask &= ulong.MaxValue >> (startIndex - start);
                 if (end > endIndex)
                     mask &= ulong.MaxValue << (end - endIndex);
-                mask &= ~Span[i];
+                mask &= ~current;
                 if (mask == 0)
                     continue;
                 return System.Numerics.BitOperations.LeadingZeroCount (mask) + start;
