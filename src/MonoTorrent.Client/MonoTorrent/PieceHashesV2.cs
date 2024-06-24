@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Security.Cryptography;
 
@@ -83,6 +84,8 @@ namespace MonoTorrent
                     return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, layers.GetHash (layers.PieceLayerIndex, hashIndex - Files[i].StartPieceIndex));
 
                 // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!
+                if (Files[i].EndPieceIndex != Files[i].StartPieceIndex)
+                    throw new InvalidOperationException ("The file has two or more pieces but is missing the required piece layers");
                 return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, Files[i].PiecesRoot.AsMemory ());
             }
             throw new InvalidOperationException ("Requested a piece which does not exist");
