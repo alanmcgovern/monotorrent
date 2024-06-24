@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using MonoTorrent.BEncoding;
@@ -73,6 +74,24 @@ namespace MonoTorrent
             var hash = pieceHashesV2.GetHash (0);
             Assert.IsTrue (files[1].PiecesRoot.AsMemory ().Span.SequenceEqual (hash.V2Hash.Span));
             Assert.IsTrue (hash.V1Hash.IsEmpty);
+        }
+
+        [Test]
+        public void V2Only_WithHugeFiles ()
+        {
+            int pieceSize = 16_384;
+            int pieceCount = 1 << 16;
+            var paddingHash = MerkleHash.PaddingHashes[16384 << 16];
+
+            var layers = new MerkleLayers (MerkleRoot.FromMemory (paddingHash), pieceSize, pieceCount);
+            Assert.IsTrue (layers.TryVerify (out ReadOnlyMerkleLayers? verifiedLayers));
+
+            var files = new[] {
+                new TorrentFile ("large", (long) pieceSize * pieceCount - 1, startIndex: 0, endIndex: pieceCount - 1, 0, verifiedLayers.Root, TorrentFileAttributes.None, 0)
+            };
+
+            var pieceHashesV2 = new PieceHashesV2 (Constants.BlockSize, files, new Dictionary<MerkleRoot, ReadOnlyMerkleLayers> { { verifiedLayers.Root, verifiedLayers } } );
+            Assert.IsTrue (MerkleHash.PaddingHashes[16384].Span.SequenceEqual(pieceHashesV2.GetHash (pieceCount - 1).V2Hash.Span));
         }
     }
 }
