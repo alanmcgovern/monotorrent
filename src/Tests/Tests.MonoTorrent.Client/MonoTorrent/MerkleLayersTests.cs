@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
         [Test]
         public void ValidLargestLayer ()
         {
-            var paddingHash = MerkleHash.PaddingHashes[16384 << 16];
+            var paddingHash = MerkleHash.PaddingHashesByLayer[16];
 
             // 3 million 16kB pieces... because why not?
             var layers = new MerkleLayers (MerkleRoot.FromMemory (paddingHash), 16_384, 1 << 16);

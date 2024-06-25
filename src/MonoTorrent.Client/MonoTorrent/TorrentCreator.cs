@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading;
@@ -298,7 +299,7 @@ namespace MonoTorrent
             if (merkleLayers.Count > 0) {
                 var dict = new BEncodedDictionary ();
                 foreach (var kvp in merkleLayers.Where (t => t.Key.StartPieceIndex != t.Key.EndPieceIndex)) {
-                    var rootHash = MerkleHash.Hash (kvp.Value.Span, PieceLength);
+                    var rootHash = MerkleHash.Hash (kvp.Value.Span, BitOps.CeilLog2 ((uint) PieceLength / Constants.BlockSize));
                     dict[BEncodedString.FromMemory (rootHash)] = BEncodedString.FromMemory (kvp.Value);
                 }
 
@@ -332,7 +333,7 @@ namespace MonoTorrent
                 fileTree = (BEncodedDictionary) inner;
             }
             if (value.Length > 32)
-                value = MerkleHash.Hash (value.Span, PieceLength);
+                value = MerkleHash.Hash (value.Span, BitOps.CeilLog2 ((uint) PieceLength / Constants.BlockSize));
 
             var fileData = new BEncodedDictionary {
                 {"length", (BEncodedNumber) key.Length },

@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 using MonoTorrent.BEncoding;
 
@@ -81,17 +82,17 @@ namespace MonoTorrent
         {
             int pieceSize = 16_384;
             int pieceCount = 1 << 16;
-            var paddingHash = MerkleHash.PaddingHashes[16384 << 16];
+            var paddingHash = MerkleHash.PaddingHashesByLayer[BitOps.CeilLog2 ((uint) pieceCount)];
 
             var layers = new MerkleLayers (MerkleRoot.FromMemory (paddingHash), pieceSize, pieceCount);
-            Assert.IsTrue (layers.TryVerify (out ReadOnlyMerkleLayers? verifiedLayers));
+            Assert.IsTrue (layers.TryVerify (out ReadOnlyMerkleLayers verifiedLayers));
 
             var files = new[] {
                 new TorrentFile ("large", (long) pieceSize * pieceCount - 1, startIndex: 0, endIndex: pieceCount - 1, 0, verifiedLayers.Root, TorrentFileAttributes.None, 0)
             };
 
             var pieceHashesV2 = new PieceHashesV2 (Constants.BlockSize, files, new Dictionary<MerkleRoot, ReadOnlyMerkleLayers> { { verifiedLayers.Root, verifiedLayers } } );
-            Assert.IsTrue (MerkleHash.PaddingHashes[16384].Span.SequenceEqual(pieceHashesV2.GetHash (pieceCount - 1).V2Hash.Span));
+            Assert.IsTrue (MerkleHash.PaddingHashesByLayer[0].Span.SequenceEqual(pieceHashesV2.GetHash (pieceCount - 1).V2Hash.Span));
         }
     }
 }

@@ -629,7 +629,7 @@ namespace MonoTorrent
 
                         var merkleTrees = dict.ToDictionary (
                             key => MerkleRoot.FromMemory (key.Key.AsMemory ()),
-                            kvp => ReadOnlyMerkleLayers.FromLayer (PieceLength, MerkleRoot.FromMemory (kvp.Key.AsMemory ()), ((BEncodedString) kvp.Value).Span) ?? throw new TorrentException ($"Invalid merkle tree. A layer not produce the expected root hash.")
+                            kvp => ReadOnlyMerkleLayers.FromLayer (PieceLength, MerkleRoot.FromMemory (kvp.Key.AsMemory ()), ((BEncodedString) kvp.Value).Span)
                         );
 
                         hashesV2 = LoadHashesV2 (Files, merkleTrees, PieceLength);

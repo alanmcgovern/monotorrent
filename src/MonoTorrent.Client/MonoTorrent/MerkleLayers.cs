@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
 
 namespace MonoTorrent
@@ -50,13 +51,13 @@ namespace MonoTorrent
             if (pieceLayerHashCount == 1)
                 throw new ArgumentException ("A merkletree must have 2 or more hashes");
 
-            PieceLayerIndex = (int) Math.Log (pieceLength / 16384, 2);
+            PieceLayerIndex = BitOps.CeilLog2 ((uint) pieceLength / 16384);
             Layers = new List<Memory<byte>> ();
 
-            var finalLayer = (int) Math.Ceiling (Math.Log (pieceLayerHashCount, 2)) + 1;
+            var finalLayer = BitOps.CeilLog2 ((uint) pieceLayerHashCount);
             for (int i = 0; i < PieceLayerIndex; i++)
                 Layers.Add (Memory<byte>.Empty);
-            for (int layer = PieceLayerIndex; layer < PieceLayerIndex + finalLayer; layer++) {
+            for (int layer = PieceLayerIndex; layer <= PieceLayerIndex + finalLayer; layer++) {
                 Layers.Add (new Memory<byte> (new byte[pieceLayerHashCount * 32]));
                 pieceLayerHashCount = (pieceLayerHashCount + 1) / 2;
             }
@@ -77,7 +78,7 @@ namespace MonoTorrent
 
             Span<byte> computedHash = stackalloc byte[32];
             using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
-            if (!MerkleHash.TryHash (hasher, hashes, (int) Math.Pow (2, baseLayer) * 16384, proofs, index, length, computedHash, out int written))
+            if (!MerkleHash.TryHash (hasher, hashes, baseLayer, proofs, index, length, computedHash, out int written))
                 return false;
             if (!ExpectedRoot.IsEmpty && !computedHash.SequenceEqual (ExpectedRoot.Span))
                 return false;
@@ -104,7 +105,8 @@ namespace MonoTorrent
                 }
                 if (src.Length % 64 == 32) {
                     hasher.AppendData (src.Span.Slice (src.Length - 32, 32));
-                    hasher.AppendData (MerkleHash.PaddingHashes[16384 * (int) Math.Pow (2, layer)].Span);
+                    // Math.Pow(2, layer) == 1 << layer
+                    hasher.AppendData (MerkleHash.PaddingHashesByLayer[layer].Span);
                     if (!hasher.TryGetHashAndReset (dest.Slice (dest.Length - 32, 32).Span, out written) || written != 32)
                         return false;
                 }

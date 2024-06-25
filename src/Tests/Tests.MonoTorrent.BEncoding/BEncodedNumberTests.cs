@@ -114,6 +114,26 @@ namespace MonoTorrent.BEncoding
         }
 
         [Test]
+        public void benNumber_AllPowersOf10 ()
+        {
+            for (long value = 1L; value > 0; value *= 10) {
+                foreach (var offset in new int[] { -1, 0, 1 }) {
+                    // positive value
+                    var expected = value + offset;
+                    var number = new BEncodedNumber (expected);
+                    foreach (var result in BEncodedValue.DecodingVariants<BEncodedNumber> (number.Encode ()))
+                        Assert.AreEqual (expected, result.Number);
+
+                    // negative value.
+                    expected *= -1;
+                    number = new BEncodedNumber (expected);
+                    foreach (var result in BEncodedValue.DecodingVariants<BEncodedNumber> (number.Encode ()))
+                        Assert.AreEqual (expected, result.Number);
+                }
+            }
+        }
+
+        [Test]
         public void benNumberEncodingBuffered ()
         {
             byte[] data = Encoding.UTF8.GetBytes ("i12345e");

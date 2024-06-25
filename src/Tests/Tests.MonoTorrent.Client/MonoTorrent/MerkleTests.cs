@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,8 +25,8 @@ namespace MonoTorrent.Client
         [Test]
         public void CreateTree_OneRootHash ([Values (1)] int hashes)
         {
-            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashes[Constants.BlockSize * 2]);
-            var leafHashes = Replicate (MerkleHash.PaddingHashes[Constants.BlockSize], hashes);
+            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashesByLayer[1]);
+            var leafHashes = Replicate (MerkleHash.PaddingHashesByLayer[0], hashes);
 
             Assert.Throws<ArgumentException> (() => CreateMerkleTree (Constants.BlockSize, expectedRoot, leafHashes.Span));
         }
@@ -33,37 +34,37 @@ namespace MonoTorrent.Client
         [Test]
         public void CreateTree_2Hashes ([Values(2)] int hashes)
         {
-            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashes[Constants.BlockSize * 2]);
-            var leafHashes = Replicate (MerkleHash.PaddingHashes[Constants.BlockSize], hashes);
+            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashesByLayer[BitOps.CeilLog2 (Constants.BlockSize * 2)]);
+            var leafHashes = Replicate (MerkleHash.PaddingHashesByLayer[BitOps.CeilLog2 (Constants.BlockSize)], hashes);
 
             var layers = CreateMerkleTree (Constants.BlockSize, expectedRoot, leafHashes.Span);
-            Contains (layers, 0, MerkleHash.PaddingHashes[Constants.BlockSize], 2);
-            Contains (layers, 1, MerkleHash.PaddingHashes[Constants.BlockSize * 2], 1);
+            Contains (layers, 0, MerkleHash.PaddingHashesByLayer[BitOps.CeilLog2 (Constants.BlockSize)], 2);
+            Contains (layers, 1, MerkleHash.PaddingHashesByLayer[BitOps.CeilLog2 (Constants.BlockSize * 2)], 1);
         }
 
         [Test]
         public void CreateTree_4Hashes ([Values (3, 4)] int hashes)
         {
-            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashes[Constants.BlockSize * 4]);
-            var leafHashes = Replicate (MerkleHash.PaddingHashes[Constants.BlockSize], hashes);
+            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashesByLayer[2]);
+            var leafHashes = Replicate (MerkleHash.PaddingHashesByLayer[0], hashes);
 
             var layers = CreateMerkleTree (Constants.BlockSize, expectedRoot, leafHashes.Span);
-            Contains (layers, 0, MerkleHash.PaddingHashes[Constants.BlockSize], 4);
-            Contains (layers, 1, MerkleHash.PaddingHashes[Constants.BlockSize * 2], 2);
-            Contains (layers, 2, MerkleHash.PaddingHashes[Constants.BlockSize * 4], 1);
+            Contains (layers, 0, MerkleHash.PaddingHashesByLayer[0], 4);
+            Contains (layers, 1, MerkleHash.PaddingHashesByLayer[1], 2);
+            Contains (layers, 2, MerkleHash.PaddingHashesByLayer[2], 1);
         }
 
         [Test]
         public void CreateTree_8Hashes ([Values (5, 6, 7, 8)] int hashes)
         {
-            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashes[Constants.BlockSize * 8]);
-            var leafHashes = Replicate (MerkleHash.PaddingHashes[Constants.BlockSize], hashes);
+            var expectedRoot = MerkleRoot.FromMemory (MerkleHash.PaddingHashesByLayer[3]);
+            var leafHashes = Replicate (MerkleHash.PaddingHashesByLayer[0], hashes);
 
             var layers = CreateMerkleTree (Constants.BlockSize, expectedRoot, leafHashes.Span);
-            Contains (layers, 0, MerkleHash.PaddingHashes[Constants.BlockSize], 8);
-            Contains (layers, 1, MerkleHash.PaddingHashes[Constants.BlockSize * 2], 4);
-            Contains (layers, 2, MerkleHash.PaddingHashes[Constants.BlockSize * 4], 2);
-            Contains (layers, 3, MerkleHash.PaddingHashes[Constants.BlockSize * 8], 1);
+            Contains (layers, 0, MerkleHash.PaddingHashesByLayer[0], 8);
+            Contains (layers, 1, MerkleHash.PaddingHashesByLayer[1], 4);
+            Contains (layers, 2, MerkleHash.PaddingHashesByLayer[2], 2);
+            Contains (layers, 3, MerkleHash.PaddingHashesByLayer[3], 1);
         }
 
         [Test]

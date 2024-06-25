@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
 
 using MonoTorrent.BEncoding;
@@ -60,7 +61,7 @@ namespace MonoTorrent
         }
 
         internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleLayers> layers)
-            => (Files, Layers, HashCodeLength, Count, PieceLayer) = (files, layers, 32, files.Last ().EndPieceIndex + 1, (int) Math.Log (pieceLength / 16384, 2));
+            => (Files, Layers, HashCodeLength, Count, PieceLayer) = (files, layers, 32, files.Last ().EndPieceIndex + 1, BitOps.CeilLog2 ((uint) pieceLength / 16384));
 
         int PieceLayer { get; }
 
@@ -121,13 +122,13 @@ namespace MonoTorrent
             length = Math.Max (2, length);
 
             // Reduce the size of the buffer by the number of omitted hashes.
-            var omittedHashes = (int) Math.Ceiling (Math.Log (length, 2)) - 1;
+            var omittedHashes = BitOps.CeilLog2 ((uint) length) - 1;
             proofsBuffer = proofsBuffer.Slice (0, proofsBuffer.Length - (omittedHashes * 32));
             actualProofLayers = proofsBuffer.Length / 32;
 
             // The first proof layer is the one after the base layer, and we also skip ahead by the number of omitted hashes.
             var proofLayer = baseLayer + omittedHashes + 1;
-            var proofLayerIndex = index / (int) Math.Pow (2, proofLayer - baseLayer);
+            var proofLayerIndex = index / (1 << (proofLayer - baseLayer));
             while (proofsBuffer.Length > 0) {
                 layers.GetHash (proofLayer, proofLayerIndex ^ 1).Span.CopyTo (proofsBuffer.Slice (0, HashCodeLength));
                 proofLayerIndex /= 2;

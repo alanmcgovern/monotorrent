@@ -29,41 +29,48 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Security.Cryptography;
 
 namespace MonoTorrent
 {
     static class MerkleHash
     {
-        internal static Dictionary<long, ReadOnlyMemory<byte>> PaddingHashes { get; } = CreateFinalHashPerLayer ();
+        /// <summary>
+        /// Layer 0 is 16kB, Layer 1 is 32kB, etc
+        /// </summary>
+        internal static Dictionary<int, ReadOnlyMemory<byte>> PaddingHashesByLayer { get; } = CreateFinalHashPerLayer ();
 
-        static Dictionary<long, ReadOnlyMemory<byte>> CreateFinalHashPerLayer ()
+        static Dictionary<int, ReadOnlyMemory<byte>> CreateFinalHashPerLayer ()
         {
             using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
-            byte[] buffer = new byte[32];
+            Span<byte> buffer = stackalloc byte[32];
+            buffer.Fill (0);
 
-            Dictionary<long, ReadOnlyMemory<byte>> results = new Dictionary<long, ReadOnlyMemory<byte>> ();
-            results[Constants.BlockSize] = (byte[]) buffer.Clone ();
-            for (long i = Constants.BlockSize * 2; results.Count < 49; i *= 2) {
+            var results = new Dictionary<int, ReadOnlyMemory<byte>> ();
+            results[0] = buffer.ToArray ();
+
+            // Generate 49 layers worth... though no real world torrent should ever use that many layers. Right???
+            for (int i = 1; results.Count < 49; i ++) {
                 hasher.AppendData (buffer);
                 hasher.AppendData (buffer);
                 if (!hasher.TryGetHashAndReset (buffer, out int written) || written != 32)
                     throw new Exception ("Critical failure");
-                results[i] = (byte[]) buffer.Clone ();
+                results[i] = buffer.ToArray ();
             }
             return results;
         }
 
-        public static ReadOnlyMemory<byte> Hash (ReadOnlySpan<byte> src, int startLayerLength)
+        public static ReadOnlyMemory<byte> Hash (ReadOnlySpan<byte> src, int startLayer)
         {
             using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
             Memory<byte> hash = new byte[32];
-            if (!TryHash (hasher, src, startLayerLength, ReadOnlySpan<byte>.Empty, 0, src.Length, hash.Span, out int written) || written != 32)
+            if (!TryHash (hasher, src, startLayer, ReadOnlySpan<byte>.Empty, 0, src.Length, hash.Span, out int written) || written != 32)
                 throw new InvalidOperationException ("Unexpected error hashing the buffer");
             return hash;
         }
 
-        public static bool TryHash (IncrementalHash hasher, ReadOnlySpan<byte> src, long startLayerLength, ReadOnlySpan<byte> proofLayers, int index, int length, Span<byte> computedHash, out int written)
+        public static bool TryHash (IncrementalHash hasher, ReadOnlySpan<byte> src, int startLayer, ReadOnlySpan<byte> proofLayers, int index, int length, Span<byte> computedHash, out int written)
         {
             using var _ = MemoryPool.Default.Rent (((src.Length + 63) / 64) * 32, out Memory<byte> dest);
             do {
@@ -74,19 +81,19 @@ namespace MonoTorrent
                 }
                 if (src.Length % 64 == 32) {
                     hasher.AppendData (src.Slice (src.Length - 32, 32));
-                    hasher.AppendData (PaddingHashes[startLayerLength].Span);
+                    hasher.AppendData (PaddingHashesByLayer[startLayer].Span);
                     if (!hasher.TryGetHashAndReset (dest.Slice (dest.Length - 32, 32).Span, out written) || written != 32)
                         return false;
                 }
                 src = dest.Span;
                 dest = dest.Slice (0, ((dest.Length + 63) / 64) * 32);
-                startLayerLength *= 2;
+                startLayer++;
             } while (src.Length != 32);
 
             // The only time 'length' is equal to 1 is when the final request needed 1 piece. In this case we should
             // treat it as being a request of length '2' as we *should* have a padding hash to the right of the node we fetched.
             length = Math.Max (2, length);
-            int proofLayerOffset = index / (int) Math.Pow (2, Math.Ceiling (Math.Log (length, 2)));
+            int proofLayerOffset = index / (int) BitOps.RoundUpToPowerOf2 ((uint) length);
             for (int i = 0; i < proofLayers.Length; i += 32) {
                 if ((proofLayerOffset & 1) == 1)
                     hasher.AppendData (proofLayers.Slice (i, 32));

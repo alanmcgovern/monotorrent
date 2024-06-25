@@ -75,7 +75,7 @@ namespace MonoTorrent
         {
             var hashes = Layers[layer];
             if ((index * 32) >= hashes.Length)
-                return MerkleHash.PaddingHashes[(int) Math.Pow (2, layer) * 16384];
+                return MerkleHash.PaddingHashesByLayer[layer];
             return hashes.Slice (index * 32, 32);
         }
 
