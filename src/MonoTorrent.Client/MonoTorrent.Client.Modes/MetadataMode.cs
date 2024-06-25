@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,7 +65,10 @@ namespace MonoTorrent.Client.Modes
             {
                 length = size;
                 AvailablePieces = new BitField (PieceCount).SetAll (true);
-                PieceLength = (int) Math.Pow (2, Math.Ceiling (Math.Log (size, 2)) + 1);
+                // minimum power of two piece length which allows all the metadata blocks
+                // to be treated as if they were part of the same piece. i.e. a 1 piece torrent
+                // which is in 'endgame' mode so multiple requests can be made to the same 'piece'.
+                PieceLength = (int) BitOps.RoundUpToPowerOf2 ((uint) size);
                 WrappedPeers = new Dictionary<PeerId, IgnoringChokeStateRequester> ();
                 UnwrappedPeers = new Dictionary<IgnoringChokeStateRequester, PeerId> ();
             }
