@@ -106,7 +106,7 @@ namespace MonoTorrent.BEncoding
         }
 
         [Test]
-        public void benNumber_MaxMin ([Values (long.MinValue, long.MaxValue)] long value)
+        public void benNumber_MaxMin ([Values (long.MinValue, int.MinValue, 3000000000L, int.MaxValue, uint.MaxValue, long.MaxValue)] long value)
         {
             var number = new BEncodedNumber (value);
             foreach (var result in BEncodedValue.DecodingVariants<BEncodedNumber> (number.Encode ()))

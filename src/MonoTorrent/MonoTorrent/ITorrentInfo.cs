@@ -111,7 +111,7 @@ namespace MonoTorrent
                     var file = self.Files[i];
                     if (pieceIndex < file.StartPieceIndex || pieceIndex > file.EndPieceIndex || file.Length == 0)
                         continue;
-                    var remainder = file.Length - (pieceIndex - file.StartPieceIndex) * self.PieceLength;
+                    var remainder = file.Length - (pieceIndex - file.StartPieceIndex) * (long) self.PieceLength;
                     return (int) (remainder > self.PieceLength ? self.PieceLength : remainder);
                 }
                 throw new ArgumentOutOfRangeException (nameof (pieceIndex));
@@ -132,6 +132,8 @@ namespace MonoTorrent
                 throw new ArgumentOutOfRangeException (nameof (offset));
             } else {
                 // Works for padded, and unpadded, V1 torrents. including hybrid v1/v2 torrents.
+                if (offset < 0 || offset >= self.Size)
+                    throw new ArgumentOutOfRangeException (nameof (offset));
                 return (int) (offset / self.PieceLength);
             }
         }

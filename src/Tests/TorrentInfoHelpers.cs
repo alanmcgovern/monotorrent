@@ -74,13 +74,23 @@ namespace MonoTorrent
             IList<ITorrentFile> files = null)
             where T : TestTorrentManagerInfo, new ()
         {
+            long actualSize = size ?? (4 * 16 * 1024) * 32;
+            int actualPieceLength = pieceLength ?? (4 * 16 * 1024);
+            infoHashes ??= new InfoHashes (new InfoHash (new byte[20]), null);
+
+            var merkleRoot = infoHashes.V2 == null ? default : new MerkleRoot (new byte[32]);
+
+            files ??= new[] {
+                new TestTorrentFile ("fake/file", (long) actualSize, 0, (int)( actualSize / actualPieceLength + ((actualSize % actualPieceLength) > 0 ? 1 : 0)) - 1, 0, merkleRoot, 0)
+            };
+
             return new T {
                 TorrentInfo = new TestTorrentInfo {
-                    Files = files ?? Array.Empty<ITorrentFile> (),
+                    Files = files,
                     Name = name ?? "name",
-                    PieceLength = pieceLength ?? (4 * 16 * 1024),
-                    Size = size ?? (4 * 16 * 1024) * 32,
-                    InfoHashes = new InfoHashes (new InfoHash (new byte[20]), null)
+                    PieceLength = (int) actualPieceLength,
+                    Size = (long) actualSize,
+                    InfoHashes = infoHashes
                 }
             };
         }
@@ -122,5 +132,27 @@ namespace MonoTorrent
         public string Name { get; set; }
         public int PieceLength { get; set; }
         public long Size { get; set; }
+    }
+
+    class TestTorrentFile : ITorrentFile
+    {
+        public TestTorrentFile(string path, long length, int startPieceIndex, int endPieceIndex, long offsetInTorrent, MerkleRoot merkleRoot, long padding)
+        {
+            Path = path;
+            Length = length;
+            StartPieceIndex = startPieceIndex;
+            EndPieceIndex = endPieceIndex;
+            OffsetInTorrent = offsetInTorrent;
+            PiecesRoot = merkleRoot;
+            Padding = padding;
+        }
+
+        public string Path { get; }
+        public long Length { get; }
+        public int StartPieceIndex { get; }
+        public int EndPieceIndex { get; }
+        public long OffsetInTorrent { get; }
+        public MerkleRoot PiecesRoot { get; }
+        public long Padding { get; }
     }
 }
