@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Threading;
 
 namespace MonoTorrent
 {
@@ -21,7 +23,7 @@ namespace MonoTorrent
         public static Releaser Create ()
         {
             var tmp = Path.GetTempFileName ();
-            var tmpDir = tmp + "_dir";
+            var tmpDir = tmp + $"_dir{Thread.CurrentThread.ManagedThreadId}-{Process.GetCurrentProcess ().Id}";
             Directory.CreateDirectory (tmpDir);
             File.Delete (tmp);
             return new Releaser (tmpDir);
