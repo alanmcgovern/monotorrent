@@ -16,6 +16,7 @@
     <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
     <Compile Include="$(MSBuildThisFileDirectory)GitInfoHelper.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)ICacheable.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Include="$(MSBuildThisFileDirectory)BitOps.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)Cache.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)ThreadSwitcher.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="$(MSBuildThisFileDirectory)EnsureThreadPool.cs" Link="Linked\%(FileName)%(Extension)" />

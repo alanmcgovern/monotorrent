@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Numerics;
 
 namespace MonoTorrent.BEncoding
 {
@@ -105,8 +106,19 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <returns></returns>
         public override int LengthInBytes ()
-            // Add 2 for the 'i' and 'e'. Special case '0' as we can't Log10 it. Add 1 if the number is negative. Then calculate digits!
-            => 2 + (Number == 0 ? 1 : (Number > 0 ? 1 : 2) + (int) Math.Log10 (Math.Abs ((double)Number)));
+        {
+            // Add 2 for the 'i' and 'e'.
+            // Special case '0' as we can't Log10 it.
+            // For everything else we add 1 to cover the first digit, and then CeilLog10 for the number of 10s we need.
+            switch (Number) {
+                case 0:
+                    return 2 + 1;
+                case long.MinValue: // -9223372036854775808
+                    return 2 + 20;
+                default:
+                    return 2 + 1 + (Number < 0 ? 1 : 0) + BitOps.CeilLog10 ((ulong) Math.Abs (Number));
+            }
+        }
 
         public int CompareTo (object? other)
         {
