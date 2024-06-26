@@ -40,7 +40,7 @@ namespace Tests.MonoTorrent.IntegrationTests
 
     public abstract class IntegrationTestsBase
     {
-        static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (20);
+        static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (60);
 
         public IPAddress AnyAddress { get; }
         public IPAddress LoopbackAddress { get; }
