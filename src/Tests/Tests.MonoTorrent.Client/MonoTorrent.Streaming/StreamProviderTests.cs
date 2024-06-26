@@ -111,6 +111,10 @@ namespace MonoTorrent.Streaming
             using var stream = await manager.StreamProvider.CreateStreamAsync (manager.Files[0], prebuffer: false, CancellationToken.None).WithTimeout ();
             stream.Seek (0, SeekOrigin.End);
             Assert.AreEqual (0, await stream.ReadAsync (new byte[1], 0, 1).WithTimeout ());
+
+            stream.Seek (-1, SeekOrigin.End);
+            Assert.AreEqual (1, await stream.ReadAsync (new byte[1], 0, 2).WithTimeout ());
+
         }
 
         [Test]
