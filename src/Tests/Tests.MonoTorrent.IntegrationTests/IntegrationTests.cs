@@ -120,7 +120,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         public async Task DownloadFileInTorrent_V2_OnlyOneNonEmptyFile () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 1);
 
         [Test]
-        public async Task DownloadFileInTorrent_V2_Empty_And_BigNonEmpty () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: true, nonEmptyFileCount: 1, fileSize: 3_000_000_000);
+        public async Task DownloadFileInTorrent_V2_Empty_And_BigNonEmpty () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: true, nonEmptyFileCount: 1, fileSize: 2_300_000_000);
 
         [Test]
         public async Task DownloadFileInTorrent_V2_ThreeNonEmptyFiles () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 3);
