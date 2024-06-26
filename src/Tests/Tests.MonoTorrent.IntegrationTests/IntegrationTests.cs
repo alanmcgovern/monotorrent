@@ -63,11 +63,19 @@ namespace Tests.MonoTorrent.IntegrationTests
             _directory = Directory.CreateDirectory (tempDirectory);
             _seederDir = _directory.CreateSubdirectory ("Seeder");
             _leecherDir = _directory.CreateSubdirectory ("Leecher");
+
+            seederEngine = GetEngine (0);
+            leecherEngine = GetEngine (0);
         }
 
         [TearDown]
-        public void TearDown ()
+        public async Task TearDown ()
         {
+            if (seederEngine != null)
+                await seederEngine.StopAllAsync ();
+            if (leecherEngine != null)
+                await leecherEngine.StopAllAsync ();
+
             _directory?.Refresh ();
             if (_directory?.Exists == true) {
                 _directory.Delete (true);
@@ -97,6 +105,10 @@ namespace Tests.MonoTorrent.IntegrationTests
         private DirectoryInfo _leecherDir;
 
         private bool _failHttpRequest;
+
+        ClientEngine seederEngine;
+        ClientEngine leecherEngine;
+
 
         [Test]
         public async Task DownloadFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: false, explitlyHashCheck: false);
@@ -194,9 +206,6 @@ namespace Tests.MonoTorrent.IntegrationTests
             }
             var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
             var torrent = Torrent.Load (encodedTorrent);
-
-            using ClientEngine seederEngine = GetEngine (0);
-            using ClientEngine leecherEngine = GetEngine (0);
 
             var seederIsSeeding = new TaskCompletionSource<bool> ();
             var leecherIsSeeding = new TaskCompletionSource<bool> ();
