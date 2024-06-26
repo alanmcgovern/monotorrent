@@ -267,8 +267,12 @@ namespace MonoTorrent.PiecePicking
         /// <param name="position"></param>
         public void ReadToPosition (ITorrentManagerFile file, long position)
         {
-            if (TorrentData != null)
-                HighPriorityPieceIndex = Math.Min (file.EndPieceIndex, TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent));
+            if (TorrentData != null) {
+                if (position >= file.Length)
+                    HighPriorityPieceIndex = file.EndPieceIndex;
+                else
+                    HighPriorityPieceIndex = TorrentData.ByteOffsetToPieceIndex (position + file.OffsetInTorrent);
+            }
         }
 
         public bool ValidatePiece (IRequester peer, PieceSegment blockInfo, out bool pieceComplete, HashSet<IRequester> peersInvolved)

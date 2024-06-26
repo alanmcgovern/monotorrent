@@ -33,6 +33,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -80,7 +81,7 @@ namespace MonoTorrent
 
             int count = 0;
             for (int i = 0; i < Data.Length; i++)
-                count += CountBits (Data[i]);
+                count += BitOps.PopCount (Data[i]);
             TrueCount = count;
         }
 
@@ -331,7 +332,7 @@ namespace MonoTorrent
             var data = Span;
             var selectorData = selector.Span;
             for (int i = 0; i < data.Length && i < selectorData.Length; i++)
-                count += CountBits (data[i] & selectorData[i]);
+                count += BitOps.PopCount (data[i] & selectorData[i]);
             return count;
         }
 
@@ -446,7 +447,7 @@ namespace MonoTorrent
             int count = 0;
             for (int i = 0; i < data.Length && i < valueData.Length; i++) {
                 var result = data[i] & valueData[i];
-                count += CountBits (result);
+                count += BitOps.PopCount (result);
                 data[i] = result;
             }
             TrueCount = count;
@@ -467,7 +468,7 @@ namespace MonoTorrent
                 ref ulong valueData = ref MemoryMarshal.GetReference (value.Span);
                 do {
                     var result = data & ~valueData;
-                    count += CountBits (result);
+                    count += BitOps.PopCount (result);
                     data = result;
 
                     data = ref Unsafe.Add (ref data, 1);
@@ -486,7 +487,7 @@ namespace MonoTorrent
             var valueData = value.Span;
             for (int i = 0; i < data.Length && i < valueData.Length; i++) {
                 var result = data[i] | valueData[i];
-                count += CountBits (result);
+                count += BitOps.PopCount (result);
                 data[i] = result;
             }
             TrueCount = count;
@@ -501,30 +502,12 @@ namespace MonoTorrent
             var valueData = value.Span;
             for (int i = 0; i < data.Length && i < valueData.Length; i++) {
                 var result = data[i] ^ valueData[i];
-                count += CountBits (result);
+                count += BitOps.PopCount (result);
                 data[i] = result;
             }
             TrueCount = count;
         }
 
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        private protected static uint CountBits (uint v)
-        {
-            v -= (v >> 1) & 0x55555555;
-            v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-            return (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24);
-        }
-
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        private protected static int CountBits (ulong v)
-            => (int) (CountBits ((uint) v) + CountBits ((uint) (v >> 32)));
-#else
-
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        private protected static int CountBits (ulong v)
-            => System.Numerics.BitOperations.PopCount (v);
-#endif
         void Check (ReadOnlyBitField value)
         {
             if (value is null)

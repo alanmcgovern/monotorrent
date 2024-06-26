@@ -68,7 +68,7 @@ namespace MonoTorrent.Client.Modes
                 // minimum power of two piece length which allows all the metadata blocks
                 // to be treated as if they were part of the same piece. i.e. a 1 piece torrent
                 // which is in 'endgame' mode so multiple requests can be made to the same 'piece'.
-                PieceLength = (int) BitOps.RoundUpToPowerOf2 ((uint) size);
+                PieceLength = checked ((int) BitOps.RoundUpToPowerOf2 (size));
                 WrappedPeers = new Dictionary<PeerId, IgnoringChokeStateRequester> ();
                 UnwrappedPeers = new Dictionary<IgnoringChokeStateRequester, PeerId> ();
             }

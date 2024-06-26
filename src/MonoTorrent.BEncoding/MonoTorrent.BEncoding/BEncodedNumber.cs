@@ -116,7 +116,7 @@ namespace MonoTorrent.BEncoding
                 case long.MinValue: // -9223372036854775808
                     return 2 + 20;
                 default:
-                    return 2 + 1 + (Number < 0 ? 1 : 0) + BitOps.CeilLog10 ((ulong) Math.Abs (Number));
+                    return 2 + 1 + (Number < 0 ? 1 : 0) + BitOps.CeilLog10 (Math.Abs (Number));
             }
         }
 

@@ -82,7 +82,7 @@ namespace MonoTorrent
         {
             int pieceSize = 16_384;
             int pieceCount = 1 << 16;
-            var paddingHash = MerkleHash.PaddingHashesByLayer[BitOps.CeilLog2 ((uint) pieceCount)];
+            var paddingHash = MerkleHash.PaddingHashesByLayer[BitOps.CeilLog2 (pieceCount)];
 
             var layers = new MerkleLayers (MerkleRoot.FromMemory (paddingHash), pieceSize, pieceCount);
             Assert.IsTrue (layers.TryVerify (out ReadOnlyMerkleLayers verifiedLayers));

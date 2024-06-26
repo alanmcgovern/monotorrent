@@ -61,7 +61,7 @@ namespace MonoTorrent
         }
 
         internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleLayers> layers)
-            => (Files, Layers, HashCodeLength, Count, PieceLayer) = (files, layers, 32, files.Last ().EndPieceIndex + 1, BitOps.CeilLog2 ((uint) pieceLength / 16384));
+            => (Files, Layers, HashCodeLength, Count, PieceLayer) = (files, layers, 32, files.Last ().EndPieceIndex + 1, BitOps.CeilLog2 (pieceLength / 16384));
 
         int PieceLayer { get; }
 
@@ -122,7 +122,7 @@ namespace MonoTorrent
             length = Math.Max (2, length);
 
             // Reduce the size of the buffer by the number of omitted hashes.
-            var omittedHashes = BitOps.CeilLog2 ((uint) length) - 1;
+            var omittedHashes = BitOps.CeilLog2 (length) - 1;
             proofsBuffer = proofsBuffer.Slice (0, proofsBuffer.Length - (omittedHashes * 32));
             actualProofLayers = proofsBuffer.Length / 32;
 

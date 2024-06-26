@@ -93,7 +93,7 @@ namespace MonoTorrent
             // The only time 'length' is equal to 1 is when the final request needed 1 piece. In this case we should
             // treat it as being a request of length '2' as we *should* have a padding hash to the right of the node we fetched.
             length = Math.Max (2, length);
-            int proofLayerOffset = index / (int) BitOps.RoundUpToPowerOf2 ((uint) length);
+            int proofLayerOffset = checked(index / (int) BitOps.RoundUpToPowerOf2 (length));
             for (int i = 0; i < proofLayers.Length; i += 32) {
                 if ((proofLayerOffset & 1) == 1)
                     hasher.AppendData (proofLayers.Slice (i, 32));

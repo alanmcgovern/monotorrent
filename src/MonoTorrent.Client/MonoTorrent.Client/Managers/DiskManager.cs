@@ -107,7 +107,7 @@ namespace MonoTorrent.Client
                     if (file.StartPieceIndex == file.EndPieceIndex) {
                         var blocks = actualBlocks;
                         if (blocks > 1)
-                            blocks = (int) BitOps.RoundUpToPowerOf2 ((uint)blocks);
+                            blocks = checked((int) BitOps.RoundUpToPowerOf2 (blocks));
                         BlockHashesReleaser = MemoryPool.Default.Rent (blocks * 32, out hashes);
                     } else { 
                         BlockHashesReleaser = MemoryPool.Default.Rent (manager.TorrentInfo!.PieceLength / Constants.BlockSize  * 32, out hashes);

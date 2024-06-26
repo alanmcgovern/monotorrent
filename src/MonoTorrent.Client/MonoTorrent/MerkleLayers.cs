@@ -51,10 +51,10 @@ namespace MonoTorrent
             if (pieceLayerHashCount == 1)
                 throw new ArgumentException ("A merkletree must have 2 or more hashes");
 
-            PieceLayerIndex = BitOps.CeilLog2 ((uint) pieceLength / 16384);
+            PieceLayerIndex = BitOps.CeilLog2 (pieceLength / 16384);
             Layers = new List<Memory<byte>> ();
 
-            var finalLayer = BitOps.CeilLog2 ((uint) pieceLayerHashCount);
+            var finalLayer = BitOps.CeilLog2 (pieceLayerHashCount);
             for (int i = 0; i < PieceLayerIndex; i++)
                 Layers.Add (Memory<byte>.Empty);
             for (int layer = PieceLayerIndex; layer <= PieceLayerIndex + finalLayer; layer++) {
