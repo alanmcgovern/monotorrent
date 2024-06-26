@@ -168,7 +168,7 @@ namespace MonoTorrent.Connections.Tracker
 
             var b = new UriQueryBuilder (Uri);
             b.Add ("info_hash", infoHash.Truncate ().UrlEncode ())
-             .Add ("peer_id", BEncodedString.FromMemory (parameters.PeerId).UrlEncode ())
+             .Add ("peer_id", UriQueryBuilder.UrlEncodeQuery (parameters.PeerId.Span))
              .Add ("port", port)
              .Add ("uploaded", parameters.BytesUploaded)
              .Add ("downloaded", parameters.BytesDownloaded)
@@ -202,7 +202,7 @@ namespace MonoTorrent.Connections.Tracker
                 b.Add ("event", eventString);
             }
             if (!BEncodedString.IsNullOrEmpty (TrackerId))
-                b.Add ("trackerid", TrackerId!.UrlEncode ());
+                b.Add ("trackerid", UriQueryBuilder.UrlEncodeQuery(TrackerId!.Span));
 
             return b.ToUri ();
         }

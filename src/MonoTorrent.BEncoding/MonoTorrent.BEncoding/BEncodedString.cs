@@ -220,6 +220,7 @@ namespace MonoTorrent.BEncoding
             return 0;
         }
 
+        [Obsolete("This wraps HttpUtility.UrlEncode which improperly encodes ' ' as '+' instead of '%20' when cencoding for a query param")]
         public string UrlEncode ()
             => HttpUtility.UrlEncode (Span.ToArray ());
 

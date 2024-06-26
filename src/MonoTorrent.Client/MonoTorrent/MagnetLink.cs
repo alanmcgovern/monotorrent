@@ -210,17 +210,17 @@ namespace MonoTorrent
 
             if (!string.IsNullOrEmpty (Name)) {
                 sb.Append ("&dn=");
-                sb.Append (Name.UrlEncodeUTF8 ());
+                sb.Append (Name.UrlEncodeQueryUTF8 ());
             }
 
             foreach (string tracker in AnnounceUrls) {
                 sb.Append ("&tr=");
-                sb.Append (tracker.UrlEncodeUTF8 ());
+                sb.Append (tracker.UrlEncodeQueryUTF8 ());
             }
 
             foreach (string webseed in Webseeds) {
                 sb.Append ("&as=");
-                sb.Append (webseed.UrlEncodeUTF8 ());
+                sb.Append (webseed.UrlEncodeQueryUTF8 ());
             }
 
             return sb.ToString ();

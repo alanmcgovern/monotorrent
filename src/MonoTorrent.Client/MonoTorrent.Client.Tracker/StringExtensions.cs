@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Text;
 using System.Web;
 
@@ -35,6 +36,9 @@ namespace MonoTorrent
     static class StringExtensions
     {
         static readonly Encoding UTF8 = Encoding.UTF8;
+
+        public static string UrlEncodeQueryUTF8 (this string str)
+            => HttpUtility.UrlEncode (str, UTF8).Replace("+", "%20");
 
         public static string UrlEncodeUTF8 (this string str)
             => HttpUtility.UrlEncode (str, UTF8);

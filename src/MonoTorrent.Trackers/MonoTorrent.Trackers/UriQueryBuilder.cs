@@ -32,12 +32,19 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Web;
 
 namespace MonoTorrent.Trackers
 {
     [DebuggerDisplay ("{" + nameof (ToUri) + " ()}")]
     class UriQueryBuilder
     {
+        public static string UrlEncodeQuery (Span<byte> data)
+            => UrlEncodeQuery ((ReadOnlySpan<byte>) data);
+
+        public static string UrlEncodeQuery (ReadOnlySpan<byte> data)
+            => HttpUtility.UrlEncode (data.ToArray ()).Replace ("+", "%20");
+
         readonly UriBuilder builder;
         readonly Dictionary<string, string> queryParams;
 

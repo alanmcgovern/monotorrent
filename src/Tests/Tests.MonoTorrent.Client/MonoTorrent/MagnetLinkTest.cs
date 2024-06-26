@@ -209,6 +209,14 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void UriEncodeSpaces ()
+        {
+            var uri = new MagnetLink (Create (), "my name").ToV1Uri ();
+            Assert.IsFalse (uri.PathAndQuery.Contains ("+"));
+            Assert.IsTrue (uri.PathAndQuery.Contains ("%20"));
+        }
+
+        [Test]
         public void TwoInfoHashes ()
         {
             Assert.Throws<FormatException> (() => MagnetLink.FromUri (new Uri ("magnet://btih:?foo=bar&xt=urn:btih:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C&xt=urn:btih:ANCKHTQCWBTRNJIV4WNAE52SJUQCZO5C")));

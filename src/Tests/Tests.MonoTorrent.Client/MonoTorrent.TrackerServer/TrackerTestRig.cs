@@ -60,7 +60,7 @@ namespace MonoTorrent.TrackerServer
         {
             NameValueCollection c = new NameValueCollection ();
             c.Add ("info_hash", trackable.InfoHash.UrlEncode ());
-            c.Add ("peer_id", d.peerId.UrlEncode ());
+            c.Add ("peer_id", System.Web.HttpUtility.UrlEncode (d.peerId.Span.ToArray ()).Replace("+", "%20"));
             c.Add ("port", d.Port.ToString ());
             c.Add ("uploaded", d.Uploaded.ToString ());
             c.Add ("downloaded", d.Downloaded.ToString ());

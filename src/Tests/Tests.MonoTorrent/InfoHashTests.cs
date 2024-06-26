@@ -112,5 +112,26 @@ namespace MonoTorrent
             Assert.IsTrue (first.Equals ((object) second));
             Assert.IsTrue (first.Equals (second));
         }
+
+        [Test]
+        public void UrlEncode ()
+        {
+            var data = new byte[20];
+            int index = 0;
+            data[index++] = (byte) ' ';
+            data[index++] = (byte) '\t';
+            data[index++] = (byte) '\r';
+            data[index++] = (byte) '&';
+            data[index++] = (byte) '+';
+            data[index++] = (byte) '?';
+            data[index++] = (byte) '#';
+            data[index++] = (byte) '%';
+            data[index++] = (byte) '+';
+            var infoHash = new InfoHash (data);
+            var hash = infoHash.UrlEncode ();
+            Assert.AreEqual (60, hash.Length);
+            Assert.IsFalse (hash.Contains ("+"));
+            Assert.IsTrue (hash.Contains ("%20"));
+        }
     }
 }

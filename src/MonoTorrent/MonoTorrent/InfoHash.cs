@@ -122,7 +122,7 @@ namespace MonoTorrent
         }
 
         public string UrlEncode ()
-            => HttpUtility.UrlEncode (Hash.Span.ToArray ());
+            => HttpUtility.UrlEncode (Hash.Span.ToArray ()).Replace("+", "%20");
 
         public static bool operator == (InfoHash? left, InfoHash? right)
         {

@@ -58,9 +58,9 @@ namespace MonoTorrent.Trackers
             Assert.AreEqual (new Uri ("http://mytest.com/announce.aspx"), bld.ToUri (), "#3");
 
             bld = new UriQueryBuilder ("http://mytest.com/announce.aspx");
-            byte[] infoHash = new byte[] { 0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc };
-            bld.Add ("key", HttpUtility.UrlEncode (infoHash));
-            Assert.AreEqual (new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc"), bld.ToUri (), "#4");
+            var infoHash = new InfoHash (new byte[] { 0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc, (byte) ' ' }.Concat (new byte[13]).ToArray ());
+            bld.Add ("key", infoHash.UrlEncode ());
+            Assert.AreEqual (new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc%20%00%00%00%00%00%00%00%00%00%00%00%00%00"), bld.ToUri (), "#4");
         }
 
         [Test]

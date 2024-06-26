@@ -38,6 +38,7 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Logging;
 using MonoTorrent.Messages.UdpTracker;
+using MonoTorrent.Trackers;
 using MonoTorrent.TrackerServer;
 
 namespace MonoTorrent.Connections.TrackerServer
@@ -206,7 +207,7 @@ namespace MonoTorrent.Connections.TrackerServer
         {
             var res = new NameValueCollection {
                 { "info_hash", announceMessage.InfoHash!.UrlEncode () },
-                { "peer_id", BEncodedString.FromMemory (announceMessage.PeerId).UrlEncode () },
+                { "peer_id", UriQueryBuilder.UrlEncodeQuery(announceMessage.PeerId.Span) },
                 { "port", announceMessage.Port.ToString () },
                 { "uploaded", announceMessage.Uploaded.ToString () },
                 { "downloaded", announceMessage.Downloaded.ToString () },
