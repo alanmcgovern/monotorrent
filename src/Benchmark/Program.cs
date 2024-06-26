@@ -523,7 +523,7 @@ namespace MyBenchmarks
     {
         public static void Main (string[] args)
         {
-            BenchmarkDotNet.Configs.IConfig config = null;
+            BenchmarkDotNet.Configs.IConfig config = null!;
 #if DEBUG
             config = new BenchmarkDotNet.Configs.DebugInProcessConfig ();
 #endif
