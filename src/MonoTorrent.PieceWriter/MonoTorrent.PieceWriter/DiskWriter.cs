@@ -100,6 +100,7 @@ namespace MonoTorrent.PieceWriter
                 throw new ArgumentNullException (nameof (file));
 
             if (Streams.TryGetValue (file, out AllStreams? allStreams)) {
+                Streams.Remove (file);
                 using (await allStreams.Locker.EnterAsync ())
                     await CloseAllAsync (allStreams);
             }
