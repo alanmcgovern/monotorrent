@@ -68,7 +68,7 @@ namespace MonoTorrent.Dht.Tasks
 
             foreach (Node node in Engine.RoutingTable.GetClosest (InfoHash)) {
                 if (closestNodes.Add (node))
-                    activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
+                    activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.AddressFamily, Engine.LocalId, InfoHash), node));
             }
 
             while (activeQueries.Count > 0) {
@@ -95,7 +95,7 @@ namespace MonoTorrent.Dht.Tasks
                 if (response.Nodes != null && FoundPeers.Count < MaxPeers) {
                     foreach (Node node in Node.FromCompactNode (response.Nodes))
                         if (closestNodes.Add (node))
-                            activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
+                            activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.AddressFamily, Engine.LocalId, InfoHash), node));
                 }
 
                 closestActiveNodes.Add (query.Node);

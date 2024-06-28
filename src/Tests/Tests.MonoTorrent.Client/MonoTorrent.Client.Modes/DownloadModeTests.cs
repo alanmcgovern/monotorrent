@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -59,7 +60,7 @@ namespace MonoTorrent.Client.Modes
         [SetUp]
         public void Setup ()
         {
-            conn = new ConnectionPair ().WithTimeout ();
+            conn = new ConnectionPair (AddressFamily.InterNetwork).WithTimeout ();
             Settings = new EngineSettings ();
             PieceWriter = new TestWriter ();
             DiskManager = new DiskManager (Settings, Factories.Default, PieceWriter);
@@ -260,6 +261,16 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#3");
             Assert.AreEqual (null, TrackerManager.Announces[1].Item1, "#2");
             Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[1].Item2, "#4");
+        }
+
+        [Test]
+        public void DhtPortMessage_IPv4 ()
+        {
+            using var pair = new ConnectionPair (AddressFamily.InterNetwork);
+            var peer = new PeerId (new Peer (new PeerInfo (pair.Outgoing.Uri), Manager.InfoHashes.V1OrV2), pair.Outgoing, new BitField (Manager.Torrent.PieceCount ()));
+            Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+            Manager.Mode.HandleMessage (peer, new DhtPortMessage (1234), default);
+            Assert.AreEqual (1234, peer.DhtPort);
         }
 
         [Test]

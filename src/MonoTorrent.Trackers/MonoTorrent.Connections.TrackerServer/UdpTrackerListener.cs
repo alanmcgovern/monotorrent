@@ -49,7 +49,7 @@ namespace MonoTorrent.Connections.TrackerServer
 
         public IPEndPoint? LocalEndPoint { get; private set; }
 
-        IPEndPoint OriginalEndPoint { get; }
+        public IPEndPoint PreferredLocalEndPoint { get; }
 
         CancellationTokenSource Cancellation { get; set; }
 
@@ -66,7 +66,7 @@ namespace MonoTorrent.Connections.TrackerServer
         {
             Cancellation = new CancellationTokenSource ();
             ConnectionIDs = new Dictionary<IPAddress, long> ();
-            OriginalEndPoint = endPoint;
+            PreferredLocalEndPoint = endPoint;
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace MonoTorrent.Connections.TrackerServer
             Cancellation = new CancellationTokenSource ();
 
             var token = Cancellation.Token;
-            var listener = new UdpClient (OriginalEndPoint);
+            var listener = new UdpClient (PreferredLocalEndPoint);
             token.Register (() => {
                 LocalEndPoint = null;
                 listener.Dispose ();

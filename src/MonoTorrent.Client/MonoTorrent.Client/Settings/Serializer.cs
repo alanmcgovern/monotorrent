@@ -77,14 +77,13 @@ namespace MonoTorrent.Client
                     property.SetValue (builder, new Uri (((BEncodedString) value).Text));
                 } else if (property.PropertyType == typeof (IPAddress)) {
                     property.SetValue (builder, IPAddress.Parse (((BEncodedString) value).Text));
+                } else if (property.PropertyType == typeof (List<IPEndPoint>)) {
+                    var list = (List<IPEndPoint>) property.GetValue (builder)!;
+                    list.Clear ();
+                    foreach (var endpoint in (BEncodedList) value)
+                        list.Add (DecodeIPEndPoint ((BEncodedString) endpoint)!);
                 } else if (property.PropertyType == typeof (IPEndPoint)) {
-                    var list = (BEncodedList) value;
-                    IPEndPoint? endPoint = null;
-                    if (list.Count == 2) {
-                        var ipAddress = (BEncodedString) list.Single (t => t is BEncodedString);
-                        var port = (BEncodedNumber) list.Single (t => t is BEncodedNumber);
-                        endPoint = new IPEndPoint (IPAddress.Parse (ipAddress.Text), (int) port.Number);
-                    }
+                    var endPoint = DecodeIPEndPoint ((BEncodedString) value);
                     property.SetValue (builder, endPoint);
                 } else if (property.PropertyType == typeof (List<EncryptionType>)) {
                     var list = (IList<EncryptionType>) property.GetValue (builder)!;
@@ -99,6 +98,21 @@ namespace MonoTorrent.Client
             return builder;
         }
 
+        static IPEndPoint? DecodeIPEndPoint (BEncodedString value)
+        {
+#if NET5_0_OR_GREATER
+            return IPEndPoint.Parse (value.Text);
+#else
+            var text = value.Text;
+            var portSeparator = text.LastIndexOf (':');
+
+            if (portSeparator > 0) {
+                return new IPEndPoint (IPAddress.Parse (text.Substring(0, portSeparator)), int.Parse (text.Substring(portSeparator + 1)));
+            }
+            return null;
+#endif
+        }
+
         static BEncodedDictionary Serialize (object builder)
         {
             var dict = new BEncodedDictionary ();
@@ -109,14 +123,15 @@ namespace MonoTorrent.Client
                     IList<EncryptionType> value => convertedValue = new BEncodedList (value.Select (v => (BEncodedString) v.ToString ())),
                     string value => new BEncodedString (value),
                     TimeSpan value => new BEncodedNumber (value.Ticks),
-                    IPAddress value => new BEncodedString (value.ToString ()),
-                    IPEndPoint value => new BEncodedList { (BEncodedString) value.Address.ToString (), (BEncodedNumber) value.Port },
+                    IPAddress value => new BEncodedString (value?.ToString () ?? ""),
+                    IPEndPoint value => new BEncodedString (value?.ToString () ?? ""),
                     int value => new BEncodedNumber (value),
                     FastResumeMode value => new BEncodedString (value.ToString ()),
                     CachePolicy value => new BEncodedString (value.ToString ()),
                     Uri value => new BEncodedString (value.OriginalString),
                     null => null,
                     Dictionary<string, IPEndPoint> value => FromIPAddressDictionary(value),
+                    List<IPEndPoint> value => new BEncodedList (value.Select (t => new BEncodedString(t.ToString ()))),
                     _ => throw new NotSupportedException ($"{property.Name} => type: ${property.PropertyType}"),
                 };
                 // Ensure default values aren't accidentally propagated.

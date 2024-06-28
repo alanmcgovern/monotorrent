@@ -16,7 +16,7 @@ namespace MonoTorrent.Dht
         public void AddRawNodesBeforeStarting ()
         {
             int count = 0;
-            var engine = new DhtEngine ();
+            var engine = new DhtEngine (System.Net.Sockets.AddressFamily.InterNetwork);
             engine.MessageLoop.QuerySent += (o, e) => count++;
             engine.Add (new ReadOnlyMemory<byte>[] { new byte[100] });
             Assert.AreEqual (0, engine.MessageLoop.PendingQueries);

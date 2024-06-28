@@ -31,6 +31,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -48,9 +49,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AddPeers_Dht ()
         {
-            var dht = new ManualDhtEngine ();
-            var factories = Factories.Default.WithDhtCreator (() => dht);
-            var settings = EngineSettingsBuilder.CreateForTests (dhtEndPoint: new IPEndPoint (IPAddress.Any, 1234));
+            var factories = Factories.Default.WithDhtCreator (addressFamily => new ManualDhtEngine ());
+            var settings = EngineSettingsBuilder.CreateForTests (dhtEndPoints: new[] { new IPEndPoint (IPAddress.Any, 1234) });
 
             using var engine = new ClientEngine (settings, factories);
             var manager = await engine.AddAsync (new MagnetLink (InfoHash.FromMemory (new byte[20])), "asd");
@@ -62,8 +62,8 @@ namespace MonoTorrent.Client
             };
 
             var peer = new PeerInfo (new Uri ("ipv4://123.123.123.123:1515"));
-            dht.RaisePeersFound (manager.InfoHashes.V1OrV2, new[] { peer });
-            var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5));
+            ((ManualDhtEngine) engine.Dht.IPv4Dht).RaisePeersFound (manager.InfoHashes.V1OrV2, new[] { peer });
+            var result = await tcs.Task.WithTimeout (TimeSpan.FromSeconds (5000));
             Assert.AreEqual (1, result.NewPeers, "#2");
             Assert.AreEqual (0, result.ExistingPeers, "#3");
             Assert.AreEqual (1, manager.Peers.AvailablePeers.Count, "#4");
@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
 
             var manager = await rig.Engine.AddAsync (editor.ToTorrent (), "path", new TorrentSettings ());
 
-            var dht = (ManualDhtEngine) rig.Engine.DhtEngine;
+            var dht = (ManualDhtEngine) rig.Engine.DhtEngine.IPv4Dht;
 
             var tcs = new TaskCompletionSource<DhtPeersAdded> ();
             manager.PeersFound += (o, e) => {
@@ -335,8 +335,10 @@ namespace MonoTorrent.Client
             public IPEndPoint PreferredLocalEndPoint { get; set; }
             public ListenerStatus Status { get; }
 
+#pragma warning disable 0067
             public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
             public event EventHandler<EventArgs> StatusChanged;
+#pragma warning restore 0067
 
             public FakeListener (int port)
                 => (PreferredLocalEndPoint) = (new IPEndPoint (IPAddress.Any, port));

@@ -27,6 +27,8 @@
 //
 
 
+using System.Net.Sockets;
+
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
@@ -38,27 +40,27 @@ namespace MonoTorrent.Dht.Messages
 
         public NodeId Target => new NodeId ((BEncodedString) Parameters[TargetKey]);
 
-        public FindNode (NodeId id, NodeId target)
-            : base (id, QueryName)
+        public FindNode (AddressFamily addressFamily, NodeId id, NodeId target)
+            : base (addressFamily, id, QueryName)
         {
             Parameters.Add (TargetKey, BEncodedString.FromMemory (target.AsMemory ()));
         }
 
-        public FindNode (BEncodedDictionary d)
-            : base (d)
+        public FindNode (AddressFamily addressFamily, BEncodedDictionary d)
+            : base (addressFamily, d)
         {
         }
 
         public override ResponseMessage CreateResponse (BEncodedDictionary parameters)
         {
-            return new FindNodeResponse (parameters);
+            return new FindNodeResponse (AddressFamily, parameters);
         }
 
         public override void Handle (DhtEngine engine, Node node)
         {
             base.Handle (engine, node);
 
-            var response = new FindNodeResponse (engine.RoutingTable.LocalNodeId, TransactionId!);
+            var response = new FindNodeResponse (engine.AddressFamily, engine.RoutingTable.LocalNodeId, TransactionId!);
 
             Node? targetNode = engine.RoutingTable.FindNode (Target);
             response.Nodes = !(targetNode is null)

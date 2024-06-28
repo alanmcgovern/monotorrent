@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht.Messages;
 
 using NUnit.Framework;
@@ -23,7 +24,7 @@ namespace MonoTorrent.Dht
         {
             listener = new TestListener ();
             node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0));
-            engine = new DhtEngine ();
+            engine = new DhtEngine (System.Net.Sockets.AddressFamily.InterNetwork);
             await engine.SetListenerAsync (listener);
         }
 
@@ -39,7 +40,7 @@ namespace MonoTorrent.Dht
             int failedCount = 0;
             var pingSuccessful = new TaskCompletionSource<bool> ();
 
-            var ping = new Ping (node.Id) {
+            var ping = new Ping (engine.AddressFamily, node.Id) {
                 TransactionId = transactionId
             };
 
@@ -57,7 +58,7 @@ namespace MonoTorrent.Dht
                     pingSuccessful.TrySetResult (false);
 
                 if (message.TransactionId.Equals (ping.TransactionId)) {
-                    listener.RaiseMessageReceived (new ErrorMessage (ping.TransactionId, ErrorCode.ServerError, "Ooops"), node.EndPoint);
+                    listener.RaiseMessageReceived (new ErrorMessage (engine.AddressFamily, ping.TransactionId, ErrorCode.ServerError, "Ooops"), node.EndPoint);
                     failedCount++;
                 }
             };
@@ -91,7 +92,7 @@ namespace MonoTorrent.Dht
                 engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
 
                 if (message is Ping && endpoint.Equals (node.EndPoint)) {
-                    var response = new PingResponse (node.Id, message.TransactionId);
+                    var response = new PingResponse (engine.AddressFamily, node.Id, message.TransactionId);
                     listener.RaiseMessageReceived (response, endpoint);
                 }
             };
@@ -114,12 +115,12 @@ namespace MonoTorrent.Dht
         public void PingTimeout ()
         {
             bool pingSuccessful = false;
-            var ping = new Ping (node.Id) {
+            var ping = new Ping (engine.AddressFamily, node.Id) {
                 TransactionId = transactionId
             };
 
             bool timedOutPingSuccessful = false;
-            var timedOutPing = new Ping (node.Id) {
+            var timedOutPing = new Ping (engine.AddressFamily, node.Id) {
                 TransactionId = (BEncodedNumber) 5
             };
 
@@ -127,7 +128,7 @@ namespace MonoTorrent.Dht
                 engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
 
                 if (message.TransactionId.Equals (ping.TransactionId)) {
-                    var response = new PingResponse (node.Id, transactionId);
+                    var response = new PingResponse (engine.AddressFamily, node.Id, transactionId);
                     listener.RaiseMessageReceived (response, endpoint);
                 }
             };
@@ -164,7 +165,7 @@ namespace MonoTorrent.Dht
         {
             // See what happens if we receive a query with the same ID as a pending query we are sending.
             var pingSuccessful = new TaskCompletionSource<bool> ();
-            var ping = new Ping (node.Id) {
+            var ping = new Ping (engine.AddressFamily, node.Id) {
                 TransactionId = transactionId
             };
 
@@ -181,7 +182,7 @@ namespace MonoTorrent.Dht
             listener.RaiseMessageReceived (ping, new IPEndPoint (IPAddress.Any, 9876));
 
             // Now we receive a response to our original ping
-            listener.RaiseMessageReceived (new PingResponse (node.Id, ping.TransactionId), node.EndPoint);
+            listener.RaiseMessageReceived (new PingResponse (ping.AddressFamily, node.Id, ping.TransactionId), node.EndPoint);
 
             // The query should complete, and the message should not have timed out.
             Assert.IsTrue (task.Wait (1000), "#1");

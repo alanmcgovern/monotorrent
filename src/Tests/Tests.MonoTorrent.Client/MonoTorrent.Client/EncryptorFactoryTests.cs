@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -58,7 +59,7 @@ namespace MonoTorrent.Client.Encryption
         [SetUp]
         public void Setup ()
         {
-            pair = new ConnectionPair ().WithTimeout ();
+            pair = new ConnectionPair (AddressFamily.InterNetwork).WithTimeout ();
 
             InfoHash = new InfoHash (Enumerable.Repeat ((byte) 255, 20).ToArray ());
             SKeys = new[] {

@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Net.Sockets;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Messages;
@@ -45,6 +46,8 @@ namespace MonoTorrent.Dht.Messages
         static readonly BEncodedString DhtVersion = new BEncodedString (GitInfoHelper.DhtClientVersion);
 
         protected BEncodedDictionary properties = new BEncodedDictionary ();
+
+        public AddressFamily AddressFamily { get; }
 
         public BEncodedString ClientVersion
              => (BEncodedString?) properties.GetValueOrDefault (VersionKey) ?? BEncodedString.Empty;
@@ -65,16 +68,17 @@ namespace MonoTorrent.Dht.Messages
             }
         }
 
-
-        protected DhtMessage (BEncodedString messageType)
+        protected DhtMessage (AddressFamily addressFamily, BEncodedString messageType)
         {
+            AddressFamily = addressFamily;
             properties.Add (MessageTypeKey, messageType);
             if (UseVersionKey)
                 properties.Add (VersionKey, DhtVersion);
         }
 
-        protected DhtMessage (BEncodedDictionary dictionary)
+        protected DhtMessage (AddressFamily addressFamily , BEncodedDictionary dictionary)
         {
+            AddressFamily = addressFamily;
             properties = dictionary;
         }
 

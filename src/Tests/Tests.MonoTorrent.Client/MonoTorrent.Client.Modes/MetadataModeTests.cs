@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,7 +57,7 @@ namespace MonoTorrent.Client.Modes
 
         public async Task Setup (bool metadataMode, bool multiFile = false, bool metadataOnly = false)
         {
-            pair = new ConnectionPair ().WithTimeout ();
+            pair = new ConnectionPair (AddressFamily.InterNetwork).WithTimeout ();
             rig = multiFile ? TestRig.CreateMultiFile (32768, metadataMode) : TestRig.CreateSingleFile (Constants.BlockSize * 27, Constants.BlockSize * 2, metadataMode);
             rig.RecreateManager ().Wait ();
 

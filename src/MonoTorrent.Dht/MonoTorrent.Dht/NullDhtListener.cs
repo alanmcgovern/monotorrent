@@ -39,6 +39,7 @@ namespace MonoTorrent.Dht
     class NullDhtListener : IDhtListener
     {
         public IPEndPoint? LocalEndPoint { get; }
+        public IPEndPoint PreferredLocalEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
         public ListenerStatus Status { get; } = ListenerStatus.NotListening;
 
 #pragma warning disable CS0067 
