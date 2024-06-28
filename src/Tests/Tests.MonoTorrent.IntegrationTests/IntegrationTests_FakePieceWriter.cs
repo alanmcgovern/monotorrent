@@ -5,48 +5,135 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent;
 using MonoTorrent.Client;
 using MonoTorrent.Connections.TrackerServer;
+using MonoTorrent.PieceWriter;
 using MonoTorrent.TrackerServer;
 
 using NUnit.Framework;
 
+using ReusableTasks;
+
 namespace Tests.MonoTorrent.IntegrationTests
 {
     [TestFixture]
-    public class IPv4IntegrationTests : IntegrationTestsBase
+    public class LargeFiles_FakeIPieceWriter
     {
-        public IPv4IntegrationTests ()
-            : base (IPAddress.Any, IPAddress.Loopback)
+        class FakePieceWriter : IPieceWriter
         {
+            public bool IsSeeder { get; set; }
+            public int OpenFiles { get; }
+            public int MaximumOpenFiles { get; } = 10;
+            public ITorrentInfo TorrentInfo { get; set; }
 
+            public Dictionary<ITorrentManagerFile, BitField> Available = new Dictionary<ITorrentManagerFile, BitField> ();
+
+            public ReusableTask CloseAsync (ITorrentManagerFile file)
+            {
+                return default;
+            }
+
+            public void Dispose ()
+            {
+
+            }
+
+            public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
+            {
+                return ReusableTask.FromResult (true);
+            }
+
+            public ReusableTask FlushAsync (ITorrentManagerFile file)
+            {
+                return default;
+            }
+
+            public ReusableTask MoveAsync (ITorrentManagerFile file, string fullPath, bool overwrite)
+            {
+                return default;
+            }
+
+            public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
+            {
+                if (!Available.TryGetValue (file, out var bf)) {
+                    if (IsSeeder)
+                        Available[file] = bf = new BitField (file.BitField).SetAll (true);
+                    else
+                        return ReusableTask.FromResult (0);
+                }
+
+                int requestedBlock;
+                if (TorrentInfo != null)
+                    // When seeding/leeching a torrent we need an accurate calculation which is piece boundary aware
+                    requestedBlock = TorrentInfo.ByteOffsetToPieceIndex (file.OffsetInTorrent + offset) - file.StartPieceIndex;
+                else
+                    // when hashing the files to create the .torrent metadata we can use a simplistic calculation as it's
+                    // treated as 'just a bunch of files'
+                    requestedBlock = (int) ((file.OffsetInTorrent + offset) / PieceLength) - file.StartPieceIndex;
+
+                if (bf[(int) requestedBlock]) {
+                    buffer.Span.Fill ((byte) 'a');
+                    return ReusableTask.FromResult (buffer.Length);
+                }
+                return ReusableTask.FromResult (0);
+            }
+
+            public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
+            {
+                return default;
+            }
+
+            public ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
+            {
+                if (!Available.TryGetValue (file, out var bf))
+                    Available[file] = bf = new BitField (file.BitField);
+                int writtenBlock;
+                if (TorrentInfo != null)
+                    // When seeding/leeching a torrent we need an accurate calculation which is piece boundary aware
+                    writtenBlock = TorrentInfo.ByteOffsetToPieceIndex (file.OffsetInTorrent + offset) - file.StartPieceIndex;
+                else
+                    // when hashing the files to create the .torrent metadata we can use a simplistic calculation as it's
+                    // treated as 'just a bunch of files'
+                    writtenBlock = (int) ((file.OffsetInTorrent + offset) / PieceLength) - file.StartPieceIndex;
+                bf[(int) writtenBlock] = true;
+
+                return default;
+            }
         }
-    }
 
-    [TestFixture]
-    public class IPv6IntegrationTests : IntegrationTestsBase
-    {
-        public IPv6IntegrationTests ()
-            : base (IPAddress.IPv6Any, IPAddress.IPv6Loopback)
+        class CustomTorrentFileSource : ITorrentFileSource
         {
-
+            public IEnumerable<FileMapping> Files { get; set; }
+            public string TorrentName { get; set; }
         }
-    }
 
-    public abstract class IntegrationTestsBase
-    {
+        [Test]
+        public async Task V1Only () => await CreateAndDownloadTorrent (TorrentType.V1Only);
+
+        [Test]
+        public async Task V1V2Hybrid () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid);
+
+        [Test]
+        public async Task V2Only () => await CreateAndDownloadTorrent (TorrentType.V2Only);
+
+        public static int PieceLength = Constants.BlockSize;
         static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (60);
 
         public IPAddress AnyAddress { get; }
         public IPAddress LoopbackAddress { get; }
 
-        protected IntegrationTestsBase (IPAddress anyAddress, IPAddress loopbackAddress)
-            => (AnyAddress, LoopbackAddress) = (anyAddress, loopbackAddress);
+        FakePieceWriter SeederWriter { get; set; }
+        FakePieceWriter LeecherWriter { get; set; }
+
+        public LargeFiles_FakeIPieceWriter ()
+            => (AnyAddress, LoopbackAddress) = (IPAddress.Any, IPAddress.Loopback);
 
         [OneTimeSetUp]
         public void FixtureSetup ()
@@ -64,8 +151,12 @@ namespace Tests.MonoTorrent.IntegrationTests
             _seederDir = _directory.CreateSubdirectory ("Seeder");
             _leecherDir = _directory.CreateSubdirectory ("Leecher");
 
-            seederEngine = GetEngine (0);
-            leecherEngine = GetEngine (0);
+            LeecherWriter = new FakePieceWriter { IsSeeder = false };
+            SeederWriter = new FakePieceWriter { IsSeeder = true };
+
+            streams = new List<FileStream> ();
+            leecherEngine = GetEngine (0, Factories.Default.WithPieceWriterCreator (t => LeecherWriter));
+            seederEngine = GetEngine (0, Factories.Default.WithPieceWriterCreator (t => SeederWriter));
         }
 
         [TearDown]
@@ -75,6 +166,10 @@ namespace Tests.MonoTorrent.IntegrationTests
                 await seederEngine.StopAllAsync ();
             if (leecherEngine != null)
                 await leecherEngine.StopAllAsync ();
+
+            foreach (var stream in streams)
+                stream.Dispose ();
+            streams = null;
 
             _directory?.Refresh ();
             if (_directory?.Exists == true) {
@@ -108,104 +203,30 @@ namespace Tests.MonoTorrent.IntegrationTests
 
         ClientEngine seederEngine;
         ClientEngine leecherEngine;
+        List<FileStream> streams;
 
-
-        [Test]
-        public async Task DownloadFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: false, explitlyHashCheck: false);
-
-        [Test]
-        public async Task DownloadFileInTorrent_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false);
-
-        [Test]
-        public async Task DownloadFileInTorrent_V2_OnlyOneNonEmptyFile () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 1);
-
-        [Test]
-        public async Task DownloadFileInTorrent_V2_Empty_And_BigNonEmpty () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: true, nonEmptyFileCount: 1, fileSize: 2_300_000_000);
-
-        [Test]
-        public async Task DownloadFileInTorrent_V2_ThreeNonEmptyFiles () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 3);
-
-        [Test]
-        public async Task DownloadFileInTorrent_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: false, explitlyHashCheck: false);
-
-        [Test]
-        public async Task DownloadEmptyFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: true, explitlyHashCheck: false);
-
-        [Test]
-        public async Task DownloadEmptyFileInTorrent_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: false);
-
-        [Test]
-        public async Task DownloadEmptyFileInTorrent_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false);
-
-        [Test]
-        public async Task DownloadFileInTorrent_V1_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: false, explitlyHashCheck: true);
-
-        [Test]
-        public async Task DownloadFileInTorrent_V2_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: true);
-
-        [Test]
-        public async Task DownloadFileInTorrent_V1V2_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: false, explitlyHashCheck: true);
-
-        [Test]
-        public async Task DownloadEmptyFileInTorrent_V1_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: true, explitlyHashCheck: true);
-
-        [Test]
-        public async Task DownloadEmptyFileInTorrent_V2_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: true);
-
-        [Test]
-        public async Task DownloadEmptyFileInTorrent_V1V2_HashCheck () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: true);
-
-        [Test]
-        public async Task WebSeedDownload_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
-
-        [Test]
-        public async Task WebSeedDownload_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
-
-        [Test]
-        public async Task WebSeedDownload_V1V2_BiggerFile () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true, fileSize: 131_073);
-
-        [Test]
-        public async Task WebSeedDownload_V1V2_RetryWebSeeder ()
+        async Task CreateAndDownloadTorrent (TorrentType torrentType)
         {
-            _failHttpRequest = true;
-            await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
-        }
+            var nonEmptyFiles = new List<(string name, long size)> ();
+            nonEmptyFiles.Add ((Path.Combine (_seederDir.FullName, $"NonEmpty1.file"), (long) int.MaxValue + 15123L));
+            nonEmptyFiles.Add ((Path.Combine (_seederDir.FullName, $"NonEmpty2.file"), (long) int.MaxValue + 25123L));
 
-        [Test]
-        public async Task WebSeedDownload_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
-
-        public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, bool explitlyHashCheck, int nonEmptyFileCount = 2, bool useWebSeedDownload = false, long fileSize = 5)
-        {
-            var emptyFile = new FileInfo (Path.Combine (_seederDir.FullName, "Empty.file"));
-            if (createEmptyFile)
-                File.WriteAllText (emptyFile.FullName, "");
-
-            var nonEmptyFiles = new List<FileInfo> ();
-            for (int i = 0; i < nonEmptyFileCount; i++) {
-                var nonEmptyFile = new FileInfo (Path.Combine (_seederDir.FullName, $"NonEmpty{i}.file"));
-                using (var fs = nonEmptyFile.Create ()) {
-                    long written = 0;
-                    var buffer = new byte[16*1024];
-                    for(int j = 0; j < buffer.Length; j++)
-                        buffer[j] = (byte)'a';
-                    while (written < fileSize) {
-                        var toWrite = Math.Min (fileSize - written, buffer.Length);
-                        fs.Write (buffer, 0, (int)toWrite);
-                        written += toWrite;
-                    }
-                }
-                nonEmptyFiles.Add (nonEmptyFile);
-            }
-
-            var fileSource = new TorrentFileSource (_seederDir.FullName);
+            var fileSource = new CustomTorrentFileSource {
+                Files = nonEmptyFiles.Select (t => {
+                    return new FileMapping (t.name, Path.GetFileName (t.name), t.size);
+                })
+            };
             fileSource.TorrentName = _torrentName;
-            TorrentCreator torrentCreator = new TorrentCreator (torrentType);
+            TorrentCreator torrentCreator = new TorrentCreator (torrentType, Factories.Default.WithPieceWriterCreator (t => SeederWriter)) {
+                PieceLength = PieceLength
+            };
             torrentCreator.Announce = $"http://{new IPEndPoint (LoopbackAddress, _trackerPort)}/announce";
-            if (useWebSeedDownload) {
-                torrentCreator.GetrightHttpSeeds.Add ($"http://{new IPEndPoint (LoopbackAddress, _webSeedPort)}/{_webSeedPrefix}/");
-            }
             var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
             var torrent = Torrent.Load (encodedTorrent);
+
+            // So we can calculate byte offset -> piece index.
+            SeederWriter.TorrentInfo = torrent;
+            LeecherWriter.TorrentInfo = torrent;
 
             var seederIsSeeding = new TaskCompletionSource<bool> ();
             var leecherIsSeeding = new TaskCompletionSource<bool> ();
@@ -225,27 +246,40 @@ namespace Tests.MonoTorrent.IntegrationTests
                     leecherIsSeeding.TrySetException (e.TorrentManager.Error.Exception);
             };
 
-            var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
+            // FastResume it to 100% completion
+            var fastResumeComplete = new FastResume (torrent.InfoHashes, new BitField (torrent.PieceCount).SetAll (true), new BitField (torrent.PieceCount));
+            var seederManager = await StartTorrent (seederEngine, torrent, _seederDir.FullName, seederIsSeedingHandler, fastResumeComplete);
 
-            var leecherManager = await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+
+            // Only download the last few pieces from each file.
+            var bf = new BitField (torrent.PieceCount).SetAll (true);
+            foreach (var file in torrent.Files) {
+                bf[file.EndPieceIndex] = false;
+                bf[file.EndPieceIndex - 1] = false;
+            }
+            // And remove a psuedo random assortment of other pieces from before/after the 2gb mark.
+            var random = new Random (12345); // this is reproducible as the seed is hardcoded.
+            foreach (var file in torrent.Files) {
+                for (int i = 0; i < 14; i++) {
+                    bf[random.Next (file.StartPieceIndex, file.StartPieceIndex + 100)] = false;
+                    bf[random.Next (file.EndPieceIndex - 100, file.EndPieceIndex)] = false;
+                }
+            }
+
+            var fastResumeIncomplete = new FastResume (torrent.InfoHashes, bf, new BitField (bf).SetAll (false));
+            var leecherManager = await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, leecherIsSeedingHandler, fastResumeIncomplete);
 
             var timeout = new CancellationTokenSource (CancellationTimeout);
             timeout.Token.Register (() => { seederIsSeeding.TrySetCanceled (); });
             timeout.Token.Register (() => { leecherIsSeeding.TrySetCanceled (); });
 
-            if (!useWebSeedDownload) {
-                Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task, "Seeder should be seeding after hashcheck completes");
-                Assert.True (seederManager.Complete, "Seeder should have all data");
-            }
+            Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task, "Seeder should be seeding after hashcheck completes");
+            Assert.True (seederManager.Complete, "Seeder should have all data");
             Assert.DoesNotThrowAsync (async () => await leecherIsSeeding.Task, "Leecher should have downloaded all data");
 
             foreach (var file in nonEmptyFiles) {
-                var leecherNonEmptyFile = new FileInfo (Path.Combine (_leecherDir.FullName, file.Name));
-                Assert.IsTrue (leecherNonEmptyFile.Exists, $"Non empty file {file.Name} should exist");
+                Assert.IsTrue (LeecherWriter.Available.Keys.Any (t => t.FullPath == file.name.Replace ("Seeder", "Leecher") && t.BitField.AllTrue));
             }
-
-            var leecherEmptyFile = new FileInfo (Path.Combine (_leecherDir.FullName, emptyFile.Name));
-            Assert.AreEqual (createEmptyFile, leecherEmptyFile.Exists, "Empty file should exist when created");
         }
 
         private (TrackerServer, ITrackerListener) GetTracker ()
@@ -267,7 +301,7 @@ namespace Tests.MonoTorrent.IntegrationTests
             throw new Exception ("No ports were free?");
         }
 
-        private ClientEngine GetEngine (int port)
+        private ClientEngine GetEngine (int port, Factories factories)
         {
             // Give an example of how settings can be modified for the engine.
             var type = AnyAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
@@ -281,7 +315,7 @@ namespace Tests.MonoTorrent.IntegrationTests
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
             };
-            var engine = new ClientEngine (settingBuilder.ToSettings ());
+            var engine = new ClientEngine (settingBuilder.ToSettings (), factories);
             return engine;
         }
 
@@ -300,7 +334,7 @@ namespace Tests.MonoTorrent.IntegrationTests
             throw new Exception ("No ports were free?");
         }
 
-            private void OnHttpContext (IAsyncResult ar)
+        private void OnHttpContext (IAsyncResult ar)
         {
             if (!_httpSeeder.IsListening)
                 return;
@@ -332,7 +366,7 @@ namespace Tests.MonoTorrent.IntegrationTests
                     ctx.Response.StatusCode = 406;
                     ctx.Response.Close ();
                 } else {
-                    using FileStream fs = new FileStream (file.FullName, FileMode.Open, FileAccess.Read);
+                    using FileStream fs = new FileStream (file.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                     long start = 0;
                     long end = fs.Length - 1;
                     var rangeHeader = ctx.Request.Headers["Range"];
@@ -355,17 +389,19 @@ namespace Tests.MonoTorrent.IntegrationTests
             }
         }
 
-        private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
+        private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, EventHandler<TorrentStateChangedEventArgs> handler, FastResume fastResume = null)
         {
             TorrentSettingsBuilder torrentSettingsBuilder = new TorrentSettingsBuilder () {
                 CreateContainingDirectory = false,
             };
             TorrentManager manager = await clientEngine.AddAsync (torrent, saveDirectory, torrentSettingsBuilder.ToSettings ());
+
+            // load up some fastresume if it exists
+            if (fastResume != null)
+                await manager.LoadFastResumeAsync (fastResume);
+
             manager.TorrentStateChanged += handler;
-            if (explicitlyHashCheck)
-                await manager.HashCheckAsync (true);
-            else
-                await manager.StartAsync ();
+            await manager.StartAsync ();
             return manager;
         }
     }
