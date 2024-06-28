@@ -334,12 +334,15 @@ namespace MonoTorrent.Connections.Tracker
             }
 
             var files = (BEncodedDictionary) dict[FilesKey];
-            if (files.Count != 1)
+            if (files.Count != 1 && !(infoHashes.IsHybrid && files.Count == 2))
                 throw new TrackerException ("The scrape response contained unexpected data");
 
             var results = new Dictionary<InfoHash, ScrapeInfo> ();
             foreach (var infoHash in new[] { infoHashes.V1!, infoHashes.V2! }.Where (t => t != null)) {
-                var d = (BEncodedDictionary) files[BEncodedString.FromMemory (infoHash.Truncate ()!.AsMemory ())];
+                if (!files.TryGetValue (BEncodedString.FromMemory (infoHash.Truncate ().AsMemory ()), out BEncodedValue? val))
+                    continue;
+
+                var d = (BEncodedDictionary) val;
                 int complete = 0, downloaded = 0, incomplete = 0;
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d) {
                     switch (kp.Key.ToString ()) {
