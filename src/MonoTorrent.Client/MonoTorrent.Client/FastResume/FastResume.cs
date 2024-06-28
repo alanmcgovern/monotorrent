@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
 
         public ReadOnlyBitField UnhashedPieces { get; }
 
-        internal FastResume (InfoHashes infoHashes, ReadOnlyBitField bitfield, ReadOnlyBitField unhashedPieces)
+        public FastResume (InfoHashes infoHashes, ReadOnlyBitField bitfield, ReadOnlyBitField unhashedPieces)
         {
             InfoHashes = infoHashes ?? throw new ArgumentNullException (nameof (infoHashes));
             Bitfield = new ReadOnlyBitField (bitfield);
