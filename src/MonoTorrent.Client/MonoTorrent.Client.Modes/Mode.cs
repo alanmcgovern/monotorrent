@@ -340,11 +340,18 @@ namespace MonoTorrent.Client.Modes
             id.IsChoking = true;
             if (!id.SupportsFastPeer)
                 Manager.PieceManager.CancelRequests (id);
+
+            // Try to run an unchoke review.
+            if (Manager.UploadingTo < Manager.Settings.UploadSlots)
+                Unchoker.UnchokeReview ();
         }
 
         protected virtual void HandleInterestedMessage (PeerId id, InterestedMessage message)
         {
             id.IsInterested = true;
+            // Try to run an unchoke review.
+            if (Manager.UploadingTo < Manager.Settings.UploadSlots)
+                Unchoker.UnchokeReview ();
         }
 
         protected virtual void HandleExtendedHandshakeMessage (PeerId id, ExtendedHandshakeMessage message)
