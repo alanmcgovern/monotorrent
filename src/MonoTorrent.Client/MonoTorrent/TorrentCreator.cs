@@ -133,7 +133,11 @@ namespace MonoTorrent
         /// </summary>
         public bool StoreMD5 { get; set; }
 
-        bool StoreSHA1 => Type == TorrentType.V1OnlyWithPaddingFiles || Type == TorrentType.V1V2Hybrid;
+        /// <summary>
+        /// A SHA1 checksum will be generated for each file when this is set to <see langword="true"/>. This is required for BEP47.
+        /// Defaults to false.
+        /// </summary>
+        public bool StoreSHA1 { get; set; }
 
         /// <summary>
         /// Determines whether 
