@@ -970,6 +970,9 @@ namespace MonoTorrent.Client
                 if (argsCache.Count == 1)
                     InvokePieceHashedAsync ();
             }
+
+            if (Mode is DownloadMode downloadMode && Bitfield.AllTrue)
+                _ = downloadMode.UpdateSeedingDownloadingState ();
         }
 
         Queue<PieceHashedEventArgs> argsCache = new Queue<PieceHashedEventArgs> ();
