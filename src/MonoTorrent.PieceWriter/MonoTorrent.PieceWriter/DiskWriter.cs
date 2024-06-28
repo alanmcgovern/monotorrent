@@ -251,7 +251,7 @@ namespace MonoTorrent.PieceWriter
                 // If this is the first Stream we're opening for this file and the file exists, ensure it's the correct length.
                 FileReaderWriterHelper.MaybeTruncate (file.FullPath, file.Length);
             }
-            freshStreamData.Stream = new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite);
+            freshStreamData.Stream = new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite | FileShare.Delete);
             return (freshStreamData.Stream, freshStreamDataReleaser);
         }
 
