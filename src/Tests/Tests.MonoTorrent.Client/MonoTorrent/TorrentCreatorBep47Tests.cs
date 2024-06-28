@@ -49,6 +49,7 @@ namespace MonoTorrent.Common
             var creator = new TorrentCreator (type, Factories.Default
                             .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = false, FillValue = 0 })) {
                 StoreMD5 = true,
+                StoreSHA1 = true,
             };
 
             var announces = new List<List<string>> {
