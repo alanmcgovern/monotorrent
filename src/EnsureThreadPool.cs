@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         [EditorBrowsable(EditorBrowsableState.Never)]
         public void OnCompleted(Action continuation)
         {
-#if NETSTANDARD2_0 || NETSTANDARD2_1
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
             ThreadPool.UnsafeQueueUserWorkItem(Callback, continuation);
 #else
             ThreadPool.UnsafeQueueUserWorkItem (ThreadSwitcher.ThreadSwitcherWorkItem.GetOrCreate (continuation), true);

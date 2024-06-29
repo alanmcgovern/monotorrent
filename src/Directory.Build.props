@@ -13,8 +13,8 @@
     <Deterministic>true</Deterministic>
     <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Nullable Condition="$(TargetFramework) == 'netstandard2.0'">annotations</Nullable>
-    <Nullable Condition="$(TargetFramework) != 'netstandard2.0'">enable</Nullable>
+    <Nullable Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'">annotations</Nullable>
+    <Nullable Condition="$(TargetFramework) != 'netstandard2.0' And $(TargetFramework) != 'net472'">enable</Nullable>
     
     <!-- These are essentially junk if i'm compiling against net472/NetStandard2.0 and newer targets.
          Most rules result in uncompilable net472 code, so let's ignore them as i don't want to wade

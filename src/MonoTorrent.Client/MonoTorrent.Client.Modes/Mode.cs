@@ -503,7 +503,7 @@ namespace MonoTorrent.Client.Modes
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
             // otherwise send back a reject request message
             else if (id.SupportsFastPeer) {
-                if (id.AmAllowedFastPieces.Span.Contains (message.PieceIndex)) {
+                if (id.AmAllowedFastPieces.Span.IndexOf (message.PieceIndex) != -1) {
                     Interlocked.Increment (ref id.isRequestingPiecesCount);
                     (var m, var releaser) = PeerMessage.Rent<PieceMessage> ();
                     m.Initialize (message.PieceIndex, message.StartOffset, message.RequestLength);

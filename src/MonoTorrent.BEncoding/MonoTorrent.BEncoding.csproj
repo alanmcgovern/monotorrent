@@ -1,14 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
     <ReferenceReusableTasks>false</ReferenceReusableTasks>
     <UseMemoryExtensions>true</UseMemoryExtensions>
-    <AllowUnsafeBlocks Condition="$(TargetFramework) == 'netstandard2.0'">true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'">true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Condition="$(TargetFramework) == 'netstandard2.0'" Include="System.Memory" Version="4.5.1" />
+    <PackageReference Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" Include="System.Memory" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net472'">
+    <Reference Include="System.Web" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
 </Project>

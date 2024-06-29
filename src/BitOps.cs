@@ -137,7 +137,7 @@ namespace System.Numerics
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         static int FloorLog2 (uint value)
         {
-#if NETSTANDARD2_0 || NETSTANDARD2_1
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
             Span<uint> b = stackalloc uint[] { 0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000 };
             Span<uint> S = stackalloc uint[] { 1, 2, 4, 8, 16 };
 
@@ -158,7 +158,7 @@ namespace System.Numerics
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         static uint RoundUpToPowerOf2 (uint value)
         {
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP3_0 || NET5_0
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP3_0 || NET5_0 || NET472
             --value;
             value |= value >> 1;
             value |= value >> 2;

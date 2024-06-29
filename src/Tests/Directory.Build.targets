@@ -7,7 +7,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="ReusableTasks" Version="3.0.0" />
+    <PackageReference Update="ReusableTasks" Version="4.0.0" />
   </ItemGroup>
 
 </Project>

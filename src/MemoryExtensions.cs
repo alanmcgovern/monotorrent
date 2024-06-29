@@ -68,6 +68,8 @@ namespace System
             hasher.TransformFinalBlock (array, 0, 0);
             hasher.Hash.AsSpan ().CopyTo (destination);
             written = hasher.Hash.Length;
+            hasher.Initialize ();
+
             return true;
         }
 #endif
@@ -122,7 +124,7 @@ namespace System
 
         public static void Write (this Stream stream, ReadOnlyMemory<byte> memory)
         {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET472
             if (!MemoryMarshal.TryGetArray (memory, out ArraySegment<byte> segment))
                 throw new InvalidOperationException ("Could not retrieve the underlying byte[] from the Memory<T>");
             stream.Write (segment.Array, segment.Offset, segment.Count);

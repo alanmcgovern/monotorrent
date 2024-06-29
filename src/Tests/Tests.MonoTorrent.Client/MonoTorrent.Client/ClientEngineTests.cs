@@ -335,8 +335,10 @@ namespace MonoTorrent.Client
             public IPEndPoint PreferredLocalEndPoint { get; set; }
             public ListenerStatus Status { get; }
 
+#pragma warning disable 0067
             public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
             public event EventHandler<EventArgs> StatusChanged;
+#pragma warning restore 0067
 
             public FakeListener (int port)
                 => (PreferredLocalEndPoint) = (new IPEndPoint (IPAddress.Any, port));

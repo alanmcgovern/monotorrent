@@ -124,7 +124,7 @@ namespace MonoTorrent
             // This is safer than allocating one massive buffer which is placed in the large object heap
             // as there's no guarantee that a buffer won't be 'lost', and at the moment that could lead to
             // pretty poor memory utilisation if we keep losing segments of really large buffers.
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP3_0
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP3_0 || NET472
             for (int i = 0; i < count; i++)
                 bufferQueue.Push(new ByteBuffer (new ArraySegment<byte> (new byte[bufferSize])));
 #else

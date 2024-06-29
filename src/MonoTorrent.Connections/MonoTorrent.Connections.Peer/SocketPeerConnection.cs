@@ -204,7 +204,7 @@ namespace MonoTorrent.Connections.Peer
 
         static void SetBuffer (SocketAsyncEventArgs args, Memory<byte> buffer)
         {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET472
             if (!MemoryMarshal.TryGetArray (buffer, out ArraySegment<byte> segment))
                 throw new ArgumentException ("Could not retrieve the underlying buffer");
             args.SetBuffer (segment.Array, segment.Offset, segment.Count);

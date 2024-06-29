@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
 
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
@@ -75,6 +75,11 @@
     <ProjectReference Include="..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net472'">
+    <Reference Include="System.Web" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup>

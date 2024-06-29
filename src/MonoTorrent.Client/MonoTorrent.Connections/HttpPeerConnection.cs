@@ -82,7 +82,7 @@ namespace MonoTorrent.Connections.Peer
                 buffer.AsSpan (offset, count).Fill (0);
                 return count;
             }
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_0 && !NET472
             public override int Read (Span<byte> buffer)
             {
                 buffer.Fill (0);
@@ -94,7 +94,7 @@ namespace MonoTorrent.Connections.Peer
                 buffer.AsSpan (offset, count).Fill (0);
                 return Task.FromResult (count);
             }
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_0 && !NET472
             public override ValueTask<int> ReadAsync (Memory<byte> buffer, CancellationToken cancellationToken = default)
             {
                 buffer.Span.Fill (0);

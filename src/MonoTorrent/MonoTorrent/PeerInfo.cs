@@ -134,7 +134,7 @@ namespace MonoTorrent
             while (buffer.Length > 0) {
                 var ipBuffer = buffer.Slice (0, sizeOfIP);
                 var portBuffer = buffer.Slice (sizeOfIP, 2);
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET472
                 var ip = new IPAddress (ipBuffer.ToArray ());
 #else
                 var ip = new IPAddress (ipBuffer);

@@ -39,7 +39,7 @@ namespace MonoTorrent
 
         readonly BigInteger Value;
 
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET472
         public BigEndianBigInteger (ReadOnlySpan<byte> span)
         {
             var littleEndianArray = new byte[span.Length + 1];

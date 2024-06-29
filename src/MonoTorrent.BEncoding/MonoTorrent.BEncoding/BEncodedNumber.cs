@@ -66,7 +66,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int Encode (Span<byte> buffer)
         {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET472
 
             // exclude the 'i' and 'e'
             var totalCharacters = LengthInBytes () - 2;

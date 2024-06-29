@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +11,11 @@
   <ItemGroup>
     <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\Peers\PeerDecoder.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="..\MonoTorrent.Client\MonoTorrent.Logging\Logger.cs" Link="Linked\%(FileName)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net472'">
+    <Reference Include="System.Web" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
 </Project>

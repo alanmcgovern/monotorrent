@@ -112,7 +112,7 @@ namespace MonoTorrent.Messages
         public static string ReadString (ref ReadOnlySpan<byte> buffer, int length)
         {
             string result;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET472
             using (MemoryPool.Default.Rent (length, out ArraySegment<byte> segment)) {
                 buffer.Slice (0, length).CopyTo (segment.AsSpan ());
                 result = Encoding.ASCII.GetString (segment.Array, segment.Offset, segment.Count);
@@ -177,7 +177,7 @@ namespace MonoTorrent.Messages
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static void WriteAscii (ref Span<byte> buffer, string value)
         {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET472
             for (int i = 0; i < value.Length; i++)
                 buffer[i] = (byte) value[i];
             buffer = buffer.Slice (value.Length);
