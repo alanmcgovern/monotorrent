@@ -269,6 +269,17 @@ namespace MonoTorrent
         }
 
         [Test]
+        public void ToByteArray7 ()
+        {
+            ReadOnlyBitField first = new BitField (75)
+                .SetTrue (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71);
+            ReadOnlyBitField second = new ReadOnlyBitField (first.ToBytes (), first.Length);
+            for (int i = 0; i < first.Length; i++) {
+                Assert.AreEqual (first[i], second[i], "#" + i);
+            }
+        }
+
+        [Test]
         public void Clone ()
         {
             ReadOnlyBitField clone = new ReadOnlyBitField (bf);

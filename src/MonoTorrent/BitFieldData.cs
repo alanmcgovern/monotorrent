@@ -364,10 +364,13 @@ namespace MonoTorrent
             if (buffer.Length < LengthInBytes)
                 throw new ArgumentOutOfRangeException ($"The buffer must be able to store at least {LengthInBytes} bytes");
 
-
             int end = Length / 64;
             int offset = 0;
             for (int i = 0; i < end; i++) {
+                buffer[offset++] = (byte) (Span[i] >> 56);
+                buffer[offset++] = (byte) (Span[i] >> 48);
+                buffer[offset++] = (byte) (Span[i] >> 40);
+                buffer[offset++] = (byte) (Span[i] >> 32);
                 buffer[offset++] = (byte) (Span[i] >> 24);
                 buffer[offset++] = (byte) (Span[i] >> 16);
                 buffer[offset++] = (byte) (Span[i] >> 8);
