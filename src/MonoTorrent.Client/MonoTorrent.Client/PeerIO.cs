@@ -88,9 +88,17 @@ namespace MonoTorrent.Client
                 decryptor.Decrypt (messageHeaderBuffer.Span.Slice (0, messageHeaderLength));
 
                 messageBodyLength = Message.ReadInt (messageHeaderBuffer.Span);
-                if (messageBodyLength < 0 || messageBodyLength > MaxMessageLength) {
+                if (messageBodyLength < 0) {
                     connection.Dispose ();
-                    throw new ProtocolException ($"Invalid message length received. Value was '{messageBodyLength}'");
+                    throw new ProtocolException ($"Invalid message length received. Value was negative: '{messageBodyLength}'");
+                }
+
+                if (messageBodyLength > MaxMessageLength) {
+                    // Some messages are proportional to the size of the bitfield. If any message
+                    // exceeds the regular threshold, calculate whether or not it could plausibly
+                    // be a bitfield. Maybe this should be restricted to just bitfield messages?
+                    if (messageBodyLength > ((torrentData?.TorrentInfo?.PieceCount () ?? 0) / 8 + 64))
+                        throw new ProtocolException ($"Invalid message length received. Value was too large: '{messageBodyLength}'");
                 }
 
                 if (messageBodyLength == 0)
