@@ -359,10 +359,16 @@ namespace MonoTorrent.TrackerServer
         [Test]
         public async Task Scrape_Timeout ()
         {
+            var cancellation = new CancellationTokenSource ();
             var tcs = new TaskCompletionSource<bool> ();
-            listener.ScrapeReceived += (o, e) => tcs.Task.Wait ();
+            listener.ScrapeReceived += (o, e) => {
+                cancellation.Cancel ();
+                tcs.Task.Wait ();
+                throw new InvalidOperationException ("Ensure this request isn't processed");
+            };
+
             try {
-                var response = await tracker.ScrapeAsync (scrapeParams, new CancellationTokenSource (TimeSpan.FromMilliseconds (1)).Token).WithTimeout ();
+                var response = await tracker.ScrapeAsync (scrapeParams, cancellation.Token).WithTimeout ();
                 Assert.AreEqual (TrackerState.Offline, response.State);
             } finally {
                 tcs.SetResult (true);
