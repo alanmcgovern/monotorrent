@@ -71,6 +71,30 @@ namespace MonoTorrent.Connections
         }
 
 
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
+        public async ReusableTask<Socket> ConnectAsync (Uri uri, CancellationToken token)
+        {
+            var socket = new Socket ((uri.Scheme == "ipv4") ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+            var endPoint = new IPEndPoint (IPAddress.Parse (uri.Host), uri.Port);
+
+            using var registration = token.Register (SocketDisposer, socket);
+
+            try {
+                // `Socket.ConnectAsync (SocketAsyncEventArgs)` cannot be safely used under .NET 4.7.2.
+                // .NET 4.7.2 has a bug whereby disposing a socket (so it's safehandle is invalid) before the async operation has fully begun
+                // causes the 'SocketAsyncEventArgs' to be left in an inconsistent state (permanently in the 'operation in progress' state)
+                // so it cannot be reused. Work around it by using the synchronous implementation.
+                //
+                // This issue caused random integration test deadlocks/hangs under .NET 4.7.2 as socket connections couldn't be made.
+                await new ThreadSwitcher ();
+                socket.Connect (endPoint);
+            } catch {
+                socket.Dispose ();
+                throw;
+            }
+            return socket;
+        }
+#else
         public async ReusableTask<Socket> ConnectAsync (Uri uri, CancellationToken token)
         {
             var socket = new Socket ((uri.Scheme == "ipv4") ? AddressFamily.InterNetwork : AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
@@ -98,5 +122,6 @@ namespace MonoTorrent.Connections
             }
             return socket;
         }
+#endif
     }
 }
