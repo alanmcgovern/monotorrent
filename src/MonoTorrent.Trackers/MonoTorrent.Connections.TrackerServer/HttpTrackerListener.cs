@@ -108,10 +108,12 @@ namespace MonoTorrent.Connections.TrackerServer
         {
             int statusCode;
             byte[] response;
-            bool isScrape = context.Request.RawUrl!.StartsWith ("/scrape", StringComparison.OrdinalIgnoreCase);
+            bool isScrape = context.Request.Url?.LocalPath.EndsWith ("/scrape", StringComparison.OrdinalIgnoreCase) ?? false;
 
             using (context.Response) {
                 try {
+                    if (context.Request.RawUrl is null || context.Request.Url is null)
+                        throw new ArgumentException ();
                     var responseData = Handle (context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
                     response = responseData.Encode ();
                     statusCode = (int) HttpStatusCode.OK;

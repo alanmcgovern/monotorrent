@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -50,7 +51,7 @@ namespace MonoTorrent.TrackerServer
     [TestFixture]
     public class HttpTrackerTests
     {
-        class CustomHttpTrackerListener: HttpTrackerListener
+        class CustomHttpTrackerListener : HttpTrackerListener
         {
 
             public bool IncompleteAnnounce { get; set; }
@@ -98,7 +99,7 @@ namespace MonoTorrent.TrackerServer
             trackerId = Enumerable.Repeat ((byte) 255, 20).ToArray ();
             for (int i = 47124; i < 47224; i++) {
                 try {
-                    ListeningPrefix = $"http://127.0.0.1:{i}/";
+                    ListeningPrefix = $"http://127.0.0.1:{i}/{Process.GetCurrentProcess ().Id}/";
                     listener = new CustomHttpTrackerListener (ListeningPrefix);
                     listener.AnnounceReceived += delegate (object o, AnnounceRequest e) {
                         keys.Add (e.Key);
@@ -138,7 +139,7 @@ namespace MonoTorrent.TrackerServer
 
             infoHash = new InfoHash (infoHashBytes.Concat (infoHashBytes).ToArray ());
             announceParams = new MonoTorrent.Trackers.AnnounceRequest (InfoHashes.FromV1 (infoHash))
-                .WithReportedEndPointFunc(t => (null, 5555))
+                .WithReportedEndPointFunc (t => (null, 5555))
                 .WithPeerId (peerId.Span.ToArray ());
 
             scrapeParams = new MonoTorrent.Trackers.ScrapeRequest (InfoHashes.FromV1 (infoHash));
@@ -182,7 +183,7 @@ namespace MonoTorrent.TrackerServer
         [Test]
         public async Task AnnounceHybrid ()
         {
-            var hybrid = new InfoHashes (new InfoHash (Enumerable.Repeat<byte>(1, 20).ToArray ()), new InfoHash (Enumerable.Repeat<byte> (2, 32).ToArray ()));
+            var hybrid = new InfoHashes (new InfoHash (Enumerable.Repeat<byte> (1, 20).ToArray ()), new InfoHash (Enumerable.Repeat<byte> (2, 32).ToArray ()));
             await tracker.AnnounceAsync (announceParams.WithInfoHashes (hybrid), CancellationToken.None);
             Assert.AreEqual (int.Parse (keys[0].Text), tracker.AnnounceKey, "#2");
             Assert.AreEqual (2, announcedInfoHashes.Count);
