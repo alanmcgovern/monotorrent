@@ -307,7 +307,7 @@ namespace MonoTorrent.Client
             DiskManager = new DiskManager (Settings, Factories);
 
             ConnectionManager = new ConnectionManager (PeerId, Settings, Factories, DiskManager);
-            listenManager = new ListenManager (this);
+            listenManager = new ListenManager (this, Factories.CreatePeerConnectionGate());
             PortForwarder = Factories.CreatePortForwarder ();
 
             MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (TickLength), delegate {
