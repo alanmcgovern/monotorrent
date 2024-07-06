@@ -70,6 +70,12 @@ steps:
     publishTestResults: false
   continueOnError: true
 
+- task: reportgenerator@5
+  displayName: 'Coverage report generator'
+  inputs:
+    reports: **/*.coverage
+    targetdir: coveragereport
+
 - task: PublishTestResults@2
   displayName: 'Upload test results'
   inputs:
