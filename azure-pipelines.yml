@@ -75,6 +75,7 @@ steps:
   inputs:
     reports: '**/coverage.cobertura.xml'
     targetdir: coveragereport
+  publishCodeCoverageResults: true
 
 - task: PublishTestResults@2
   displayName: 'Upload test results'
