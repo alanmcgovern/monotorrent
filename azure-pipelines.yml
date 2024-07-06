@@ -3,12 +3,19 @@
 # Add steps that publish symbols, save build artifacts, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
 
+strategy:
+  matrix:
+#    linux:
+#      imageName: 'ubuntu-latest'
+    windows:
+      imageName: 'windows-latest'
+
 trigger:
 - master
 - monotorrent-*
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: $(imageName)
 
 variables:
   solution: 'src/MonoTorrent.sln'
@@ -59,9 +66,16 @@ steps:
   inputs:
     command: test
     projects: $(solution)
-    arguments: '--maxcpucount:4 --configuration $(configuration) --no-build --collect "Code coverage" --logger "trx"'
+    arguments: '--maxcpucount:4 --configuration $(configuration) --no-build --collect:"XPlat Code Coverage" --logger "trx"'
     publishTestResults: false
   continueOnError: true
+
+- task: reportgenerator@5
+  displayName: 'Coverage report generator'
+  inputs:
+    reports: '**/coverage.cobertura.xml'
+    targetdir: coveragereport
+  publishCodeCoverageResults: true
 
 - task: PublishTestResults@2
   displayName: 'Upload test results'

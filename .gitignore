@@ -4,6 +4,7 @@ bin/
 obj/
 /src/MonoTorrent.sln.DotSettings.user
 /build/
+/coveragereport
 /out/
 /src/.vs
 *.csproj.user
