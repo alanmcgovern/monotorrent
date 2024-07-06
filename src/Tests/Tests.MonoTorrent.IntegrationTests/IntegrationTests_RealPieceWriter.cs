@@ -274,7 +274,9 @@ namespace Tests.MonoTorrent.IntegrationTests
                     tracker.RegisterListener (listener);
                     listener.Start ();
                     return (tracker, listener);
-                } catch {
+                } catch (Exception ex) {
+                    Console.WriteLine ("Couldn't get a tracker port for integration tests:");
+                    Console.WriteLine (ex);
                     continue;
                 }
             }
@@ -308,7 +310,9 @@ namespace Tests.MonoTorrent.IntegrationTests
                     listener.Start ();
                     listener.BeginGetContext (OnHttpContext, listener);
                     return listener;
-                } catch {
+                } catch (Exception ex) {
+                    Console.WriteLine ("Couldn't get a port for integration tests:");
+                    Console.WriteLine (ex);
                 }
             }
             throw new Exception ("No ports were free?");
