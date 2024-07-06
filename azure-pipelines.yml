@@ -3,12 +3,19 @@
 # Add steps that publish symbols, save build artifacts, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
 
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-latest'
+    windows:
+      imageName: 'windows-latest'
+
 trigger:
 - master
 - monotorrent-*
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: $(imageName)
 
 variables:
   solution: 'src/MonoTorrent.sln'
