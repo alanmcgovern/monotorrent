@@ -15,19 +15,25 @@
   <ItemGroup Condition="$(UseGitInfo)">
     <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
     <Compile Include="$(MSBuildThisFileDirectory)GitInfoHelper.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)ICacheable.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)BitOps.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)Cache.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)ThreadSwitcher.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)EnsureThreadPool.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)MainLoop.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)SimpleSpinLock.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)MemoryExtensions.cs" Condition="'$(UseMemoryExtensions)' == 'true'" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)BigEndianBigInteger.cs" Link="Linked\%(FileName)%(Extension)" Condition="$(ProjectName) == 'MonoTorrent.Dht' or $(ProjectName) == 'MonoTorrent.Client'" />
-    <Compile Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="$(MSBuildThisFileDirectory)NullabilityAttributes.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Condition="$(UseBigEndianBigInteger)" Include="$(MSBuildThisFileDirectory)BigEndianBigInteger.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseBitOps)" Include="$(MSBuildThisFileDirectory)BitOps.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseCache)" Include="$(MSBuildThisFileDirectory)ICacheable.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseCache)" Include="$(MSBuildThisFileDirectory)Cache.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseEnsureThreadPool)" Include="$(MSBuildThisFileDirectory)EnsureThreadPool.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseIListExtensions)" Include="$(MSBuildThisFileDirectory)IListExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseLogger)" Include="$(MSBuildThisFileDirectory)Logger.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseMainLoop)" Include="$(MSBuildThisFileDirectory)MainLoop.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseMemoryExtensions)" Include="$(MSBuildThisFileDirectory)MemoryExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseNullabilityHelpers)" Include="$(MSBuildThisFileDirectory)NullabilityAttributes.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseSemaphoreSlimExtensions)" Include="$(MSBuildThisFileDirectory)SemaphoreSlimExtensions.cs" Link="Linked\%(Filename)%(Extension)" />
+    <Compile Condition="$(UseSimpleSpinLock)" Include="$(MSBuildThisFileDirectory)SimpleSpinLock.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseThreadSwitcher)" Include="$(MSBuildThisFileDirectory)ThreadSwitcher.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseTorrentFileExtensions)" Include="$(MSBuildThisFileDirectory)TorrentFileExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseValueStopWatch)" Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" Link="Linked\%(FileName)%(Extension)" />
+  </ItemGroup>
 
   <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' Or !$(UseGitInfo) ">
     <PropertyGroup>

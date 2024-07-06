@@ -4,13 +4,15 @@
     <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
-  </ItemGroup>
+  <PropertyGroup>
+    <UseLogger>true</UseLogger>
+    <UseSimpleSpinLock>true</UseSimpleSpinLock>
+    <UseThreadSwitcher>true</UseThreadSwitcher>
+    <UseValueStopWatch>true</UseValueStopWatch>
+  </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent.Client\Peers\PeerDecoder.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent.Logging\Logger.cs" Link="Linked\%(FileName)%(Extension)" />
+    <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net472'">

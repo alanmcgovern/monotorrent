@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 using Microsoft.Win32.SafeHandles;
 
-using MonoTorrent.Client;
-
 using ReusableTasks;
 
 namespace MonoTorrent.PieceWriter

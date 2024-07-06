@@ -2,8 +2,16 @@
 
   <PropertyGroup>
     <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
-    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <UseBitOps>true</UseBitOps>
+    <UseIListExtensions>true</UseIListExtensions>
     <UseMemoryExtensions>true</UseMemoryExtensions>
+    <UseNullabilityHelpers>true</UseNullabilityHelpers>
+    <UseSimpleSpinLock>true</UseSimpleSpinLock>
+    <UseTorrentFileExtensions>true</UseTorrentFileExtensions>
+    <UseValueStopWatch>true</UseValueStopWatch>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,11 +20,6 @@
 
   <ItemGroup>
     <PackageReference Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" Include="System.Memory" Version="4.5.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent\IListExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent\TorrentFileExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net472'">

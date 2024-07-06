@@ -36,8 +36,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MonoTorrent.Client;
-
 using ReusableTasks;
 
 namespace MonoTorrent.PieceWriter

@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
 
+  <!-- Helpers defined within the project -->
   <PropertyGroup>
     <CI Condition="'$(CI)' == '' and '$(TF_BUILD)' == 'true'">true</CI>
     <CI Condition="'$(CI)' == '' ">false</CI>
 
+    <UseBigEndianBigInteger>false</UseBigEndianBigInteger>
+    <UseBitOps>false</UseBitOps>
+    <UseCache>false</UseCache>
+    <UseEnsureThreadPool>false</UseEnsureThreadPool>
+    <UseIListExtensions>false</UseIListExtensions>
+    <UseLogger>false</UseLogger>
+    <UseMainLoop>false</UseMainLoop>
+    <UseMemoryExtensions>false</UseMemoryExtensions>
+    <UseNullabilityHelpers>false</UseNullabilityHelpers>
+    <UseSemaphoreSlimExtensions>false</UseSemaphoreSlimExtensions>
+    <UseSimpleSpinLock>false</UseSimpleSpinLock>
+    <UseThreadSwitcher>false</UseThreadSwitcher>
+    <UseTorrentFileExtensions>false</UseTorrentFileExtensions>
+    <UseValueStopWatch>false</UseValueStopWatch>
+  </PropertyGroup>
+
+  <!-- General build configuration -->
+  <PropertyGroup>
     <NoWarn>1701;1702;1591;0419;netsdk1138</NoWarn>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
 
     <LangVersion>8.0</LangVersion>
     <DebugType>portable</DebugType>

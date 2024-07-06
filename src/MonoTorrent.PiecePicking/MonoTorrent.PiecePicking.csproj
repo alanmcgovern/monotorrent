@@ -4,12 +4,15 @@
     <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
-  </ItemGroup>
+  <PropertyGroup>
+    <UseCache>true</UseCache>
+    <UseIListExtensions>true</UseIListExtensions>
+    <UseNullabilityHelpers>true</UseNullabilityHelpers>
+    <UseSimpleSpinLock>true</UseSimpleSpinLock>
+  </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\MonoTorrent.Client\MonoTorrent\IListExtensions.cs" Link="Linked\%(Filename)%(Extension)" />
+    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
   </ItemGroup>
 
 </Project>
