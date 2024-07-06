@@ -5,8 +5,8 @@
 
 strategy:
   matrix:
-    linux:
-      imageName: 'ubuntu-latest'
+#    linux:
+#      imageName: 'ubuntu-latest'
     windows:
       imageName: 'windows-latest'
 
@@ -66,14 +66,14 @@ steps:
   inputs:
     command: test
     projects: $(solution)
-    arguments: '--maxcpucount:4 --configuration $(configuration) --no-build --collect "Code coverage" --logger "trx"'
+    arguments: '--maxcpucount:4 --configuration $(configuration) --no-build --collect:"XPlat Code Coverage" --logger "trx"'
     publishTestResults: false
   continueOnError: true
 
 - task: reportgenerator@5
   displayName: 'Coverage report generator'
   inputs:
-    reports: '**/*.coverage'
+    reports: '**/coverage.cobertura.xml'
     targetdir: coveragereport
 
 - task: PublishTestResults@2

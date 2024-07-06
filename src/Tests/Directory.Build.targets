@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Update="ReusableTasks" Version="4.0.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
   </ItemGroup>
 
 </Project>
