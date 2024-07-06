@@ -55,9 +55,17 @@ steps:
     arguments: '/p:Configuration=$(configuration)'
 
 - task: DotNetCoreCLI@2
-  displayName: 'Test'
+  displayName: 'Run tests'
   inputs:
     command: test
     projects: $(solution)
-    arguments: '--configuration $(configuration) --no-build --collect "Code coverage"'
-    publishTestResults: true
+    arguments: '--maxcpucount:4 --configuration $(configuration) --no-build --collect "Code coverage" --logger "trx"'
+    publishTestResults: false
+  continueOnError: true
+
+- task: PublishTestResults@2
+  displayName: 'Upload test results'
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
+    failTaskOnFailedTests: true
