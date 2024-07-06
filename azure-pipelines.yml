@@ -73,7 +73,7 @@ steps:
 - task: reportgenerator@5
   displayName: 'Coverage report generator'
   inputs:
-    reports: **/*.coverage
+    reports: '**/*.coverage'
     targetdir: coveragereport
 
 - task: PublishTestResults@2
