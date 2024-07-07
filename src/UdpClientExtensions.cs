@@ -1,10 +1,10 @@
 ﻿//
-// ToolboxTests.cs
+// UdpClientExtensions.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2024 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,37 +26,25 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
 
-using NUnit.Framework;
-
-namespace MonoTorrent.Common
+namespace MonoTorrent
 {
-    [TestFixture]
-    public class ToolboxTests
+#if NET472 || NET5_0 || NET6_0 || NETCOREAPP3_0 || NETSTANDARD2_0 || NETSTANDARD2_1
+    static class UdpClientExtensions
     {
-        [Test]
-        public void ByteMatch_DifferentArrayLengths ()
-        {
-            Assert.IsFalse (Toolbox.ByteMatch (new byte[1], new byte[2]));
-        }
+        public static Task<int> SendAsync (this UdpClient client, ReadOnlyMemory<byte> datagram, int bytes, IPEndPoint? endPoint)
+            => client.SendAsync (datagram.ToArray (), bytes, endPoint);
 
-        [Test]
-        public void ByteMatch_DifferentArrayLengths2 ()
-        {
-            Assert.IsFalse (Toolbox.ByteMatch (new byte[1], 0, new byte[2], 0, 2));
-            Assert.IsTrue (Toolbox.ByteMatch (new byte[1], 0, new byte[2], 0, 1));
-        }
+        public static int Send (this UdpClient client, ReadOnlyMemory<byte> datagram, int bytes)
+            => client.Send (datagram.ToArray (), bytes);
 
-        [Test]
-        public void ByteMatch_Null ()
-        {
-            Assert.Throws<ArgumentNullException> (() => Toolbox.ByteMatch (null, new byte[1]));
-            Assert.Throws<ArgumentNullException> (() => Toolbox.ByteMatch (new byte[1], null));
-
-            Assert.Throws<ArgumentNullException> (() => Toolbox.ByteMatch (null, 0, new byte[2], 0, 2));
-            Assert.Throws<ArgumentNullException> (() => Toolbox.ByteMatch (new byte[1], 0, null, 0, 2));
-        }
     }
+#endif
 }

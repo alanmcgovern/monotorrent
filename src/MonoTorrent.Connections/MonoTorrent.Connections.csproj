@@ -7,6 +7,7 @@
   <PropertyGroup>
     <UseSimpleSpinLock>true</UseSimpleSpinLock>
     <UseThreadSwitcher>true</UseThreadSwitcher>
+    <UseUdpClientExtensions>true</UseUdpClientExtensions>
   </PropertyGroup>
 
   <ItemGroup>

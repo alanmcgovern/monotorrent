@@ -237,7 +237,7 @@ namespace MonoTorrent.Client
         public void CompleteChunkBeforeRequestNext ()
         {
             var messages = new List<RequestMessage> ();
-            var requestsBuffer = requests.Encode ().AsMemory ();
+            var requestsBuffer = requests.Encode ();
             while (requestsBuffer.Length > 0) {
                 var message = (RequestMessage) PeerMessage.DecodeMessage (requestsBuffer.Span, null).message;
                 messages.Add (message);
@@ -282,7 +282,7 @@ namespace MonoTorrent.Client
         private async Task CompleteSendOrReceiveFirst (Memory<byte> buffer)
         {
             var allRequests = new List<RequestMessage> ();
-            var requestsBuffer = requests.Encode ().AsMemory ();
+            var requestsBuffer = requests.Encode ();
             while (requestsBuffer.Length > 0) {
                 var message = (RequestMessage) PeerMessage.DecodeMessage (requestsBuffer.Span, null).message;
                 allRequests.Add (message);

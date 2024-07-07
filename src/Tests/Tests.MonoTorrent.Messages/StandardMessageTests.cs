@@ -66,9 +66,9 @@ namespace MonoTorrent.Messages.Peer
                                        true, true, false, false, true, false, false, true, true, false };
 
             Assert.AreEqual (data.Length, (int) Math.Ceiling ((double) torrentData.TorrentInfo.Size / torrentData.TorrentInfo.PieceLength), "#0");
-            byte[] encoded = new BitfieldMessage (new ReadOnlyBitField (data)).Encode ();
+            ReadOnlyMemory<byte> encoded = new BitfieldMessage (new ReadOnlyBitField (data)).Encode ();
 
-            BitfieldMessage m = (BitfieldMessage) PeerMessage.DecodeMessage (encoded, torrentData).message;
+            BitfieldMessage m = (BitfieldMessage) PeerMessage.DecodeMessage (encoded.Span, torrentData).message;
             Assert.AreEqual (data.Length, m.BitField.Length, "#1");
             for (int i = 0; i < data.Length; i++)
                 Assert.AreEqual (data[i], m.BitField[i], "#2." + i);
@@ -97,9 +97,9 @@ namespace MonoTorrent.Messages.Peer
         {
             Assert.Throws<MessageException> (() => {
                 bool[] data = { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };
-                byte[] encoded = new BitfieldMessage (new ReadOnlyBitField (data)).Encode ();
+                ReadOnlyMemory<byte> encoded = new BitfieldMessage (new ReadOnlyBitField (data)).Encode ();
 
-                PeerMessage.DecodeMessage (encoded, null);
+                PeerMessage.DecodeMessage (encoded.Span, null);
             });
         }
 
@@ -142,10 +142,10 @@ namespace MonoTorrent.Messages.Peer
             byte[] peerId = Encoding.ASCII.GetBytes ("12312312345645645678");
             byte[] protocolVersion = Encoding.ASCII.GetBytes (Constants.ProtocolStringV100);
             Assert.AreEqual (19, buffer[offset], "1");
-            Assert.IsTrue (Toolbox.ByteMatch (protocolVersion, 0, buffer, offset + 1, 19), "2");
-            Assert.IsTrue (Toolbox.ByteMatch (new byte[8], 0, buffer, offset + 20, 8), "3");
-            Assert.IsTrue (Toolbox.ByteMatch (infohash, 0, buffer, offset + 28, 20), "4");
-            Assert.IsTrue (Toolbox.ByteMatch (peerId, 0, buffer, offset + 48, 20), "5");
+            Assert.IsTrue (protocolVersion.AsSpan ().SequenceEqual (buffer.AsSpan (offset + 1, 19)), "2");
+            Assert.IsTrue (new byte[8].AsSpan ().SequenceEqual (buffer.AsSpan (offset + 20, 8)), "3");
+            Assert.IsTrue (infohash.AsSpan ().SequenceEqual (buffer.AsSpan (offset + 28, 20)), "4");
+            Assert.IsTrue (peerId.AsSpan ().SequenceEqual (buffer.AsSpan (offset + 48, 20)), "5");
             Assert.AreEqual (length, HandshakeMessage.HandshakeLength, "6");
 
             length = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100, true, false).Encode (buffer.AsSpan (offset));
@@ -160,7 +160,7 @@ namespace MonoTorrent.Messages.Peer
             orig.Encode (buffer.AsSpan (offset));
             HandshakeMessage dec = new HandshakeMessage (buffer.AsSpan (offset, HandshakeMessage.HandshakeLength));
             Assert.IsTrue (orig.Equals (dec));
-            Assert.AreEqual (orig.Encode (), dec.Encode ());
+            Assert.IsTrue (orig.Encode ().Span.SequenceEqual (dec.Encode ().Span));
         }
 
 
@@ -311,7 +311,7 @@ namespace MonoTorrent.Messages.Peer
             Message dec = PeerMessage.DecodeMessage (buffer.AsSpan (offset, orig.ByteLength), torrentData).message;
             Assert.IsTrue (orig.Equals (dec), $"orig: {orig}, new: {dec}");
 
-            Assert.IsTrue (Toolbox.ByteMatch (orig.Encode (), PeerMessage.DecodeMessage (orig.Encode (), torrentData).message.Encode ()));
+            Assert.IsTrue (orig.Encode ().Span.SequenceEqual (PeerMessage.DecodeMessage (orig.Encode ().Span, torrentData).message.Encode ().Span));
         }
     }
 }

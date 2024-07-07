@@ -19,6 +19,7 @@
     <UseSimpleSpinLock>false</UseSimpleSpinLock>
     <UseThreadSwitcher>false</UseThreadSwitcher>
     <UseTorrentFileExtensions>false</UseTorrentFileExtensions>
+    <UseUdpClientExtensions>false</UseUdpClientExtensions>
     <UseValueStopWatch>false</UseValueStopWatch>
   </PropertyGroup>
 

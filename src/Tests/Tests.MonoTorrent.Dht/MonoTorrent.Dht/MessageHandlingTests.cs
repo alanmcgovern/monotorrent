@@ -50,7 +50,7 @@ namespace MonoTorrent.Dht
             };
 
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), out DhtMessage message);
 
                 // This TransactionId should be registered and it should be pending a response.
                 if (!DhtMessageFactory.IsRegistered (ping.TransactionId) || engine.MessageLoop.PendingQueries != 1)
@@ -88,7 +88,7 @@ namespace MonoTorrent.Dht
 
             var tcs = new TaskCompletionSource<object> ();
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), out DhtMessage message);
 
                 if (message is Ping && endpoint.Equals (node.EndPoint)) {
                     var response = new PingResponse (node.Id, message.TransactionId);
@@ -124,7 +124,7 @@ namespace MonoTorrent.Dht
             };
 
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data), out DhtMessage message);
+                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), out DhtMessage message);
 
                 if (message.TransactionId.Equals (ping.TransactionId)) {
                     var response = new PingResponse (node.Id, transactionId);

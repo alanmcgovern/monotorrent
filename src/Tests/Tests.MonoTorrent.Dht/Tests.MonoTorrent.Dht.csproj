@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\MonoTorrent.Client\MonoTorrent\Arrays.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Include="..\Tests.MonoTorrent.Client\TaskExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 

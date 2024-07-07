@@ -68,8 +68,8 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             var supports = new ExtensionSupports (new[] { PeerExchangeMessage.Support });
             PeerExchangeMessage message = new PeerExchangeMessage ().Initialize (supports, peer, peerDotF, default, peer6, peer6DotF, default, default);
 
-            byte[] buffer = message.Encode ();
-            PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer, null).message;
+            ReadOnlyMemory<byte> buffer = message.Encode ();
+            PeerExchangeMessage m = (PeerExchangeMessage) PeerMessage.DecodeMessage (buffer.Span, null).message;
             Assert.IsTrue (peer.AsSpan ().SequenceEqual (m.Added.Span), "#1");
             Assert.IsTrue (peerDotF.AsSpan ().SequenceEqual (m.AddedDotF.Span), "#2");
 

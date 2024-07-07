@@ -136,7 +136,7 @@ namespace MonoTorrent.Connections.TrackerServer
             else
                 m = new ErrorMessage (connectMessage.TransactionId, $"The connection_id was {connectMessage.ConnectionId} but expected {ConnectMessage.InitialiseConnectionId}");
 
-            byte[] data = m.Encode ();
+            ReadOnlyMemory<byte> data = m.Encode ();
             try {
                 await client.SendAsync (data, data.Length, remotePeer);
             } catch {
@@ -199,7 +199,7 @@ namespace MonoTorrent.Connections.TrackerServer
                 }
                 m = new AnnounceResponseMessage (remotePeer.AddressFamily, announceMessage.TransactionId, interval, leechers, seeders, peers);
             }
-            byte[] data = m.Encode ();
+            ReadOnlyMemory<byte> data = m.Encode ();
             await client.SendAsync (data, data.Length, remotePeer);
         }
 
@@ -226,7 +226,7 @@ namespace MonoTorrent.Connections.TrackerServer
             BEncodedDictionary val = Handle (getCollection (scrapeMessage), remotePeer.Address, true);
 
             UdpTrackerMessage m;
-            byte[] data;
+            ReadOnlyMemory<byte> data;
             if (val.ContainsKey (TrackerRequest.FailureKey)) {
                 m = new ErrorMessage (scrapeMessage.TransactionId, val[TrackerRequest.FailureKey].ToString ()!);
             } else {

@@ -41,7 +41,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         public void HandshakeSupportsTest ()
         {
             ExtendedHandshakeMessage m = new ExtendedHandshakeMessage (false, 1234, 5555);
-            byte[] encoded = m.Encode ();
+            ReadOnlyMemory<byte> encoded = m.Encode ();
 
             Assert.AreEqual (m.ByteLength, encoded.Length, "#1");
             Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
@@ -54,7 +54,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         public void HandshakeSupportsTest_Private ()
         {
             ExtendedHandshakeMessage m = new ExtendedHandshakeMessage (true, 123, 5555);
-            byte[] encoded = m.Encode ();
+            ReadOnlyMemory<byte> encoded = m.Encode ();
 
             Assert.AreEqual (m.ByteLength, encoded.Length, "#1");
             Assert.IsFalse (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
@@ -66,8 +66,8 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         public void HandshakeDecodeTest ()
         {
             ExtendedHandshakeMessage m = new ExtendedHandshakeMessage (false, 123, 5555);
-            byte[] data = m.Encode ();
-            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage) PeerMessage.DecodeMessage (data, null).message;
+            ReadOnlyMemory<byte> data = m.Encode ();
+            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage) PeerMessage.DecodeMessage (data.Span, null).message;
 
             Assert.AreEqual (m.ByteLength, data.Length);
             Assert.AreEqual (m.ByteLength, decoded.ByteLength, "#1");
@@ -83,8 +83,8 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         {
             LTChat m = new LTChat (LTChat.Support.MessageId, "This Is My Message");
 
-            byte[] data = m.Encode ();
-            LTChat decoded = (LTChat) PeerMessage.DecodeMessage (data, null).message;
+            ReadOnlyMemory<byte> data = m.Encode ();
+            LTChat decoded = (LTChat) PeerMessage.DecodeMessage (data.Span, null).message;
 
             Assert.AreEqual (m.Message, decoded.Message, "#1");
         }

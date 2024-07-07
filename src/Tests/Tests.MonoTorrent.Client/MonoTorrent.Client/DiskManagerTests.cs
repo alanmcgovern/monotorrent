@@ -514,8 +514,8 @@ namespace MonoTorrent.Client
             var data1 = fileData.Data[0];
             var data2 = fileData.Data[1];
 
-            Assert.IsTrue (Toolbox.ByteMatch (buffer, 0, data1, 0, data1.Length), "#2");
-            Assert.IsTrue (Toolbox.ByteMatch (buffer, data1.Length, data2, 0, Constants.BlockSize - data1.Length), "#3");
+            Assert.IsTrue (buffer.AsSpan (0, data1.Length).SequenceEqual (data1.AsSpan (0, data1.Length)), "#2");
+            Assert.IsTrue (buffer.AsSpan (data1.Length, Constants.BlockSize - data1.Length).SequenceEqual (data2.AsSpan (0, Constants.BlockSize - data1.Length)), "#3");
         }
 
         [Test]
@@ -528,8 +528,8 @@ namespace MonoTorrent.Client
             var data1 = fileData.Data[1];
             var data2 = fileData.Data[2];
 
-            Assert.IsTrue (Toolbox.ByteMatch (buffer, 0, data1, data0.Length, data1.Length - data0.Length), "#2");
-            Assert.IsTrue (Toolbox.ByteMatch (buffer, data1.Length - data0.Length, data2, 0, Constants.BlockSize - (data1.Length - data0.Length)), "#3");
+            Assert.IsTrue (buffer.AsSpan (0, data1.Length - data0.Length).SequenceEqual (data1.AsSpan (data0.Length, data1.Length - data0.Length)), "#2");
+            Assert.IsTrue (buffer.AsSpan (data1.Length - data0.Length, Constants.BlockSize - (data1.Length - data0.Length)).SequenceEqual (data2.AsSpan (0, Constants.BlockSize - (data1.Length - data0.Length))), "#3");
         }
 
         [Test]
@@ -636,8 +636,8 @@ namespace MonoTorrent.Client
             await diskManager.WriteAsync (fileData, new BlockInfo (0, 0, Constants.BlockSize), buffer);
 
             Assert.AreEqual (2, writer.WrittenData.Count, "#1");
-            Assert.IsTrue (Toolbox.ByteMatch (fileData.Data[0], 0, buffer, 0, fileData.Data[0].Length), "#2");
-            Assert.IsTrue (Toolbox.ByteMatch (fileData.Data[1], fileData.Data[0].Length, buffer, 0, Constants.BlockSize - fileData.Data[1].Length), "#3");
+            Assert.IsTrue (fileData.Data[0].AsSpan (0, fileData.Data[0].Length).SequenceEqual (buffer.AsSpan (0, fileData.Data[0].Length)), "#2");
+            Assert.IsTrue (fileData.Data[1].AsSpan (fileData.Data[0].Length, Constants.BlockSize - fileData.Data[1].Length).SequenceEqual (buffer.AsSpan (0, Constants.BlockSize - fileData.Data[1].Length)), "#3");
         }
 
         [Test]

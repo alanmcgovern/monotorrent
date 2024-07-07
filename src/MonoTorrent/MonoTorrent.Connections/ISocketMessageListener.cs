@@ -35,8 +35,8 @@ namespace MonoTorrent.Connections
 {
     public interface ISocketMessageListener : ISocketListener
     {
-        event Action<byte[], IPEndPoint> MessageReceived;
+        event Action<ReadOnlyMemory<byte>, IPEndPoint> MessageReceived;
 
-        Task SendAsync (byte[] buffer, IPEndPoint endpoint);
+        Task SendAsync (ReadOnlyMemory<byte> buffer, IPEndPoint endpoint);
     }
 }

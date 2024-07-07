@@ -39,8 +39,8 @@ namespace MonoTorrent.Dht
 {
     class TestListener : IDhtListener
     {
-        public event Action<byte[], IPEndPoint> MessageSent;
-        public event Action<byte[], IPEndPoint> MessageReceived;
+        public event Action<ReadOnlyMemory<byte>, IPEndPoint> MessageSent;
+        public event Action<ReadOnlyMemory<byte>, IPEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
 
         public bool SendAsynchronously { get; set; }
@@ -51,7 +51,7 @@ namespace MonoTorrent.Dht
         public void RaiseMessageReceived (DhtMessage message, IPEndPoint endpoint)
             => MessageReceived?.Invoke (message.Encode (), endpoint);
 
-        public async Task SendAsync (byte[] buffer, IPEndPoint endpoint)
+        public async Task SendAsync (ReadOnlyMemory<byte> buffer, IPEndPoint endpoint)
         {
             if (SendAsynchronously)
                 await Task.Yield ();

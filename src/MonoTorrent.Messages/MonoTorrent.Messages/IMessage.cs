@@ -35,7 +35,7 @@ namespace MonoTorrent.Messages
     {
         int ByteLength { get; }
 
-        byte[] Encode ();
+        ReadOnlyMemory<byte> Encode ();
 
         int Encode (Span<byte> buffer);
 

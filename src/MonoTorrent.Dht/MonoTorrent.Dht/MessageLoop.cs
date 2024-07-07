@@ -145,7 +145,7 @@ namespace MonoTorrent.Dht
             });
         }
 
-        async void MessageReceived (byte[] buffer, IPEndPoint endpoint)
+        async void MessageReceived (ReadOnlyMemory<byte> buffer, IPEndPoint endpoint)
         {
             await DhtEngine.MainLoop;
 
@@ -157,7 +157,7 @@ namespace MonoTorrent.Dht
             // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
             // and return an error message (if that's what the spec allows)
             try {
-                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer, false), out DhtMessage? message)) {
+                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer.Span, false), out DhtMessage? message)) {
                     Monitor.ReceiveMonitor.AddDelta (buffer.Length);
                     ReceiveQueue.Enqueue (new KeyValuePair<IPEndPoint, DhtMessage> (endpoint, message!));
                 }
@@ -192,7 +192,7 @@ namespace MonoTorrent.Dht
                 if (details.Message is QueryMessage)
                     WaitingResponse.Add (details.Message.TransactionId, details);
 
-                byte[] buffer = details.Message.Encode ();
+                ReadOnlyMemory<byte> buffer = details.Message.Encode ();
                 try {
                     Monitor.SendMonitor.AddDelta (buffer.Length);
                     await Listener.SendAsync (buffer, details.Destination);

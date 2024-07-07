@@ -113,26 +113,6 @@ namespace MonoTorrent
     static partial class Toolbox
     {
         static readonly Random r = new Random ();
-        public static int Count<T> (IEnumerable<T> enumerable, Predicate<T> predicate)
-        {
-            int count = 0;
-
-            foreach (T t in enumerable)
-                if (predicate (t))
-                    count++;
-
-            return count;
-        }
-
-        public static long Accumulate<T> (IEnumerable<T> enumerable, Func<T, long> action)
-        {
-            long count = 0;
-
-            foreach (T t in enumerable)
-                count += action (t);
-
-            return count;
-        }
 
         public static void InvokeAsync<T> (this EventHandler<T> handler, object o, T args)
             where T : EventArgs

@@ -42,7 +42,7 @@ namespace MonoTorrent.Messages
 
         public abstract void Decode (ReadOnlySpan<byte> buffer);
 
-        public byte[] Encode ()
+        public ReadOnlyMemory<byte> Encode ()
         {
             byte[] buffer = new byte[ByteLength];
             Encode (buffer);

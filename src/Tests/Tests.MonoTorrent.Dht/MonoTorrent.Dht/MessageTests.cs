@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Text;
 
 using MonoTorrent.BEncoding;
@@ -263,8 +264,8 @@ namespace MonoTorrent.Dht
 
         private void Compare (DhtMessage m, string expected)
         {
-            byte[] b = m.Encode ();
-            Assert.AreEqual (Encoding.UTF8.GetString (b), expected);
+            ReadOnlyMemory<byte> b = m.Encode ();
+            Assert.AreEqual (Encoding.UTF8.GetString (b.ToArray ()), expected);
         }
 
         private DhtMessage Decode (string p)

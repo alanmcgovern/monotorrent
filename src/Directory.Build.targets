@@ -32,6 +32,7 @@
     <Compile Condition="$(UseSimpleSpinLock)" Include="$(MSBuildThisFileDirectory)SimpleSpinLock.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseThreadSwitcher)" Include="$(MSBuildThisFileDirectory)ThreadSwitcher.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseTorrentFileExtensions)" Include="$(MSBuildThisFileDirectory)TorrentFileExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
+    <Compile Condition="$(UseUdpClientExtensions)" Include="$(MSBuildThisFileDirectory)UdpClientExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseValueStopWatch)" Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 

@@ -224,7 +224,7 @@ namespace MonoTorrent.Connections.Tracker
 
         async void SendAsync (UdpClient client, UdpTrackerMessage msg, CancellationToken token)
         {
-            byte[] buffer = msg.Encode ();
+            ReadOnlyMemory<byte> buffer = msg.Encode ();
             try {
                 do {
                     client.Send (buffer, buffer.Length);
