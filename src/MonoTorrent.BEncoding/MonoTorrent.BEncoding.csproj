@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
-    <ReferenceReusableTasks>false</ReferenceReusableTasks>
     <AllowUnsafeBlocks Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'">true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -13,7 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" Include="System.Memory" Version="4.5.1" />
+    <PackageReference Include="GitInfo" />
+    <PackageReference Include="System.Memory" Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net472'">

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
-	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="../Samples/Directory.Build.targets" />
 
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)TorrentInfoHelpers.cs" Link="Linked\TorrentInfoHelpers.cs" Condition="'$(ProjectName)' != 'Tests.MonoTorrent.BEncoding'" />
@@ -10,7 +10,6 @@
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0-preview-20221003-04" />
-    <PackageReference Update="ReusableTasks" Version="4.0.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="ReportGenerator" Version="5.3.7" />
   </ItemGroup>

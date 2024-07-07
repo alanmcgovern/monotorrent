@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
 
   <ItemGroup>
-    <PackageReference Include="Mono.Nat" Version="3.0.4" />
-    <PackageReference Include="ReusableTasks" Version="4.0.0" />
+    <PackageReference Include="Mono.Nat" />
+    <PackageReference Include="ReusableTasks" />
+    <PackageReference Include="System.Memory" Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" />
   </ItemGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <Nullable></Nullable>
+  </PropertyGroup>
 
 </Project>

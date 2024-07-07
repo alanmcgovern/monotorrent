@@ -15,11 +15,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
+    <PackageReference Include="GitInfo" />
+    <PackageReference Include="ReusableTasks" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" Include="System.Memory" Version="4.5.1" />
+    <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net472'">

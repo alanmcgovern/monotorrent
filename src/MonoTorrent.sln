@@ -60,7 +60,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoTorrent.Dht", "MonoTorr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.MonoTorrent.Dht", "Tests\Tests.MonoTorrent.Dht\Tests.MonoTorrent.Dht.csproj", "{041CF2E0-DF9E-4643-9664-521945DC5AA3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmark", "Benchmark\Benchmark.csproj", "{D27D0CD3-D644-4782-B530-CDA5DCEABDEC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmark", "Samples\Benchmark\Benchmark.csproj", "{D27D0CD3-D644-4782-B530-CDA5DCEABDEC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrackerSample", "Samples\TrackerApp\TrackerSample.csproj", "{E276020E-512D-46C0-8085-84AEB8E70507}"
 EndProject

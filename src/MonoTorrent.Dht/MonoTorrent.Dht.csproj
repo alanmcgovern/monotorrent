@@ -15,6 +15,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="GitInfo" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
   </ItemGroup>
 

@@ -5,7 +5,10 @@
   <PropertyGroup>
     <CI Condition="'$(CI)' == '' and '$(TF_BUILD)' == 'true'">true</CI>
     <CI Condition="'$(CI)' == '' ">false</CI>
+  </PropertyGroup>
 
+  <!-- Various cs files which are included in some projects to avoid exposing public APIs -->
+  <PropertyGroup>
     <UseBigEndianBigInteger>false</UseBigEndianBigInteger>
     <UseBitOps>false</UseBitOps>
     <UseCache>false</UseCache>
@@ -23,6 +26,15 @@
     <UseValueStopWatch>false</UseValueStopWatch>
   </PropertyGroup>
 
+  <!-- Configuration for various nuget packages -->
+  <PropertyGroup>
+    <!-- Use a fixed version for the core libraries so end-users can upgrade as desired -->
+    <GitInfoVersion>2.0.34</GitInfoVersion>
+    <ReusableTasksVersion>4.0.0</ReusableTasksVersion>
+    <SystemMemoryVersion>4.5.1</SystemMemoryVersion>
+    <MonoNatVersion>3.0</MonoNatVersion>
+  </PropertyGroup>
+
   <!-- General build configuration -->
   <PropertyGroup>
     <NoWarn>1701;1702;1591;0419;netsdk1138</NoWarn>
@@ -34,8 +46,6 @@
     <Deterministic>true</Deterministic>
     <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Nullable Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'">annotations</Nullable>
-    <Nullable Condition="$(TargetFramework) != 'netstandard2.0' And $(TargetFramework) != 'net472'">enable</Nullable>
     
     <!-- These are essentially junk if i'm compiling against net472/NetStandard2.0 and newer targets.
          Most rules result in uncompilable net472 code, so let's ignore them as i don't want to wade

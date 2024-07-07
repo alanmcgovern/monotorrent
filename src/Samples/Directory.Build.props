@@ -3,11 +3,15 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <UseGitInfo>false</UseGitInfo>
-    <Nullable></Nullable>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Condition="$(TargetFramework) == 'netstandard2.0'" Include="System.Memory" Version="4.5.5" />
-  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Use the latest API/ABI compatible version for the sample projects -->
+    <GitInfoVersion></GitInfoVersion>
+    <MonoNatVersion>3.*</MonoNatVersion>
+    <ReusableTasksVersion>4.*</ReusableTasksVersion>
+    <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
+  </PropertyGroup>
 
 </Project>

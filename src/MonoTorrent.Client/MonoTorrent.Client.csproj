@@ -27,8 +27,8 @@
 
   <!-- Ensure this library is referenced as a dependency -->
   <ItemGroup>
-    <PackageReference Include="Mono.Nat" Version="[3.0,4.0)" ExcludeAssets="compile" />
-    <PackageReference Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" Include="System.Memory" Version="4.5.1" />
+    <PackageReference Include="GitInfo" />
+    <PackageReference Include="Mono.Nat" ExcludeAssets="compile" />
   </ItemGroup>
 
   <!-- NuGet related properties. We need to run this as part of the 'PackDependsOn' dependencies

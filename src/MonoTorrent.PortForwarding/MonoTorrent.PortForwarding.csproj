@@ -11,8 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="GitInfo" />
+    <PackageReference Include="Mono.Nat" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" />
-    <PackageReference Include="Mono.Nat" Version="[3.0.3,4.0)" />
   </ItemGroup>
 
 </Project>

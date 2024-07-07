@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <ReferenceReusableTasks>false</ReferenceReusableTasks>
   </PropertyGroup>
 
   <ItemGroup>

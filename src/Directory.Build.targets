@@ -5,18 +5,19 @@
     <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha.unstable</MonoTorrentReleaseSuffix>
     <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
 
-    <UseGitInfo Condition="'$(UseGitInfo)' == ''">!$(ProjectName.StartsWith('Tests'))</UseGitInfo>
+    <Nullable Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'">annotations</Nullable>
+    <Nullable Condition="$(TargetFramework) != 'netstandard2.0' And $(TargetFramework) != 'net472'">enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(ReferenceReusableTasks)' != 'false'">
-    <PackageReference Include="ReusableTasks" Version="[4.0.0,5.0)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$(UseGitInfo)">
-    <PackageReference Include="GitInfo" Version="2.0.34" PrivateAssets="all" />
+  <ItemGroup Condition="$(GitInfoVersion) != ''">
+    <PackageReference Update="GitInfo" Version="$(GitInfoVersion)" PrivateAssets="all" />
     <Compile Include="$(MSBuildThisFileDirectory)GitInfoHelper.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="Mono.Nat" Version="$(MonoNatVersion)" />
+  </ItemGroup>
+  
   <ItemGroup>
     <Compile Condition="$(UseBigEndianBigInteger)" Include="$(MSBuildThisFileDirectory)BigEndianBigInteger.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseBitOps)" Include="$(MSBuildThisFileDirectory)BitOps.cs" Link="Linked\%(FileName)%(Extension)" />
@@ -36,7 +37,12 @@
     <Compile Condition="$(UseValueStopWatch)" Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
-  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' Or !$(UseGitInfo) ">
+  <ItemGroup>
+    <PackageReference Update="ReusableTasks" Version="$(ReusableTasksVersion)" />
+    <PackageReference Update="System.Memory" Version="$(SystemMemoryVersion)" />
+  </ItemGroup>
+
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' Or '$(GitInfoVersion)' == '' ">
     <PropertyGroup>
       <Version>0.0.0.1</Version>
       <AssemblyVersion>$(Version)</AssemblyVersion>
@@ -47,7 +53,7 @@
 
   <!-- Restore success is in the .nuget.g.props file generated as part of msbuild /t:Restore. We do not -->
   <!-- want this logic to run if restore hasn't been executed as the 'GitVersion' target won't exist.   -->
-  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' == 'true' And '$(Configuration)' == 'Release' And $(UseGitInfo)" DependsOnTargets="GitVersion">
+  <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' == 'true' And '$(Configuration)' == 'Release' And '$(GitInfoVersion)' != ''" DependsOnTargets="GitVersion">
     <PropertyGroup>
       <MonoTorrentFileVersion Condition="$(MonoTorrentReleaseSuffix) == ''">$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</MonoTorrentFileVersion>
       <MonoTorrentFileVersion Condition="$(MonoTorrentReleaseSuffix) != ''">$(GitBaseVersion)</MonoTorrentFileVersion>
