@@ -100,6 +100,12 @@ namespace MonoTorrent.Logging
                 Writer.Info ($"{connection.Uri}: {string.Format (formatString, p1)}");
         }
 
+        internal void InfoFormatted (IPeerConnection connection, string formatString, int p1, int p2)
+        {
+            if (Writer != null)
+                Writer.Info ($"{connection.Uri}: {string.Format (formatString, p1, p2)}");
+        }
+
         internal void InfoFormatted (IPeerConnection connection, string formatString, object p1)
         {
             if (Writer != null)
