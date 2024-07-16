@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -109,7 +110,7 @@ namespace MonoTorrent.Client
         /// a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
         /// to keep this value within a range of 7-15 seconds unless absolutely necessary.
         /// </summary>
-        public TimeSpan ConnectionTimeout { get; } = TimeSpan.FromSeconds (10);
+        public TimeSpan ConnectionTimeout { get; } = Debugger.IsAttached ? TimeSpan.FromSeconds (120) : TimeSpan.FromSeconds (10);
 
         /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
