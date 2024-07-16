@@ -45,6 +45,7 @@ namespace Tests.MonoTorrent.IntegrationTests
 
     public abstract class IntegrationTestsBase
     {
+        const int PieceLength = 32768;
         static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (60);
 
         public IPAddress AnyAddress { get; }
@@ -68,7 +69,9 @@ namespace Tests.MonoTorrent.IntegrationTests
         public void Setup ()
         {
             _failHttpRequest = false;
-            string tempDirectory = Path.Combine (Path.GetTempPath (), $"{NUnit.Framework.TestContext.CurrentContext.Test.Name}-{Path.GetRandomFileName ()}");
+
+            string tempDirectory = Path.Combine (Path.GetTempPath (), "monotorrent_tests", $"{NUnit.Framework.TestContext.CurrentContext.Test.Name}-{Path.GetRandomFileName ()}");
+
             _directory = Directory.CreateDirectory (tempDirectory);
             _seederDir = _directory.CreateSubdirectory ("Seeder");
             _leecherDir = _directory.CreateSubdirectory ("Leecher");
@@ -131,6 +134,12 @@ namespace Tests.MonoTorrent.IntegrationTests
         public async Task DownloadFileInTorrent_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false);
 
         [Test]
+        public async Task DownloadFileInTorrent_V2_MagnetLink () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, magnetLinkLeecher: true);
+
+        [Test]
+        public async Task DownloadFileInTorrent_V2_MagnetLink_Large () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, magnetLinkLeecher: true, fileSize: PieceLength * 17);
+
+        [Test]
         public async Task DownloadFileInTorrent_V2_OnlyOneNonEmptyFile () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: false, explitlyHashCheck: false, nonEmptyFileCount: 1);
 
         [Test]
@@ -185,7 +194,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         [Test]
         public async Task WebSeedDownload_V2 () => await CreateAndDownloadTorrent (TorrentType.V2Only, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
 
-        public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, bool explitlyHashCheck, int nonEmptyFileCount = 2, bool useWebSeedDownload = false, long fileSize = 5, IPieceWriter writer = null)
+        public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, bool explitlyHashCheck, int nonEmptyFileCount = 2, bool useWebSeedDownload = false, long fileSize = 5, IPieceWriter writer = null, bool magnetLinkLeecher = false)
         {
             var emptyFile = new FileInfo (Path.Combine (_seederDir.FullName, "Empty.file"));
             if (createEmptyFile)
@@ -194,15 +203,15 @@ namespace Tests.MonoTorrent.IntegrationTests
             var nonEmptyFiles = new List<FileInfo> ();
             for (int i = 0; i < nonEmptyFileCount; i++) {
                 var nonEmptyFile = new FileInfo (Path.Combine (_seederDir.FullName, $"NonEmpty{i}.file"));
-                var fs = new FileStream (nonEmptyFile.FullName, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.DeleteOnClose);
+                var fs = new FileStream (nonEmptyFile.FullName, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite, 4096);
                 streams.Add (fs);
 
                 long written = 0;
                 var buffer = new byte[16 * 1024];
                 for (int j = 0; j < buffer.Length; j++)
                     buffer[j] = (byte) 'a';
-                while (written < fileSize) {
-                    var toWrite = Math.Min (fileSize - written, buffer.Length);
+                while (written < fileSize + i) {
+                    var toWrite = Math.Min ((fileSize + i) - written, buffer.Length);
                     fs.Write (buffer, 0, (int) toWrite);
                     written += toWrite;
                 }
@@ -215,9 +224,11 @@ namespace Tests.MonoTorrent.IntegrationTests
             fileSource.TorrentName = _torrentName;
             TorrentCreator torrentCreator = new TorrentCreator (torrentType);
             torrentCreator.Announce = $"http://{new IPEndPoint (LoopbackAddress, _trackerPort)}/announce";
+            torrentCreator.PieceLength = PieceLength;
             if (useWebSeedDownload) {
                 torrentCreator.GetrightHttpSeeds.Add ($"http://{new IPEndPoint (LoopbackAddress, _webSeedPort)}/{_webSeedPrefix}/");
             }
+
             var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
             var torrent = Torrent.Load (encodedTorrent);
 
@@ -241,7 +252,10 @@ namespace Tests.MonoTorrent.IntegrationTests
 
             var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
 
-            var leecherManager = await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+            var magnetLink = new MagnetLink (torrent.InfoHashes, "testing", torrent.AnnounceUrls.SelectMany (t => t).ToList (), null, torrent.Size);
+            var leecherManager = magnetLinkLeecher
+                ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
+                : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
 
             var timeout = new CancellationTokenSource (CancellationTimeout);
             timeout.Token.Register (() => { seederIsSeeding.TrySetCanceled (); });
@@ -373,12 +387,22 @@ namespace Tests.MonoTorrent.IntegrationTests
             }
         }
 
-        private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
+        private Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
+            => StartTorrent (clientEngine, torrent, null, saveDirectory, explicitlyHashCheck, handler);
+
+        private Task<TorrentManager> StartTorrent (ClientEngine clientEngine, MagnetLink torrent, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
+            => StartTorrent (clientEngine, null, torrent, saveDirectory, explicitlyHashCheck, handler);
+
+        private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, MagnetLink magnetLink, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
         {
             TorrentSettingsBuilder torrentSettingsBuilder = new TorrentSettingsBuilder () {
                 CreateContainingDirectory = false,
             };
-            TorrentManager manager = await clientEngine.AddAsync (torrent, saveDirectory, torrentSettingsBuilder.ToSettings ());
+
+            TorrentManager manager = torrent != null
+                ? await clientEngine.AddAsync (torrent, saveDirectory, torrentSettingsBuilder.ToSettings ())
+                : await clientEngine.AddAsync (magnetLink, saveDirectory, torrentSettingsBuilder.ToSettings ());
+
             manager.TorrentStateChanged += handler;
             if (explicitlyHashCheck)
                 await manager.HashCheckAsync (true);

@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Threading;
 
@@ -157,22 +158,45 @@ namespace MonoTorrent.Client.Modes
 
         protected virtual void HandleHashRequestMessage (PeerId id, HashRequestMessage hashRequest)
         {
-            int actualProofLayers = 0;
             // Validate we're only requesting between 1 and 512 piece hashes to avoid being DDOS'ed by someone
             // requesting a few GB worth of hashes. The spec says that clients 'should not' request more than 512.
             // I'm choosing to treat that as 'must not'.
-            bool successful = hashRequest.Length > 0 && hashRequest.Length <= 512;
+            bool successful = hashRequest.Index >= 0
+                && hashRequest.Index <= Manager.Torrent!.PieceCount * (Manager.Torrent!.PieceLength / Constants.BlockSize)
+                && hashRequest.BaseLayer >= 0;
+
+            // Length MUST be equal-to-or-greater-than two and a power of two
+            // Length SHOULD NOT be greater than 512.
+            //      NOTE: The spec says 'should', I say 'must'. There's no real benefit to supporting larger requests.
+            if (hashRequest.Length < 2 || hashRequest.Length > 512 || BitOps.PopCount ((uint) hashRequest.Length) != 1) {
+                logger.InfoFormatted (id.Connection, "Received invalid hash request message. Length was not between 2 and 512 and a power of 2. Received length {0}", hashRequest.Length);
+                successful = false;
+            }
+
+            // There's a reasonable limit to the requested piece layers too - don't request ones that don't exist?
+            // Estimate an upper bound and ignore any requests who want more than that
+            if (hashRequest.ProofLayers > BitOps.CeilLog2 (Manager.Torrent!.PieceCount)) {
+                logger.InfoFormatted (id.Connection, "Received invalid hash request message. Upper bound on expected piece layer request is {0}. Requested value was: {1}", BitOps.CeilLog2 (Manager.Torrent!.PieceCount), hashRequest.ProofLayers);
+                successful = false;
+            }
+
+            // Index MUST be a multiple of length, this includes zero
+            if (hashRequest.Index % hashRequest.Length != 0) {
+                logger.InfoFormatted (id.Connection, "Received invalid hash request message. Index was not an even multiple of length. Index was: {0}, Length was {1}", hashRequest.Index, hashRequest.Length);
+                successful = false;
+            }
 
             Memory<byte> buffer = default;
             ByteBufferPool.Releaser bufferReleaser = default;
             if (successful) {
                 bufferReleaser = MemoryPool.Default.Rent ((hashRequest.Length + hashRequest.ProofLayers) * 32, out buffer);
-                successful = Manager.PieceHashes.TryGetV2Hashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, buffer.Span.Slice (0, hashRequest.Length * 32), buffer.Span.Slice (hashRequest.Length * 32), out actualProofLayers);
+                successful = Manager.PieceHashes.TryGetV2Hashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, buffer.Span, out int bytesWritten);
+                buffer = buffer.Slice (0, bytesWritten);
             }
 
             if (successful) {
                 (var message, var releaser) = PeerMessage.Rent<HashesMessage> ();
-                message.Initialize (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, actualProofLayers, buffer, bufferReleaser);
+                message.Initialize (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, buffer, bufferReleaser);
                 id.MessageQueue.Enqueue (message, releaser);
             } else {
                 bufferReleaser.Dispose ();

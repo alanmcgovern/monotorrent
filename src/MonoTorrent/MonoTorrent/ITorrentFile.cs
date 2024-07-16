@@ -49,6 +49,11 @@ namespace MonoTorrent
         int EndPieceIndex { get; }
 
         /// <summary>
+        /// Returns the number of pieces for this file. This is the same as `<see cref="EndPieceIndex"/> - <see cref="StartPieceIndex"/> + 1`.
+        /// </summary>
+        int PieceCount { get; }
+
+        /// <summary>
         /// The size of this file in bytes.
         /// </summary>
         long Length { get; }

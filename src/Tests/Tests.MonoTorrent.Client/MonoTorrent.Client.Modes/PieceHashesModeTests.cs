@@ -133,10 +133,8 @@ namespace MonoTorrent.Client.Modes
         static HashesMessage FulfillRequest(HashRequestMessage hashRequest, PieceHashesV2 layers)
         {
             Memory<byte> totalBuffer = new byte[(hashRequest.Length + hashRequest.ProofLayers) * 32];
-            var hashBuffer = totalBuffer.Slice (0, hashRequest.Length * 32);
-            var proofBuffer = totalBuffer.Slice (hashRequest.Length * 32, hashRequest.ProofLayers * 32);
-            Assert.IsTrue (layers.TryGetV2Hashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashBuffer.Span, proofBuffer.Span, out int proofs));
-            return new HashesMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, proofs, totalBuffer.Slice (0, (hashRequest.Length + proofs) * 32), default);
+            Assert.IsTrue (layers.TryGetV2Hashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Span, out int bytesWritten));
+            return new HashesMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Slice (0, bytesWritten), default);
         }
     }
 }

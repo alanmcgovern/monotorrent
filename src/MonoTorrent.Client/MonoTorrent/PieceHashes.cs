@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MonoTorrent
 {
@@ -58,14 +59,15 @@ namespace MonoTorrent
                 && (V2 is null || V2.IsValid (hashes, hashIndex))
                 && !(V1 is null && V2 is null);
         }
-        public ReadOnlyMerkleLayers TryGetV2Hashes (MerkleRoot piecesRoot)
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleLayers? layers)
         {
-            return V2?.TryGetV2Hashes (piecesRoot)!;
+            layers = null;
+            return V2 == null ? false : V2.TryGetV2Hashes (piecesRoot, out layers);
         }
-        public bool TryGetV2Hashes (MerkleRoot piecesRoot, int baseLayer, int index, int length, Span<byte> hashesBuffer, Span<byte> proofsBuffer, out int actualProofLayers)
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, int baseLayer, int index, int count, int proofCount, Span<byte> hashesAndProofsBuffer, out int bytesWritten)
         {
-            actualProofLayers = 0;
-            return V2 == null ? false : V2.TryGetV2Hashes (piecesRoot, baseLayer, index, length, hashesBuffer, proofsBuffer, out actualProofLayers);
+            bytesWritten = 0;
+            return V2 == null ? false : V2.TryGetV2Hashes (piecesRoot, baseLayer, index, count, proofCount, hashesAndProofsBuffer, out bytesWritten);
         }
     }
 }
