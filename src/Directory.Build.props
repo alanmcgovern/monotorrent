@@ -31,6 +31,7 @@
     <!-- Use a fixed version for the core libraries so end-users can upgrade as desired -->
     <GitInfoVersion>2.0.34</GitInfoVersion>
     <ReusableTasksVersion>4.0.0</ReusableTasksVersion>
+    <StandardSocketsHttpHandlerVersion>2.2.0.4</StandardSocketsHttpHandlerVersion>
     <SystemMemoryVersion>4.5.1</SystemMemoryVersion>
     <MonoNatVersion>3.0</MonoNatVersion>
   </PropertyGroup>

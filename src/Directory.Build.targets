@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Update="Mono.Nat" Version="$(MonoNatVersion)" />
+    <PackageReference Update="StandardSocketsHttpHandler" Version="$(StandardSocketsHttpHandlerVersion)" />
   </ItemGroup>
   
   <ItemGroup>
