@@ -5,6 +5,7 @@
         <CI Condition="'$(CI)' == '' ">false</CI>
 
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <!-- this is also in src/Directory.Build.props -->
         <Out Condition=" '$(Out)' == '' ">$(MSBuildThisFileDirectory)out</Out>
 
         <MSBuildCommonProperties>$(MSBuildCommonProperties);Deterministic=true</MSBuildCommonProperties>
@@ -39,7 +40,6 @@
     </Target>
 
     <Target Name="Pack">
-        <MakeDir Directories="$(Out)" />
         <MSBuild
             Projects="@(PackFile)"
             Properties="$(MSBuildCommonProperties);Configuration=%(PackFile.Configuration);PackageOutputPath=$(Out)"

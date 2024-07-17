@@ -42,6 +42,10 @@
     <PackageReference Update="System.Memory" Version="$(SystemMemoryVersion)" />
   </ItemGroup>
 
+  <Target Name="CreateOutDirectory" BeforeTargets="_GetAllRestoreProjectPathItems;Restore;BeforeResolveReferences;CollectPackageReferences">
+    <MakeDir Directories="$(Out)" />
+  </Target>
+
   <Target Name="SetAssemblyVersion" BeforeTargets="GetAssemblyVersion" Condition="'$(RestoreSuccess)' != 'true' Or '$(Configuration)' == 'Debug' Or '$(GitInfoVersion)' == '' ">
     <PropertyGroup>
       <Version>0.0.0.1</Version>
