@@ -121,8 +121,18 @@ namespace MonoTorrent.Messages.Peer
 
         public override string ToString ()
         {
-            var title = $"{BitConverter.ToString (PiecesRoot.Span.ToArray ())} - {BaseLayer} - {Index} - {Length} - {ProofLayers}" + Environment.NewLine;
-            title += String.Join (Environment.NewLine, Enumerable.Range (0, Hashes.Length / 32).Select (t => BitConverter.ToString (Hashes.Slice (t, t + 32).ToArray ())).ToArray ());
+            var title = $"{nameof (HashesMessage)}";
+            title += $"{Environment.NewLine}\t File: {BitConverter.ToString (PiecesRoot.Span.ToArray ()).Replace ("-", "")}";
+            title += $"{Environment.NewLine}\t BaseLayer: {BaseLayer}";
+            title += $"{Environment.NewLine}\t Index: {Index}";
+            title += $"{Environment.NewLine}\t Length: {Length}";
+            title += $"{Environment.NewLine}\t ProofLayers: {ProofLayers}";
+            title += $"{Environment.NewLine}\t Data length: {Hashes.Length} ({Hashes.Length / 32} hashes)";
+#if NETSTANDARD2_0 || NET472
+            title += $"{Environment.NewLine}\t Full message: {Convert.ToBase64String(Encode().ToArray ())})";
+#else
+            title += $"{Environment.NewLine}\t Full message: {Convert.ToBase64String (Encode ().Span)})";
+#endif
             return title;
         }
     }

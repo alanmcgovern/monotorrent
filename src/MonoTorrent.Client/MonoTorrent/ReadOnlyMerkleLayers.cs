@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 using MonoTorrent.BEncoding;
 
@@ -38,30 +39,42 @@ namespace MonoTorrent
     {
         public static ReadOnlyMerkleLayers FromLayer (int pieceLength, ReadOnlySpan<byte> layer)
         {
+            if (layer.Length % 32 != 0)
+                throw new ArgumentException ("The layer span should be a multiple of 32 bytes as it consists of SHA256 hashes", nameof (layer));
+            if (pieceLength < 0 || BitOps.PopCount ((uint) pieceLength) != 1)
+                throw new ArgumentException ("Piece length must be positive and a power of 2", nameof (pieceLength));
+
             MerkleLayers layers = new MerkleLayers (MerkleRoot.Empty, pieceLength, layer.Length / 32);
-            if (!layers.TryAppend (layers.PieceLayerIndex, 0, layer.Length / 32, layer, ReadOnlySpan<byte>.Empty))
+            if (!layers.TryAppend (layers.PieceLayerIndex, 0, layer.Length / 32, layer))
                 throw new InvalidOperationException ("Failed to append merkle layers to the three");
             if (!layers.TryVerify (out var verifiedHashes))
                 throw new InvalidOperationException ("Failed to verify a layer when no expected hash was provided");
             return verifiedHashes;
         }
 
-        public static ReadOnlyMerkleLayers? FromLayer (int pieceLength, MerkleRoot expectedRoot, ReadOnlySpan<byte> layer)
+        public static ReadOnlyMerkleLayers FromLayer (int pieceLength, ReadOnlySpan<byte> layer, MerkleRoot expectedRoot)
         {
             if (expectedRoot.IsEmpty)
                 throw new ArgumentException ("The expected MerkleRoot cannot be empty", nameof (expectedRoot));
 
-            MerkleLayers layers = new MerkleLayers (expectedRoot, pieceLength, layer.Length / 32);
-            if (!layers.TryAppend (layers.PieceLayerIndex, 0, layer.Length / 32, layer, ReadOnlySpan<byte>.Empty))
-                return null;
-            if (!layers.TryVerify (out var verifiedHashes))
-                return null;
-            return verifiedHashes;
+            var merkleTree = FromLayer (pieceLength, layer);
+            if (merkleTree.Root != expectedRoot)
+                throw new ArgumentException (nameof (expectedRoot), "The root of the generated merkle tree did not match the expected root.");
+
+            return merkleTree;
         }
 
         IReadOnlyList<ReadOnlyMemory<byte>> Layers { get; }
 
+        public int LayerCount => Layers.Count;
+
         public int PieceLayerIndex { get; }
+
+        /// <summary>
+        /// This is the number of hashes in the MerkleLayer, which is always a power of two. In the event the
+        /// piece layer for a file has 5 hashes, the associated piece layer hash count would be 8.
+        /// </summary>
+        public int PieceLayerHashCount => (int) BitOps.RoundUpToPowerOf2 (Layers[PieceLayerIndex].Length / 32);
 
         public MerkleRoot Root => MerkleRoot.FromMemory (Layers[Layers.Count - 1]);
 
@@ -80,7 +93,24 @@ namespace MonoTorrent
         }
 
         internal void CopyHashes (int layer, int index, Span<byte> dest)
-            => Layers[layer].Slice (index * 32, dest.Length).Span.CopyTo (dest);
+        {
+            var layerBytes = Layers[layer];
+            var layerStartIndex = index * 32;
+            var layerEndIndex = layerStartIndex + dest.Length;
+
+            // Copy as much as we can from the actual layer.
+            var count = Math.Min (layerEndIndex - layerStartIndex, layerBytes.Length - layerStartIndex);
+            if (count > 0) {
+                layerBytes.Slice (layerStartIndex, count).Span.CopyTo (dest);
+                dest = dest.Slice (count);
+            }
+
+            // Now, copy in the padding hash until the buffer is full.
+            while (dest.Length > 0) {
+                MerkleHash.PaddingHashesByLayer[layer].Span.CopyTo (dest);
+                dest = dest.Slice (32);
+            }
+        }
 
         internal ReadOnlyMemory<byte> GetHashes (int layer)
             => Layers[layer];

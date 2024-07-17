@@ -51,7 +51,7 @@ namespace MonoTorrent
             results[0] = buffer.ToArray ();
 
             // Generate 49 layers worth... though no real world torrent should ever use that many layers. Right???
-            for (int i = 1; results.Count < 49; i ++) {
+            for (int i = 1; results.Count < 49; i++) {
                 hasher.AppendData (buffer);
                 hasher.AppendData (buffer);
                 if (!hasher.TryGetHashAndReset (buffer, out int written) || written != 32)
@@ -94,18 +94,19 @@ namespace MonoTorrent
             // treat it as being a request of length '2' as we *should* have a padding hash to the right of the node we fetched.
             length = Math.Max (2, length);
             int proofLayerOffset = checked(index / (int) BitOps.RoundUpToPowerOf2 (length));
-            for (int i = 0; i < proofLayers.Length; i += 32) {
+            while (proofLayers.Length >= 32) {
                 if ((proofLayerOffset & 1) == 1)
-                    hasher.AppendData (proofLayers.Slice (i, 32));
+                    hasher.AppendData (proofLayers.Slice (0, 32));
 
                 hasher.AppendData (src);
 
                 if ((proofLayerOffset & 1) == 0)
-                    hasher.AppendData (proofLayers.Slice (i, 32));
+                    hasher.AppendData (proofLayers.Slice (0, 32));
 
                 if (!hasher.TryGetHashAndReset (dest.Span, out written) || written != 32)
                     return false;
                 proofLayerOffset /= 2;
+                proofLayers = proofLayers.Slice (32);
             }
 
             written = 32;

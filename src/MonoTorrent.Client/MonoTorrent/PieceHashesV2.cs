@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -56,7 +57,7 @@ namespace MonoTorrent
         internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, BEncodedDictionary layers)
             : this (pieceLength,
                   files,
-                  layers.ToDictionary (kvp => MerkleRoot.FromMemory (kvp.Key.AsMemory ()), kvp => ReadOnlyMerkleLayers.FromLayer (pieceLength, MerkleRoot.FromMemory (kvp.Key.AsMemory ()), ((BEncodedString) kvp.Value).AsMemory ().Span)!))
+                  layers.ToDictionary (kvp => MerkleRoot.FromMemory (kvp.Key.AsMemory ()), kvp => ReadOnlyMerkleLayers.FromLayer (pieceLength, ((BEncodedString) kvp.Value).AsMemory ().Span, MerkleRoot.FromMemory (kvp.Key.AsMemory ()))))
         {
         }
 
@@ -97,15 +98,15 @@ namespace MonoTorrent
             return GetHash (hashIndex).V2Hash.Span.SequenceEqual (hashes.V2Hash.Span);
         }
 
-        public ReadOnlyMerkleLayers TryGetV2Hashes (MerkleRoot piecesRoot)
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleLayers? layers)
         {
-            return Layers[piecesRoot];
+            return Layers.TryGetValue (piecesRoot, out layers);
         }
 
-
-        public bool TryGetV2Hashes (MerkleRoot piecesRoot, int baseLayer, int index, int length, Span<byte> hashesBuffer, Span<byte> proofsBuffer, out int actualProofLayers)
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, int baseLayer, int index, int length, int proofCount, Span<byte> hashesAndProofsBuffer, out int bytesWritten)
         {
-            actualProofLayers = 0;
+            bytesWritten = 0;
+
             // Basic sanity checks on the values passed in
             if (baseLayer != PieceLayer || index < 0 || length > 512 || length < 1)
                 return false;
@@ -115,16 +116,20 @@ namespace MonoTorrent
                 return false;
 
             // Copy over the required hashes, starting at 'index' until the dest buffer is full.
-            layers.CopyHashes (baseLayer, index, hashesBuffer);
+            layers.CopyHashes (baseLayer, index, hashesAndProofsBuffer.Slice (0, length * 32));
+            bytesWritten += length * 32;
 
             // The only time 'length' is equal to 1 is when the final request needed 1 piece. In this case we should
             // treat it as being a request of length '2' as we *should* have a padding hash to the right of the node we fetched.
             length = Math.Max (2, length);
 
-            // Reduce the size of the buffer by the number of omitted hashes.
+            // The proofs buffer will be empty if the whole layer fits into the request
             var omittedHashes = BitOps.CeilLog2 (length) - 1;
-            proofsBuffer = proofsBuffer.Slice (0, proofsBuffer.Length - (omittedHashes * 32));
-            actualProofLayers = proofsBuffer.Length / 32;
+            if (proofCount > 0)
+                proofCount -= omittedHashes;
+
+            // Reduce the size of the buffer by the number of omitted hashes.
+            Span<byte> proofsBuffer = hashesAndProofsBuffer.Slice (bytesWritten, proofCount * 32);
 
             // The first proof layer is the one after the base layer, and we also skip ahead by the number of omitted hashes.
             var proofLayer = baseLayer + omittedHashes + 1;
@@ -134,7 +139,9 @@ namespace MonoTorrent
                 proofLayerIndex /= 2;
                 proofLayer++;
                 proofsBuffer = proofsBuffer.Slice (HashCodeLength);
+                bytesWritten += HashCodeLength;
             }
+
             return true;
         }
     }

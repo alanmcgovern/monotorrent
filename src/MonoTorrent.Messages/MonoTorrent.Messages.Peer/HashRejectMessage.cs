@@ -93,5 +93,16 @@ namespace MonoTorrent.Messages.Peer
 
         public override int GetHashCode ()
             => PiecesRoot.GetHashCode ();
+
+        public override string ToString ()
+        {
+            var title = $"{nameof (HashRejectMessage)}";
+            title += $"{Environment.NewLine}\t File: {BitConverter.ToString (PiecesRoot.Span.ToArray ()).Replace ("-", "")}";
+            title += $"{Environment.NewLine}\t BaseLayer: {BaseLayer}";
+            title += $"{Environment.NewLine}\t Index: {Index}";
+            title += $"{Environment.NewLine}\t Length: {Length}";
+            title += $"{Environment.NewLine}\t ProofLayers: {ProofLayers}";
+            return title;
+        }
     }
 }

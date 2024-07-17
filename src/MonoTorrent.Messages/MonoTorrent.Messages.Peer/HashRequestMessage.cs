@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace MonoTorrent.Messages.Peer
@@ -92,19 +93,45 @@ namespace MonoTorrent.Messages.Peer
             => MemoryMarshal.Read<int> (PiecesRoot.Span);
 
 
-        public static HashRequestMessage Create (MerkleRoot piecesRoot, int hashCount, int pieceLength, int index, int preferredLength)
+        public static HashRequestMessage CreateFromPieceLayer (MerkleRoot piecesRoot, int fileHashCount, int pieceLength, int index, int? suggestedLength)
         {
-            // The layer we're requesting is based on the piece length
-            var requestedLayer = (int) Math.Log (pieceLength / 16384, 2);
+            // The layer we're requesting is the 'piece' layer.
+            var requestedLayer = BitOps.CeilLog2 (pieceLength / Constants.BlockSize);
+
+            // This should go elsewhere? Layers are *always* powers of two, so round fileHashCount up the to the nearest power of two.
+            // An actual file may have 7 hashes, but the layer will have 8.
+            var closestPowerOfTwo = (int) BitOps.RoundUpToPowerOf2 (fileHashCount);
+
+            // Never request more than 512 pieces at the same time.
+            var preferredLength = suggestedLength.GetValueOrDefault (Math.Min (512, closestPowerOfTwo));
+
+            if (BitOps.PopCount ((uint) preferredLength) != 1)
+                throw new ArgumentException ("Value must be a power of 2", nameof (preferredLength));
+            if ((index % preferredLength) != 0)
+                throw new ArgumentException ("Value must be divisible by preferredLength", nameof (index));
+            if(preferredLength > closestPowerOfTwo)
+                throw new ArgumentException("Request length should be less than or equal to hashCount.", nameof(preferredLength));
 
             // Ensure we don't request padding hashes beyond the end of the layer.
-            var length = Math.Min (preferredLength, hashCount - index);
+            var length = preferredLength;
 
             // The number of proofs needed to validate this layer is equal to the number of remaining layers.
-            var totalProofsRequired = (int) Math.Ceiling (Math.Log (hashCount, 2)) - 1;
+            // If we are requesting the whole layer, ask for no proofs.
+            var totalProofsRequired = BitOps.CeilLog2 (fileHashCount) - 1;
 
             // YOLO!
             return new HashRequestMessage (piecesRoot, requestedLayer, index, length, totalProofsRequired);
+        }
+
+        public override string ToString ()
+        {
+            var title = $"{nameof (HashRequestMessage)}";
+            title += $"{Environment.NewLine}\t File: {BitConverter.ToString (PiecesRoot.Span.ToArray ()).Replace ("-", "")}";
+            title += $"{Environment.NewLine}\t BaseLayer: {BaseLayer}";
+            title += $"{Environment.NewLine}\t Index: {Index}";
+            title += $"{Environment.NewLine}\t Length: {Length}";
+            title += $"{Environment.NewLine}\t ProofLayers: {ProofLayers}";
+            return title;
         }
     }
 }

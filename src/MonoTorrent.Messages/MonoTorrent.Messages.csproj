@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <UseBitOps>true</UseBitOps>
     <UseSimpleSpinLock>true</UseSimpleSpinLock>
   </PropertyGroup>
 

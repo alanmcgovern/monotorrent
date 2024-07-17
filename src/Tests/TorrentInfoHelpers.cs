@@ -151,6 +151,7 @@ namespace MonoTorrent
         public long Length { get; }
         public int StartPieceIndex { get; }
         public int EndPieceIndex { get; }
+        public int PieceCount => EndPieceIndex - StartPieceIndex + 1;
         public long OffsetInTorrent { get; }
         public MerkleRoot PiecesRoot { get; }
         public long Padding { get; }

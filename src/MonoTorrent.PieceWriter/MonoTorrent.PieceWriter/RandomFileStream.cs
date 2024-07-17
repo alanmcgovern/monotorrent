@@ -57,8 +57,8 @@ namespace MonoTorrent.PieceWriter
             Handle = new FileStream (fullPath, fileMode, access, share, 1, FileOptions.None);
 #else
             try {
-                if (!File.Exists (fullPath))
-                    File.OpenHandle (fullPath, fileMode, access, share, FileOptions.None, length).Dispose ();
+                if (!File.Exists (fullPath) && (fileMode == FileMode.Create || fileMode == FileMode.CreateNew || fileMode == FileMode.OpenOrCreate))
+                    File.OpenHandle (fullPath, FileMode.CreateNew, access, share, FileOptions.None, length).Dispose ();
             } catch {
                 // who cares if we can't pre-allocate a sparse file.
             }

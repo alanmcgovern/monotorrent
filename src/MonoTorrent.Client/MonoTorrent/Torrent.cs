@@ -629,7 +629,7 @@ namespace MonoTorrent
 
                         var merkleTrees = dict.ToDictionary (
                             key => MerkleRoot.FromMemory (key.Key.AsMemory ()),
-                            kvp => ReadOnlyMerkleLayers.FromLayer (PieceLength, MerkleRoot.FromMemory (kvp.Key.AsMemory ()), ((BEncodedString) kvp.Value).Span)!
+                            kvp => ReadOnlyMerkleLayers.FromLayer (PieceLength, ((BEncodedString) kvp.Value).Span, MerkleRoot.FromMemory (kvp.Key.AsMemory ()))
                         );
 
                         hashesV2 = LoadHashesV2 (Files, merkleTrees, PieceLength);
@@ -655,6 +655,10 @@ namespace MonoTorrent
 
             if (!hasV1Data && !hasV2Data)
                 throw new NotSupportedException ("The supplied torrent did not contain BitTorrent V1 or BitTorrent V2 metadata.");
+
+            // If all files are 1 piece long, then their root hash is all we need. Create the hashes object now!
+            if (hashesV2 == null && Files.All (t => t.StartPieceIndex == t.EndPieceIndex))
+                hashesV2 = LoadHashesV2 (Files, new Dictionary<MerkleRoot, ReadOnlyMerkleLayers> (), PieceLength);
 
             if (SupportsV2Torrents && SupportsV1V2Torrents) {
                 InfoHashes = new InfoHashes (hasV1Data ? InfoHash.FromMemory (infoHashes.SHA1) : default, hasV2Data ? InfoHash.FromMemory (infoHashes.SHA256) : default);
