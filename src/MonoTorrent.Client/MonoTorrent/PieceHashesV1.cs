@@ -60,7 +60,7 @@ namespace MonoTorrent
         public bool IsValid (ReadOnlyPieceHash hashes, int hashIndex)
             => GetHash (hashIndex).V1Hash.Span.SequenceEqual (hashes.V1Hash.Span);
 
-        public bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleLayers? layers)
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleTree? layers)
         {
             layers = null;
             return false;

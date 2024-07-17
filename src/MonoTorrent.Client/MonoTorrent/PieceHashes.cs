@@ -59,7 +59,7 @@ namespace MonoTorrent
                 && (V2 is null || V2.IsValid (hashes, hashIndex))
                 && !(V1 is null && V2 is null);
         }
-        public bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleLayers? layers)
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleTree? layers)
         {
             layers = null;
             return V2 == null ? false : V2.TryGetV2Hashes (piecesRoot, out layers);

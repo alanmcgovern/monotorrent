@@ -43,7 +43,7 @@ namespace MonoTorrent
     {
         readonly int HashCodeLength;
         readonly IList<ITorrentFile> Files;
-        readonly Dictionary<MerkleRoot, ReadOnlyMerkleLayers> Layers;
+        readonly Dictionary<MerkleRoot, ReadOnlyMerkleTree> Layers;
 
         /// <summary>
         /// Number of Hashes (equivalent to number of Pieces)
@@ -57,11 +57,11 @@ namespace MonoTorrent
         internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, BEncodedDictionary layers)
             : this (pieceLength,
                   files,
-                  layers.ToDictionary (kvp => MerkleRoot.FromMemory (kvp.Key.AsMemory ()), kvp => ReadOnlyMerkleLayers.FromLayer (pieceLength, ((BEncodedString) kvp.Value).AsMemory ().Span, MerkleRoot.FromMemory (kvp.Key.AsMemory ()))))
+                  layers.ToDictionary (kvp => MerkleRoot.FromMemory (kvp.Key.AsMemory ()), kvp => ReadOnlyMerkleTree.FromLayer (pieceLength, ((BEncodedString) kvp.Value).AsMemory ().Span, MerkleRoot.FromMemory (kvp.Key.AsMemory ()))))
         {
         }
 
-        internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleLayers> layers)
+        internal PieceHashesV2 (int pieceLength, IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleTree> layers)
             => (Files, Layers, HashCodeLength, Count, PieceLayer) = (files, layers, 32, files.Last ().EndPieceIndex + 1, BitOps.CeilLog2 (pieceLength / 16384));
 
         int PieceLayer { get; }
@@ -82,7 +82,7 @@ namespace MonoTorrent
                     continue;
 
                 // If the file has 2 or more pieces then we'll need to grab the appropriate sha from the layer
-                if (Layers.TryGetValue (Files[i].PiecesRoot, out ReadOnlyMerkleLayers? layers))
+                if (Layers.TryGetValue (Files[i].PiecesRoot, out ReadOnlyMerkleTree? layers))
                     return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, layers.GetHash (layers.PieceLayerIndex, hashIndex - Files[i].StartPieceIndex));
 
                 // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!
@@ -98,7 +98,7 @@ namespace MonoTorrent
             return GetHash (hashIndex).V2Hash.Span.SequenceEqual (hashes.V2Hash.Span);
         }
 
-        public bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleLayers? layers)
+        public bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleTree? layers)
         {
             return Layers.TryGetValue (piecesRoot, out layers);
         }
@@ -112,7 +112,7 @@ namespace MonoTorrent
                 return false;
 
             // Check that the actual layer exists
-            if (!Layers.TryGetValue (piecesRoot, out ReadOnlyMerkleLayers? layers))
+            if (!Layers.TryGetValue (piecesRoot, out ReadOnlyMerkleTree? layers))
                 return false;
 
             // Copy over the required hashes, starting at 'index' until the dest buffer is full.

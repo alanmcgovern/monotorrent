@@ -344,7 +344,7 @@ namespace MonoTorrent
         /// <summary>
         /// This is the array of SHA1 piece hashes contained within the torrent. Used to validate torrents which comply with the V1 specification.
         /// </summary>
-        public IPieceHashes CreatePieceHashes (Dictionary<MerkleRoot, ReadOnlyMerkleLayers> pieceHashes)
+        public IPieceHashes CreatePieceHashes (Dictionary<MerkleRoot, ReadOnlyMerkleTree> pieceHashes)
             => new PieceHashes (PieceHashesV1, LoadHashesV2 (Files, pieceHashes, PieceLength));
 
         public override bool Equals (object? obj)
@@ -629,7 +629,7 @@ namespace MonoTorrent
 
                         var merkleTrees = dict.ToDictionary (
                             key => MerkleRoot.FromMemory (key.Key.AsMemory ()),
-                            kvp => ReadOnlyMerkleLayers.FromLayer (PieceLength, ((BEncodedString) kvp.Value).Span, MerkleRoot.FromMemory (kvp.Key.AsMemory ()))
+                            kvp => ReadOnlyMerkleTree.FromLayer (PieceLength, ((BEncodedString) kvp.Value).Span, MerkleRoot.FromMemory (kvp.Key.AsMemory ()))
                         );
 
                         hashesV2 = LoadHashesV2 (Files, merkleTrees, PieceLength);
@@ -658,7 +658,7 @@ namespace MonoTorrent
 
             // If all files are 1 piece long, then their root hash is all we need. Create the hashes object now!
             if (hashesV2 == null && Files.All (t => t.StartPieceIndex == t.EndPieceIndex))
-                hashesV2 = LoadHashesV2 (Files, new Dictionary<MerkleRoot, ReadOnlyMerkleLayers> (), PieceLength);
+                hashesV2 = LoadHashesV2 (Files, new Dictionary<MerkleRoot, ReadOnlyMerkleTree> (), PieceLength);
 
             if (SupportsV2Torrents && SupportsV1V2Torrents) {
                 InfoHashes = new InfoHashes (hasV1Data ? InfoHash.FromMemory (infoHashes.SHA1) : default, hasV2Data ? InfoHash.FromMemory (infoHashes.SHA256) : default);
@@ -762,14 +762,14 @@ namespace MonoTorrent
             return Array.AsReadOnly<ITorrentFile> (TorrentFile.Create (pieceLength, files.ToArray ()));
         }
 
-        static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleLayers> hashes, int pieceLength)
+        static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleTree> hashes, int pieceLength)
         {
             for (int fileIndex = 0; fileIndex < files.Count; fileIndex++) {
                 var file = files[fileIndex];
                 if (file.Length <= pieceLength)
                     continue;
 
-                if (!hashes.TryGetValue (file.PiecesRoot, out ReadOnlyMerkleLayers? fileHash))
+                if (!hashes.TryGetValue (file.PiecesRoot, out ReadOnlyMerkleTree? fileHash))
                     throw new TorrentException ($"The hash root is missing for file {file.Path}");
                 if (!fileHash.Root.Span.SequenceEqual (file.PiecesRoot.Span))
                     throw new TorrentException ($"The hash root is corrupt for file {file.Path}");

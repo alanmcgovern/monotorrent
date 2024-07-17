@@ -192,7 +192,7 @@ namespace MonoTorrent.Client.Modes
                 var path = Settings.GetV2HashesPath (Manager.InfoHashes);
                 if (File.Exists (path)) {
                     var data = BEncodedValue.Decode<BEncodedDictionary> (File.ReadAllBytes (path));
-                    Manager.PieceHashes = Manager.Torrent!.CreatePieceHashes (data.ToDictionary (t => MerkleRoot.FromMemory (t.Key.AsMemory ()), kvp => ReadOnlyMerkleLayers.FromLayer (Manager.Torrent.PieceLength, ((BEncodedString) kvp.Value).Span)));
+                    Manager.PieceHashes = Manager.Torrent!.CreatePieceHashes (data.ToDictionary (t => MerkleRoot.FromMemory (t.Key.AsMemory ()), kvp => ReadOnlyMerkleTree.FromLayer (Manager.Torrent.PieceLength, ((BEncodedString) kvp.Value).Span)));
                     Manager.PendingV2PieceHashes.SetAll (false);
                 }
             } catch (Exception ex) {

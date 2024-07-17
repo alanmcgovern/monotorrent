@@ -120,7 +120,7 @@ namespace MonoTorrent.Client.Modes
         static readonly Logger logger = Logger.Create (nameof (PieceHashesMode));
         public override TorrentState State => TorrentState.FetchingHashes;
         Dictionary<MerkleRoot, (IPieceRequester, HashesRequesterData)> pickers;
-        Dictionary<MerkleRoot, MerkleLayers> infoHashes;
+        Dictionary<MerkleRoot, MerkleTree> infoHashes;
         HashSet<PeerId> IgnoredPeers { get; }
         bool StopWhenDone { get; }
 
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client.Modes
             if (manager.Torrent is null)
                 throw new InvalidOperationException ($"{nameof (PieceHashesMode)} can only be used after the torrent metadata is available");
 
-            infoHashes = new Dictionary<MerkleRoot, MerkleLayers> ();
+            infoHashes = new Dictionary<MerkleRoot, MerkleTree> ();
             pickers = new Dictionary<MerkleRoot, (IPieceRequester, HashesRequesterData)> ();
             foreach (var file in manager.Files.Where (t => t.PieceCount > 1)) {
                 var data = new HashesRequesterData (file, manager.Torrent.PieceLength);
@@ -139,7 +139,7 @@ namespace MonoTorrent.Client.Modes
 
                 // Multiple files can have the same root hash if the files themselves are identical. What a waste of bandwidth that would be though :p
                 // Protect against it by constructing the dictionaries manually and using the index based setter instead of calling 'Add'.
-                infoHashes[file.PiecesRoot] = new MerkleLayers (file.PiecesRoot, manager.Torrent.PieceLength, file.PieceCount);
+                infoHashes[file.PiecesRoot] = new MerkleTree (file.PiecesRoot, manager.Torrent.PieceLength, file.PieceCount);
                 pickers[file.PiecesRoot] = (request, data);
             }
             IgnoredPeers = new HashSet<PeerId> ();
@@ -226,7 +226,7 @@ namespace MonoTorrent.Client.Modes
             if (picker.Item2.ValidatedPieces.AllTrue) {
                 using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
 
-                if (!infoHashes[hashesMessage.PiecesRoot].TryVerify (out ReadOnlyMerkleLayers? verifiedPieceHashes))
+                if (!infoHashes[hashesMessage.PiecesRoot].TryVerify (out ReadOnlyMerkleTree? verifiedPieceHashes))
                     picker.Item2.ValidatedPieces.SetAll (false);
             }
 

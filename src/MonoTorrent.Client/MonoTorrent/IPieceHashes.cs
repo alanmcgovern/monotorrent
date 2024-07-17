@@ -40,7 +40,7 @@ namespace MonoTorrent
 
         ReadOnlyPieceHash GetHash (int hashIndex);
         bool IsValid (ReadOnlyPieceHash hashes, int hashIndex);
-        bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleLayers? layers);
+        bool TryGetV2Hashes (MerkleRoot piecesRoot, [NotNullWhen (true)] out ReadOnlyMerkleTree? merkleTree);
         bool TryGetV2Hashes (MerkleRoot piecesRoot, int layer, int index, int count, int proofCount, Span<byte> hashesAndProofsBuffer, out int bytesWritten);
     }
 }

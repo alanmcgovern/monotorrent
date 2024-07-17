@@ -1,5 +1,5 @@
 ﻿//
-// ReadOnlyMerkleLayers.cs
+// ReadOnlyMerkleTree.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -35,16 +35,16 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
 {
-    public class ReadOnlyMerkleLayers
+    public class ReadOnlyMerkleTree
     {
-        public static ReadOnlyMerkleLayers FromLayer (int pieceLength, ReadOnlySpan<byte> layer)
+        public static ReadOnlyMerkleTree FromLayer (int pieceLength, ReadOnlySpan<byte> layer)
         {
             if (layer.Length % 32 != 0)
                 throw new ArgumentException ("The layer span should be a multiple of 32 bytes as it consists of SHA256 hashes", nameof (layer));
             if (pieceLength < 0 || BitOps.PopCount ((uint) pieceLength) != 1)
                 throw new ArgumentException ("Piece length must be positive and a power of 2", nameof (pieceLength));
 
-            MerkleLayers layers = new MerkleLayers (MerkleRoot.Empty, pieceLength, layer.Length / 32);
+            MerkleTree layers = new MerkleTree (MerkleRoot.Empty, pieceLength, layer.Length / 32);
             if (!layers.TryAppend (layers.PieceLayerIndex, 0, layer.Length / 32, layer))
                 throw new InvalidOperationException ("Failed to append merkle layers to the three");
             if (!layers.TryVerify (out var verifiedHashes))
@@ -52,7 +52,7 @@ namespace MonoTorrent
             return verifiedHashes;
         }
 
-        public static ReadOnlyMerkleLayers FromLayer (int pieceLength, ReadOnlySpan<byte> layer, MerkleRoot expectedRoot)
+        public static ReadOnlyMerkleTree FromLayer (int pieceLength, ReadOnlySpan<byte> layer, MerkleRoot expectedRoot)
         {
             if (expectedRoot.IsEmpty)
                 throw new ArgumentException ("The expected MerkleRoot cannot be empty", nameof (expectedRoot));
@@ -78,7 +78,7 @@ namespace MonoTorrent
 
         public MerkleRoot Root => MerkleRoot.FromMemory (Layers[Layers.Count - 1]);
 
-        internal ReadOnlyMerkleLayers (IReadOnlyList<ReadOnlyMemory<byte>> layers, int pieceLayer)
+        internal ReadOnlyMerkleTree (IReadOnlyList<ReadOnlyMemory<byte>> layers, int pieceLayer)
         {
             Layers = layers;
             PieceLayerIndex = pieceLayer;

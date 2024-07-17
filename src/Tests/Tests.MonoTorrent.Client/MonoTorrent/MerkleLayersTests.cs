@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         public void InvalidLargestLayer ()
         {
             // 3 million 16kB pieces... because why not?
-            var layers = new MerkleLayers (MerkleRoot.FromMemory (new byte[32]), 16_384, 10_000_000);
+            var layers = new MerkleTree (MerkleRoot.FromMemory (new byte[32]), 16_384, 10_000_000);
             Assert.IsFalse (layers.TryVerify (out _));
 
             Span<byte> proofs = new byte[(BitOps.CeilLog2 (10_000_000) - 10) * 32];
@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
         public void IncompleteProofLayers ()
         {
             // 3 million 16kB pieces... because why not?
-            var layers = new MerkleLayers (MerkleRoot.FromMemory (new byte[32]), 16_384, 1 << 11);
+            var layers = new MerkleTree (MerkleRoot.FromMemory (new byte[32]), 16_384, 1 << 11);
 
             // 1 byte short of 2 proofs
             Assert.IsFalse (layers.TryAppend (layers.PieceLayerIndex, 0, 1, new byte[63]));
@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
         [Test]
         public void NotPieceLayer ()
         {
-            var layers = new MerkleLayers (MerkleRoot.FromMemory (new byte[32]), 16_384, 100);
+            var layers = new MerkleTree (MerkleRoot.FromMemory (new byte[32]), 16_384, 100);
             Assert.Throws<NotSupportedException> (() => layers.TryAppend (layers.PieceLayerIndex - 1, 0, 1, default));
             Assert.Throws<NotSupportedException> (() => layers.TryAppend (layers.PieceLayerIndex + 1, 0, 1, default));
         }
@@ -77,7 +77,7 @@ namespace MonoTorrent.Client
             var paddingHash = MerkleHash.PaddingHashesByLayer[16];
 
             // 3 million 16kB pieces... because why not?
-            var layers = new MerkleLayers (MerkleRoot.FromMemory (paddingHash), 16_384, 1 << 16);
+            var layers = new MerkleTree (MerkleRoot.FromMemory (paddingHash), 16_384, 1 << 16);
             Assert.IsTrue (layers.TryVerify (out _));
 
         }

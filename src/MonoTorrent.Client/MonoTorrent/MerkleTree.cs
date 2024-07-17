@@ -1,5 +1,5 @@
 ﻿//
-// MerkleLayers.cs
+// MerkleTree.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -36,7 +36,7 @@ using System.Security.Cryptography;
 
 namespace MonoTorrent
 {
-    public class MerkleLayers
+    public class MerkleTree
     {
         const int HashCodeLength = 32;
 
@@ -48,7 +48,7 @@ namespace MonoTorrent
 
         public int PieceLayerHashCount => Layers[PieceLayerIndex].Length / 32;
 
-        public MerkleLayers (MerkleRoot expectedRoot, int pieceLength, int pieceLayerHashCount)
+        public MerkleTree (MerkleRoot expectedRoot, int pieceLength, int pieceLayerHashCount)
         {
             if (pieceLayerHashCount == 1)
                 throw new ArgumentException ("A merkletree must have 2 or more hashes");
@@ -107,7 +107,7 @@ namespace MonoTorrent
             return true;
         }
 
-        public bool TryVerify ([NotNullWhen (true)] out ReadOnlyMerkleLayers? verifiedMerkleTree)
+        public bool TryVerify ([NotNullWhen (true)] out ReadOnlyMerkleTree? verifiedMerkleTree)
         {
             verifiedMerkleTree = null;
             int written = 0;
@@ -131,7 +131,7 @@ namespace MonoTorrent
             }
 
             if (Layers[Layers.Count - 1].Span.SequenceEqual (ExpectedRoot.Span))
-                verifiedMerkleTree = new ReadOnlyMerkleLayers (Layers.Select (t => (ReadOnlyMemory<byte>) t).ToList ().AsReadOnly (), PieceLayerIndex);
+                verifiedMerkleTree = new ReadOnlyMerkleTree (Layers.Select (t => (ReadOnlyMemory<byte>) t).ToList ().AsReadOnly (), PieceLayerIndex);
 
             return verifiedMerkleTree != null;
         }

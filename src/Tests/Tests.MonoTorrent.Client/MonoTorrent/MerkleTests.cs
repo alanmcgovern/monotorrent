@@ -21,8 +21,8 @@ namespace MonoTorrent.Client
         Torrent HybridTorrent { get; } = Torrent.Load (HybridTorrentPath);
         Torrent V2OnlyTorrent { get; } = Torrent.Load (V2OnlyTorrentPath);
 
-        ReadOnlyMerkleLayers CreateMerkleTree (int pieceLength, MerkleRoot expectedRoot, ReadOnlySpan<byte> layerHashes)
-            => ReadOnlyMerkleLayers.FromLayer (pieceLength, layerHashes, expectedRoot);
+        ReadOnlyMerkleTree CreateMerkleTree (int pieceLength, MerkleRoot expectedRoot, ReadOnlySpan<byte> layerHashes)
+            => ReadOnlyMerkleTree.FromLayer (pieceLength, layerHashes, expectedRoot);
 
         [Test]
         public void CreateTree_OneRootHash ([Values (1)] int hashes)
@@ -81,10 +81,10 @@ namespace MonoTorrent.Client
         {
             var originalHashes = torrent.CreatePieceHashes ();
 
-            var result = new Dictionary<MerkleRoot, ReadOnlyMerkleLayers> ();
+            var result = new Dictionary<MerkleRoot, ReadOnlyMerkleTree> ();
             foreach (var file in torrent.Files.Where (t => t.PieceCount > 1)) {
                 // Create the merkle layer with the precise number of pieces
-                var currentFileLayers = new MerkleLayers (file.PiecesRoot, torrent.PieceLength, file.PieceCount);
+                var currentFileLayers = new MerkleTree (file.PiecesRoot, torrent.PieceLength, file.PieceCount);
 
                 // But we always round up to the layer size when making requests. Layers are always a power of 2.
                 var piecesInLayer = (int) BitOps.RoundUpToPowerOf2 (file.PieceCount);
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
                          .SelectMany (t => t)
                          .ToArray ();
 
-        static void Contains (ReadOnlyMerkleLayers layers, int layerIndex, ReadOnlyMemory<byte> expectedHash, int expectedCount)
+        static void Contains (ReadOnlyMerkleTree layers, int layerIndex, ReadOnlyMemory<byte> expectedHash, int expectedCount)
         {
             for (int i = 0; i < expectedCount; i++)
                 layers.GetHash (layerIndex, i).Span.SequenceEqual (expectedHash.Span);
