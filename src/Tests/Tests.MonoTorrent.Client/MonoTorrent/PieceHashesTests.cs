@@ -82,7 +82,7 @@ namespace MonoTorrent
         {
             int pieceSize = 16_384;
             int pieceCount = 1 << 16;
-            var paddingHash = MerkleHash.PaddingHashesByLayer[BitOps.CeilLog2 (pieceCount)];
+            var paddingHash = MerkleTreeHasher.PaddingHashesByLayer[BitOps.CeilLog2 (pieceCount)];
 
             var layers = new MerkleTree (MerkleRoot.FromMemory (paddingHash), pieceSize, pieceCount);
             Assert.IsTrue (layers.TryVerify (out ReadOnlyMerkleTree verifiedLayers));
@@ -92,7 +92,7 @@ namespace MonoTorrent
             };
 
             var pieceHashesV2 = new PieceHashesV2 (Constants.BlockSize, files, new Dictionary<MerkleRoot, ReadOnlyMerkleTree> { { verifiedLayers.Root, verifiedLayers } } );
-            Assert.IsTrue (MerkleHash.PaddingHashesByLayer[0].Span.SequenceEqual(pieceHashesV2.GetHash (pieceCount - 1).V2Hash.Span));
+            Assert.IsTrue (MerkleTreeHasher.PaddingHashesByLayer[0].Span.SequenceEqual(pieceHashesV2.GetHash (pieceCount - 1).V2Hash.Span));
         }
     }
 }

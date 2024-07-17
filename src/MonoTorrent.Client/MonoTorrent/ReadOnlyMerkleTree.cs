@@ -88,7 +88,7 @@ namespace MonoTorrent
         {
             var hashes = Layers[layer];
             if ((index * 32) >= hashes.Length)
-                return MerkleHash.PaddingHashesByLayer[layer];
+                return MerkleTreeHasher.PaddingHashesByLayer[layer];
             return hashes.Slice (index * 32, 32);
         }
 
@@ -107,7 +107,7 @@ namespace MonoTorrent
 
             // Now, copy in the padding hash until the buffer is full.
             while (dest.Length > 0) {
-                MerkleHash.PaddingHashesByLayer[layer].Span.CopyTo (dest);
+                MerkleTreeHasher.PaddingHashesByLayer[layer].Span.CopyTo (dest);
                 dest = dest.Slice (32);
             }
         }

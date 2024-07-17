@@ -34,7 +34,7 @@ using System.Security.Cryptography;
 
 namespace MonoTorrent
 {
-    static class MerkleHash
+    static class MerkleTreeHasher
     {
         /// <summary>
         /// Layer 0 is 16kB, Layer 1 is 32kB, etc

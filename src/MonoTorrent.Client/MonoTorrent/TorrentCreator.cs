@@ -303,7 +303,7 @@ namespace MonoTorrent
             if (merkleLayers.Count > 0) {
                 var dict = new BEncodedDictionary ();
                 foreach (var kvp in merkleLayers.Where (t => t.Key.StartPieceIndex != t.Key.EndPieceIndex)) {
-                    var rootHash = MerkleHash.Hash (kvp.Value.Span, BitOps.CeilLog2 (PieceLength / Constants.BlockSize));
+                    var rootHash = MerkleTreeHasher.Hash (kvp.Value.Span, BitOps.CeilLog2 (PieceLength / Constants.BlockSize));
                     dict[BEncodedString.FromMemory (rootHash)] = BEncodedString.FromMemory (kvp.Value);
                 }
 
@@ -337,7 +337,7 @@ namespace MonoTorrent
                 fileTree = (BEncodedDictionary) inner;
             }
             if (value.Length > 32)
-                value = MerkleHash.Hash (value.Span, BitOps.CeilLog2 (PieceLength / Constants.BlockSize));
+                value = MerkleTreeHasher.Hash (value.Span, BitOps.CeilLog2 (PieceLength / Constants.BlockSize));
 
             var fileData = new BEncodedDictionary {
                 {"length", (BEncodedNumber) key.Length },

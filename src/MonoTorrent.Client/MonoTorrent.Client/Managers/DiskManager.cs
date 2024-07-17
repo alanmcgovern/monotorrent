@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
                     if (BlockHashes.Length == 32)
                         BlockHashes.Span.CopyTo (dest.V2Hash.Span);
                     // Layer 0 corresponds to 16kB hashes.
-                    else if (!MerkleHash.TryHash (SHA256Hasher, BlockHashes.Span, 0, ReadOnlySpan<byte>.Empty, 0, BlockHashes.Span.Length / 32, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
+                    else if (!MerkleTreeHasher.TryHash (SHA256Hasher, BlockHashes.Span, 0, ReadOnlySpan<byte>.Empty, 0, BlockHashes.Span.Length / 32, dest.V2Hash.Span, out written) || written != dest.V2Hash.Length)
                         return false;
                 }
 
