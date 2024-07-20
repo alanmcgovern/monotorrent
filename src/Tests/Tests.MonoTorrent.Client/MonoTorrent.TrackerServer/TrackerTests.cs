@@ -62,7 +62,6 @@ namespace MonoTorrent.TrackerServer
 
             server = new TrackerServer ();
             server.RegisterListener (listener);
-            listener.Start ();
         }
 
         [OneTimeTearDown]

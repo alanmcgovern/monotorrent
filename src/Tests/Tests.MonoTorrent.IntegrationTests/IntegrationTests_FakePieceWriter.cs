@@ -291,8 +291,8 @@ namespace Tests.MonoTorrent.IntegrationTests
                     var listenAddress = $"http://{new IPEndPoint (LoopbackAddress, _trackerPort)}/";
 
                     var listener = TrackerListenerFactory.CreateHttp (listenAddress);
-                    tracker.RegisterListener (listener);
                     listener.Start ();
+                    tracker.RegisterListener (listener);
                     return (tracker, listener);
                 } catch (Exception ex) {
                     Console.WriteLine ("Couldn't get a tracker port for integration tests:");
