@@ -51,8 +51,6 @@ namespace MonoTorrent.Connections.TrackerServer
 
         IPEndPoint OriginalEndPoint { get; }
 
-        CancellationTokenSource Cancellation { get; set; }
-
         Dictionary<IPAddress, long> ConnectionIDs { get; }
 
         long curConnectionID;
@@ -64,7 +62,6 @@ namespace MonoTorrent.Connections.TrackerServer
 
         public UdpTrackerListener (IPEndPoint endPoint)
         {
-            Cancellation = new CancellationTokenSource ();
             ConnectionIDs = new Dictionary<IPAddress, long> ();
             OriginalEndPoint = endPoint;
         }
@@ -72,12 +69,8 @@ namespace MonoTorrent.Connections.TrackerServer
         /// <summary>
         /// Starts listening for incoming connections
         /// </summary>
-        public override void Start ()
+        protected override void StartCore (CancellationToken token)
         {
-            Cancellation?.Cancel ();
-            Cancellation = new CancellationTokenSource ();
-
-            var token = Cancellation.Token;
             var listener = new UdpClient (OriginalEndPoint);
             token.Register (() => {
                 LocalEndPoint = null;
@@ -88,11 +81,6 @@ namespace MonoTorrent.Connections.TrackerServer
 
             ReceiveAsync (listener, token);
             RaiseStatusChanged (ListenerStatus.Listening);
-        }
-        public override void Stop ()
-        {
-            Cancellation?.Cancel ();
-            RaiseStatusChanged (ListenerStatus.NotListening);
         }
 
         async void ReceiveAsync (UdpClient client, CancellationToken token)

@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Specialized;
 using System.Net;
+using System.Threading;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.TrackerServer;
@@ -44,9 +45,11 @@ namespace MonoTorrent.Connections.TrackerServer
         public event EventHandler<AnnounceRequest>? AnnounceReceived;
         public event EventHandler<EventArgs>? StatusChanged;
 
+        CancellationTokenSource? Cancellation { get; set; }
+
         protected TrackerListener ()
         {
-
+            Status = ListenerStatus.NotListening;
         }
 
         public virtual BEncodedDictionary Handle (string queryString, IPAddress remoteAddress, bool isScrape)
@@ -116,8 +119,23 @@ namespace MonoTorrent.Connections.TrackerServer
             ScrapeReceived?.Invoke (this, e);
         }
 
-        public abstract void Start ();
+        public void Start ()
+        {
+            if (Status != ListenerStatus.Listening) {
+                Cancellation?.Cancel ();
+                Cancellation = new CancellationTokenSource ();
+                StartCore (Cancellation.Token);
+            }
+        }
 
-        public abstract void Stop ();
+        protected abstract void StartCore (CancellationToken token);
+
+        public void Stop ()
+        {
+            if (Status != ListenerStatus.NotListening) {
+                Cancellation?.Cancel ();
+                RaiseStatusChanged (ListenerStatus.NotListening);
+            }
+        }
     }
 }

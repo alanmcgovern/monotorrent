@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
+using System.Threading;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections.TrackerServer;
@@ -70,15 +71,12 @@ namespace MonoTorrent.TrackerServer
             return base.Handle (c, d.ClientAddress, false);
         }
 
-        public override void Start ()
-        {
-
-        }
-        public override void Stop ()
+        protected override void StartCore (CancellationToken token)
         {
 
         }
     }
+
     public class Trackable : ITrackable
     {
         public Trackable (InfoHash infoHash, string name)
