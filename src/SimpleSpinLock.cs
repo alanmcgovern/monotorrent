@@ -33,27 +33,48 @@ using System.Threading;
 
 namespace MonoTorrent
 {
-    class SimpleSpinLock
+    class SpinLocked
+    {
+        internal static SpinLocked<T> Create<T> (T value)
+        {
+            return SpinLocked<T>.Create (value);
+        }
+    }
+
+    class SpinLocked<T>
     {
         SpinLock Lock = new SpinLock (false);
+        T Value { get; }
 
-        public Releaser Enter ()
+        internal static SpinLocked<T> Create (T value)
+        {
+            return new SpinLocked<T> (value);
+        }
+
+        SpinLocked (T value)
+        {
+            Value = value;
+        }
+
+        public Releaser Enter (out T value)
         {
             // Nothing in this library is safe after a thread abort... so let's not care too much about this.
             bool taken = false;
             Lock.Enter (ref taken);
+
+            value = Value;
             return new Releaser (this);
         }
 
         public struct Releaser : IDisposable
         {
-            SimpleSpinLock SimpleSpinLock;
+            SpinLocked<T> SpinLocked;
 
-            internal Releaser (SimpleSpinLock ssl)
-                => SimpleSpinLock = ssl;
+            internal Releaser (SpinLocked<T> ssl)
+                => SpinLocked = ssl;
 
             public void Dispose ()
-                => SimpleSpinLock?.Lock.Exit (false);
+                => SpinLocked?.Lock.Exit (false);
         }
     }
 }

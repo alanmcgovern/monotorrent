@@ -70,18 +70,17 @@ namespace MonoTorrent
         internal class ThreadSwitcherWorkItem : IThreadPoolWorkItem
         {
             static readonly Action EmptyAction = () => { };
-            static readonly Stack<ThreadSwitcherWorkItem> Cache = new Stack<ThreadSwitcherWorkItem> ();
-            static readonly SimpleSpinLock CacheLock = new SimpleSpinLock ();
+            static readonly SpinLocked<Stack<ThreadSwitcherWorkItem>> Cache = SpinLocked.Create (new Stack<ThreadSwitcherWorkItem> ());
 
             public Action Continuation { get; private set; } = EmptyAction;
 
             public static ThreadSwitcherWorkItem GetOrCreate (Action action)
             {
-                using (CacheLock.Enter ()) {
-                    if (Cache.Count == 0) {
+                using (Cache.Enter (out var cache)) {
+                    if (cache.Count == 0) {
                         return new ThreadSwitcherWorkItem { Continuation = action };
                     } else {
-                        var worker = Cache.Pop ();
+                        var worker = cache.Pop ();
                         worker.Continuation = action;
                         return worker;
                     }
@@ -93,8 +92,8 @@ namespace MonoTorrent
                 var continuation = Continuation;
                 Continuation = EmptyAction;
 
-                using (CacheLock.Enter ())
-                    Cache.Push (this);
+                using (Cache.Enter (out var cache))
+                    cache.Push (this);
                 continuation ();
             }
         }

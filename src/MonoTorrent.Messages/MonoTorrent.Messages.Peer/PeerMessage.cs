@@ -64,20 +64,19 @@ namespace MonoTorrent.Messages.Peer
     static class PeerMessageCache<T>
         where T : PeerMessage, IRentable, new()
     {
-        static readonly Stack<T> Cache = new Stack<T> ();
-        static readonly SimpleSpinLock CacheLock = new SimpleSpinLock ();
+        static readonly SpinLocked<Stack<T>> Cache = SpinLocked.Create (new Stack<T> ());
 
         static readonly Action<PeerMessage> ReturnMessage = (message) => {
-            using (CacheLock.Enter ())
-                Cache.Push ((T) message);
+            using (Cache.Enter (out var cache))
+                cache.Push ((T) message);
         };
 
         public static (T, PeerMessage.Releaser) GetOrCreate ()
         {
             T message;
-            using (CacheLock.Enter ()) {
-                if (Cache.Count > 0)
-                    message = Cache.Pop ();
+            using (Cache.Enter (out var cache)) {
+                if (cache.Count > 0)
+                    message = cache.Pop ();
                 else
                     message = new T ();
             }

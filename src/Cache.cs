@@ -36,68 +36,71 @@ namespace MonoTorrent
     internal interface ICache<T>
     {
         int Count { get; }
-        T Dequeue();
-        void Enqueue(T instance);
+        T Dequeue ();
+        void Enqueue (T instance);
     }
 
     class Cache<T> : ICache<T>
         where T : class, ICacheable
     {
-        readonly Queue<T> cache;
+        readonly Stack<T> cache;
         readonly Func<T> Creator;
 
         public int Count => cache.Count;
 
-        public Cache(Func<T> creator)
+        public Cache (Func<T> creator)
         {
             Creator = creator;
-            cache = new Queue<T>();
+            cache = new Stack<T> ();
         }
 
-        public T Dequeue()
+        public T Dequeue ()
         {
             if (cache.Count > 0)
-                return cache.Dequeue();
+                return cache.Pop ();
 
-            var instance = Creator.Invoke();
-            instance.Initialise();
+            var instance = Creator.Invoke ();
+            instance.Initialise ();
             return instance;
         }
 
-        public void Enqueue(T instance)
+        public void Enqueue (T instance)
         {
-            instance.Initialise();
-            cache.Enqueue(instance);
+            instance.Initialise ();
+            cache.Push (instance);
         }
-        public ICache<T> Synchronize()
+        public ICache<T> Synchronize ()
         {
-            return new SynchronizedCache<T>(this);
+            return new SynchronizedCache<T> (this);
         }
     }
 
     internal class SynchronizedCache<T> : ICache<T>
     {
-        ICache<T> Cache { get; }
-        SimpleSpinLock CacheLock { get; }
+        SpinLocked<ICache<T>> Cache { get; }
 
-        public int Count => Cache.Count;
-
-        public SynchronizedCache(ICache<T> cache)
-        {
-            Cache = cache ?? throw new System.ArgumentNullException(nameof(cache));
-            CacheLock = new SimpleSpinLock ();
+        public int Count {
+            get {
+                using (Cache.Enter (out var cache))
+                    return cache.Count;
+            }
         }
 
-        public T Dequeue()
+        public SynchronizedCache (ICache<T> cache)
         {
-            using (CacheLock.Enter ())
-                return Cache.Dequeue ();
+            Cache = SpinLocked.Create (cache ?? throw new System.ArgumentNullException (nameof (cache)));
+        }
+
+        public T Dequeue ()
+        {
+            using (Cache.Enter (out var cache))
+                return cache.Dequeue ();
         }
 
         public void Enqueue (T instance)
         {
-            using (CacheLock.Enter ())
-                Cache.Enqueue (instance);
+            using (Cache.Enter (out var cache))
+                cache.Enqueue (instance);
         }
     }
 }

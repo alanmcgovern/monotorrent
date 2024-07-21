@@ -59,14 +59,14 @@ namespace MonoTorrent
 
                 var size = Buffer.Segment.Count;
                 if (size == ByteBufferPool.SmallMessageBufferSize) {
-                    using (Pool.SmallMessageBuffersLock.Enter ())
-                        Pool.SmallMessageBuffers.Push (Buffer);
+                    using (Pool.SmallMessageBuffers.Enter (out var buffers))
+                        buffers.Push (Buffer);
                 } else if (size == ByteBufferPool.LargeMessageBufferSize) {
-                    using (Pool.LargeMessageBuffersLock.Enter ())
-                        Pool.LargeMessageBuffers.Push (Buffer);
+                    using (Pool.LargeMessageBuffers.Enter (out var buffers))
+                        buffers.Push (Buffer);
                 } else {
-                    using (Pool.MassiveBuffersLock.Enter ())
-                        Pool.MassiveBuffers.Enqueue (Buffer);
+                    using (Pool.MassiveBuffers.Enter (out var buffers))
+                        buffers.Enqueue (Buffer);
                 }
             }
         }

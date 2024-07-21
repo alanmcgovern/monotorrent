@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
 
         readonly ICache<IncrementalHashData> IncrementalHashCache;
 
-        readonly Dictionary<ValueTuple<ITorrentManagerInfo, int>, IncrementalHashData> IncrementalHashes = new Dictionary<ValueTuple<ITorrentManagerInfo, int>, IncrementalHashData> ();
+        readonly SpinLocked<Dictionary<ValueTuple<ITorrentManagerInfo, int>, IncrementalHashData>> IncrementalHashes = SpinLocked.Create (new Dictionary<ValueTuple<ITorrentManagerInfo, int>, IncrementalHashData> ());
 
         class IncrementalHashData : ICacheable
         {
@@ -284,7 +284,7 @@ namespace MonoTorrent.Client
             Cache = factories.CreateBlockCache (writer, settings.DiskCacheBytes, settings.DiskCachePolicy, BufferPool);
             Cache.ReadThroughCache += (o, e) => WriterReadMonitor.AddDelta (e.RequestLength);
             Cache.WrittenThroughCache += (o, e) => WriterWriteMonitor.AddDelta (e.RequestLength);
-            IncrementalHashCache = new Cache<IncrementalHashData> (() => new IncrementalHashData ());
+            IncrementalHashCache = new Cache<IncrementalHashData> (() => new IncrementalHashData ()).Synchronize ();
         }
 
         internal async ReusableTask SetWriterAsync (IPieceWriter writer)
@@ -333,26 +333,29 @@ namespace MonoTorrent.Client
 
             await IOLoop;
 
-            if (IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData? incrementalHash)) {
-                // Immediately remove it from the dictionary so another thread writing data to using `WriteAsync` can't try to use it
-                IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
+            IncrementalHashData? incrementalHash = null;
+            using (IncrementalHashes.Enter (out var hashes)) {
+                if (hashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out incrementalHash)) {
+                    // Immediately remove it from the dictionary so another thread writing data to using `WriteAsync` can't try to use it
+                    hashes.Remove (ValueTuple.Create (manager, pieceIndex));
 
-                using var lockReleaser = await incrementalHash.Locker.EnterAsync ();
-                // We request the blocks for most pieces sequentially, and most (all?) torrent clients
-                // will process requests in the order they have been received. This means we can optimise
-                // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
-                // we'll compute the final hash by reading the data from disk.
-                if (incrementalHash.NextOffsetToHash == manager.TorrentInfo!.BytesPerPiece (pieceIndex)) {
-                    if (!incrementalHash.TryGetHashAndReset (dest))
-                        throw new NotSupportedException ("Could not generate SHA1 hash for this piece");
-                    IncrementalHashCache.Enqueue (incrementalHash);
-                    return true;
+                    using var lockReleaser = await incrementalHash.Locker.EnterAsync ();
+                    // We request the blocks for most pieces sequentially, and most (all?) torrent clients
+                    // will process requests in the order they have been received. This means we can optimise
+                    // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
+                    // we'll compute the final hash by reading the data from disk.
+                    if (incrementalHash.NextOffsetToHash == manager.TorrentInfo!.BytesPerPiece (pieceIndex)) {
+                        if (!incrementalHash.TryGetHashAndReset (dest))
+                            throw new NotSupportedException ("Could not generate SHA1 hash for this piece");
+                        IncrementalHashCache.Enqueue (incrementalHash);
+                        return true;
+                    }
+                } else {
+                    // If we have no partial hash data for this piece we could be doing a full
+                    // hash check, so let's create a IncrementalHashData for our piece!
+                    incrementalHash = IncrementalHashCache.Dequeue ();
+                    incrementalHash.PrepareForFirstUse (manager, pieceIndex);
                 }
-            } else {
-                // If we have no partial hash data for this piece we could be doing a full
-                // hash check, so let's create a IncrementalHashData for our piece!
-                incrementalHash = IncrementalHashCache.Dequeue ();
-                incrementalHash.PrepareForFirstUse (manager, pieceIndex);
             }
 
             // We can store up to 4MB of pieces in an in-memory queue so that, when we're rate limited
@@ -399,9 +402,9 @@ namespace MonoTorrent.Client
                     }
                     return incrementalHash.TryGetHashAndReset (dest);
                 } finally {
-                    await IOLoop;
                     IncrementalHashCache.Enqueue (incrementalHash);
-                    IncrementalHashes.Remove (ValueTuple.Create (manager, pieceIndex));
+                    using (IncrementalHashes.Enter (out var hashes))
+                        hashes.Remove (ValueTuple.Create (manager, pieceIndex));
                 }
             }
         }
@@ -521,9 +524,12 @@ namespace MonoTorrent.Client
 
             try {
                 int pieceIndex = request.PieceIndex;
-                if (!IncrementalHashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out IncrementalHashData? incrementalHash) && request.StartOffset == 0) {
-                    incrementalHash = IncrementalHashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
-                    incrementalHash.PrepareForFirstUse (manager, pieceIndex);
+                IncrementalHashData? incrementalHash = null;
+                using (IncrementalHashes.Enter (out var hashes)) {
+                    if (!hashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out incrementalHash) && request.StartOffset == 0) {
+                        incrementalHash = hashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
+                        incrementalHash.PrepareForFirstUse (manager, pieceIndex);
+                    }
                 }
 
                 ReusableTaskCompletionSource<bool>? tcs = null;
