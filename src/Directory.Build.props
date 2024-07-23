@@ -42,7 +42,7 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
 
     <LangVersion>8.0</LangVersion>
-    <DebugType>portable</DebugType>
+    <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <Deterministic>true</Deterministic>
     <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
