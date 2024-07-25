@@ -39,49 +39,42 @@ namespace MonoTorrent.Common
         [Test]
         public void EmptyList ()
         {
-            Assert.AreEqual (-1, new List<int> ().BinarySearch (val => 5));
             Assert.AreEqual (-1, new List<int> ().BinarySearch ((val, state) => state, 5));
         }
 
         [Test]
         public void FindAtStart ()
         {
-            Assert.AreEqual (0, new List<int> { 5, 7, 9 }.BinarySearch (val => val.CompareTo (5)));
             Assert.AreEqual (0, new List<int> { 5, 7, 9 }.BinarySearch ((val, state) => val.CompareTo (state), 5));
         }
 
         [Test]
         public void FindAtMiddle ()
         {
-            Assert.AreEqual (1, new List<int> { 1, 5, 10 }.BinarySearch (val => val.CompareTo (5)));
             Assert.AreEqual (1, new List<int> { 1, 5, 10 }.BinarySearch ((val, state) => val.CompareTo (state), 5));
         }
 
         [Test]
         public void FindAtEnd ()
         {
-            Assert.AreEqual (2, new List<int> { 1, 3, 5 }.BinarySearch (val => val.CompareTo (5)));
             Assert.AreEqual (2, new List<int> { 1, 3, 5 }.BinarySearch ((val, state) => val.CompareTo (state), 5));
         }
 
         [Test]
         public void InsertAtStart ()
         {
-            Assert.AreEqual (~0, new List<int> { 10 }.BinarySearch (val => val.CompareTo (5)));
             Assert.AreEqual (~0, new List<int> { 10 }.BinarySearch ((val, state) => val.CompareTo (state), 5));
         }
 
         [Test]
         public void InsertAtMiddle ()
         {
-            Assert.AreEqual (~2, new List<int> { 1, 2, 9, 10 }.BinarySearch (val => val.CompareTo (5)));
             Assert.AreEqual (~2, new List<int> { 1, 2, 9, 10 }.BinarySearch ((val, state) => val.CompareTo (state), 5));
         }
 
         [Test]
         public void InsertAtEnd ()
         {
-            Assert.AreEqual (~1, new List<int> { 1 }.BinarySearch (val => val.CompareTo (5)));
             Assert.AreEqual (~1, new List<int> { 1 }.BinarySearch ((val, state) => val.CompareTo (state), 5));
         }
     }

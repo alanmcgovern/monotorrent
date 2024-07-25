@@ -31,6 +31,7 @@ using System;
 
 namespace MonoTorrent
 {
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     internal static class GitInfoHelper
     {
         internal static string ClientIdentifier { get; } = "MO";

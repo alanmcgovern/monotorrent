@@ -34,23 +34,6 @@ namespace MonoTorrent
 {
     static class IListExtensions
     {
-        public static int BinarySearch<T> (this IList<T> list, Func<T, int> predicate)
-        {
-            int min = 0;
-            int max = list.Count - 1;
-            while (min <= max) {
-                var mid = (min + max) / 2;
-                var result = predicate (list[mid]);
-                if (result == 0)
-                    return mid;
-                if (result < 0)
-                    min = mid + 1;
-                if (result > 0)
-                    max = mid - 1;
-            }
-            return ~min;
-        }
-
         public static int BinarySearch<T, TState> (this IList<T> list, Func<T, TState, int> predicate, TState comparand)
         {
             int min = 0;
