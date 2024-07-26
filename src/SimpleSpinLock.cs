@@ -43,7 +43,8 @@ namespace MonoTorrent
 
     class SpinLocked<T>
     {
-        SpinLock Lock = new SpinLock (false);
+        int locker;
+
         T Value { get; }
 
         internal static SpinLocked<T> Create (T value)
@@ -56,14 +57,26 @@ namespace MonoTorrent
             Value = value;
         }
 
+        static void SpinWait (int spinCount)
+        {
+            if (spinCount < 10 && Environment.ProcessorCount > 1)
+                Thread.SpinWait (20 * (spinCount));
+            else if (spinCount < 15)
+                Thread.Sleep (0);
+            else
+                Thread.Sleep (1);
+        }
+
         public Releaser Enter (out T value)
         {
-            // Nothing in this library is safe after a thread abort... so let's not care too much about this.
-            bool taken = false;
-            Lock.Enter (ref taken);
-
             value = Value;
-            return new Releaser (this);
+            var ret = new Releaser (this);
+
+            int spinCount = 0;
+            while (Interlocked.CompareExchange (ref locker, 1, 0) != 0)
+                SpinWait (++spinCount);
+
+            return ret;
         }
 
         public struct Releaser : IDisposable
@@ -74,7 +87,7 @@ namespace MonoTorrent
                 => SpinLocked = ssl;
 
             public void Dispose ()
-                => SpinLocked?.Lock.Exit (false);
+                => Interlocked.Decrement (ref SpinLocked.locker);
         }
     }
 }

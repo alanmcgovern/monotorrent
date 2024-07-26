@@ -76,7 +76,7 @@ namespace MonoTorrent
             }
         }
 #else
-        static readonly ICache<AsyncInvokerState> Cache = new Cache<AsyncInvokerState> (() => new AsyncInvokerState ()).Synchronize ();
+        static readonly ICache<AsyncInvokerState> Cache = new SynchronizedCache<AsyncInvokerState> (() => new AsyncInvokerState ());
 
         public static void InvokeAsync (EventHandler<T> handler, object sender, T args)
         {

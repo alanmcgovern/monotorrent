@@ -413,7 +413,7 @@ namespace MonoTorrent.Client.Modes
             id.IsInterested = false;
         }
 
-        static ICache<CacheableHashSet<IRequester>> PeersInvolvedCache = new Cache<CacheableHashSet<IRequester>> (() => new CacheableHashSet<IRequester> ()).Synchronize ();
+        static ICache<CacheableHashSet<IRequester>> PeersInvolvedCache = new SynchronizedCache<CacheableHashSet<IRequester>> (() => new CacheableHashSet<IRequester> ());
         class CacheableHashSet<T> : HashSet<T>, ICacheable
         {
             public void Initialise ()

@@ -79,11 +79,19 @@ namespace MonoTorrent
         Releaser Rent (int capacity, out ByteBuffer buffer)
         {
             if (capacity <= SmallMessageBufferSize) {
-                using (SmallMessageBuffers.Enter(out var buffers))
-                    return Rent (buffers, SmallMessageBufferSize, out buffer);
+                using (SmallMessageBuffers.Enter (out var buffers)) {
+                    if (buffers.Count == 0)
+                        AllocateBuffers (AllocateDelta, buffers, SmallMessageBufferSize);
+                    buffer = buffers.Pop ();
+                }
+                return new Releaser (this, buffer);
             } else if (capacity <= LargeMessageBufferSize) {
-                using (LargeMessageBuffers.Enter(out var buffers))
-                    return Rent (buffers, LargeMessageBufferSize, out buffer);
+                using (LargeMessageBuffers.Enter (out var buffers)) {
+                    if (buffers.Count == 0)
+                        AllocateBuffers (AllocateDelta, buffers, LargeMessageBufferSize);
+                    buffer = buffers.Pop ();
+                }
+                return new Releaser (this, buffer);
             } else {
                 using (MassiveBuffers.Enter (out var buffers)) {
                     for (int i = 0; i < buffers.Count; i++)
@@ -91,19 +99,10 @@ namespace MonoTorrent
                             return new Releaser (this, buffer);
                         else
                             buffers.Enqueue (buffer);
-
-                    buffer = new ByteBuffer (new ArraySegment<byte> (new byte[capacity]));
-                    return new Releaser (this, buffer);
                 }
-            }
-        }
-
-        Releaser Rent (Stack<ByteBuffer> buffers, int bufferSize, out ByteBuffer buffer)
-        {
-                if (buffers.Count == 0)
-                    AllocateBuffers (AllocateDelta, buffers, bufferSize);
-                buffer = buffers.Pop ();
+                buffer = new ByteBuffer (new ArraySegment<byte> (new byte[capacity]));
                 return new Releaser (this, buffer);
+            }
         }
 
         static void AllocateBuffers (int count, Stack<ByteBuffer> bufferQueue, int bufferSize)

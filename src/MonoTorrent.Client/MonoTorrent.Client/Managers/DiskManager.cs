@@ -79,13 +79,16 @@ namespace MonoTorrent.Client
                 SHA1Hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA1);
                 SHA256Hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
                 Locker = new ReusableSemaphore (1);
-                Initialise ();
+                PieceIndex = -1;
             }
 
             public void Initialise ()
             {
-                SHA1Hasher.TryGetHashAndReset (Flusher, out _);
-                SHA256Hasher.TryGetHashAndReset (Flusher, out _);
+                // If we've used them, reset them.
+                if (NextOffsetToHash != 0) {
+                    SHA1Hasher.TryGetHashAndReset (Flusher, out _);
+                    SHA256Hasher.TryGetHashAndReset (Flusher, out _);
+                }
                 NextOffsetToHash = 0;
 
                 BlockHashesReleaser.Dispose ();
@@ -284,7 +287,7 @@ namespace MonoTorrent.Client
             Cache = factories.CreateBlockCache (writer, settings.DiskCacheBytes, settings.DiskCachePolicy, BufferPool);
             Cache.ReadThroughCache += (o, e) => WriterReadMonitor.AddDelta (e.RequestLength);
             Cache.WrittenThroughCache += (o, e) => WriterWriteMonitor.AddDelta (e.RequestLength);
-            IncrementalHashCache = new Cache<IncrementalHashData> (() => new IncrementalHashData ()).Synchronize ();
+            IncrementalHashCache = new SynchronizedCache<IncrementalHashData> (() => new IncrementalHashData ());
         }
 
         internal async ReusableTask SetWriterAsync (IPieceWriter writer)
@@ -338,24 +341,25 @@ namespace MonoTorrent.Client
                 if (hashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out incrementalHash)) {
                     // Immediately remove it from the dictionary so another thread writing data to using `WriteAsync` can't try to use it
                     hashes.Remove (ValueTuple.Create (manager, pieceIndex));
-
-                    using var lockReleaser = await incrementalHash.Locker.EnterAsync ();
-                    // We request the blocks for most pieces sequentially, and most (all?) torrent clients
-                    // will process requests in the order they have been received. This means we can optimise
-                    // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
-                    // we'll compute the final hash by reading the data from disk.
-                    if (incrementalHash.NextOffsetToHash == manager.TorrentInfo!.BytesPerPiece (pieceIndex)) {
-                        if (!incrementalHash.TryGetHashAndReset (dest))
-                            throw new NotSupportedException ("Could not generate SHA1 hash for this piece");
-                        IncrementalHashCache.Enqueue (incrementalHash);
-                        return true;
-                    }
-                } else {
-                    // If we have no partial hash data for this piece we could be doing a full
-                    // hash check, so let's create a IncrementalHashData for our piece!
-                    incrementalHash = IncrementalHashCache.Dequeue ();
-                    incrementalHash.PrepareForFirstUse (manager, pieceIndex);
                 }
+            }
+            if (incrementalHash != null) {
+                using var lockReleaser = await incrementalHash.Locker.EnterAsync ();
+                // We request the blocks for most pieces sequentially, and most (all?) torrent clients
+                // will process requests in the order they have been received. This means we can optimise
+                // hashing a received piece by hashing each block as it arrives. If blocks arrive out of order then
+                // we'll compute the final hash by reading the data from disk.
+                if (incrementalHash.NextOffsetToHash == manager.TorrentInfo!.BytesPerPiece (pieceIndex)) {
+                    if (!incrementalHash.TryGetHashAndReset (dest))
+                        throw new NotSupportedException ("Could not generate SHA1 hash for this piece");
+                    IncrementalHashCache.Enqueue (incrementalHash);
+                    return true;
+                }
+            } else {
+                // If we have no partial hash data for this piece we could be doing a full
+                // hash check, so let's create a IncrementalHashData for our piece!
+                incrementalHash = IncrementalHashCache.Dequeue ();
+                incrementalHash.PrepareForFirstUse (manager, pieceIndex);
             }
 
             // We can store up to 4MB of pieces in an in-memory queue so that, when we're rate limited
@@ -403,8 +407,6 @@ namespace MonoTorrent.Client
                     return incrementalHash.TryGetHashAndReset (dest);
                 } finally {
                     IncrementalHashCache.Enqueue (incrementalHash);
-                    using (IncrementalHashes.Enter (out var hashes))
-                        hashes.Remove (ValueTuple.Create (manager, pieceIndex));
                 }
             }
         }
@@ -528,7 +530,6 @@ namespace MonoTorrent.Client
                 using (IncrementalHashes.Enter (out var hashes)) {
                     if (!hashes.TryGetValue (ValueTuple.Create (manager, pieceIndex), out incrementalHash) && request.StartOffset == 0) {
                         incrementalHash = hashes[ValueTuple.Create (manager, pieceIndex)] = IncrementalHashCache.Dequeue ();
-                        incrementalHash.PrepareForFirstUse (manager, pieceIndex);
                     }
                 }
 
@@ -536,10 +537,16 @@ namespace MonoTorrent.Client
                 ReusableTask writeTask = default;
 
                 using (incrementalHash == null ? default : await incrementalHash.Locker.EnterAsync ()) {
-                    if (incrementalHash != null && incrementalHash.NextOffsetToHash < request.StartOffset)
-                        await TryIncrementallyHashFromMemory (manager, pieceIndex, incrementalHash);
+                    bool canIncrementallyHash = false;
+                    if (incrementalHash != null) {
+                        if (incrementalHash.NextOffsetToHash == 0 && request.StartOffset == 0)
+                            incrementalHash.PrepareForFirstUse (manager, pieceIndex);
 
-                    bool canIncrementallyHash = incrementalHash != null && request.StartOffset == incrementalHash.NextOffsetToHash;
+                        if (incrementalHash.NextOffsetToHash < request.StartOffset)
+                            await TryIncrementallyHashFromMemory (manager, pieceIndex, incrementalHash);
+
+                        canIncrementallyHash = request.StartOffset == incrementalHash.NextOffsetToHash;
+                    }
 
                     // If we can incrementally hash the data, instruct the cache to write the block straight through
                     // to the IPieceWriter, so it is not stored in the in-memory cache.

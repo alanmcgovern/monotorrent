@@ -69,38 +69,42 @@ namespace MonoTorrent
             instance.Initialise ();
             cache.Push (instance);
         }
-        public ICache<T> Synchronize ()
-        {
-            return new SynchronizedCache<T> (this);
-        }
     }
 
     internal class SynchronizedCache<T> : ICache<T>
+        where T : class, ICacheable
     {
-        SpinLocked<ICache<T>> Cache { get; }
+        readonly SpinLocked<Stack<T>> Cache;
+        readonly Func<T> Creator;
 
-        public int Count {
-            get {
-                using (Cache.Enter (out var cache))
-                    return cache.Count;
-            }
-        }
+        public int Count { get; private set; }
 
-        public SynchronizedCache (ICache<T> cache)
+        public SynchronizedCache (Func<T> creator)
         {
-            Cache = SpinLocked.Create (cache ?? throw new System.ArgumentNullException (nameof (cache)));
+            Creator = creator;
+            Cache = SpinLocked.Create (new Stack<T> ());
         }
 
         public T Dequeue ()
         {
-            using (Cache.Enter (out var cache))
-                return cache.Dequeue ();
+            using (Cache.Enter (out var cache)) {
+                if (cache.Count > 0) {
+                    Count--;
+                    return cache.Pop ();
+                }
+            }
+
+            var instance = Creator.Invoke ();
+            instance.Initialise ();
+            return instance;
         }
 
         public void Enqueue (T instance)
         {
+            instance.Initialise ();
             using (Cache.Enter (out var cache))
-                cache.Enqueue (instance);
+                cache.Push (instance);
+            Count++;
         }
     }
 }

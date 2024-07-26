@@ -100,7 +100,7 @@ namespace MonoTorrent.PiecePicking
 
     public partial class StandardPicker : IPiecePicker
     {
-        static ICache<Piece> PieceCache { get; } = new Cache<Piece> (() => new Piece ()).Synchronize ();
+        static ICache<Piece> PieceCache { get; } = new SynchronizedCache<Piece> (() => new Piece ());
 
         // static readonly Logger logger = Logger.Create (nameof(StandardPicker));
 

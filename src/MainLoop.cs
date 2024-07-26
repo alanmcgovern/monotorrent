@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
 {
     internal class MainLoop : SynchronizationContext, INotifyCompletion
     {
-        static readonly ICache<CacheableManualResetEventSlim> cache = new Cache<CacheableManualResetEventSlim>(() => new CacheableManualResetEventSlim()).Synchronize();
+        static readonly ICache<CacheableManualResetEventSlim> cache = new SynchronizedCache<CacheableManualResetEventSlim>(() => new CacheableManualResetEventSlim());
 
         private struct QueuedTask
         {
