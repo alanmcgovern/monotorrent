@@ -56,9 +56,15 @@ namespace System
             args.SetBuffer (segment.Array, segment.Offset, segment.Count);
         }
 
+        [ThreadStatic]
+        static byte[] tryComputeHashBuffer;
+
         public static bool TryComputeHash (this HashAlgorithm hasher, ReadOnlySpan<byte> buffer, Span<byte> destination, out int written)
         {
-            var array = new byte[Math.Min (buffer.Length, 4096)];
+            if (tryComputeHashBuffer is null)
+                tryComputeHashBuffer = new byte[1024];
+
+            var array = tryComputeHashBuffer;
             while (buffer.Length > 0) {
                 var sliceSize = Math.Min (array.Length, buffer.Length);
                 buffer.Slice (0, sliceSize).CopyTo (array);
@@ -103,11 +109,20 @@ namespace System
 #endif
 
 #if NETSTANDARD2_0 || NET472
+        [ThreadStatic]
+        static byte[] appendDataBuffer;
+
         public static void AppendData (this IncrementalHash incrementalHash, ReadOnlySpan<byte> buffer)
         {
-            var tmp = new byte[buffer.Length];
-            buffer.CopyTo (tmp);
-            incrementalHash.AppendData (tmp);
+            if (appendDataBuffer == null)
+                appendDataBuffer = new byte[1024];
+
+            while (buffer.Length > 0) {
+                var toCopy = Math.Min (appendDataBuffer.Length, buffer.Length);
+                buffer.Slice (0, toCopy).CopyTo (appendDataBuffer);
+                incrementalHash.AppendData (appendDataBuffer, 0, toCopy);
+                buffer = buffer.Slice (toCopy);
+            }
         }
 #endif
 
