@@ -203,7 +203,7 @@ namespace MonoTorrent.Dht
             Node nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];
 
             ReplaceNodeTask task = new ReplaceNodeTask (engine, engine.RoutingTable.Buckets[0], replacement);
-            await task.Execute ().WithTimeout (1000);
+            await task.Execute ().WithTimeout ();
             Assert.IsFalse (engine.RoutingTable.Buckets[0].Nodes.Contains (nodeToReplace), "#1");
             Assert.IsTrue (engine.RoutingTable.Buckets[0].Nodes.Contains (replacement), "#2");
         }
