@@ -6,6 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent;
+using MonoTorrent.Connections.TrackerServer;
+using MonoTorrent.Trackers;
+using MonoTorrent.TrackerServer;
 
 namespace TrackerApp
 {
@@ -17,6 +20,11 @@ namespace TrackerApp
         readonly Thread[] threads;
         private readonly int threadSleepTime;
 
+        readonly HttpTrackerListener trackerListener;
+        readonly string trackerAddress;
+        readonly TrackerServer trackerServer;
+
+
         public int RequestRate {
             get { return (int) requests.Rate; }
         }
@@ -25,8 +33,10 @@ namespace TrackerApp
             get { return requests.Total; }
         }
 
-        public StressTest (int torrents, int peers, int requests)
+        public StressTest (int torrents, int peers, int requests, string trackerAddress)
         {
+            this.trackerAddress = trackerAddress;
+
             for (int i = 0; i < torrents; i++) {
                 byte[] infoHash = new byte[20];
                 random.NextBytes (infoHash);
@@ -35,9 +45,18 @@ namespace TrackerApp
 
             threadSleepTime = Math.Max ((int) (20000.0 / requests + 0.5), 1);
             threads = new Thread[20];
+
+            trackerListener = new HttpTrackerListener (trackerAddress);
+            trackerListener.Start ();
+
+            trackerServer = new TrackerServer {
+                AllowUnregisteredTorrents = true,
+                AllowScrape = true
+            };
+            trackerServer.RegisterListener (trackerListener);
         }
 
-        public void Start (string trackerAddress)
+        public void Start ()
         {
             var client = new HttpClient ();
             for (int i = 0; i < threads.Length; i++) {
@@ -47,11 +66,9 @@ namespace TrackerApp
                     while (true) {
                         sb.Remove (0, sb.Length);
 
-                        int ipaddress = random.Next (0, hashes.Count);
-
                         sb.Append (trackerAddress);
                         sb.Append ("?info_hash=");
-                        sb.Append (hashes[torrent++]);
+                        sb.Append (hashes[(torrent++) % hashes.Count]);
                         sb.Append ("&peer_id=");
                         sb.Append ("12345123451234512345");
                         sb.Append ("&port=");

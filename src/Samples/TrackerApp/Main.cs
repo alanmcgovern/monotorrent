@@ -88,8 +88,9 @@ namespace TrackerSample
             tracker = new TrackerServer ();
             tracker.AllowUnregisteredTorrents = true;
 
-            var httpEndpoint = new System.Net.IPEndPoint (System.Net.IPAddress.Any, 10000);
-            var udpEndpoint = new System.Net.IPEndPoint (System.Net.IPAddress.Any, 10001);
+            // Listen on a private address (localhost) in the sample.
+            var httpEndpoint = new System.Net.IPEndPoint (System.Net.IPAddress.Loopback, 10000);
+            var udpEndpoint = new System.Net.IPEndPoint (System.Net.IPAddress.Loopback, 10001);
             Console.WriteLine ("Listening for HTTP requests at: {0}", httpEndpoint);
             Console.WriteLine ("Listening for UDP requests at: {0}", udpEndpoint);
 
@@ -174,18 +175,22 @@ namespace TrackerSample
         private static void Benchmark ()
         {
             Console.Clear ();
-            Console.Write ("How many active torrents will be simulated: ");
-            int torrents = GetInt ();
-            Console.Write ("How many active peers per torrent: ");
-            int peers = GetInt ();
-            Console.Write ("How many requests per second: ");
-            int requests = GetInt ();
+            Console.Write ("How many active torrents will be simulated (default 10): ");
+            int torrents = GetInt (10);
+            Console.Write ("How many active peers per torrent (default 1000): ");
+            int peers = GetInt (1000);
+            Console.Write ("How many requests per second (default 100): ");
+            int requests = GetInt (100);
 
-            Console.Write ("What is the tracker address: ");
+            const string defaultAddress = "http://127.0.0.1:35277/announce/";
+            Console.WriteLine ("Read https://stackoverflow.com/questions/2583347/c-sharp-httplistener-without-using-netsh-to-register-a-uri to see how to listen on public IP addresses");
+            Console.Write ($"What is the tracker address (default {defaultAddress}): ");
             string address = Console.ReadLine ();
+            if (string.IsNullOrEmpty (address))
+                address = defaultAddress;
 
-            StressTest test = new StressTest (torrents, peers, requests);
-            test.Start (address);
+            StressTest test = new StressTest (torrents, peers, requests, address);
+            test.Start ();
 
             while (true) {
                 Console.WriteLine ("Measured announces/sec:  {0}", test.RequestRate);
@@ -200,10 +205,13 @@ namespace TrackerSample
             new MySimpleTracker ();
         }
 
-        private static int GetInt ()
+        private static int GetInt (int? defaultValue = null)
         {
             while (true) {
-                if (int.TryParse (Console.ReadLine (), out int ret))
+                var data = Console.ReadLine ();
+                if (string.IsNullOrEmpty (data) && defaultValue.HasValue)
+                    return defaultValue.Value;
+                else if (int.TryParse (data, out int ret))
                     return ret;
             }
         }
