@@ -51,9 +51,9 @@ namespace MonoTorrent
         /// </summary>
         protected ByteBufferPool ()
         {
-            LargeMessageBuffers = SpinLocked.Create (new Stack<ByteBuffer> ());
-            MassiveBuffers = SpinLocked.Create (new Queue<ByteBuffer> ());
-            SmallMessageBuffers = SpinLocked.Create (new Stack<ByteBuffer> ());
+            LargeMessageBuffers = SpinLocked.Create (new Stack<ByteBuffer> (128));
+            MassiveBuffers = SpinLocked.Create (new Queue<ByteBuffer> (16));
+            SmallMessageBuffers = SpinLocked.Create (new Stack<ByteBuffer> (128));
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
             using (LargeMessageBuffers.Enter (out var buffers))
