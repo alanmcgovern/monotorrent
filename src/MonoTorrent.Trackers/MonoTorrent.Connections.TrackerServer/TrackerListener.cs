@@ -137,5 +137,10 @@ namespace MonoTorrent.Connections.TrackerServer
                 RaiseStatusChanged (ListenerStatus.NotListening);
             }
         }
+
+        public void Dispose ()
+        {
+            Cancellation?.Cancel ();
+        }
     }
 }

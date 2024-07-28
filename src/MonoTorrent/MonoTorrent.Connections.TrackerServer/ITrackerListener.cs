@@ -36,7 +36,7 @@ namespace MonoTorrent.Connections.TrackerServer
     /// <summary>
     /// Listens for incoming Announce or Scrape requests and sends the response back.
     /// </summary>
-    public interface ITrackerListener : IListener
+    public interface ITrackerListener : IListener, IDisposable
     {
         event EventHandler<ScrapeRequest> ScrapeReceived;
         event EventHandler<AnnounceRequest> AnnounceReceived;
