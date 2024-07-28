@@ -455,8 +455,8 @@ namespace MonoTorrent.PiecePicking
             if (TorrentData == null || Requests == null)
                 return 0;
 
-            int piecesNeeded = (requests.Length * Piece.BlockSize) / TorrentData.PieceLength;
-            if ((requests.Length * Piece.BlockSize) % TorrentData.PieceLength != 0)
+            int piecesNeeded = (requests.Length * Constants.BlockSize) / TorrentData.PieceLength;
+            if ((requests.Length * Constants.BlockSize) % TorrentData.PieceLength != 0)
                 piecesNeeded++;
             int checkIndex = CanRequest (current, startIndex, endIndex, ref piecesNeeded);
 

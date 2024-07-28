@@ -38,8 +38,6 @@ namespace MonoTorrent.PiecePicking
         [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
         class Piece : IComparable<Piece>, ICacheable
         {
-            internal const int BlockSize = (1 << 14); // 16kB
-
             public Block this[int index] => Blocks[index];
 
             /// <summary>
