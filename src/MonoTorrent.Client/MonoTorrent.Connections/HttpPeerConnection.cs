@@ -337,45 +337,51 @@ namespace MonoTorrent.Connections.Peer
 
         void CreateWebRequests (BlockInfo start, BlockInfo end)
         {
-            // Properly handle the case where we have multiple files
-            // This is only implemented for single file torrents
             Uri uri = Uri;
 
             if (Uri.OriginalString.EndsWith ("/"))
                 uri = new Uri (uri, $"{TorrentData.Name}/");
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
-            // stop at the correct byte when requesting the byte ranges from the server
+            // stop at the correct byte when requesting the byte ranges from the server.
+            //
+            // These values are also always relative to the *current* file as we iterate through the list of files.
             long startOffset = TorrentData.TorrentInfo!.PieceIndexToByteOffset (start.PieceIndex) + start.StartOffset;
-            long endOffset = TorrentData.TorrentInfo!.PieceIndexToByteOffset (end.PieceIndex) + end.StartOffset + end.RequestLength;
+            long count = TorrentData.TorrentInfo!.PieceIndexToByteOffset (end.PieceIndex) + end.StartOffset + end.RequestLength - startOffset;
 
             foreach (var file in TorrentData.Files) {
+                // Bail out after we've read all the data.
+                if (count == 0)
+                    break;
+
+                var lengthWithPadding = file.Length + file.Padding;
+                // If the first byte of data is from the next file, move to the next file immediately
+                // and adjust start offset to be relative to that file.
+                if (startOffset >= lengthWithPadding) {
+                    startOffset -= lengthWithPadding;
+                    continue;
+                }
+
                 Uri u = uri;
                 if (TorrentData.Files.Count > 1)
                     u = new Uri (u, file.Path);
-                if (endOffset == 0)
-                    break;
 
-                // We want data from a later file
-                if (startOffset >= file.Length) {
-                    startOffset -= file.Length;
-                    endOffset -= file.Length;
+                // Should data be read from this file?
+                if (startOffset < file.Length) {
+                    var toReadFromFile = Math.Min (count, file.Length - startOffset);
+                    WebRequests.Enqueue ((u, startOffset, toReadFromFile));
+                    count -= toReadFromFile;
                 }
-                // We want data from the end of the current file and from the next few files
-                else if (endOffset >= file.Length) {
-                    WebRequests.Enqueue ((u, startOffset, file.Length - startOffset));
-                    startOffset = 0;
-                    endOffset -= file.Length;
-                    if (file.Padding > 0) {
-                        WebRequests.Enqueue ((PaddingFileUri, 0, file.Padding));
-                        endOffset -= file.Padding;
-                    }
+
+                // Should data be read from this file's padding?
+                if (file.Padding > 0 && count > 0) {
+                    var toReadFromPadding = Math.Min (count, file.Padding);
+                    WebRequests.Enqueue ((PaddingFileUri, 0, toReadFromPadding));
+                    count -= toReadFromPadding;
                 }
-                // All the data we want is from within this file
-                else {
-                    WebRequests.Enqueue ((u, startOffset, endOffset - startOffset));
-                    endOffset = 0;
-                }
+
+                // As of the next read, we'll be reading data from the start of the file.
+                startOffset = 0;
             }
         }
 
