@@ -29,6 +29,7 @@
   <ItemGroup>
     <PackageReference Include="GitInfo" />
     <PackageReference Include="Mono.Nat" ExcludeAssets="compile" />
+    <PackageReference Include="ReusableTasks" />
     <PackageReference Include="System.Memory" Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" />
     <PackageReference Include="StandardSocketsHttpHandler" Condition="$(TargetFramework) == 'netcoreapp3.0' Or $(TargetFramework) == 'netstandard2.1' Or $(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" />
   </ItemGroup>
