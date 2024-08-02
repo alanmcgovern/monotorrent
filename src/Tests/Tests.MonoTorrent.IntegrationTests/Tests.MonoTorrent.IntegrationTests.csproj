@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\MonoTorrent.Client\MonoTorrent.Client.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" />
+    <ProjectReference Include="..\..\MonoTorrent.PiecePicking\MonoTorrent.PiecePicking.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Trackers\MonoTorrent.Trackers.csproj" />
   </ItemGroup>
 

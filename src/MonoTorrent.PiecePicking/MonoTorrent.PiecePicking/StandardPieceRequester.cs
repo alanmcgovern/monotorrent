@@ -96,8 +96,6 @@ namespace MonoTorrent.PiecePicking
 
         public void AddRequests (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> allPeers)
         {
-            int maxRequests = peer.MaxPendingRequests;
-
             if (!peer.CanRequestMorePieces || Picker == null || TorrentData == null || Enqueuer == null)
                 return;
 
@@ -105,7 +103,7 @@ namespace MonoTorrent.PiecePicking
             // continue a piece they have initiated. If they're choking then the only piece they can continue
             // will be a fast piece (if one exists!)
             if (!peer.IsChoking || peer.SupportsFastPeer) {
-                while (peer.AmRequestingPiecesCount < maxRequests) {
+                while (peer.CanRequestMorePieces) {
                     if (Picker.ContinueExistingRequest (peer, 0, available.Length - 1, out PieceSegment segment))
                         Enqueuer.EnqueueRequest (peer, segment);
                     else
@@ -123,7 +121,7 @@ namespace MonoTorrent.PiecePicking
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
                 ReadOnlyBitField? filtered = null;
 
-                while (peer.AmRequestingPiecesCount < maxRequests) {
+                while (peer.CanRequestMorePieces) {
                     filtered ??= ApplyIgnorables (available);
 
                     int requests = Picker.PickPiece (peer, filtered, allPeers, 0, TorrentData.PieceCount - 1, requestBuffer);
@@ -137,7 +135,7 @@ namespace MonoTorrent.PiecePicking
             if (!peer.IsChoking && peer.AmRequestingPiecesCount == 0) {
                 ReadOnlyBitField? filtered = null;
                 PieceSegment segment;
-                while (peer.AmRequestingPiecesCount < maxRequests) {
+                while (peer.CanRequestMorePieces) {
                     filtered ??= ApplyIgnorables (available);
 
                     if (Picker.ContinueAnyExistingRequest (peer, filtered, 0, TorrentData.PieceCount - 1, 1, out segment)) {

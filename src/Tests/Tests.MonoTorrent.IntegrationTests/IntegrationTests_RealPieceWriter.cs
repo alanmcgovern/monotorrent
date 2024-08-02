@@ -14,14 +14,14 @@ using System.Threading.Tasks;
 using MonoTorrent;
 using MonoTorrent.Client;
 using MonoTorrent.Connections.TrackerServer;
+using MonoTorrent.PiecePicking;
 using MonoTorrent.PieceWriter;
-using MonoTorrent.TrackerServer;
 
 using NUnit.Framework;
 
 using ReusableTasks;
 
-namespace Tests.MonoTorrent.IntegrationTests
+namespace MonoTorrent.IntegrationTests
 {
     [TestFixture]
     public class IPv4IntegrationTests : IntegrationTestsBase
@@ -69,7 +69,6 @@ namespace Tests.MonoTorrent.IntegrationTests
         public void Setup ()
         {
             _failHttpRequest = false;
-
             string tempDirectory = Path.Combine (Path.GetTempPath (), "monotorrent_tests", $"{NUnit.Framework.TestContext.CurrentContext.Test.Name}-{Path.GetRandomFileName ()}");
 
             _directory = Directory.CreateDirectory (tempDirectory);
@@ -115,7 +114,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         const string _torrentName = "IntegrationTests";
 
         private HttpListener _httpSeeder;
-        private TrackerServer _tracker;
+        private MonoTorrent.TrackerServer.TrackerServer _tracker;
         private ITrackerListener _trackerListener;
         private DirectoryInfo _directory;
         private DirectoryInfo _seederDir;
@@ -179,10 +178,10 @@ namespace Tests.MonoTorrent.IntegrationTests
         public async Task WebSeedDownload_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
 
         [Test]
-        public async Task WebSeedDownload_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
+        public async Task WebSeedDownload_V1V2_OneFileWithPadding () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true);
 
         [Test]
-        public async Task WebSeedDownload_V1V2_BiggerFile () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, useWebSeedDownload: true, fileSize: 131_073);
+        public async Task WebSeedDownload_V1V2_TenFilesWithPadding () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: true, explitlyHashCheck: false, nonEmptyFileCount: 10, useWebSeedDownload: true, fileSize: 987_654);
 
         [Test]
         public async Task WebSeedDownload_V1V2_RetryWebSeeder ()
@@ -199,7 +198,9 @@ namespace Tests.MonoTorrent.IntegrationTests
             var emptyFile = new FileInfo (Path.Combine (_seederDir.FullName, "Empty.file"));
             if (createEmptyFile)
                 File.WriteAllText (emptyFile.FullName, "");
-
+            
+            int counter = 0;
+            var buffer = new byte[16 * 1024];
             var nonEmptyFiles = new List<FileInfo> ();
             for (int i = 0; i < nonEmptyFileCount; i++) {
                 var nonEmptyFile = new FileInfo (Path.Combine (_seederDir.FullName, $"NonEmpty{i}.file"));
@@ -207,11 +208,11 @@ namespace Tests.MonoTorrent.IntegrationTests
                 streams.Add (fs);
 
                 long written = 0;
-                var buffer = new byte[16 * 1024];
-                for (int j = 0; j < buffer.Length; j++)
-                    buffer[j] = (byte) 'a';
                 while (written < fileSize + i) {
                     var toWrite = Math.Min ((fileSize + i) - written, buffer.Length);
+                    for (int j = 0; j < toWrite; j++)
+                        buffer[j] = (byte) counter++;
+
                     fs.Write (buffer, 0, (int) toWrite);
                     written += toWrite;
                 }
@@ -276,11 +277,11 @@ namespace Tests.MonoTorrent.IntegrationTests
             Assert.AreEqual (createEmptyFile, leecherEmptyFile.Exists, "Empty file should exist when created");
         }
 
-        private (TrackerServer, ITrackerListener) GetTracker ()
+        private (MonoTorrent.TrackerServer.TrackerServer, ITrackerListener) GetTracker ()
         {
             for (_trackerPort = 4000; _trackerPort < 4100; _trackerPort++) {
                 try {
-                    var tracker = new TrackerServer ();
+                    var tracker = new MonoTorrent.TrackerServer.TrackerServer ();
                     tracker.AllowUnregisteredTorrents = true;
                     var listenAddress = $"http://{new IPEndPoint (LoopbackAddress, _trackerPort)}/";
 
@@ -342,48 +343,49 @@ namespace Tests.MonoTorrent.IntegrationTests
             try {
                 ctx = _httpSeeder.EndGetContext (ar);
                 _httpSeeder.BeginGetContext (OnHttpContext, ar.AsyncState);
+
+
+                var localPath = ctx.Request.Url.LocalPath;
+                string relativeSeedingPath = $"/{_webSeedPrefix}/{_torrentName}/";
+                if (_failHttpRequest) {
+                    _failHttpRequest = false;
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.Close ();
+                } else if (!localPath.Contains (relativeSeedingPath)) {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.Close ();
+                } else {
+                    var fileName = localPath.Replace (relativeSeedingPath, string.Empty);
+                    var files = _seederDir.GetFiles ();
+                    var file = files.FirstOrDefault (x => x.Name == fileName);
+                    if (file == null) {
+                        ctx.Response.StatusCode = 406;
+                        ctx.Response.Close ();
+                    } else {
+                        using FileStream fs = new FileStream (file.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                        long start = 0;
+                        long end = fs.Length - 1;
+                        var rangeHeader = ctx.Request.Headers["Range"];
+                        if (rangeHeader != null) {
+                            var startAndEnd = rangeHeader.Replace ("bytes=", "").Split ('-');
+                            start = long.Parse (startAndEnd[0]);
+                            end = long.Parse (startAndEnd[1]);
+                        }
+                        var buffer = new byte[end - start + 1];
+                        fs.Seek (start, SeekOrigin.Begin);
+                        if (fs.Read (buffer, 0, buffer.Length) == buffer.Length) {
+                            ctx.Response.OutputStream.Write (buffer, 0, buffer.Length);
+                            ctx.Response.OutputStream.Close ();
+                        } else {
+                            ctx.Response.StatusCode = 405;
+                            ctx.Response.Close ();
+                        }
+                    }
+
+                }
             } catch {
                 // Do nothing!
                 return;
-            }
-
-            var localPath = ctx.Request.Url.LocalPath;
-            string relativeSeedingPath = $"/{_webSeedPrefix}/{_torrentName}/";
-            if (_failHttpRequest) {
-                _failHttpRequest = false;
-                ctx.Response.StatusCode = 500;
-                ctx.Response.Close ();
-            } else if (!localPath.Contains (relativeSeedingPath)) {
-                ctx.Response.StatusCode = 404;
-                ctx.Response.Close ();
-            } else {
-                var fileName = localPath.Replace (relativeSeedingPath, string.Empty);
-                var files = _seederDir.GetFiles ();
-                var file = files.FirstOrDefault (x => x.Name == fileName);
-                if (file == null) {
-                    ctx.Response.StatusCode = 406;
-                    ctx.Response.Close ();
-                } else {
-                    using FileStream fs = new FileStream (file.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                    long start = 0;
-                    long end = fs.Length - 1;
-                    var rangeHeader = ctx.Request.Headers["Range"];
-                    if (rangeHeader != null) {
-                        var startAndEnd = rangeHeader.Replace ("bytes=", "").Split ('-');
-                        start = long.Parse (startAndEnd[0]);
-                        end = long.Parse (startAndEnd[1]);
-                    }
-                    var buffer = new byte[end - start + 1];
-                    fs.Seek (start, SeekOrigin.Begin);
-                    if (fs.Read (buffer, 0, buffer.Length) == buffer.Length) {
-                        ctx.Response.OutputStream.Write (buffer, 0, buffer.Length);
-                        ctx.Response.OutputStream.Close ();
-                    } else {
-                        ctx.Response.StatusCode = 405;
-                        ctx.Response.Close ();
-                    }
-                }
-
             }
         }
 

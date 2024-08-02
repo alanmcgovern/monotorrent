@@ -348,48 +348,48 @@ namespace Tests.MonoTorrent.IntegrationTests
             try {
                 ctx = _httpSeeder.EndGetContext (ar);
                 _httpSeeder.BeginGetContext (OnHttpContext, ar.AsyncState);
+
+                var localPath = ctx.Request.Url.LocalPath;
+                string relativeSeedingPath = $"/{_webSeedPrefix}/{_torrentName}/";
+                if (_failHttpRequest) {
+                    _failHttpRequest = false;
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.Close ();
+                } else if (!localPath.Contains (relativeSeedingPath)) {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.Close ();
+                } else {
+                    var fileName = localPath.Replace (relativeSeedingPath, string.Empty);
+                    var files = _seederDir.GetFiles ();
+                    var file = files.FirstOrDefault (x => x.Name == fileName);
+                    if (file == null) {
+                        ctx.Response.StatusCode = 406;
+                        ctx.Response.Close ();
+                    } else {
+                        using FileStream fs = new FileStream (file.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                        long start = 0;
+                        long end = fs.Length - 1;
+                        var rangeHeader = ctx.Request.Headers["Range"];
+                        if (rangeHeader != null) {
+                            var startAndEnd = rangeHeader.Replace ("bytes=", "").Split ('-');
+                            start = long.Parse (startAndEnd[0]);
+                            end = long.Parse (startAndEnd[1]);
+                        }
+                        var buffer = new byte[end - start + 1];
+                        fs.Seek (start, SeekOrigin.Begin);
+                        if (fs.Read (buffer, 0, buffer.Length) == buffer.Length) {
+                            ctx.Response.OutputStream.Write (buffer, 0, buffer.Length);
+                            ctx.Response.OutputStream.Close ();
+                        } else {
+                            ctx.Response.StatusCode = 405;
+                            ctx.Response.Close ();
+                        }
+                    }
+
+                }
             } catch {
                 // Do nothing!
                 return;
-            }
-
-            var localPath = ctx.Request.Url.LocalPath;
-            string relativeSeedingPath = $"/{_webSeedPrefix}/{_torrentName}/";
-            if (_failHttpRequest) {
-                _failHttpRequest = false;
-                ctx.Response.StatusCode = 500;
-                ctx.Response.Close ();
-            } else if (!localPath.Contains (relativeSeedingPath)) {
-                ctx.Response.StatusCode = 404;
-                ctx.Response.Close ();
-            } else {
-                var fileName = localPath.Replace (relativeSeedingPath, string.Empty);
-                var files = _seederDir.GetFiles ();
-                var file = files.FirstOrDefault (x => x.Name == fileName);
-                if (file == null) {
-                    ctx.Response.StatusCode = 406;
-                    ctx.Response.Close ();
-                } else {
-                    using FileStream fs = new FileStream (file.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                    long start = 0;
-                    long end = fs.Length - 1;
-                    var rangeHeader = ctx.Request.Headers["Range"];
-                    if (rangeHeader != null) {
-                        var startAndEnd = rangeHeader.Replace ("bytes=", "").Split ('-');
-                        start = long.Parse (startAndEnd[0]);
-                        end = long.Parse (startAndEnd[1]);
-                    }
-                    var buffer = new byte[end - start + 1];
-                    fs.Seek (start, SeekOrigin.Begin);
-                    if (fs.Read (buffer, 0, buffer.Length) == buffer.Length) {
-                        ctx.Response.OutputStream.Write (buffer, 0, buffer.Length);
-                        ctx.Response.OutputStream.Close ();
-                    } else {
-                        ctx.Response.StatusCode = 405;
-                        ctx.Response.Close ();
-                    }
-                }
-
             }
         }
 
