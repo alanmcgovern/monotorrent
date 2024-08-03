@@ -259,14 +259,15 @@ namespace MonoTorrent.Trackers
                 CollectionAssert.Contains (peersFromAnnounce, peer);
         }
 
-        int preferredPort = 54399;
         ITrackerListener AddListener (AddressFamily addressFamily)
         {
             HttpTrackerListener listener = null;
 
             // Try to work around port-in-use issues in CI. Urgh. This is awful :P 
-            for (int i = 0; i < 10; i++) {
-                preferredPort++;
+            int preferredPort = -1;
+            var portGenerator = new Random ();
+            for (int i = 0; i < 100; i++) {
+                preferredPort = portGenerator.Next (10000, 50000);
 
                 if (addressFamily == AddressFamily.InterNetwork) {
                     listener = new HttpTrackerListener (new IPEndPoint (IPAddress.Loopback, preferredPort));
@@ -301,9 +302,9 @@ namespace MonoTorrent.Trackers
 
             var uri = new Uri ($"http://localhost:{preferredPort}/announce");
             if (addressFamily == AddressFamily.InterNetwork)
-                ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetwork);
+                ConnectionIPv4 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, addressFamily);
             if (addressFamily == AddressFamily.InterNetworkV6)
-                ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, AddressFamily.InterNetworkV6);
+                ConnectionIPv6 = new HttpTrackerConnection (uri, Factories.Default.CreateHttpClient, addressFamily);
 
             return listener;
         }
