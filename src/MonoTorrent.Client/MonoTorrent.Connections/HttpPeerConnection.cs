@@ -35,6 +35,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MonoTorrent.Logging;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
 
@@ -44,6 +45,8 @@ namespace MonoTorrent.Connections.Peer
 {
     sealed class HttpPeerConnection : IPeerConnection
     {
+        static readonly Logger Log = Logger.Create (nameof (HttpPeerConnection));
+
         static readonly Uri PaddingFileUri = new Uri ("http://__paddingfile__");
 
         class HttpRequestData
@@ -305,14 +308,20 @@ namespace MonoTorrent.Connections.Peer
         {
             SendResult = new TaskCompletionSource<object?> ();
 
+            var info = TorrentData.TorrentInfo;
             List<BlockInfo> bundle = DecodeMessages (socketBuffer.Span);
-            if (bundle.Count > 0) {
-                RequestMessages.AddRange (bundle);
-                CreateWebRequests (RequestMessages.ToArray ());
-            } else {
-                return socketBuffer.Length;
-            }
 
+            // If the messages in the send buffer are anything *other* than piece request messages,
+            // just pretend the bytes were sent and everything was fine.
+            if (bundle.Count == 0 || info == null)
+                return socketBuffer.Length;
+
+            // Otherwise, if there were 1 or more piece request messages, convert these to HTTP requests.
+            // and only mark the bytes as successfully sent after all webrequests have run to completion
+            // and the data has been received.
+            RequestMessages.AddRange (bundle);
+            ValidateWebRequests (info, RequestMessages.ToArray ());
+            CreateWebRequestsForSequentialRange (RequestMessages[0], RequestMessages[RequestMessages.Count - 1]);
             ReceiveWaiter.Set ();
             await SendResult.Task;
             return socketBuffer.Length;
@@ -331,7 +340,7 @@ namespace MonoTorrent.Connections.Peer
             return messages;
         }
 
-        void CreateWebRequests (BlockInfo[] blocks)
+        static void ValidateWebRequests (ITorrentInfo torrentInfo, BlockInfo[] blocks)
         {
             if (blocks.Length > 0) {
                 BlockInfo startBlock = blocks[0];
@@ -339,14 +348,14 @@ namespace MonoTorrent.Connections.Peer
                 for (int i = 1; i < blocks.Length; i++) {
                     BlockInfo previousBlock = blocks[i - 1];
                     currentBlock = blocks[i];
-                    long endOffsetOfPreviousEndBlock = TorrentData.TorrentInfo!.PieceIndexToByteOffset (previousBlock.PieceIndex) + previousBlock.StartOffset + previousBlock.RequestLength;
-                    long startOffsetOfCurrentBlock = TorrentData.TorrentInfo!.PieceIndexToByteOffset (currentBlock.PieceIndex) + currentBlock.StartOffset;
+                    long endOffsetOfPreviousEndBlock = torrentInfo.PieceIndexToByteOffset (previousBlock.PieceIndex) + previousBlock.StartOffset + previousBlock.RequestLength;
+                    long startOffsetOfCurrentBlock = torrentInfo.PieceIndexToByteOffset (currentBlock.PieceIndex) + currentBlock.StartOffset;
                     if (endOffsetOfPreviousEndBlock != startOffsetOfCurrentBlock) {
-                        CreateWebRequestsForSequentialRange (startBlock, previousBlock);
-                        startBlock = currentBlock;
+                        var msg = "Piece requests made from HTTP peers must be a strictly sequential range of blocks. The range must be 1 or more blocks long.";
+                        Log.Error (msg);
+                        throw new InvalidOperationException (msg);
                     }
                 }
-                CreateWebRequestsForSequentialRange (startBlock, currentBlock);
             }
         }
 
@@ -369,11 +378,10 @@ namespace MonoTorrent.Connections.Peer
                 if (count == 0)
                     break;
 
-                var lengthWithPadding = file.Length + file.Padding;
                 // If the first byte of data is from the next file, move to the next file immediately
                 // and adjust start offset to be relative to that file.
-                if (startOffset >= lengthWithPadding) {
-                    startOffset -= lengthWithPadding;
+                if (startOffset >= file.Length + file.Padding) {
+                    startOffset -= file.Length + file.Padding;
                     continue;
                 }
 
