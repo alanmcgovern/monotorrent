@@ -219,7 +219,7 @@ namespace MonoTorrent.PieceWriter
             bool shouldTruncate = false;
             using (await allStreams.Locker.EnterAsync ()) {
                 // We should check if the on-disk file needs truncation if this is the very first time we're opening it.
-                shouldTruncate = allStreams.Streams.Count == 0;
+                shouldTruncate = access.HasFlag (FileAccess.Write) && allStreams.Streams.Count == 0;
                 foreach (var existing in allStreams.Streams) {
                     if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
                         if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream!.CanWrite) {

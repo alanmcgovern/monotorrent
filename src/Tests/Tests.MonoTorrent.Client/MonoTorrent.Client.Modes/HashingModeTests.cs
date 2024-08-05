@@ -124,6 +124,19 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public async Task HashCheckAsync_DoNotTruncate ()
+        {
+            await Manager.Engine.DiskManager.SetWriterAsync (Factories.Default.CreatePieceWriter (1));
+
+            var file = Manager.Files[0];
+            System.IO.Directory.CreateDirectory (System.IO.Path.GetDirectoryName (file.FullPath));
+            System.IO.File.WriteAllBytes (file.FullPath, new byte[file.Length + 1]);
+            await Manager.HashCheckAsync (false);
+            Assert.AreEqual (TorrentState.Stopped, Manager.State, "#1");
+            Assert.AreEqual (file.Length + 1, new System.IO.FileInfo (file.FullPath).Length);
+        }
+
+        [Test]
         public async Task PauseResumeHashingMode ()
         {
             var pieceTryHash = new TaskCompletionSource<object> ();
