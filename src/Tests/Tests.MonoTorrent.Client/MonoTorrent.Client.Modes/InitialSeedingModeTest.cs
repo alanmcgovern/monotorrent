@@ -27,6 +27,8 @@
 //
 
 
+using System.Threading.Tasks;
+
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.Messages.Peer.FastPeer;
 
@@ -46,11 +48,15 @@ namespace MonoTorrent.Client.Modes
         }
 
         [SetUp]
-        public void Setup ()
+        public async Task Setup ()
         {
             Rig = TestRig.CreateSingleFile (Constants.BlockSize * 20, Constants.BlockSize * 2);
-            Rig.Manager.MutableBitField.Not ();
-            Rig.Manager.UnhashedPieces.SetAll (false);
+
+            var bf = new BitField (Rig.Manager.Bitfield).SetAll (true);
+            var unhashed = new BitField (bf).SetAll (false);
+            await Rig.Manager.LoadFastResumeAsync (new FastResume (Rig.Manager.InfoHashes, bf, unhashed));
+
+
             Rig.Manager.Mode = new InitialSeedingMode (Rig.Manager, Rig.Engine.DiskManager, Rig.Engine.ConnectionManager, Rig.Engine.Settings);
         }
 

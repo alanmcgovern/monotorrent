@@ -123,10 +123,11 @@ namespace MonoTorrent.PieceWriter
             using (var file = new FileStream (TorrentFile.FullPath, FileMode.OpenOrCreate))
                 file.Write (new byte[TorrentFile.Length + 1]);
 
-            // This should implicitly truncate.
+            // This should not implicitly truncate.
+            // Truncation happens in 'StartingMode' only.
             using var writer = new DiskWriter ();
             await writer.WriteAsync (TorrentFile, 0, new byte[12]);
-            Assert.AreEqual (TorrentFile.Length, new FileInfo (TorrentFile.FullPath).Length);
+            Assert.AreEqual (TorrentFile.Length + 1, new FileInfo (TorrentFile.FullPath).Length);
         }
 
         [Test]

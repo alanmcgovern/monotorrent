@@ -143,17 +143,18 @@ namespace MonoTorrent.Client
 
         public ReadOnlyBitField Bitfield => MutableBitField;
 
-        internal BitField MutableBitField { get; private set; }
+        private BitField MutableBitField { get; set; }
 
         public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
         public bool CanUseLocalPeerDiscovery => ClientEngine.SupportsLocalPeerDiscovery && (Torrent == null || !Torrent.IsPrivate) && Engine != null;
 
         /// <summary>
-        /// Returns true only when all files have been fully downloaded. If some files are marked as 'DoNotDownload' then the
+        /// Returns true only when all files have been fully downloaded, all zero-length files exist, and
+        /// all files have the correct length. If some files are marked as 'DoNotDownload' then the
         /// torrent will not be considered to be Complete until they are downloaded.
         /// </summary>
-        public bool Complete => Bitfield.AllTrue;
+        public bool Complete => Bitfield.AllTrue && AllFilesCorrectLength;
 
         internal bool Disposed { get; private set; }
 
@@ -203,6 +204,7 @@ namespace MonoTorrent.Client
         internal void SetNeedsHashCheck ()
         {
             HashChecked = false;
+            AllFilesCorrectLength = false;
             if (Engine != null && Engine.Settings.AutoSaveLoadFastResume) {
                 var path = Engine.Settings.GetFastResumePath (InfoHashes);
                 if (File.Exists (path))
@@ -218,6 +220,8 @@ namespace MonoTorrent.Client
         internal BitField UnhashedPieces { get; set; }
 
         public bool HashChecked { get; private set; }
+
+        internal bool AllFilesCorrectLength { get; private set; }
 
         /// <summary>
         /// The number of times a piece is downloaded, but is corrupt and fails the hashcheck and must be re-downloaded.
@@ -582,6 +586,8 @@ namespace MonoTorrent.Client
             }
 
             HashChecked = true;
+            AllFilesCorrectLength = hashingMode.AllFilesCorrectLength;
+
             if (autoStart) {
                 await StartAsync ();
             } else if (setStoppedModeWhenDone) {
@@ -679,8 +685,6 @@ namespace MonoTorrent.Client
                 var currentPath = File.Exists (downloadCompleteFullPath) ? downloadCompleteFullPath : downloadIncompleteFullPath;
                 var torrentFileInfo = new TorrentFileInfo (file, currentPath);
                 torrentFileInfo.UpdatePaths ((currentPath, downloadCompleteFullPath, downloadIncompleteFullPath));
-                if (file.Length == 0)
-                    torrentFileInfo.BitField[0] = true;
                 return torrentFileInfo;
             }).Cast<ITorrentManagerFile> ().ToList ().AsReadOnly ();
 
@@ -1060,7 +1064,10 @@ namespace MonoTorrent.Client
                 throw new InvalidOperationException ("The registered engine has been disposed");
         }
 
-        public async Task LoadFastResumeAsync (FastResume data)
+        public Task LoadFastResumeAsync (FastResume data)
+            => LoadFastResumeAsync (data, false);
+
+        internal async Task LoadFastResumeAsync (FastResume data, bool skipStateCheckForTests)
         {
             if (data == null)
                 throw new ArgumentNullException (nameof (data));
@@ -1068,7 +1075,7 @@ namespace MonoTorrent.Client
             await ClientEngine.MainLoop;
 
             CheckMetadata ();
-            if (State != TorrentState.Stopped)
+            if (State != TorrentState.Stopped && !skipStateCheckForTests)
                 throw new InvalidOperationException ("Can only load FastResume when the torrent is stopped");
             if (InfoHashes != data.InfoHashes || Torrent!.PieceCount != data.Bitfield.Length)
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
@@ -1076,6 +1083,21 @@ namespace MonoTorrent.Client
             for (int i = 0; i < Torrent.PieceCount; i++)
                 OnPieceHashed (i, data.Bitfield[i], i + 1, Torrent.PieceCount);
             UnhashedPieces.From (data.UnhashedPieces);
+
+            // Empty files aren't stored in fast resume data because it's as easy to just check if they exist on disk.
+            foreach (TorrentFileInfo file in Files)
+                if (file.Length == 0)
+                    file.BitField[0] = await Engine!.DiskManager.CheckFileExistsAsync (file);
+
+            AllFilesCorrectLength = true;
+            //fixme: api break to check file size in IO interfaces
+            foreach (var file in Files) {
+                var info = new FileInfo (file.FullPath);
+                if (info.Exists && info.Length > file.Length) {
+                    AllFilesCorrectLength = false;
+                    break;
+                }
+            }
 
             HashChecked = true;
         }

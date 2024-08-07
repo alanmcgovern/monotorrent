@@ -512,9 +512,9 @@ namespace MonoTorrent.Client
             return new TestRig ("", StandardPieceSize (), StandardWriter (), StandardTrackers (), StandardMultiFile ());
         }
 
-        internal static TestRig CreateMultiFile (ITorrentFile[] files, int pieceLength, IPieceWriter writer = null)
+        internal static TestRig CreateMultiFile (ITorrentFile[] files, int pieceLength, IPieceWriter writer = null, string baseDirectory = null)
         {
-            return new TestRig ("", pieceLength, writer ?? StandardWriter (), StandardTrackers (), files);
+            return new TestRig (baseDirectory, pieceLength, writer ?? StandardWriter (), StandardTrackers (), files);
         }
 
         public static TestRig CreateTrackers (string[][] tier)
@@ -603,15 +603,15 @@ namespace MonoTorrent.Client
             return CreateSingleFile (torrentSize, pieceLength, false).Manager;
         }
 
-        internal static TorrentManager CreateMultiFileManager (long[] fileSizes, int pieceLength, IPieceWriter writer = null)
+        internal static TorrentManager CreateMultiFileManager (long[] fileSizes, int pieceLength, IPieceWriter writer = null, string baseDirectory = null)
         {
             var files = TorrentFile.Create (pieceLength, fileSizes).ToArray ();
-            return CreateMultiFileManager (files, pieceLength, writer);
+            return CreateMultiFileManager (files, pieceLength, writer, baseDirectory);
         }
 
-        internal static TorrentManager CreateMultiFileManager (ITorrentFile[] files, int pieceLength, IPieceWriter writer = null)
+        internal static TorrentManager CreateMultiFileManager (ITorrentFile[] files, int pieceLength, IPieceWriter writer = null, string baseDirectory = null)
         {
-            return CreateMultiFile (files, pieceLength, writer: writer).Manager;
+            return CreateMultiFile (files, pieceLength, writer: writer, baseDirectory: baseDirectory).Manager;
         }
     }
 }

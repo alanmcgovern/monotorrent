@@ -44,6 +44,8 @@ namespace MonoTorrent.Client.Modes
         public TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
         public CancellationToken Token => Cancellation.Token;
 
+        public bool AllFilesCorrectLength { get; private set; }
+
         CancellationTokenSource Cancellation { get; }
         DiskManager DiskManager { get; }
         TorrentManager Manager { get; }
@@ -92,6 +94,33 @@ namespace MonoTorrent.Client.Modes
 
             // Delete any existing fast resume data. We will need to recreate it after hashing completes.
             await Manager.MaybeDeleteFastResumeAsync ();
+
+            // Files are deemed to be the 'correct' length as long as they are not *larger* then
+            // they're supposed to be. Partially downloaded files which are too small will fail
+            // the hashcheck.
+            //
+            // This additional check is to ensure that all files, including zero length
+            // files, exist *and also* that none are too large. If any are too large, you must start
+            // the torrent so the file will be truncated.
+            AllFilesCorrectLength = true;
+            foreach (TorrentFileInfo v in Manager.Files) {
+
+                // Update every single zero length file to see if it exists or not.
+                // Zero length files have a bitfield of length 1 which indicates whether the file is on disk or not.
+                if (v.Length == 0)
+                    v.BitField[0] = await DiskManager.CheckFileExistsAsync (v);
+
+                // We need to confirm whether or not *at least* one file is missing or incorrectly sized. 
+                if (AllFilesCorrectLength) {
+                    // FIXME: We need an API break to add file length checking to the disk IO interface(s). Urgh.
+                    var info = new System.IO.FileInfo (v.FullPath);
+
+                    // If any file doesn't exist or is too long, we have an issue for sure!
+                    if (!info.Exists || info.Length > v.Length)
+                        AllFilesCorrectLength = false;
+                }
+            }
+
 
             bool atLeastOneDoNotDownload = Manager.Files.Any (t => t.Priority == Priority.DoNotDownload);
             if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {

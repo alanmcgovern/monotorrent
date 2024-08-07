@@ -69,9 +69,12 @@ namespace MonoTorrent.PiecePicking
         }
 
         [Test]
-        public void CloseConnectionWithCancellableRequests ()
+        public async Task CloseConnectionWithCancellableRequests ()
         {
-            torrentManager.MutableBitField.SetAll (true).Set (0, false);
+            var bf = new BitField (torrentManager.Bitfield);
+            bf.SetAll (true).Set (0, false);
+            await torrentManager.LoadFastResumeAsync (new FastResume (torrentManager.InfoHashes, bf, new BitField (torrentManager.Bitfield).SetAll (false)));
+
             peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
             peers[0].SupportsFastPeer = true;
@@ -88,7 +91,10 @@ namespace MonoTorrent.PiecePicking
             foreach (var file in torrentManager.Files)
                 await torrentManager.SetFilePriorityAsync (file, Priority.DoNotDownload);
 
-            torrentManager.MutableBitField.SetAll (true).Set (0, false);
+            var bf = new BitField (torrentManager.Bitfield).SetAll (true).Set (0, false);
+            var unhashed = new BitField (bf).SetAll (false);
+            await torrentManager.LoadFastResumeAsync (new FastResume (torrentManager.InfoHashes, bf, unhashed));
+
             peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
 
@@ -98,9 +104,12 @@ namespace MonoTorrent.PiecePicking
         }
 
         [Test]
-        public void RequestWhenSeeder ()
+        public async Task RequestWhenSeeder ()
         {
-            torrentManager.MutableBitField.SetAll (true);
+            var bf = new BitField (torrentManager.Bitfield).SetAll (true);
+            var unhashed = new BitField (bf).SetAll (false);
+            await torrentManager.LoadFastResumeAsync (new FastResume (torrentManager.InfoHashes, bf, unhashed));
+
             peers[0].MutableBitField.SetAll (true);
             peers[0].IsChoking = false;
 

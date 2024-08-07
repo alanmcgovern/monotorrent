@@ -129,6 +129,25 @@ namespace MonoTorrent.Client.Modes
 
             SendAnnounces ();
 
+            // This means the hashcheck determined some zero length files were missing, or
+            // some files are too large. It's safe to truncate files at this point as the user
+            // has definitively chosen to start downloading the torrent if this line is executing.
+            if (!Manager.AllFilesCorrectLength) {
+                foreach (var file in Manager.Files) {
+                    var info = new FileInfo (file.FullPath);
+
+                    // If the file does not exist and it's supposed to be zero length, create it immediately.
+                    // It will not be created by the "write data to the file" codepath as it has no data.
+                    if (!info.Exists && file.Length == 0)
+                        File.WriteAllBytes (file.FullPath, Array.Empty<byte> ());
+
+                    // However if the file does exist and it's too large - truncate it!
+                    else if (info.Exists && info.Length > file.Length)
+                        using (var fileStream = new FileStream (file.FullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None))
+                            fileStream.SetLength (file.Length);
+                }
+            }
+
             // Save the fast resume data before updating the current mode. This ensures the on-disk data has
             // either been refreshed or deleted before we make a user-visible change to the state of the torrent.
             if (Manager.Complete)
@@ -206,13 +225,15 @@ namespace MonoTorrent.Client.Modes
             if (!Manager.HashChecked)
                 return;
 
-            foreach (ITorrentManagerFile file in Manager.Files) {
+            foreach (TorrentFileInfo file in Manager.Files) {
                 if (!file.BitField.AllFalse && file.Length > 0) {
                     if (!await DiskManager.CheckFileExistsAsync (file)) {
                         Manager.SetNeedsHashCheck ();
                         break;
                     }
                 }
+                if (file.Length == 0)
+                    file.BitField[0] = await DiskManager.CheckFileExistsAsync (file);
             }
         }
     }
