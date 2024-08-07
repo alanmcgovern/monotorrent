@@ -261,9 +261,9 @@ namespace MonoTorrent.Client.Modes
 
             Assert.AreEqual (2, TrackerManager.Announces.Count, "#1");
             Assert.AreEqual (null, TrackerManager.Announces[0].Item1, "#2");
-            Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#3");
+            Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[1].Item2, "#3");
             Assert.AreEqual (null, TrackerManager.Announces[1].Item1, "#2");
-            Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[1].Item2, "#4");
+            Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[0].Item2, "#4");
         }
 
         [Test]
