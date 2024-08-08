@@ -38,6 +38,12 @@ namespace MonoTorrent.Dht.Tasks
 {
     class InitialiseTask
     {
+        static readonly string[] DefaultBootstrapRouters = new[] {
+            "router.bittorrent.com",
+            "router.utorrent.com",
+            "dht.transmissionbt.com"
+        };
+
         // Choose a completely arbitrary value here. If we have at least this many
         // nodes in the routing table we can consider it 'healthy' enough to allow
         // the state to change to 'Ready' so torrents can begin searching for peers
@@ -48,17 +54,19 @@ namespace MonoTorrent.Dht.Tasks
         readonly TaskCompletionSource<object?> initializationComplete;
 
         static Node[]? BootstrapNodes { get; set; }
+        string[] BootstrapRouters { get; set; }
 
         public InitialiseTask (DhtEngine engine)
-            : this (engine, Enumerable.Empty<Node> ())
+            : this (engine, Enumerable.Empty<Node> (), DefaultBootstrapRouters)
         {
 
         }
 
-        public InitialiseTask (DhtEngine engine, IEnumerable<Node> nodes)
+        public InitialiseTask (DhtEngine engine, IEnumerable<Node> nodes, string[] bootstrapRouters)
         {
             this.engine = engine;
-            initialNodes = new List<Node> (nodes);
+            initialNodes = nodes.ToList ();
+            BootstrapRouters = bootstrapRouters.Length == 0 ? DefaultBootstrapRouters : bootstrapRouters.ToArray ();
             initializationComplete = new TaskCompletionSource<object?> ();
         }
 
@@ -92,8 +100,10 @@ namespace MonoTorrent.Dht.Tasks
 
         async Task<Node[]> GenerateBootstrapNodes ()
         {
-            var addresses = await Dns.GetHostAddressesAsync ("router.bittorrent.com");
+            var addresses = await Task.WhenAll (BootstrapRouters.Select (Dns.GetHostAddressesAsync));
             return addresses
+                .SelectMany (t => t)
+                .Distinct ()
                 .Select (t => new IPEndPoint (t, 6881))
                 .Select (t => new Node (NodeId.Create (), t))
                 .ToArray ();
