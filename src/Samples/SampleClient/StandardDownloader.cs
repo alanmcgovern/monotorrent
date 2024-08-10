@@ -72,6 +72,9 @@ namespace ClientSample
             // For each torrent manager we loaded and stored in our list, hook into the events
             // in the torrent manager and start the engine.
             foreach (TorrentManager manager in Engine.Torrents) {
+                manager.PeersFound += (o, e) => {
+                    Listener.WriteLine (string.Format ($"{e.GetType ().Name}: {e.NewPeers} peers for {e.TorrentManager.Name}"));
+                };
                 manager.PeerConnected += (o, e) => {
                     lock (Listener)
                         Listener.WriteLine ($"Connection succeeded: {e.Peer.Uri}");
@@ -116,6 +119,7 @@ namespace ClientSample
                 AppendFormat (sb, $"Disk IO Total:      {Engine.DiskManager.TotalBytesRead / 1024.0:0.00} kB read / {Engine.DiskManager.TotalBytesWritten / 1024.0:0.00} kB written");
                 AppendFormat (sb, $"Open Files:         {Engine.DiskManager.OpenFiles} / {Engine.DiskManager.MaximumOpenFiles}");
                 AppendFormat (sb, $"Open Connections:   {Engine.ConnectionManager.OpenConnections}");
+                AppendFormat (sb, $"DHT State:          {Engine.Dht.State}");
 
                 // Print out the port mappings
                 foreach (var mapping in Engine.PortMappings.Created)
