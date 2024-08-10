@@ -68,6 +68,9 @@ namespace MonoTorrent
         internal PeerInfo (Uri connectionUri, BEncodedString peerId, bool maybeSeeder, IPEndPoint? endPoint)
             => (ConnectionUri, PeerId, MaybeSeeder, EndPoint) = (connectionUri ?? throw new ArgumentNullException (nameof (connectionUri)), peerId ?? throw new ArgumentNullException (nameof (BEncodedString)), maybeSeeder, endPoint);
 
+        public PeerInfo WithPeerId (BEncodedString peerId)
+            => new PeerInfo (ConnectionUri, peerId, MaybeSeeder, EndPoint);
+
         public override bool Equals (object? obj)
             => Equals (obj as PeerInfo);
 

@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -31,7 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using MonoTorrent.Client.Listeners;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.Peer.Encryption;
@@ -50,11 +49,14 @@ namespace MonoTorrent.Client
 
         IList<IPeerConnectionListener> Listeners { get; set; }
 
+        IPeerConnectionGate ConnectionGate { get; set; }
+
         InfoHash[] SKeys { get; set; }
 
-        internal ListenManager (ClientEngine engine)
+        internal ListenManager (ClientEngine engine, IPeerConnectionGate connectionGate)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
+            ConnectionGate = connectionGate ?? throw new ArgumentNullException (nameof (connectionGate));
             Listeners = Array.Empty<IPeerConnectionListener> ();
             SKeys = Array.Empty<InfoHash> ();
         }
@@ -142,6 +144,12 @@ namespace MonoTorrent.Client
 
             if (!man.Mode.CanAcceptConnections)
                 return false;
+
+            peerInfo = peerInfo.WithPeerId (message.PeerId);
+            if (!await ConnectionGate.TryAcceptHandshakeAsync (Engine.PeerId, peerInfo, connection, man.InfoHashes.V1OrV2)) {
+                logger.InfoFormatted (connection, "[incoming] Handshake with peer_id '{0}' rejected by the connection gate", message.PeerId);
+                return false;
+            }
 
             var peer = new Peer (peerInfo, man.InfoHashes.Expand (message.InfoHash));
             peer.UpdatePeerId (message.PeerId);
