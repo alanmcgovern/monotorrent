@@ -613,6 +613,9 @@ namespace MonoTorrent.Client.Modes
 
         protected void PreLogicTick (int counter)
         {
+            var ninetySeconds = TimeSpan.FromSeconds (90);
+            var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
+
             SendAnnounces ();
 
             // The 'AmInterested' status is dependent on whether or not the set of IPiecePicker's
@@ -625,6 +628,26 @@ namespace MonoTorrent.Client.Modes
                 CloseConnectionsForStalePeers ();
             }
             Manager.Peers.UpdatePeerCounts ();
+
+            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
+                var id = Manager.Peers.ConnectedPeers[i];
+
+                // Close connections if no messages have been received.
+                if (id.LastMessageReceived.Elapsed > onhundredAndEightySeconds) {
+                    ConnectionManager.CleanupSocket (Manager, id);
+                    i--;
+                    continue;
+                }
+
+                // Send keepalives if needed.
+                if (id.LastMessageSent.Elapsed > ninetySeconds) {
+                    id.LastMessageSent.Restart ();
+                    id.MessageQueue.Enqueue (KeepAliveMessage.Instance, default);
+                }
+
+                // Process any pending queues.
+                ConnectionManager.TryProcessQueue (Manager, id);
+            }
 
             //Execute initial logic for individual peers
             if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
@@ -645,9 +668,6 @@ namespace MonoTorrent.Client.Modes
 
         void PostLogicTick (int counter)
         {
-            var ninetySeconds = TimeSpan.FromSeconds (90);
-            var onhundredAndEightySeconds = TimeSpan.FromSeconds (180);
-
             // If any files were changed from DoNotDownload -> Any other priority, then we should hash them if they
             // had been skipped in the original hashcheck.
             _ = TryHashPendingFilesAsync ();
@@ -669,23 +689,6 @@ namespace MonoTorrent.Client.Modes
                 id.MaxPendingRequests = maxRequests;
 
                 id.Monitor.Tick ();
-            }
-
-            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++) {
-                var id = Manager.Peers.ConnectedPeers[i];
-
-                ConnectionManager.TryProcessQueue (Manager, id);
-
-                if (id.LastMessageSent.Elapsed > ninetySeconds) {
-                    id.LastMessageSent.Restart ();
-                    id.MessageQueue.Enqueue (KeepAliveMessage.Instance, default);
-                }
-
-                if (id.LastMessageReceived.Elapsed > onhundredAndEightySeconds) {
-                    ConnectionManager.CleanupSocket (Manager, id);
-                    i--;
-                    continue;
-                }
             }
 
             Manager.PieceManager.AddPieceRequests (Manager.Peers.ConnectedPeers);
