@@ -165,6 +165,13 @@ namespace MonoTorrent.Client.Modes
             foreach (var peer in Manager.Peers.ConnectedPeers) {
                 if (IgnoredPeers.Contains (peer))
                     continue;
+
+                // Never request data from peers who do not have a BEP52 connection.
+                if (peer.ExpectedInfoHash != Manager.InfoHashes.V2) {
+                    IgnoredPeers.Add (peer);
+                    continue;
+                }
+
                 foreach (var picker in pickers) {
                     if (!picker.Value.Item2.ValidatedPieces.AllTrue)
                         picker.Value.Item1.AddRequests (picker.Value.Item2.Wrap (peer), picker.Value.Item2.AvailablePieces, Array.Empty<ReadOnlyBitField> ());

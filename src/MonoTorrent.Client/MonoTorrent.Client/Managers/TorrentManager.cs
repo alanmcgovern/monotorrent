@@ -881,7 +881,7 @@ namespace MonoTorrent.Client
             if (peerInfo is null)
                 throw new ArgumentNullException (nameof (peerInfo));
 
-            var peer = new Peer (peerInfo, infoHash) {
+            var peer = new Peer (peerInfo, InfoHashes.Expand (infoHash)) {
                 IsSeeder = peerInfo.MaybeSeeder,
             };
 
