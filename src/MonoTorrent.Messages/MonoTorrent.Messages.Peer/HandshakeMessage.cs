@@ -40,8 +40,9 @@ namespace MonoTorrent.Messages.Peer
     {
         public static readonly int HandshakeLength = Constants.HandshakeLengthV100;
 
-        const byte ExtendedMessagingFlag = 0x10;
-        const byte FastPeersFlag = 0x04;
+        const byte ExtendedMessagingFlag = 0b00010000;
+        const byte FastPeersFlag = 0b00000100;
+        const byte UpgradeToV2Flag = 0b00010000;
 
         public override int ByteLength => Constants.HandshakeLengthV100;
 
@@ -76,6 +77,13 @@ namespace MonoTorrent.Messages.Peer
         /// </summary>
         public bool SupportsFastPeer { get; private set; }
 
+        /// <summary>
+        /// True if the infohash sent in the handshake is a V1 infohash, and is from a hybrid torrent.
+        /// If the receiving client responds with the corresponding V2 infohash, the connection is treated
+        /// as a BitTorrent V2 (BEP52) compatible connection.
+        /// </summary>
+        public bool SupportsUpgradeToV2 { get; private set; }
+
         #region Constructors
 
         public HandshakeMessage (InfoHash infoHash, BEncodedString peerId, string protocolString)
@@ -91,6 +99,12 @@ namespace MonoTorrent.Messages.Peer
         }
 
         public HandshakeMessage (InfoHash infoHash, BEncodedString peerId, string protocolString, bool enableFastPeer, bool enableExtended)
+            : this (infoHash, peerId, protocolString, enableFastPeer, enableExtended, false)
+        {
+
+        }
+
+        public HandshakeMessage (InfoHash infoHash, BEncodedString peerId, string protocolString, bool enableFastPeer, bool enableExtended, bool supportsUpgradeToV2)
         {
             InfoHash = infoHash;
             PeerId = peerId;
@@ -98,6 +112,7 @@ namespace MonoTorrent.Messages.Peer
             ProtocolStringLength = protocolString.Length;
             SupportsFastPeer = enableFastPeer;
             SupportsExtendedMessaging = enableExtended;
+            SupportsUpgradeToV2 = supportsUpgradeToV2;
         }
         #endregion
 
@@ -120,6 +135,8 @@ namespace MonoTorrent.Messages.Peer
                 supports[5] |= ExtendedMessagingFlag;
             if (SupportsFastPeer)
                 supports[7] |= FastPeersFlag;
+            if (SupportsUpgradeToV2)
+                supports[7] |= UpgradeToV2Flag;
             supports.CopyTo (buffer);
             buffer = buffer.Slice (supports.Length);
 
@@ -152,9 +169,20 @@ namespace MonoTorrent.Messages.Peer
 
         void CheckForSupports (ref ReadOnlySpan<byte> buffer)
         {
-            SupportsExtendedMessaging = (ExtendedMessagingFlag & buffer[5]) != 0;
-            SupportsFastPeer = (FastPeersFlag & buffer[7]) != 0;
+            // There are 8 reserved bytes in total.
+            var reservedBytes = buffer.Slice (0, 8);
             buffer = buffer.Slice (8);
+
+            // The bit selected for the extension protocol is bit 20 from the right (counting starts at 0).
+            // So (reserved_byte[5] & 0x10) is the expression to use for checking if the client supports extended messaging.
+            SupportsExtendedMessaging = (ExtendedMessagingFlag & reservedBytes[5]) != 0;
+
+            // These are enabled by setting the third least significant bit of the last reserved byte in the BitTorrent handshake
+            SupportsFastPeer = (FastPeersFlag & reservedBytes[7]) != 0;
+
+            // When initiating a connection and sending the sha1 infohash of such a hybrid torrent a peer can set the 4th most
+            // significant bit in the last byte of the reserved bitfield to indicate that it also supports the new format.
+            SupportsUpgradeToV2 = (UpgradeToV2Flag & reservedBytes[7]) != 0;
         }
 
         #endregion

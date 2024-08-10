@@ -98,8 +98,8 @@ namespace MonoTorrent.Client
                     return;
                 }
                 if (!e.Connection.IsIncoming) {
-                    var peer = new Peer (peerInfo, e.InfoHash!);
-                    var manager = Engine.Torrents.FirstOrDefault (t => t.InfoHashes.Contains (e.InfoHash!))!;
+                    var manager = Engine.Torrents.First (t => t.InfoHashes.Contains (e.InfoHash!));
+                    var peer = new Peer (peerInfo, manager.InfoHashes.Expand (e.InfoHash!));
                     var id = new PeerId (peer, e.Connection, new BitField (manager.Bitfield.Length).SetAll (false));
                     id.LastMessageSent.Restart ();
                     id.LastMessageReceived.Restart ();
@@ -143,7 +143,10 @@ namespace MonoTorrent.Client
             if (!man.Mode.CanAcceptConnections)
                 return false;
 
-            var peer = new Peer (peerInfo, man.InfoHashes.Expand (message.InfoHash));
+            // If this is a hybrid torrent, and the other peer announced with the v1 hash *and* set the bit which indicates
+            // they can upgrade to a V2 connection, respond with the V2 hash to upgrade the connection to V2 mode.
+            var infoHash = message.SupportsUpgradeToV2 && man.InfoHashes.IsHybrid ? man.InfoHashes.V2! : man.InfoHashes.Expand (message.InfoHash);
+            var peer = new Peer (peerInfo, infoHash);
             peer.UpdatePeerId (message.PeerId);
 
             logger.InfoFormatted (connection, "[incoming] Received handshake with peer_id '{0}'", message.PeerId);

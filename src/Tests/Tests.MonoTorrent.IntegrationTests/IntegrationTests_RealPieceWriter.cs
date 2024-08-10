@@ -147,6 +147,14 @@ namespace MonoTorrent.IntegrationTests
         [Test]
         public async Task DownloadFileInTorrent_V1V2 () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: false, explitlyHashCheck: false);
 
+        // 100 byte files will not have a 'layers' key as there's only 1 piece.
+        [Test]
+        public async Task DownloadFileInTorrent_V1V2_MagnetLink_NoLayers () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: false, explitlyHashCheck: false, magnetLinkLeecher: true, fileSize: 100);
+
+        // 5MB files will have a 'layers' key as there will be many pieces.
+        [Test]
+        public async Task DownloadFileInTorrent_V1V2_MagnetLinkWithLayers () => await CreateAndDownloadTorrent (TorrentType.V1V2Hybrid, createEmptyFile: false, explitlyHashCheck: false, magnetLinkLeecher: true, fileSize: 5 * 1024 * 1024);
+
         [Test]
         public async Task DownloadEmptyFileInTorrent_V1 () => await CreateAndDownloadTorrent (TorrentType.V1Only, createEmptyFile: true, explitlyHashCheck: false);
 

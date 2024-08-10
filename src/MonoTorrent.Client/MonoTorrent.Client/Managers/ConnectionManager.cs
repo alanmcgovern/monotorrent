@@ -197,8 +197,12 @@ namespace MonoTorrent.Client
             Interlocked.Increment (ref openConnections);
 
             try {
+                // If this is a hybrid torrent and a connection is being made with the v1 infohash, then
+                // set the bit which tells the peer the connection can be upgraded to a bittorrent v2 (BEP52) connection.
+                var canUpgradeToV2 = manager.InfoHashes.IsHybrid && id.ExpectedInfoHash == manager.InfoHashes.V1;
+
                 // Create a handshake message to send to the peer
-                var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100);
+                var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100, enableFastPeer: true, enableExtended: true, supportsUpgradeToV2: true);
                 logger.InfoFormatted (id.Connection, "[outgoing] Sending handshake message with peer id '{0}'", LocalPeerId);
 
                 var preferredEncryption = EncryptionTypes.GetPreferredEncryption (id.Peer.AllowedEncryption, Settings.AllowedEncryption);
