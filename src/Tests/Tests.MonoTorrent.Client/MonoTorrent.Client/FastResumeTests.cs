@@ -184,7 +184,7 @@ namespace MonoTorrent.Client
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
             File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new BitField (torrent.PieceCount).SetAll (true), new ReadOnlyBitField (torrent.PieceCount)).Encode ());
-            var manager = await engine.AddAsync (torrent, "savedir");
+            var manager = await engine.AddAsync (torrent, Path.Combine(tmpDir.Path, "savedir"));
             Assert.IsTrue (manager.HashChecked);
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Downloading);
