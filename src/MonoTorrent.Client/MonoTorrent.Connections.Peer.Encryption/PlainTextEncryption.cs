@@ -39,6 +39,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
     {
         public static PlainTextEncryption Instance = new PlainTextEncryption ();
 
+        public EncryptionType EncryptionType => EncryptionType.PlainText;
+
         PlainTextEncryption ()
         {
         }

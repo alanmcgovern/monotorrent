@@ -152,17 +152,7 @@ namespace MonoTorrent.Client
 
         public Direction ConnectionDirection => Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
 
-        public EncryptionType EncryptionType {
-            get {
-                if (Encryptor is RC4)
-                    return EncryptionType.RC4Full;
-                if (Encryptor is RC4Header)
-                    return EncryptionType.RC4Header;
-                if (Encryptor is PlainTextEncryption || Encryptor == null)
-                    return EncryptionType.PlainText;
-                throw new NotSupportedException ($"Encryption type {Encryptor.GetType ().Name} is unsupported");
-            }
-        }
+        public EncryptionType EncryptionType => Encryptor.EncryptionType;
 
         public IList<EncryptionType> SupportedEncryptionTypes => Peer.AllowedEncryption;
 

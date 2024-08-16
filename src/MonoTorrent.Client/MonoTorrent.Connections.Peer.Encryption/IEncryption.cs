@@ -36,5 +36,7 @@ namespace MonoTorrent.Connections.Peer.Encryption
         void Decrypt (Span<byte> buffer);
 
         void Encrypt (Span<byte> buffer);
+
+        EncryptionType EncryptionType { get; }
     }
 }

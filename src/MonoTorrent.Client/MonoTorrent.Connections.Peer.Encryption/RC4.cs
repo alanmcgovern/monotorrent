@@ -40,6 +40,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
     {
         static readonly Memory<byte> Discarder = new byte[1024];
 
+        public EncryptionType EncryptionType => EncryptionType.RC4Full;
+
         readonly Memory<byte> Memory = new byte[256];
         int x;
         int y;

@@ -33,6 +33,8 @@ namespace MonoTorrent.Connections.Peer.Encryption
 {
     class RC4Header : IEncryption
     {
+        public EncryptionType EncryptionType => EncryptionType.RC4Header;
+
         public void Decrypt (Span<byte> buffer)
         {
         }
