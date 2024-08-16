@@ -191,6 +191,11 @@ namespace MonoTorrent.Client
         public FastResumeMode FastResumeMode { get; set; }
 
         /// <summary>
+        /// Sets the preferred approach to creating new files.
+        /// </summary>
+        public FileCreationOptions FileCreationMode { get; set; }
+
+        /// <summary>
         /// The HTTP(s) prefix which the engine should bind to when a <see cref="TorrentManager"/> is set up
         /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
         /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
@@ -355,6 +360,7 @@ namespace MonoTorrent.Client
             DiskCacheBytes = settings.DiskCacheBytes;
             DiskCachePolicy = settings.DiskCachePolicy;
             FastResumeMode = settings.FastResumeMode;
+            FileCreationMode = settings.FileCreationOptions;
             httpStreamingPrefix = settings.HttpStreamingPrefix;
             ListenEndPoints = new Dictionary<string, IPEndPoint> (settings.ListenEndPoints);
             ReportedListenEndPoints = new Dictionary<string, IPEndPoint> (settings.ReportedListenEndPoints);
@@ -395,6 +401,7 @@ namespace MonoTorrent.Client
                 diskCacheBytes: DiskCacheBytes,
                 diskCachePolicy: DiskCachePolicy,
                 fastResumeMode: FastResumeMode,
+                fileCreationMode: FileCreationMode,
                 httpStreamingPrefix: HttpStreamingPrefix,
                 listenEndPoints: ListenEndPoints,
                 maximumConnections: MaximumConnections,
