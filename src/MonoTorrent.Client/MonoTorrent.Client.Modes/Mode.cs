@@ -733,7 +733,7 @@ namespace MonoTorrent.Client.Modes
         {
             if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Settings.WebSeedDelay && (Manager.Monitor.DownloadRate < Settings.WebSeedSpeedTrigger || Settings.WebSeedSpeedTrigger == 0)) {
                 foreach (Uri uri in Manager.Torrent!.HttpSeeds) {
-                    var peer = new Peer (new PeerInfo (uri, CreatePeerId ()), Manager.InfoHashes.V1OrV2);
+                    var peer = new Peer (new PeerInfo (uri, CreatePeerId ()));
                     if (Manager.Peers.Contains (peer) || Manager.Peers.ConnectedPeers.Any (p => p.Uri == uri))
                         continue;
 
@@ -742,7 +742,7 @@ namespace MonoTorrent.Client.Modes
                     if (connection == null)
                         continue;
 
-                    var id = new PeerId (peer, connection, new BitField (Manager.Bitfield.Length).SetAll (true));
+                    var id = new PeerId (peer, connection, new BitField (Manager.Bitfield.Length).SetAll (true), Manager.InfoHashes.V1OrV2);
                     id.Encryptor = PlainTextEncryption.Instance;
                     id.Decryptor = PlainTextEncryption.Instance;
                     id.IsChoking = false;

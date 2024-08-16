@@ -87,8 +87,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Equality_EmptyPeerId ()
         {
-            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111")), new InfoHash (new byte[20]));
-            var other = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111")), new InfoHash (new byte[20]));
+            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111")));
+            var other = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111")));
 
             Assert.AreEqual (one, other, "#1");
             Assert.AreEqual (one.GetHashCode (), other.GetHashCode (), "#2");
@@ -97,8 +97,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Equality_EmptyPeerId_DifferentIP ()
         {
-            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111")), new InfoHash (new byte[20]));
-            var other = new Peer (new PeerInfo (new Uri ("ipv4://2.2.2.2:2222")), new InfoHash (new byte[20]));
+            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111")));
+            var other = new Peer (new PeerInfo (new Uri ("ipv4://2.2.2.2:2222")));
 
             Assert.AreNotEqual (one, other, "#1");
         }
@@ -106,8 +106,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Equality_EmptyPeerId_DifferentPort ()
         {
-            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111")), new InfoHash (new byte[20]));
-            var other = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:2222")), new InfoHash (new byte[20]));
+            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111")));
+            var other = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:2222")));
 
             Assert.AreNotEqual (one, other, "#1");
         }
@@ -115,8 +115,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Equality_SamePeerId_DifferentIP ()
         {
-            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), "test"), new InfoHash (new byte[20]));
-            var other = new Peer (new PeerInfo (new Uri ("ipv4://2.2.2.2:2222"), "test"), InfoHash.FromMemory (new byte[20]));
+            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), "test"));
+            var other = new Peer (new PeerInfo (new Uri ("ipv4://2.2.2.2:2222"), "test"));
 
             Assert.AreNotEqual (one, other, "#1");
         }
@@ -124,8 +124,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Equality_SamePeerId_DifferentPort ()
         {
-            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), "test"), new InfoHash (new byte[20]));
-            var other = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:2222"), "test"), new InfoHash (new byte[20]));
+            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), "test"));
+            var other = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:2222"), "test"));
 
             Assert.AreNotEqual (one, other, "#1");
         }
@@ -133,8 +133,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Equality_SamePeerId_SameIP ()
         {
-            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), "test"), new InfoHash (new byte[20]));
-            var otherOne = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), "test"), new InfoHash (new byte[20]));
+            var one = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), "test"));
+            var otherOne = new Peer (new PeerInfo (new Uri ("ipv4://1.1.1.1:1111"), "test"));
 
             Assert.AreEqual (one, otherOne, "#1");
             Assert.AreEqual (one.GetHashCode (), otherOne.GetHashCode (), "#2");

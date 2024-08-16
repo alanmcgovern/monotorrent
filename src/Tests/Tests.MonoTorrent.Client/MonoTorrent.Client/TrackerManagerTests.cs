@@ -147,7 +147,7 @@ namespace MonoTorrent.Client
         {
             foreach (var tier in trackers)
                 foreach (var tracker in tier)
-                    tracker.Connection.AddPeer (new Peer (new PeerInfo (new Uri ("ipv4://127.123.123.123:12312"), "peerid"), InfoHash.FromMemory (new byte[20])));
+                    tracker.Connection.AddPeer (new Peer (new PeerInfo (new Uri ("ipv4://127.123.123.123:12312"), "peerid")));
 
             var tcs = new TaskCompletionSource<AnnounceResponseEventArgs> ();
             trackerManager.AnnounceComplete += (o, e) => tcs.TrySetResult (e);

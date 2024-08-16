@@ -110,7 +110,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested, InfoHash expectedInfoHash)
         {
-            var peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://128.127.126.125:12345"), "null peer's id"), expectedInfoHash), new NullPeerConnection () , new BitField (bitfieldLength).SetAll (seeder)) {
+            var peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://128.127.126.125:12345"), "null peer's id")), new NullPeerConnection () , new BitField (bitfieldLength).SetAll (seeder), expectedInfoHash) {
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,
@@ -200,9 +200,10 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal PeerId (Peer peer, IPeerConnection connection, BitField bitfield)
+        internal PeerId (Peer peer, IPeerConnection connection, BitField bitfield, InfoHash expectedInfoHash)
         {
             Peer = peer;
+            ExpectedInfoHash = expectedInfoHash ?? throw new ArgumentNullException (nameof (expectedInfoHash));
 
             AmChoking = true;
             IsChoking = true;
@@ -314,7 +315,7 @@ namespace MonoTorrent.Client
 
         internal short RoundsUnchoked { get; private set; }
 
-        public InfoHash ExpectedInfoHash => Peer.ExpectedInfoHash;
+        public InfoHash ExpectedInfoHash { get; }
 
         /// <summary>
         /// Get our download rate from this peer -- this is Dp.

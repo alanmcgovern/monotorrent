@@ -49,11 +49,6 @@ namespace MonoTorrent.Client
         internal IList<EncryptionType> AllowedEncryption { get; set; }
 
         /// <summary>
-        /// The InfoHash we expect the peer to use when initiating, or accepting, encrypted connections.
-        /// </summary>
-        public InfoHash ExpectedInfoHash { get; }
-
-        /// <summary>
         /// The number of times we failed to establish an outgoing connection to this peer.
         /// </summary>
         internal int FailedConnectionAttempts { get; set; }
@@ -91,17 +86,16 @@ namespace MonoTorrent.Client
         /// </summary>
         internal int TotalHashFails { get; set; }
 
-        public Peer (PeerInfo peerInfo, InfoHash expectedInfoHash)
-            : this (peerInfo, EncryptionTypes.All, expectedInfoHash)
+        public Peer (PeerInfo peerInfo)
+            : this (peerInfo, EncryptionTypes.All)
         {
 
         }
 
-        public Peer (PeerInfo peerInfo, IList<EncryptionType> allowedEncryption, InfoHash expectedInfoHash)
+        public Peer (PeerInfo peerInfo, IList<EncryptionType> allowedEncryption)
         {
             Info = peerInfo ?? throw new ArgumentNullException (nameof (peerInfo));
             AllowedEncryption = allowedEncryption ?? throw new ArgumentNullException (nameof (allowedEncryption));
-            ExpectedInfoHash = expectedInfoHash ?? throw new ArgumentNullException (nameof (expectedInfoHash));
         }
 
         public override bool Equals (object? obj)
