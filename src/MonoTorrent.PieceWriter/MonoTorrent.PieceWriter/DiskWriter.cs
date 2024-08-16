@@ -117,6 +117,39 @@ namespace MonoTorrent.PieceWriter
             allStreams.Streams.Clear ();
         }
 
+        public async ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+        {
+            await new EnsureThreadPool ();
+
+            if (File.Exists (file.FullPath))
+                return false;
+
+            var parent = Path.GetDirectoryName (file.FullPath);
+            if (!string.IsNullOrEmpty (parent))
+                Directory.CreateDirectory (parent);
+
+            if (options == FileCreationOptions.PreferPreallocation) {
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET5_0 || NETCOREAPP3_0 || NET472
+                    if (!File.Exists (file.FullPath))
+                        using (var fs = new FileStream (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete)) {
+                            fs.SetLength (file.Length);
+                            fs.Seek (file.Length - 1, SeekOrigin.Begin);
+                            fs.Write (new byte[1]);
+                        }
+#else
+                File.OpenHandle (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, FileOptions.None, file.Length).Dispose ();
+#endif
+            } else {
+                try {
+                    NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
+                } catch {
+                    // who cares if we can't pre-allocate a sparse file. Try a regular file!
+                    new FileStream (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete).Dispose ();
+                }
+            }
+            return true;
+        }
+
         public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
         {
             if (file is null)
@@ -140,6 +173,13 @@ namespace MonoTorrent.PieceWriter
                     }
                 }
             }
+        }
+
+        public async ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+        {
+            await new EnsureThreadPool ();
+            var info = new FileInfo (file.FullPath);
+            return info.Exists ? info.Length : (long?) null;
         }
 
         public async ReusableTask MoveAsync (ITorrentManagerFile file, string newPath, bool overwrite)
@@ -182,6 +222,18 @@ namespace MonoTorrent.PieceWriter
                         return await writer.ReadAsync (buffer, offset).ConfigureAwait (false);
                 return 0;
             }
+        }
+
+        public async ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            await new EnsureThreadPool ();
+            var info = new FileInfo (file.FullPath);
+            if (!info.Exists)
+                return false;
+
+            using (var fileStream = new FileStream (file.FullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None))
+                fileStream.SetLength (file.Length);
+            return true;
         }
 
         public async ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)

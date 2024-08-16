@@ -212,7 +212,8 @@ namespace MonoTorrent.Client
             Directory.CreateDirectory (Path.GetDirectoryName (path));
             File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new BitField (torrent.PieceCount).SetAll (true), new BitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, "savedir");
-            testWriter.FilesThatExist = new System.Collections.Generic.List<ITorrentManagerFile> (manager.Files);
+            await testWriter.CreateAsync (manager.Files);
+
             Assert.IsTrue (manager.HashChecked);
             manager.Engine.DiskManager.GetHashAsyncOverride = (torrent, pieceIndex, dest) => {
                 first.SetResult (null);

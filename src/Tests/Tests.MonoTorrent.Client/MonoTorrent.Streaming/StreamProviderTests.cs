@@ -71,7 +71,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "test");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Seeding);
@@ -87,7 +87,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "test");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Seeding);
@@ -103,7 +103,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Seeding);
@@ -122,7 +122,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Seeding);
@@ -140,7 +140,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Seeding);
@@ -155,7 +155,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Seeding);
@@ -169,7 +169,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Seeding);
@@ -184,7 +184,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             Assert.ThrowsAsync<InvalidOperationException> (() => manager.StreamProvider.CreateHttpStreamAsync (manager.Files[0]));
         }
@@ -194,7 +194,7 @@ namespace MonoTorrent.Streaming
         {
             var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
             await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
-            PieceWriter.FilesThatExist.AddRange (manager.Files);
+            await PieceWriter.CreateAsync (manager.Files);
 
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Seeding);

@@ -167,7 +167,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task FastResume_SomeExist ()
         {
-            PieceWriter.FilesThatExist.AddRange (new[]{
+            await PieceWriter.CreateAsync (new[]{
                 Manager.Files [0],
                 Manager.Files [2],
             });

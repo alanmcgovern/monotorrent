@@ -103,6 +103,21 @@ namespace MonoTorrent.Client
             {
                 return ReusableTask.CompletedTask;
             }
+
+            public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+            {
+                throw new NotImplementedException ();
+            }
         }
 
         byte[] buffer;

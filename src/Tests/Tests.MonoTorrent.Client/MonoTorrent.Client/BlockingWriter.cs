@@ -26,6 +26,11 @@ namespace MonoTorrent.Client
             await tcs.Task;
         }
 
+        public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+        {
+            throw new NotImplementedException ();
+        }
+
         public void Dispose ()
         {
         }
@@ -43,6 +48,12 @@ namespace MonoTorrent.Client
             Flushes.Add ((file, tcs));
             await tcs.Task;
         }
+
+        public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+        {
+            throw new NotImplementedException ();
+        }
+
         public async ReusableTask MoveAsync (ITorrentManagerFile file, string fullPath, bool overwrite)
         {
             var tcs = new ReusableTaskCompletionSource<object> ();
@@ -55,6 +66,11 @@ namespace MonoTorrent.Client
             var tcs = new ReusableTaskCompletionSource<int> ();
             Reads.Add ((file, offset, buffer, tcs));
             return await tcs.Task;
+        }
+
+        public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            throw new NotImplementedException ();
         }
 
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)

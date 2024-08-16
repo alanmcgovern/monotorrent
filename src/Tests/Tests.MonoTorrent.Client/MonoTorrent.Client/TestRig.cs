@@ -51,8 +51,8 @@ namespace MonoTorrent.Client
 {
     public class TestWriter : IPieceWriter
     {
-        public List<ITorrentManagerFile> FilesThatExist = new List<ITorrentManagerFile> ();
         public List<ITorrentManagerFile> DoNotReadFrom = new List<ITorrentManagerFile> ();
+        public Dictionary<ITorrentManagerFile, long> FilesWithLength = new Dictionary<ITorrentManagerFile, long> ();
         public bool DontWrite;
         public byte? FillValue;
 
@@ -108,7 +108,7 @@ namespace MonoTorrent.Client
 
         public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
         {
-            return ReusableTask.FromResult (FilesThatExist.Contains (file));
+            return ReusableTask.FromResult (FilesWithLength.ContainsKey (file));
         }
 
         public ReusableTask MoveAsync (ITorrentManagerFile file, string newPath, bool overwrite)
@@ -119,6 +119,40 @@ namespace MonoTorrent.Client
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
         {
             return ReusableTask.CompletedTask;
+        }
+
+        public async ReusableTask<bool> CreateAsync (IEnumerable<ITorrentManagerFile> files)
+        {
+            foreach (var file in files)
+                await CreateAsync (file, FileCreationOptions.PreferPreallocation);
+            return true;
+        }
+
+        public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+        {
+            if (FilesWithLength.ContainsKey (file))
+                return ReusableTask.FromResult (false);
+
+            FilesWithLength.Add (file, options == FileCreationOptions.PreferPreallocation ? file.Length : 0);
+            return ReusableTask.FromResult (true);
+        }
+
+        public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+        {
+            if (FilesWithLength.TryGetValue (file, out var length))
+                return ReusableTask.FromResult<long?> (length);
+            return ReusableTask.FromResult<long?> (null);
+        }
+
+        public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            // If the file exists, change it's length
+            if (FilesWithLength.ContainsKey (file))
+                FilesWithLength[file] = length;
+
+            // This is successful only if the file existed beforehand. No action is taken
+            // if the file did not exist.
+            return ReusableTask.FromResult (FilesWithLength.ContainsKey (file));
         }
     }
 

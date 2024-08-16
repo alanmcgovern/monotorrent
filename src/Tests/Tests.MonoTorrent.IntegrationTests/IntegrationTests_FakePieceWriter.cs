@@ -106,6 +106,22 @@ namespace Tests.MonoTorrent.IntegrationTests
 
                 return default;
             }
+
+            public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+            {
+                // pretend the file exists but is empty if leeching
+                return ReusableTask.FromResult<long?> (IsSeeder ? file.Length : 0);
+            }
+
+            public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+            {
+                throw new NotImplementedException ();
+            }
         }
 
         class CustomTorrentFileSource : ITorrentFileSource

@@ -26,6 +26,11 @@ namespace ClientSample
             return ReusableTask.CompletedTask;
         }
 
+        public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+        {
+            throw new NotImplementedException ();
+        }
+
         public void Dispose ()
         {
         }
@@ -40,6 +45,11 @@ namespace ClientSample
             return ReusableTask.CompletedTask;
         }
 
+        public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+        {
+            throw new NotImplementedException ();
+        }
+
         public ReusableTask MoveAsync (ITorrentManagerFile file, string fullPath, bool overwrite)
         {
             return ReusableTask.CompletedTask;
@@ -48,6 +58,11 @@ namespace ClientSample
         public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
             return ReusableTask.FromResult (0);
+        }
+
+        public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            throw new NotImplementedException ();
         }
 
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
