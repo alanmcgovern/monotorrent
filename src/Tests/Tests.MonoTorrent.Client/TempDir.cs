@@ -19,14 +19,19 @@ namespace MonoTorrent
                 Directory.Delete (Path, true);
             }
         }
-
+        static SpinLocked<Random> RandomLocker = SpinLocked.Create (new Random ());
         public static Releaser Create ()
         {
-            var tmp = Path.GetTempFileName ();
-            var tmpDir = tmp + $"_dir{Thread.CurrentThread.ManagedThreadId}-{Process.GetCurrentProcess ().Id}";
-            Directory.CreateDirectory (tmpDir);
-            File.Delete (tmp);
-            return new Releaser (tmpDir);
+            using (RandomLocker.Enter (out var random)) {
+                var tmp = Path.Combine (
+                    Path.GetTempPath (),
+                    "monotorrent_tests",
+                    random.Next (10000, 99999).ToString (),
+                    $"_dir{Thread.CurrentThread.ManagedThreadId}-{Process.GetCurrentProcess ().Id}"
+                );
+                Directory.CreateDirectory (tmp);
+                return new Releaser (tmp);
+            }
         }
     }
 }
