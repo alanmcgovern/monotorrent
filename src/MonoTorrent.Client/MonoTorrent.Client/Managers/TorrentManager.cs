@@ -143,14 +143,15 @@ namespace MonoTorrent.Client
 
         public ReadOnlyBitField Bitfield => MutableBitField;
 
-        internal BitField MutableBitField { get; private set; }
+        private BitField MutableBitField { get; set; }
 
         public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
         public bool CanUseLocalPeerDiscovery => ClientEngine.SupportsLocalPeerDiscovery && (Torrent == null || !Torrent.IsPrivate) && Engine != null;
 
         /// <summary>
-        /// Returns true only when all files have been fully downloaded. If some files are marked as 'DoNotDownload' then the
+        /// Returns true only when all files have been fully downloaded, all zero-length files exist, and
+        /// all files have the correct length. If some files are marked as 'DoNotDownload' then the
         /// torrent will not be considered to be Complete until they are downloaded.
         /// </summary>
         public bool Complete => Bitfield.AllTrue;
