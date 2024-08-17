@@ -240,9 +240,12 @@ namespace MonoTorrent.Client.Modes
         public async Task AnnounceWhenComplete ()
         {
             await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
-            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, new BitField (Manager.Torrent.PieceCount ()).SetAll (true), new BitField (Manager.Torrent.PieceCount ())));
+            var bitfield = new BitField (Manager.Bitfield);
 
-            Manager.MutableBitField[0] = false;
+            // Leecher at first
+            bitfield.SetAll (true).Set (0, false);
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bitfield, new BitField (Manager.Torrent.PieceCount ())));
+
             var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             Manager.Mode = mode;
 
@@ -250,16 +253,17 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (TorrentState.Downloading, Manager.State, "#0b");
             Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#0");
 
-            Manager.MutableBitField[0] = true;
+            // Seeder now
             TrackerManager.Announces.Clear ();
+            Manager.OnPieceHashed (0, true);
             mode.Tick (0);
             Assert.AreEqual (TorrentState.Seeding, Manager.State, "#0c");
 
             Assert.AreEqual (2, TrackerManager.Announces.Count, "#1");
             Assert.AreEqual (null, TrackerManager.Announces[0].Item1, "#2");
-            Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[0].Item2, "#3");
+            Assert.AreEqual (TorrentEvent.None, TrackerManager.Announces[1].Item2, "#3");
             Assert.AreEqual (null, TrackerManager.Announces[1].Item1, "#2");
-            Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[1].Item2, "#4");
+            Assert.AreEqual (TorrentEvent.Completed, TrackerManager.Announces[0].Item2, "#4");
         }
 
         [Test]

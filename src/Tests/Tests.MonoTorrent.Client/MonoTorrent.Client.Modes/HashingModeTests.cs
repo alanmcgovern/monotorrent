@@ -207,8 +207,9 @@ namespace MonoTorrent.Client.Modes
         public async Task SaveLoadFastResume ()
         {
             await Manager.HashCheckAsync (false);
-            Manager.MutableBitField.SetAll (true).Set (0, false);
-            Manager.UnhashedPieces.SetAll (false).Set (0, true);
+            var bf = new BitField (Manager.Bitfield).SetAll (true).Set (0, false);
+            var unhashed = new BitField (bf).SetAll (false).Set (0, true);
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             var origUnhashed = new ReadOnlyBitField (Manager.UnhashedPieces);
             var origBitfield = new ReadOnlyBitField (Manager.Bitfield);
@@ -221,7 +222,9 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task DoNotDownload_All ()
         {
-            Manager.MutableBitField.SetAll (true);
+            var bf = new BitField (Manager.Bitfield).SetAll (true);
+            var unhashed = new BitField (bf).SetAll (false);
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             foreach (var f in Manager.Files) {
                 PieceWriter.FilesThatExist.Add (f);
@@ -255,7 +258,9 @@ namespace MonoTorrent.Client.Modes
                 return Task.FromResult (true);
             };
 
-            Manager.MutableBitField.SetAll (true);
+            var bf = new BitField (Manager.Bitfield).SetAll (true);
+            var unhashed = new BitField (bf).SetAll (false);
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             foreach (var f in Manager.Files) {
                 PieceWriter.FilesThatExist.Add (f);
@@ -303,7 +308,9 @@ namespace MonoTorrent.Client.Modes
                 return Task.FromResult (true);
             };
 
-            Manager.MutableBitField.SetAll (true);
+            var bf = new BitField (Manager.Bitfield).SetAll (false);
+            var unhashed = new BitField (bf).SetAll (true);
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             foreach (var f in Manager.Files)
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
@@ -347,7 +354,9 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task DoNotDownload_OneFile ()
         {
-            Manager.MutableBitField.SetAll (true);
+            var bf = new BitField (Manager.Bitfield).SetAll (true);
+            var unhashed = new BitField (bf).SetAll (false);
+            await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             foreach (var f in Manager.Files.Skip (1)) {
                 PieceWriter.FilesThatExist.Add (f);
