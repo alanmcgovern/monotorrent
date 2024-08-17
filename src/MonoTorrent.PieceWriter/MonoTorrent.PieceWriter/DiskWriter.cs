@@ -268,10 +268,8 @@ namespace MonoTorrent.PieceWriter
             // in the method. If we already have a cached FileStream we won't need to swap threads before returning it.
             StreamData freshStreamData;
             ReusableSemaphore.Releaser freshStreamDataReleaser;
-            bool shouldTruncate = false;
             using (await allStreams.Locker.EnterAsync ()) {
                 // We should check if the on-disk file needs truncation if this is the very first time we're opening it.
-                shouldTruncate = access.HasFlag (FileAccess.Write) && allStreams.Streams.Count == 0;
                 foreach (var existing in allStreams.Streams) {
                     if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
                         if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream!.CanWrite) {
@@ -297,9 +295,6 @@ namespace MonoTorrent.PieceWriter
             if (!File.Exists (file.FullPath)) {
                 if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
                     Directory.CreateDirectory (parentDirectory);
-            } else if (shouldTruncate) {
-                // If this is the first Stream we're opening for this file and the file exists, ensure it's the correct length.
-                FileReaderWriterHelper.MaybeTruncate (file.FullPath, file.Length);
             }
             freshStreamData.Stream = new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite | FileShare.Delete);
             return (freshStreamData.Stream, freshStreamDataReleaser);

@@ -43,6 +43,8 @@ namespace MonoTorrent.Client.Modes
             get { return Rig.Manager.Mode as InitialSeedingMode; }
         }
 
+        TestWriter PieceWriter { get; set; }
+
         TestRig Rig {
             get; set;
         }
@@ -50,14 +52,19 @@ namespace MonoTorrent.Client.Modes
         [SetUp]
         public async Task Setup ()
         {
+            PieceWriter = new TestWriter ();
             Rig = TestRig.CreateSingleFile (Constants.BlockSize * 20, Constants.BlockSize * 2);
+            await Rig.Engine.DiskManager.SetWriterAsync (PieceWriter);
+
+            // create all the files
+            await PieceWriter.CreateAsync (Rig.Manager.Files);
 
             var bf = new BitField (Rig.Manager.Bitfield).SetAll (true);
             var unhashed = new BitField (bf).SetAll (false);
             await Rig.Manager.LoadFastResumeAsync (new FastResume (Rig.Manager.InfoHashes, bf, unhashed));
 
-
             Rig.Manager.Mode = new InitialSeedingMode (Rig.Manager, Rig.Engine.DiskManager, Rig.Engine.ConnectionManager, Rig.Engine.Settings);
+
         }
 
         [TearDown]

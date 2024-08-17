@@ -20,17 +20,6 @@ namespace MonoTorrent.PieceWriter
         ReusableTask WriteAsync (ReadOnlyMemory<byte> buffer, long offset);
     }
 
-    static class FileReaderWriterHelper
-    {
-        public static void MaybeTruncate (string fullPath, long length)
-        {
-            if (new FileInfo (fullPath).Length > length) {
-                using (var fileStream = new FileStream (fullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None))
-                    fileStream.SetLength (length);
-            }
-        }
-    }
-
 #if NETSTANDARD2_0 || NETSTANDARD2_1 || NET5_0 || NETCOREAPP3_0 || NET472
     class RandomFileReaderWriter : IFileReaderWriter
     {

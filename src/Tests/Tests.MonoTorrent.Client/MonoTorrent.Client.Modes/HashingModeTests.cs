@@ -65,6 +65,8 @@ namespace MonoTorrent.Client.Modes
                 Constants.BlockSize * 32,
                 Constants.BlockSize * 2,
                 Constants.BlockSize * 13,
+                0,
+                0,
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Constants.BlockSize * 2, writer: PieceWriter, baseDirectory: TempDirectory.Path);
             Manager.SetTrackerManager (TrackerManager);
@@ -131,12 +133,56 @@ namespace MonoTorrent.Client.Modes
         {
             await Manager.Engine.DiskManager.SetWriterAsync (Factories.Default.CreatePieceWriter (1));
 
-            var file = Manager.Files[0];
+            var file = Manager.Files.First (t => t.Length != 0);
             System.IO.Directory.CreateDirectory (System.IO.Path.GetDirectoryName (file.FullPath));
             System.IO.File.WriteAllBytes (file.FullPath, new byte[file.Length + 1]);
             await Manager.HashCheckAsync (false);
             Assert.AreEqual (TorrentState.Stopped, Manager.State, "#1");
             Assert.AreEqual (file.Length + 1, new System.IO.FileInfo (file.FullPath).Length);
+        }
+
+        [Test]
+        public async Task HashCheckAsync_FilesAreCorrectLength ()
+        {
+            await DiskManager.SetWriterAsync (Factories.Default.CreatePieceWriter (1));
+            var mode = new HashingMode (Manager, DiskManager);
+            Manager.Mode = mode;
+
+            // All files are 1 byte too long
+            foreach (var file in Manager.Files) {
+                System.IO.Directory.CreateDirectory (System.IO.Path.GetDirectoryName (file.FullPath));
+                System.IO.File.WriteAllBytes (file.FullPath, new byte[file.Length + 1]);
+            }
+
+            await mode.WaitForHashingToComplete ();
+            Assert.IsFalse (Manager.AllFilesCorrectLength);
+
+            // All files are correctly sized and exist.
+            foreach (var file in Manager.Files) {
+                System.IO.Directory.CreateDirectory (System.IO.Path.GetDirectoryName (file.FullPath));
+                System.IO.File.Delete (file.FullPath);
+                System.IO.File.WriteAllBytes (file.FullPath, new byte[file.Length]);
+            }
+
+            await mode.WaitForHashingToComplete ();
+            Assert.IsTrue (Manager.AllFilesCorrectLength);
+
+            // One zero length file is missing
+            var zeroLengthFile = Manager.Files.First (t => t.Length == 0);
+            System.IO.File.Delete (zeroLengthFile.FullPath);
+
+            await mode.WaitForHashingToComplete ();
+            Assert.IsFalse (Manager.AllFilesCorrectLength);
+
+            // One file is too large
+            System.IO.File.WriteAllBytes (zeroLengthFile.FullPath, new byte[1]);
+            await mode.WaitForHashingToComplete ();
+            Assert.IsFalse (Manager.AllFilesCorrectLength);
+
+            // Back to normal!
+            System.IO.File.WriteAllBytes (zeroLengthFile.FullPath, new byte[0]);
+            await mode.WaitForHashingToComplete ();
+            Assert.IsTrue (Manager.AllFilesCorrectLength);
         }
 
         [Test]
@@ -230,7 +276,8 @@ namespace MonoTorrent.Client.Modes
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             foreach (var f in Manager.Files) {
-                await PieceWriter.CreateAsync (f, MonoTorrent.PieceWriter.FileCreationOptions.PreferPreallocation);
+                if (f.Length > 0)
+                    await PieceWriter.CreateAsync (f, MonoTorrent.PieceWriter.FileCreationOptions.PreferPreallocation);
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
                 ((TorrentFileInfo) f).BitField.SetAll (true);
             }

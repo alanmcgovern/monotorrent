@@ -90,9 +90,11 @@ namespace MonoTorrent.Client.Modes
                 throw new TorrentException ("Torrents with no metadata must use 'MetadataMode', not 'StartingMode'.");
 
             try {
-                // If the torrent contains any files of length 0, ensure we create them now.
-                await CreateEmptyFiles ();
+                // Run some basic validations to see if we should force a hashcheck
                 await VerifyHashState ();
+
+                // Create any files of length zero, and truncate any files which are too long
+                await CreateOrTruncateFiles ();
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 Manager.PieceManager.Initialise ();
             } catch (Exception ex) {
@@ -153,21 +155,24 @@ namespace MonoTorrent.Client.Modes
             await Manager.LocalPeerAnnounceAsync ();
         }
 
-        async ReusableTask CreateEmptyFiles ()
+        async ReusableTask CreateOrTruncateFiles ()
         {
-            foreach (var file in Manager.Files) {
-                if (file.Length == 0) {
-                    var fileInfo = new FileInfo (file.FullPath);
-                    if (fileInfo.Exists && fileInfo.Length == 0)
-                        continue;
+            foreach (TorrentFileInfo file in Manager.Files) {
+                var maybeLength = await DiskManager.GetLengthAsync (file).ConfigureAwait (false);
+                // If the file doesn't exist, create it.
+                if (!maybeLength.HasValue)
+                    await DiskManager.CreateAsync (file, Settings.FileCreationOptions).ConfigureAwait (false);
 
-                    await MainLoop.SwitchToThreadpool ();
-                    Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath)!);
-                    // Ensure file on disk is always 0 bytes, as it's supposed to be.
-                    using (var stream = File.OpenWrite (file.FullPath))
-                        stream.SetLength (0);
-                }
+                // Otherwise if the destination file is larger than it should be, truncate it
+                else if (maybeLength.Value > file.Length)
+                    await DiskManager.SetLengthAsync (file, file.Length).ConfigureAwait (false);
+
+                if (file.Length == 0)
+                    file.BitField[0] = true;
             }
+
+            // After potentially creating or truncating files, refresh the state.
+            await Manager.RefreshAllFilesCorrectLengthAsync ();
         }
 
         async void SendAnnounces ()
@@ -206,6 +211,8 @@ namespace MonoTorrent.Client.Modes
             if (!Manager.HashChecked)
                 return;
 
+            // Lightweight check - if any files are missing but we believe data should exist, reset the 'needs hashcheck' boolean
+            // so we force a hash check.
             foreach (ITorrentManagerFile file in Manager.Files) {
                 if (!file.BitField.AllFalse && file.Length > 0) {
                     if (!await DiskManager.CheckFileExistsAsync (file)) {
