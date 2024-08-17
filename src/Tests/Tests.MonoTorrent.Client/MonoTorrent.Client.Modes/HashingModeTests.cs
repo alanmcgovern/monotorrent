@@ -50,10 +50,12 @@ namespace MonoTorrent.Client.Modes
         TestWriter PieceWriter { get; set; }
         EngineSettings Settings { get; set; }
         ManualTrackerManager TrackerManager { get; set; }
+        TempDir.Releaser TempDirectory { get; set; }
 
         [SetUp]
         public void Setup ()
         {
+            TempDirectory = TempDir.Create ();
             conn = new ConnectionPair ().WithTimeout ();
             PieceWriter = new TestWriter ();
             TrackerManager = new ManualTrackerManager ();
@@ -64,7 +66,7 @@ namespace MonoTorrent.Client.Modes
                 Constants.BlockSize * 2,
                 Constants.BlockSize * 13,
             };
-            Manager = TestRig.CreateMultiFileManager (fileSizes, Constants.BlockSize * 2, writer: PieceWriter);
+            Manager = TestRig.CreateMultiFileManager (fileSizes, Constants.BlockSize * 2, writer: PieceWriter, baseDirectory: TempDirectory.Path);
             Manager.SetTrackerManager (TrackerManager);
 
             Settings = Manager.Engine.Settings;
@@ -80,6 +82,7 @@ namespace MonoTorrent.Client.Modes
         [TearDown]
         public void Teardown ()
         {
+            TempDirectory.Dispose ();
             conn.Dispose ();
             DiskManager.Dispose ();
         }
@@ -113,7 +116,7 @@ namespace MonoTorrent.Client.Modes
         public async Task HashCheckAsync_Autostart ()
         {
             await Manager.HashCheckAsync (true);
-            Assert.AreEqual (TorrentState.Downloading, Manager.State, "#1");
+            await Manager.WaitForState (TorrentState.Downloading);
         }
 
         [Test]
