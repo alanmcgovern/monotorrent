@@ -522,6 +522,66 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task StartAsync_DoesNotCreateDoNotDownloadPriority ()
+        {
+            using var writer = new TestWriter ();
+            var files = TorrentFile.Create (Constants.BlockSize * 4, 0, 1, 2, 3);
+            using var accessor = TempDir.Create ();
+            using var rig = TestRig.CreateMultiFile (files, Constants.BlockSize * 4, writer, baseDirectory: accessor.Path);
+
+            foreach (var file in rig.Manager.Files)
+                await rig.Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
+
+            await rig.Manager.StartAsync ();
+
+            foreach (var file in rig.Manager.Files)
+                Assert.IsFalse (await writer.ExistsAsync (file));
+        }
+
+        [Test]
+        public async Task StartAsync_CreatesAllImplicatedFiles ()
+        {
+            using var writer = new TestWriter ();
+            var files = TorrentFile.Create (Constants.BlockSize * 4, 0, 1, Constants.BlockSize * 4, 3);
+            using var accessor = TempDir.Create ();
+            using var rig = TestRig.CreateMultiFile (files, Constants.BlockSize * 4, writer, baseDirectory: accessor.Path);
+
+            foreach (var file in rig.Manager.Files)
+                await rig.Manager.SetFilePriorityAsync (file, file.Length == 1 ? Priority.Normal : Priority.DoNotDownload);
+
+            await rig.Manager.StartAsync ();
+            await rig.Manager.WaitForState (TorrentState.Downloading);
+
+            Assert.IsFalse (await writer.ExistsAsync (rig.Manager.Files[0]));
+            Assert.IsTrue (await writer.ExistsAsync (rig.Manager.Files[1]));
+            Assert.IsTrue (await writer.ExistsAsync (rig.Manager.Files[2]));
+            Assert.IsFalse (await writer.ExistsAsync (rig.Manager.Files[3]));
+        }
+
+        [Test]
+        public async Task StartAsync_SetPriorityCreatesAllImplicatedFiles ()
+        {
+            using var writer = new TestWriter ();
+            var files = TorrentFile.Create (Constants.BlockSize * 4, 0, 1, Constants.BlockSize * 4, Constants.BlockSize * 4);
+            using var accessor = TempDir.Create ();
+            using var rig = TestRig.CreateMultiFile (files, Constants.BlockSize * 4, writer, baseDirectory: accessor.Path);
+
+            foreach (var file in rig.Manager.Files)
+                await rig.Manager.SetFilePriorityAsync (file, Priority.DoNotDownload);
+
+            await rig.Manager.StartAsync ();
+
+            await rig.Manager.SetFilePriorityAsync (rig.Manager.Files[0], Priority.Normal);
+            Assert.IsTrue (await writer.ExistsAsync (rig.Manager.Files[0]));
+            Assert.IsFalse (await writer.ExistsAsync (rig.Manager.Files[1]));
+
+            await rig.Manager.SetFilePriorityAsync (rig.Manager.Files[1], Priority.Normal);
+            Assert.IsTrue (await writer.ExistsAsync (rig.Manager.Files[1]));
+            Assert.IsTrue (await writer.ExistsAsync (rig.Manager.Files[2]));
+            Assert.IsFalse (await writer.ExistsAsync (rig.Manager.Files[3]));
+        }
+
+        [Test]
         public async Task StopTest ()
         {
             using var rig = TestRig.CreateMultiFile (new TestWriter ());

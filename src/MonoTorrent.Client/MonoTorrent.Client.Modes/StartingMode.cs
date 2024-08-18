@@ -157,7 +157,7 @@ namespace MonoTorrent.Client.Modes
 
         async ReusableTask CreateOrTruncateFiles ()
         {
-            foreach (TorrentFileInfo file in Manager.Files) {
+            foreach (TorrentFileInfo file in Manager.Files.Where (t => t.Priority != Priority.DoNotDownload)) {
                 var maybeLength = await DiskManager.GetLengthAsync (file).ConfigureAwait (false);
                 // If the file doesn't exist, create it.
                 if (!maybeLength.HasValue)
@@ -169,6 +169,15 @@ namespace MonoTorrent.Client.Modes
 
                 if (file.Length == 0)
                     file.BitField[0] = true;
+            }
+
+            // Then check if any 'DoNotDownload' file overlaps with a file we are downloading.
+            var downloadingFiles = Manager.Files.Where (t => t.Priority != Priority.DoNotDownload).ToArray ();
+            foreach (var ignoredFile in Manager.Files.Where (t => t.Priority == Priority.DoNotDownload)) {
+                foreach (var downloading in downloadingFiles) {
+                    if (ignoredFile.Overlaps (downloading))
+                        await DiskManager.CreateAsync (ignoredFile, Settings.FileCreationOptions);
+                }
             }
 
             // After potentially creating or truncating files, refresh the state.

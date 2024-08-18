@@ -87,16 +87,35 @@ namespace MonoTorrent.Client
             if (!Files.Contains (file))
                 throw new ArgumentNullException (nameof (file), "The file is not part of this torrent");
 
-            // No change
+            // No change - bail out
             if (priority == file.Priority)
                 return;
 
             await ClientEngine.MainLoop;
 
+            if (Engine == null)
+                throw new InvalidOperationException ("This torrent manager has been removed from it's ClientEngine");
+
             // If the old priority, or new priority, is 'DoNotDownload' then the selector needs to be refreshed
             bool needsToUpdateSelector = file.Priority == Priority.DoNotDownload || priority == Priority.DoNotDownload;
             var oldPriority = file.Priority;
-            ((TorrentFileInfo) file).Priority = priority;
+
+            if (oldPriority == Priority.DoNotDownload && !(await Engine.DiskManager.CheckFileExistsAsync (file))) {
+                // Always create the file the user requested to download
+                await Engine.DiskManager.CreateAsync (file, Engine.Settings.FileCreationOptions);
+            }
+
+            if (oldPriority == Priority.DoNotDownload && file.Length > 0) {
+                // Look for any file which are still marked DoNotDownload but also overlap this file.
+                // We need to create those ones too because if there are three 400kB files and the
+                // piece length is 512kB, and the first file is set to 'DoNotDownload', then we still
+                // need to create it as we'll download the first 512kB under bittorrent v1.
+                foreach (var maybeCreateFile in Files.Where (t => t.Priority == Priority.DoNotDownload && t.Length > 0 && t != file)) {
+                    // If this file overlaps, create it!
+                    if (maybeCreateFile.Overlaps(file) && !(await Engine.DiskManager.CheckFileExistsAsync (maybeCreateFile)))
+                        await Engine.DiskManager.CreateAsync (maybeCreateFile, Engine.Settings.FileCreationOptions);
+                }
+            }
 
             if (needsToUpdateSelector) {
                 // If we change the priority of a file we need to figure out which files are marked
@@ -111,6 +130,7 @@ namespace MonoTorrent.Client
                 }
             }
 
+            ((TorrentFileInfo) file).Priority = priority;
             Mode.HandleFilePriorityChanged (file, oldPriority);
         }
 
@@ -1099,7 +1119,7 @@ namespace MonoTorrent.Client
         internal async ReusableTask RefreshAllFilesCorrectLengthAsync ()
         {
             var allFilesCorrectLength = true;
-            foreach (TorrentFileInfo file in Files) {
+            foreach (TorrentFileInfo file in Files.Where (t => t.Priority != Priority.DoNotDownload)) {
                 var maybeLength = await Engine!.DiskManager.GetLengthAsync (file);
 
                 // Empty files aren't stored in fast resume data because it's as easy to just check if they exist on disk.
