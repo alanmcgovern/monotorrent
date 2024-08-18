@@ -573,6 +573,7 @@ namespace MonoTorrent.Client
 
             await rig.Manager.SetFilePriorityAsync (rig.Manager.Files[0], Priority.Normal);
             Assert.IsTrue (await writer.ExistsAsync (rig.Manager.Files[0]));
+            Assert.IsTrue (rig.Manager.Files[0].BitField.AllTrue);
             Assert.IsFalse (await writer.ExistsAsync (rig.Manager.Files[1]));
 
             await rig.Manager.SetFilePriorityAsync (rig.Manager.Files[1], Priority.Normal);

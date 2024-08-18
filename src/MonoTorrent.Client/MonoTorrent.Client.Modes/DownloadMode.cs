@@ -88,8 +88,6 @@ namespace MonoTorrent.Client.Modes
 
         internal async Task UpdateSeedingDownloadingState ()
         {
-            // FIXME: Ensure this properly handles the case where files are missing.
-
             //If download is fully complete, set state to 'Seeding' and send an announce to the tracker.
             if (Manager.Complete && state == TorrentState.Downloading) {
                 state = TorrentState.Seeding;

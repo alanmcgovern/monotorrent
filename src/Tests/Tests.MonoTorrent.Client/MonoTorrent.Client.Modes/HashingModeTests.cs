@@ -271,6 +271,9 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task DoNotDownload_All ()
         {
+            // No files exist!
+            Assert.AreEqual (0, PieceWriter.FilesWithLength.Count);
+
             var bf = new BitField (Manager.Bitfield).SetAll (true);
             var unhashed = new BitField (bf).SetAll (false);
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
@@ -292,6 +295,8 @@ namespace MonoTorrent.Client.Modes
             // No piece should be marked as available, and no pieces should actually be hashchecked.
             Assert.IsTrue (Manager.Bitfield.AllFalse, "#2");
             Assert.AreEqual (Manager.UnhashedPieces.TrueCount, Manager.UnhashedPieces.Length, "#3");
+
+            // Empty files will always have their bitfield set to true if they exist on disk. None should exist though
             foreach (var f in Manager.Files)
                 Assert.IsTrue (f.BitField.AllFalse, "#4." + f.Path);
         }
