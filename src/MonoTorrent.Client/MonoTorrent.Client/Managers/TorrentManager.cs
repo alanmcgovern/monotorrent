@@ -880,21 +880,11 @@ namespace MonoTorrent.Client
 
         public async Task<int> AddPeersAsync (IEnumerable<PeerInfo> peers)
         {
-            int count = 0;
-            if (!(InfoHashes.V1 is null))
-                count += await AddPeersAsync (peers, InfoHashes.V1);
-            if (!(InfoHashes.V2 is null))
-                count += await AddPeersAsync (peers, InfoHashes.V2);
-            return count;
-        }
-
-        public async Task<int> AddPeersAsync (IEnumerable<PeerInfo> peers, InfoHash infoHash)
-        {
             await ClientEngine.MainLoop;
-            return AddPeers (peers, infoHash, prioritise: false, fromTracker: false);
+            return AddPeers (peers, prioritise: false, fromTracker: false);
         }
 
-        internal int AddPeers (IEnumerable<PeerInfo> peers, InfoHash infoHash, bool prioritise, bool fromTracker)
+        internal int AddPeers (IEnumerable<PeerInfo> peers, bool prioritise, bool fromTracker)
         {
             Check.Peers (peers);
             if (HasMetadata && Torrent!.IsPrivate && !fromTracker)
@@ -902,11 +892,11 @@ namespace MonoTorrent.Client
 
             int count = 0;
             foreach (PeerInfo p in peers)
-                count += AddPeer (p, infoHash, prioritise) ? 1 : 0;
+                count += AddPeer (p, prioritise) ? 1 : 0;
             return count;
         }
 
-        bool AddPeer (PeerInfo peerInfo, InfoHash infoHash, bool prioritise)
+        bool AddPeer (PeerInfo peerInfo, bool prioritise)
         {
             if (peerInfo is null)
                 throw new ArgumentNullException (nameof (peerInfo));
@@ -1213,7 +1203,7 @@ namespace MonoTorrent.Client
 
                 int count = 0;
                 foreach (var kvp in e.Peers)
-                    count += AddPeers (kvp.Value, kvp.Key, prioritise: true, fromTracker: true);
+                    count += AddPeers (kvp.Value, prioritise: true, fromTracker: true);
                 RaisePeersFound (new TrackerPeersAdded (this, count, e.Peers.Count, e.Tracker));
 
                 if (Engine != null)
