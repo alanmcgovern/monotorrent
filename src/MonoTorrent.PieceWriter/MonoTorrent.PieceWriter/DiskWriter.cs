@@ -117,6 +117,39 @@ namespace MonoTorrent.PieceWriter
             allStreams.Streams.Clear ();
         }
 
+        public async ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+        {
+            await new EnsureThreadPool ();
+
+            if (File.Exists (file.FullPath))
+                return false;
+
+            var parent = Path.GetDirectoryName (file.FullPath);
+            if (!string.IsNullOrEmpty (parent))
+                Directory.CreateDirectory (parent);
+
+            if (options == FileCreationOptions.PreferPreallocation) {
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET5_0 || NETCOREAPP3_0 || NET472
+                    if (!File.Exists (file.FullPath))
+                        using (var fs = new FileStream (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete)) {
+                            fs.SetLength (file.Length);
+                            fs.Seek (file.Length - 1, SeekOrigin.Begin);
+                            fs.Write (new byte[1]);
+                        }
+#else
+                File.OpenHandle (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, FileOptions.None, file.Length).Dispose ();
+#endif
+            } else {
+                try {
+                    NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
+                } catch {
+                    // who cares if we can't pre-allocate a sparse file. Try a regular file!
+                    new FileStream (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete).Dispose ();
+                }
+            }
+            return true;
+        }
+
         public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
         {
             if (file is null)
@@ -140,6 +173,13 @@ namespace MonoTorrent.PieceWriter
                     }
                 }
             }
+        }
+
+        public async ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+        {
+            await new EnsureThreadPool ();
+            var info = new FileInfo (file.FullPath);
+            return info.Exists ? info.Length : (long?) null;
         }
 
         public async ReusableTask MoveAsync (ITorrentManagerFile file, string newPath, bool overwrite)
@@ -184,6 +224,18 @@ namespace MonoTorrent.PieceWriter
             }
         }
 
+        public async ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            await new EnsureThreadPool ();
+            var info = new FileInfo (file.FullPath);
+            if (!info.Exists)
+                return false;
+
+            using (var fileStream = new FileStream (file.FullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None))
+                fileStream.SetLength (file.Length);
+            return true;
+        }
+
         public async ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
         {
             ThrowIfNoSyncContext ();
@@ -216,10 +268,8 @@ namespace MonoTorrent.PieceWriter
             // in the method. If we already have a cached FileStream we won't need to swap threads before returning it.
             StreamData freshStreamData;
             ReusableSemaphore.Releaser freshStreamDataReleaser;
-            bool shouldTruncate = false;
             using (await allStreams.Locker.EnterAsync ()) {
                 // We should check if the on-disk file needs truncation if this is the very first time we're opening it.
-                shouldTruncate = access.HasFlag (FileAccess.Write) && allStreams.Streams.Count == 0;
                 foreach (var existing in allStreams.Streams) {
                     if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
                         if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream!.CanWrite) {
@@ -245,9 +295,6 @@ namespace MonoTorrent.PieceWriter
             if (!File.Exists (file.FullPath)) {
                 if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
                     Directory.CreateDirectory (parentDirectory);
-            } else if (shouldTruncate) {
-                // If this is the first Stream we're opening for this file and the file exists, ensure it's the correct length.
-                FileReaderWriterHelper.MaybeTruncate (file.FullPath, file.Length);
             }
             freshStreamData.Stream = new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite | FileShare.Delete);
             return (freshStreamData.Stream, freshStreamDataReleaser);

@@ -65,6 +65,8 @@ namespace MonoTorrent.Client.Modes
                 Constants.BlockSize * 32,
                 Constants.BlockSize * 2,
                 Constants.BlockSize * 13,
+                0,
+                0,
             };
             Manager = TestRig.CreateMultiFileManager (fileSizes, Constants.BlockSize * 2, writer: PieceWriter, baseDirectory: TempDirectory.Path);
             Manager.SetTrackerManager (TrackerManager);
@@ -131,12 +133,56 @@ namespace MonoTorrent.Client.Modes
         {
             await Manager.Engine.DiskManager.SetWriterAsync (Factories.Default.CreatePieceWriter (1));
 
-            var file = Manager.Files[0];
+            var file = Manager.Files.First (t => t.Length != 0);
             System.IO.Directory.CreateDirectory (System.IO.Path.GetDirectoryName (file.FullPath));
             System.IO.File.WriteAllBytes (file.FullPath, new byte[file.Length + 1]);
             await Manager.HashCheckAsync (false);
             Assert.AreEqual (TorrentState.Stopped, Manager.State, "#1");
             Assert.AreEqual (file.Length + 1, new System.IO.FileInfo (file.FullPath).Length);
+        }
+
+        [Test]
+        public async Task HashCheckAsync_FilesAreCorrectLength ()
+        {
+            await DiskManager.SetWriterAsync (Factories.Default.CreatePieceWriter (1));
+            var mode = new HashingMode (Manager, DiskManager);
+            Manager.Mode = mode;
+
+            // All files are 1 byte too long
+            foreach (var file in Manager.Files) {
+                System.IO.Directory.CreateDirectory (System.IO.Path.GetDirectoryName (file.FullPath));
+                System.IO.File.WriteAllBytes (file.FullPath, new byte[file.Length + 1]);
+            }
+
+            await mode.WaitForHashingToComplete ();
+            Assert.IsFalse (Manager.AllFilesCorrectLength);
+
+            // All files are correctly sized and exist.
+            foreach (var file in Manager.Files) {
+                System.IO.Directory.CreateDirectory (System.IO.Path.GetDirectoryName (file.FullPath));
+                System.IO.File.Delete (file.FullPath);
+                System.IO.File.WriteAllBytes (file.FullPath, new byte[file.Length]);
+            }
+
+            await mode.WaitForHashingToComplete ();
+            Assert.IsTrue (Manager.AllFilesCorrectLength);
+
+            // One zero length file is missing
+            var zeroLengthFile = Manager.Files.First (t => t.Length == 0);
+            System.IO.File.Delete (zeroLengthFile.FullPath);
+
+            await mode.WaitForHashingToComplete ();
+            Assert.IsFalse (Manager.AllFilesCorrectLength);
+
+            // One file is too large
+            System.IO.File.WriteAllBytes (zeroLengthFile.FullPath, new byte[1]);
+            await mode.WaitForHashingToComplete ();
+            Assert.IsFalse (Manager.AllFilesCorrectLength);
+
+            // Back to normal!
+            System.IO.File.WriteAllBytes (zeroLengthFile.FullPath, new byte[0]);
+            await mode.WaitForHashingToComplete ();
+            Assert.IsTrue (Manager.AllFilesCorrectLength);
         }
 
         [Test]
@@ -146,7 +192,7 @@ namespace MonoTorrent.Client.Modes
             var pieceHashed = new TaskCompletionSource<byte[]> ();
             var secondPieceHashed = new TaskCompletionSource<byte[]> ();
 
-            PieceWriter.FilesThatExist.AddRange (Manager.Files);
+            await PieceWriter.CreateAsync (Manager.Files);
 
             Manager.Engine.DiskManager.GetHashAsyncOverride = async (torrentdata, pieceIndex, dest) => {
                 pieceTryHash.TrySetResult (null);
@@ -225,12 +271,16 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task DoNotDownload_All ()
         {
+            // No files exist!
+            Assert.AreEqual (0, PieceWriter.FilesWithLength.Count);
+
             var bf = new BitField (Manager.Bitfield).SetAll (true);
             var unhashed = new BitField (bf).SetAll (false);
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             foreach (var f in Manager.Files) {
-                PieceWriter.FilesThatExist.Add (f);
+                if (f.Length > 0)
+                    await PieceWriter.CreateAsync (f, MonoTorrent.PieceWriter.FileCreationOptions.PreferPreallocation);
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
                 ((TorrentFileInfo) f).BitField.SetAll (true);
             }
@@ -245,6 +295,8 @@ namespace MonoTorrent.Client.Modes
             // No piece should be marked as available, and no pieces should actually be hashchecked.
             Assert.IsTrue (Manager.Bitfield.AllFalse, "#2");
             Assert.AreEqual (Manager.UnhashedPieces.TrueCount, Manager.UnhashedPieces.Length, "#3");
+
+            // Empty files will always have their bitfield set to true if they exist on disk. None should exist though
             foreach (var f in Manager.Files)
                 Assert.IsTrue (f.BitField.AllFalse, "#4." + f.Path);
         }
@@ -266,7 +318,7 @@ namespace MonoTorrent.Client.Modes
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             foreach (var f in Manager.Files) {
-                PieceWriter.FilesThatExist.Add (f);
+                await PieceWriter.CreateAsync (f, MonoTorrent.PieceWriter.FileCreationOptions.PreferPreallocation);
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
             }
 
@@ -330,7 +382,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task StopWhileHashingPaused ()
         {
-            PieceWriter.FilesThatExist.AddRange (Manager.Files);
+            await PieceWriter.CreateAsync (Manager.Files);
 
             int getHashCount = 0;
             DiskManager.GetHashAsyncOverride = (manager, index, dest) => {
@@ -362,7 +414,7 @@ namespace MonoTorrent.Client.Modes
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bf, unhashed));
 
             foreach (var f in Manager.Files.Skip (1)) {
-                PieceWriter.FilesThatExist.Add (f);
+                await PieceWriter.CreateAsync (f, MonoTorrent.PieceWriter.FileCreationOptions.PreferPreallocation);
                 await Manager.SetFilePriorityAsync (f, Priority.DoNotDownload);
             }
 
@@ -384,14 +436,14 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task ReadZeroFromDisk ()
         {
-            PieceWriter.FilesThatExist.AddRange (new[]{
-                Manager.Files [0],
-                Manager.Files [2],
-            });
+            var emptyFiles = Manager.Files.Where (t => t.Length == 0).ToArray ();
+            var nonEmptyFiles = Manager.Files.Where (t => t.Length != 0).ToArray ();
+            await PieceWriter.CreateAsync (new[] { nonEmptyFiles[0], nonEmptyFiles[2] });
+            await PieceWriter.CreateAsync (emptyFiles);
 
             PieceWriter.DoNotReadFrom.AddRange (new[]{
-                Manager.Files[0],
-                Manager.Files[3],
+                nonEmptyFiles [0],
+                nonEmptyFiles [3],
             });
 
             var bf = new BitField (Manager.Torrent.PieceCount ()).SetAll (true);
@@ -401,6 +453,9 @@ namespace MonoTorrent.Client.Modes
             foreach (var file in Manager.Files)
                 Assert.IsTrue (file.BitField.AllTrue, "#2." + file.Path);
 
+            // Remove zero length files so they no longer exist
+            foreach (var v in emptyFiles)
+                PieceWriter.FilesWithLength.Remove (v);
             var mode = new HashingMode (Manager, DiskManager);
             Manager.Mode = mode;
             await mode.WaitForHashingToComplete ();

@@ -36,7 +36,6 @@ using Microsoft.Win32.SafeHandles;
 
 namespace MonoTorrent.PieceWriter
 {
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET5_0 || NETCOREAPP3_0 || NET472
     static class NtfsSparseFile
     {
         [StructLayout (LayoutKind.Sequential)]
@@ -155,5 +154,4 @@ namespace MonoTorrent.PieceWriter
             uint nFileSystemNameSize
         );
     }
-#endif
 }

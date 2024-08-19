@@ -53,6 +53,11 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
+        public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+        {
+            throw new NotImplementedException ();
+        }
+
         public void Dispose ()
         {
         }
@@ -67,6 +72,11 @@ namespace MonoTorrent.Client
             return ReusableTask.CompletedTask;
         }
 
+        public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+        {
+            throw new NotImplementedException ();
+        }
+
         public ReusableTask MoveAsync (ITorrentManagerFile file, string fullPath, bool overwrite)
         {
             return ReusableTask.CompletedTask;
@@ -75,6 +85,11 @@ namespace MonoTorrent.Client
         public virtual ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
             return ReusableTask.FromResult (0);
+        }
+
+        public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            throw new NotImplementedException ();
         }
 
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
@@ -162,6 +177,21 @@ namespace MonoTorrent.Client
             public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
             {
                 return ReusableTask.CompletedTask;
+            }
+
+            public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+            {
+                throw new NotImplementedException ();
             }
         }
 

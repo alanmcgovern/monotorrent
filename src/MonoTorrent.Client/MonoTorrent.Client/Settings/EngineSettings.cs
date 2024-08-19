@@ -154,6 +154,11 @@ namespace MonoTorrent.Client
         public FastResumeMode FastResumeMode { get; } = FastResumeMode.BestEffort;
 
         /// <summary>
+        /// Sets the preferred approach to creating new files.
+        /// </summary>
+        public FileCreationOptions FileCreationOptions { get; } = FileCreationOptions.PreferSparse;
+
+        /// <summary>
         /// The list of HTTP(s) endpoints which the engine should bind to when a <see cref="TorrentManager"/> is set up
         /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
         /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
@@ -266,7 +271,8 @@ namespace MonoTorrent.Client
         internal EngineSettings (
             IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
-            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode, Dictionary<string, IPEndPoint> listenEndPoints,
+            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode,
+            FileCreationOptions fileCreationMode, Dictionary<string, IPEndPoint> listenEndPoints,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
             int maximumOpenFiles, int maximumUploadRate, IDictionary<string, IPEndPoint> reportedListenEndPoints, bool usePartialFiles,
             TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
@@ -286,6 +292,7 @@ namespace MonoTorrent.Client
             CacheDirectory = cacheDirectory;
             ConnectionTimeout = connectionTimeout;
             FastResumeMode = fastResumeMode;
+            FileCreationOptions = fileCreationMode;
             HttpStreamingPrefix = httpStreamingPrefix;
             ListenEndPoints = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> (listenEndPoints));
             MaximumConnections = maximumConnections;

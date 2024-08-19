@@ -259,12 +259,20 @@ namespace MonoTorrent.IntegrationTests
                     leecherIsSeeding.TrySetException (e.TorrentManager.Error.Exception);
             };
 
-            var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
-
+            TorrentManager seederManager;
+            TorrentManager leecherManager;
             var magnetLink = new MagnetLink (torrent.InfoHashes, "testing", torrent.AnnounceUrls.SelectMany (t => t).ToList (), null, torrent.Size);
-            var leecherManager = magnetLinkLeecher
-                ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
-                : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+            if (false && new Random ().Next (0, 100) % 2 == 1) {
+                seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
+                leecherManager = magnetLinkLeecher
+                    ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
+                    : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+            } else {
+                leecherManager = magnetLinkLeecher
+                    ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
+                    : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+                seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
+            }
 
             var timeout = new CancellationTokenSource (CancellationTimeout);
             timeout.Token.Register (() => { seederIsSeeding.TrySetCanceled (); });
@@ -319,6 +327,7 @@ namespace MonoTorrent.IntegrationTests
                 DhtEndPoint = null,
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
+                AllowLocalPeerDiscovery = false,
             };
             var engine = new ClientEngine (settingBuilder.ToSettings (), factories);
             return engine;
@@ -418,6 +427,8 @@ namespace MonoTorrent.IntegrationTests
                 await manager.HashCheckAsync (true);
             else
                 await manager.StartAsync ();
+
+            await Task.Delay (1000);
             return manager;
         }
     }

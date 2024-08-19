@@ -128,6 +128,8 @@ namespace MonoTorrent.Client.Modes
                 for (int i = 0; i < Manager.Torrent!.PieceCount; i++)
                     Manager.OnPieceHashed (i, false, i + 1, Manager.Torrent.PieceCount);
             }
+
+            await Manager.RefreshAllFilesCorrectLengthAsync ();
         }
 
         public void Dispose ()

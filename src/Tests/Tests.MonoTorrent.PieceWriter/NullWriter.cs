@@ -43,6 +43,11 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.CompletedTask;
         }
 
+        public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
+        {
+            throw new NotImplementedException ();
+        }
+
         public void Dispose ()
         {
         }
@@ -57,6 +62,11 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.CompletedTask;
         }
 
+        public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+        {
+            return ReusableTask.FromResult<long?> (null);
+        }
+
         public ReusableTask MoveAsync (ITorrentManagerFile file, string fullPath, bool overwrite)
         {
             return ReusableTask.CompletedTask;
@@ -67,6 +77,11 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.FromResult (0);
         }
 
+        public ReusableTask SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            throw new NotImplementedException ();
+        }
+
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
         {
             return ReusableTask.CompletedTask;
@@ -75,6 +90,11 @@ namespace MonoTorrent.PieceWriter
         public ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
         {
             return ReusableTask.CompletedTask;
+        }
+
+        ReusableTask<bool> IPieceWriter.SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            throw new NotImplementedException ();
         }
     }
 }

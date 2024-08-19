@@ -242,6 +242,10 @@ namespace MonoTorrent.Client.Modes
             await TrackerManager.AddTrackerAsync (new Uri ("http://1.1.1.1"));
             var bitfield = new BitField (Manager.Bitfield);
 
+            // Create all the files.
+            foreach (var file in Manager.Files)
+                await Manager.Engine.DiskManager.CreateAsync (file, MonoTorrent.PieceWriter.FileCreationOptions.PreferSparse);
+
             // Leecher at first
             bitfield.SetAll (true).Set (0, false);
             await Manager.LoadFastResumeAsync (new FastResume (Manager.InfoHashes, bitfield, new BitField (Manager.Torrent.PieceCount ())));

@@ -720,5 +720,23 @@ namespace MonoTorrent.Client
                 await Cache.SetCapacityAsync (settings.DiskCacheBytes);
             }
         }
+
+        internal async ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions fileCreationOptions)
+        {
+            await IOLoop;
+            return await Cache.Writer.CreateAsync (file, fileCreationOptions);
+        }
+
+        internal async ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
+        {
+            await IOLoop;
+            return await Cache.Writer.GetLengthAsync (file);
+        }
+
+        internal async ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
+        {
+            await IOLoop;
+            return await Cache.Writer.SetLengthAsync (file, length);
+        }
     }
 }

@@ -38,13 +38,86 @@ namespace MonoTorrent.PieceWriter
         int OpenFiles { get; }
         int MaximumOpenFiles { get; }
 
+        /// <summary>
+        /// Releases all resources associated with the specified file.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         ReusableTask CloseAsync (ITorrentManagerFile file);
+
+        /// <summary>
+        /// Returns false if the file already exists, otherwise creates the file and returns true.  
+        /// </summary>
+        /// <param name="file">The file to create</param>
+        /// <param name="options">Determines how new files will be created.</param>
+        /// <returns></returns>
+        ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options);
+
+        /// <summary>
+        /// Returns true if the file exists.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         ReusableTask<bool> ExistsAsync (ITorrentManagerFile file);
+
+        /// <summary>
+        /// Flush any cached data to the file.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         ReusableTask FlushAsync (ITorrentManagerFile file);
+
+        /// <summary>
+        /// Returns null if the specified file does not exist, otherwise returns the length of the file in bytes.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file);
+
+        /// <summary>
+        /// Moves the specified file to the new location. Optionally overwrite any pre-existing files.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="fullPath"></param>
+        /// <param name="overwrite"></param>
+        /// <returns></returns>
         ReusableTask MoveAsync (ITorrentManagerFile file, string fullPath, bool overwrite);
+
+        /// <summary>
+        /// Reads the specified amount of data from the specified file.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="offset"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
         ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer);
-        ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer);
+
+        /// <summary>
+        /// Returns false and no action is taken if the file does not already exist. If the file does exist
+        /// it's length is set to the provided value.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length);
+
+        /// <summary>
+        /// Optional limit to the maximum number of files this writer can have open concurrently.
+        /// </summary>
+        /// <param name="maximumOpenFiles"></param>
+        /// <returns></returns>
         ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles);
+
+        /// <summary>
+        /// Writes all data in the provided buffer to the specified file. Some implementatations may
+        /// have an internal cache, which means <see cref="FlushAsync(ITorrentManagerFile)"/> should
+        /// be invoked to guarantee the data is written to it's final destination.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="offset"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer);
     }
 
     public static class PaddingAwareIPieceWriterExtensions

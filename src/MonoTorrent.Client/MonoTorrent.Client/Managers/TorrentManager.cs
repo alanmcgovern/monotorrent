@@ -87,17 +87,44 @@ namespace MonoTorrent.Client
             if (!Files.Contains (file))
                 throw new ArgumentNullException (nameof (file), "The file is not part of this torrent");
 
-            // No change
+            // No change - bail out
             if (priority == file.Priority)
                 return;
 
             await ClientEngine.MainLoop;
 
+            if (Engine == null)
+                throw new InvalidOperationException ("This torrent manager has been removed from it's ClientEngine");
+
             // If the old priority, or new priority, is 'DoNotDownload' then the selector needs to be refreshed
             bool needsToUpdateSelector = file.Priority == Priority.DoNotDownload || priority == Priority.DoNotDownload;
             var oldPriority = file.Priority;
+
+            if (oldPriority == Priority.DoNotDownload && !(await Engine.DiskManager.CheckFileExistsAsync (file))) {
+                // Always create the file the user requested to download
+                await Engine.DiskManager.CreateAsync (file, Engine.Settings.FileCreationOptions);
+
+                if (file.Length == 0)
+                    ((TorrentFileInfo) file).BitField[0] = await Engine.DiskManager.CheckFileExistsAsync (file);
+            }
+
+            // Update the priority for the file itself now that we've successfully created it!
             ((TorrentFileInfo) file).Priority = priority;
 
+            if (oldPriority == Priority.DoNotDownload && file.Length > 0) {
+                // Look for any file which are still marked DoNotDownload but also overlap this file.
+                // We need to create those ones too because if there are three 400kB files and the
+                // piece length is 512kB, and the first file is set to 'DoNotDownload', then we still
+                // need to create it as we'll download the first 512kB under bittorrent v1.
+                foreach (var maybeCreateFile in Files.Where (t => t.Priority == Priority.DoNotDownload && t.Length > 0)) {
+                    // If this file overlaps, create it!
+                    if (maybeCreateFile.Overlaps(file) && !(await Engine.DiskManager.CheckFileExistsAsync (maybeCreateFile)))
+                        await Engine.DiskManager.CreateAsync (maybeCreateFile, Engine.Settings.FileCreationOptions);
+                }
+            }
+;
+
+            // With the new priority, calculate which files we're actively downloading!
             if (needsToUpdateSelector) {
                 // If we change the priority of a file we need to figure out which files are marked
                 // as 'DoNotDownload' and which ones are downloadable.
@@ -154,7 +181,7 @@ namespace MonoTorrent.Client
         /// all files have the correct length. If some files are marked as 'DoNotDownload' then the
         /// torrent will not be considered to be Complete until they are downloaded.
         /// </summary>
-        public bool Complete => Bitfield.AllTrue;
+        public bool Complete => Bitfield.AllTrue && AllFilesCorrectLength;
 
         internal bool Disposed { get; private set; }
 
@@ -204,6 +231,7 @@ namespace MonoTorrent.Client
         internal void SetNeedsHashCheck ()
         {
             HashChecked = false;
+            AllFilesCorrectLength = false;
             if (Engine != null && Engine.Settings.AutoSaveLoadFastResume) {
                 var path = Engine.Settings.GetFastResumePath (InfoHashes);
                 if (File.Exists (path))
@@ -219,6 +247,8 @@ namespace MonoTorrent.Client
         internal BitField UnhashedPieces { get; set; }
 
         public bool HashChecked { get; private set; }
+
+        internal bool AllFilesCorrectLength { get; private set; }
 
         /// <summary>
         /// The number of times a piece is downloaded, but is corrupt and fails the hashcheck and must be re-downloaded.
@@ -583,6 +613,7 @@ namespace MonoTorrent.Client
             }
 
             HashChecked = true;
+
             if (autoStart) {
                 await StartAsync ();
             } else if (setStoppedModeWhenDone) {
@@ -680,8 +711,6 @@ namespace MonoTorrent.Client
                 var currentPath = File.Exists (downloadCompleteFullPath) ? downloadCompleteFullPath : downloadIncompleteFullPath;
                 var torrentFileInfo = new TorrentFileInfo (file, currentPath);
                 torrentFileInfo.UpdatePaths ((currentPath, downloadCompleteFullPath, downloadIncompleteFullPath));
-                if (file.Length == 0)
-                    torrentFileInfo.BitField[0] = true;
                 return torrentFileInfo;
             }).Cast<ITorrentManagerFile> ().ToList ().AsReadOnly ();
 
@@ -1061,7 +1090,18 @@ namespace MonoTorrent.Client
                 throw new InvalidOperationException ("The registered engine has been disposed");
         }
 
-        public async Task LoadFastResumeAsync (FastResume data)
+        /// <summary>
+        /// Attempts to load the provided fastresume data. Several validations are performed during this, such as ensuring
+        /// files which have validated pieces actually exist on disk, and the length of those files is correct. If any validation
+        /// fails, the <see cref="HashChecked"/> boolean will not be set to true, and <see cref="HashCheckAsync(bool)"/> will need
+        /// to be run to re-averify the file contents.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public Task LoadFastResumeAsync (FastResume data)
+            => LoadFastResumeAsync (data, false);
+
+        internal async Task LoadFastResumeAsync (FastResume data, bool skipStateCheckForTests)
         {
             if (data == null)
                 throw new ArgumentNullException (nameof (data));
@@ -1069,16 +1109,37 @@ namespace MonoTorrent.Client
             await ClientEngine.MainLoop;
 
             CheckMetadata ();
-            if (State != TorrentState.Stopped)
+            if (State != TorrentState.Stopped && !skipStateCheckForTests)
                 throw new InvalidOperationException ("Can only load FastResume when the torrent is stopped");
             if (InfoHashes != data.InfoHashes || Torrent!.PieceCount != data.Bitfield.Length)
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
 
             for (int i = 0; i < Torrent.PieceCount; i++)
                 OnPieceHashed (i, data.Bitfield[i], i + 1, Torrent.PieceCount);
+
             UnhashedPieces.From (data.UnhashedPieces);
 
+            await RefreshAllFilesCorrectLengthAsync ();
             HashChecked = true;
+        }
+
+        internal async ReusableTask RefreshAllFilesCorrectLengthAsync ()
+        {
+            var allFilesCorrectLength = true;
+            foreach (TorrentFileInfo file in Files) {
+                var maybeLength = await Engine!.DiskManager.GetLengthAsync (file);
+
+                // Empty files aren't stored in fast resume data because it's as easy to just check if they exist on disk.
+                if (file.Length == 0)
+                    file.BitField[0] = maybeLength.HasValue;
+
+                // If any file doesn't exist, or any file is too large, indicate that something is wrong.
+                // If files exist but are too short, then we can assume everything is fine and the torrent just
+                // needs to be downloaded.
+                if (file.Priority != Priority.DoNotDownload && (!maybeLength.HasValue || maybeLength > file.Length))
+                    allFilesCorrectLength = false;
+            }
+            AllFilesCorrectLength = allFilesCorrectLength;
         }
 
         public async Task<FastResume> SaveFastResumeAsync ()
