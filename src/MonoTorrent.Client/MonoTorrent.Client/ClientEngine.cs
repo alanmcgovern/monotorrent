@@ -619,7 +619,7 @@ namespace MonoTorrent.Client
                 } else {
                     // Add new peer to matched Torrent
                     var peer = new PeerInfo (args.Uri);
-                    int peersAdded = manager.AddPeers (new[] { peer }, manager.InfoHashes.Expand (args.InfoHash), prioritise: false, fromTracker: false);
+                    int peersAdded = manager.AddPeers (new[] { peer }, prioritise: false, fromTracker: false);
                     manager.RaisePeersFound (new LocalPeersAdded (manager, peersAdded, 1));
                 }
             } catch {
@@ -710,7 +710,7 @@ namespace MonoTorrent.Client
                 return;
 
             if (manager.CanUseDht) {
-                int successfullyAdded = await manager.AddPeersAsync (e.Peers, manager.InfoHashes.Expand (e.InfoHash));
+                int successfullyAdded = await manager.AddPeersAsync (e.Peers);
                 manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));
             } else {
                 // This is only used for unit testing to validate that even if the DHT engine
