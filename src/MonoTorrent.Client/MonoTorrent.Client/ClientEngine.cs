@@ -236,7 +236,7 @@ namespace MonoTorrent.Client
         /// A readonly list of the listeners which the engine is using to receive incoming connections from other peers.
         /// This are created by passing <see cref="EngineSettings.ListenEndPoints"/> to the <see cref="Factories.CreatePeerConnectionListener(IPEndPoint)"/> factory method.
         /// </summary>
-        public IList<IPeerConnectionListener> PeerListeners { get; set; } = Array.Empty<IPeerConnectionListener> ();
+        public IList<IPeerConnectionListener> PeerListeners { get; private set; } = Array.Empty<IPeerConnectionListener> ();
 
         internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
