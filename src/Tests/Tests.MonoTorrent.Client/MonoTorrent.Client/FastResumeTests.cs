@@ -32,6 +32,7 @@ using System.IO;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 using NUnit.Framework;
 
@@ -147,6 +148,44 @@ namespace MonoTorrent.Client
             await manager.StartAsync ();
             await manager.WaitForState (TorrentState.Downloading);
             Assert.IsFalse (File.Exists (path));
+        }
+
+        [Test]
+        public async Task CanExplicitlyLoadHybridTorrentFastResume ()
+        {
+            // Ensure the data can be saved/loaded, including when converted to a byte[] for storage on disk.
+            using var engine = EngineHelpers.Create ();
+            var torrent = Torrent.Load (Path.Combine (Path.GetDirectoryName (typeof (TorrentV2Test).Assembly.Location), "MonoTorrent", "bittorrent-v2-hybrid-test.torrent"));
+            var manager = await engine.AddAsync (torrent, "");
+
+            await manager.HashCheckAsync (false);
+            var fastResume = await manager.SaveFastResumeAsync ();
+
+            await manager.SetNeedsHashCheckAsync ();
+            await manager.LoadFastResumeAsync (fastResume);
+            Assert.IsTrue (manager.HashChecked);
+
+            await manager.SetNeedsHashCheckAsync ();
+            await manager.LoadFastResumeAsync (new FastResume (BEncodedValue.Decode<BEncodedDictionary> (fastResume.Encode ())));
+        }
+
+        [Test]
+        public async Task CanImplicitlyLoadHybridTorrentFastResume ()
+        {
+            using var tmpDir = TempDir.Create ();
+            var settings = EngineHelpers.CreateSettings(cacheDirectory: tmpDir.Path, automaticFastResume: true);
+            // Ensure the on-disk cache can be loaded implicitly when loading a torrent into the engine
+            using var engine = EngineHelpers.Create (settings);
+            var torrent = Torrent.Load (Path.Combine (Path.GetDirectoryName (typeof (TorrentV2Test).Assembly.Location), "MonoTorrent", "bittorrent-v2-hybrid-test.torrent"));
+            var manager = await engine.AddAsync (torrent, "");
+            Assert.IsFalse (manager.HashChecked);
+
+            // Hash check and write fast resume data to disk
+            await manager.HashCheckAsync (false);
+
+            await engine.RemoveAsync (manager, RemoveMode.KeepAllData);
+            manager = await engine.AddAsync (torrent, "");
+            Assert.IsTrue (manager.HashChecked);
         }
 
         [Test]
