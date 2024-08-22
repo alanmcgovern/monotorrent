@@ -49,12 +49,11 @@ namespace MonoTorrent.Streaming
         Torrent Torrent { get; set; }
 
         [SetUp]
-        public async Task Setup ()
+        public void Setup ()
         {
-            Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
-
             PieceWriter = new TestWriter ();
-            await Engine.DiskManager.SetWriterAsync (PieceWriter);
+
+            Engine = EngineHelpers.Create (EngineHelpers.CreateSettings (), EngineHelpers.Factories.WithPieceWriterCreator (t => PieceWriter));
             Torrent = TestRig.CreateMultiFileTorrent (new[] { new TorrentFile ("path", Constants.BlockSize * 1024, 0, 1024 / 8 - 1, 0, TorrentFileAttributes.None, 0) }, Constants.BlockSize * 8, out torrentInfo);
             MagnetLink = new MagnetLink (Torrent.InfoHashes, "MagnetDownload");
         }

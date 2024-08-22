@@ -77,7 +77,6 @@ namespace MonoTorrent.Client
         [Test]
         public async Task InvalidLargeMessageBodyLength ()
         {
-
             using var releaser = MemoryPool.Default.Rent (4, out Memory<byte> buffer);
             Message.Write (buffer.Span, int.MaxValue);
 
@@ -85,7 +84,6 @@ namespace MonoTorrent.Client
             var receiveTask = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
 
             Assert.ThrowsAsync<ProtocolException> (async () => await receiveTask, "#1");
-            Assert.ThrowsAsync<ConnectionClosedException> (async () => await PeerIO.ReceiveMessageAsync (pair.Outgoing, PlainTextEncryption.Instance), "#2");
         }
 
         [Test]

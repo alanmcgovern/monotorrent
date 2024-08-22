@@ -54,7 +54,7 @@ namespace MonoTorrent.Client.Modes
 
         async Task<(ClientEngine engine, TorrentManager manager, PieceHashesV2 hashes)> CreateTorrent(string path)
         {
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (autoSaveLoadMagnetLinkMetadata: false));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (autoSaveLoadMagnetLinkMetadata: false));
 
             var dict = (BEncodedDictionary) BEncodedDictionary.Decode (File.ReadAllBytes (V2OnlyTorrentPath));
             var rawLayers = (BEncodedDictionary) dict["piece layers"];

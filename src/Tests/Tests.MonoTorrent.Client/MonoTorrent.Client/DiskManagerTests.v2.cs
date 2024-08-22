@@ -123,7 +123,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (pieceLength * 1024, torrent.PieceLength);
 
             var info = new Info (torrent);
-            var manager = new DiskManager (EngineSettingsBuilder.CreateForTests (), Factories.Default, new ZeroWriter ());
+            var manager = new DiskManager (EngineHelpers.CreateSettings (), EngineHelpers.Factories.WithPieceWriterCreator (t => new ZeroWriter ()));
             for (int i = 0; i < info.TorrentInfo.PieceCount (); i ++) {
                 PieceHash dest = new PieceHash (Memory<byte>.Empty, new byte[32]);
                 await manager.GetHashAsync (info, i, dest);

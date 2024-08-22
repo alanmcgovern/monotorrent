@@ -43,66 +43,6 @@ using ReusableTasks;
 
 namespace MonoTorrent.Client
 {
-    class TestPieceWriter : IPieceWriter
-    {
-        public int OpenFiles => 0;
-        public int MaximumOpenFiles { get; }
-
-        public ReusableTask CloseAsync (ITorrentManagerFile file)
-        {
-            return ReusableTask.CompletedTask;
-        }
-
-        public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
-        {
-            throw new NotImplementedException ();
-        }
-
-        public void Dispose ()
-        {
-        }
-
-        public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
-        {
-            return ReusableTask.FromResult (false);
-        }
-
-        public ReusableTask FlushAsync (ITorrentManagerFile file)
-        {
-            return ReusableTask.CompletedTask;
-        }
-
-        public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
-        {
-            throw new NotImplementedException ();
-        }
-
-        public ReusableTask MoveAsync (ITorrentManagerFile file, string fullPath, bool overwrite)
-        {
-            return ReusableTask.CompletedTask;
-        }
-
-        public virtual ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
-        {
-            return ReusableTask.FromResult (0);
-        }
-
-        public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
-        {
-            throw new NotImplementedException ();
-        }
-
-        public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
-        {
-            return ReusableTask.CompletedTask;
-        }
-
-        public virtual ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
-        {
-            return ReusableTask.CompletedTask;
-        }
-    }
-
     [TestFixture]
     public class DiskManagerTests
     {
@@ -371,19 +311,18 @@ namespace MonoTorrent.Client
         [Test]
         public async Task MoveFile_ConvertsToFullPath ()
         {
-
-            using var writer = new TestPieceWriter ();
+            using var writer = new TestWriter ();
             using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             var file = TorrentFileInfo.Create (Constants.BlockSize, 123456).Single ();
-            Assert.IsFalse (File.Exists (file.FullPath));
+            Assert.IsFalse (writer.FilesWithLength.ContainsKey (file.FullPath));
 
             var newFullPath = Path.GetFullPath ("NewFullPath");
             await manager.MoveFileAsync (file, (newFullPath, newFullPath, newFullPath));
             Assert.AreEqual (newFullPath, file.FullPath);
             Assert.AreEqual (newFullPath, file.DownloadCompleteFullPath);
             Assert.AreEqual (newFullPath, file.DownloadIncompleteFullPath);
-            Assert.IsFalse (File.Exists (file.FullPath));
+            Assert.IsFalse (writer.FilesWithLength.ContainsKey (file.FullPath));
         }
 
         [Test]
@@ -393,11 +332,11 @@ namespace MonoTorrent.Client
             var file = TorrentFileInfo.Create (Constants.BlockSize, ("file.txt", 123456, Path.Combine (tmp.Path, "orig.txt"))).Single ();
             File.OpenWrite (file.FullPath).Close ();
 
-            using var writer = new TestPieceWriter ();
+            using var writer = new TestWriter ();
             using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             await manager.MoveFileAsync (file, (file.FullPath, file.FullPath, file.FullPath + TorrentFileInfo.IncompleteFileSuffix));
-            Assert.IsTrue (File.Exists (file.FullPath));
+            Assert.IsTrue (writer.FilesWithLength.ContainsKey (file.FullPath));
         }
 
         [Test]
@@ -405,9 +344,10 @@ namespace MonoTorrent.Client
         {
             using var tmp = TempDir.Create ();
             var file = TorrentFileInfo.Create (Constants.BlockSize, ("file.txt", 123456, Path.Combine (tmp.Path, "orig.txt"))).Single ();
-            File.OpenWrite (file.FullPath).Close ();
 
-            using var writer = new TestPieceWriter ();
+            using var writer = new TestWriter ();
+            writer.FilesWithLength[file.FullPath] = 0;
+
             using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             var fullPath = Path.Combine (tmp.Path, "New", "Path", "file.txt");
@@ -425,12 +365,12 @@ namespace MonoTorrent.Client
             Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
             File.OpenWrite (file.FullPath).Close ();
 
-            using var writer = new TestPieceWriter ();
+            using var writer = new TestWriter ();
             using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             await manager.MoveFilesAsync (new[] { file }, newRoot.Path, false);
             Assert.AreEqual (Path.Combine (newRoot.Path, file.Path), file.FullPath);
-            //Assert.IsTrue (File.Exists (file.FullPath));
+            Assert.IsTrue (writer.FilesWithLength.ContainsKey (file.FullPath));
         }
 
         [Test]
@@ -443,12 +383,12 @@ namespace MonoTorrent.Client
             Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
             File.OpenWrite (file.FullPath).Close ();
 
-            using var writer = new TestPieceWriter ();
+            using var writer = new TestWriter ();
             using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             await manager.MoveFilesAsync (new[] { file }, newRoot.Path, true);
             Assert.AreEqual (Path.Combine (newRoot.Path, file.Path), file.FullPath);
-            //Assert.IsTrue (File.Exists (file.FullPath));
+            Assert.IsTrue (writer.FilesWithLength.ContainsKey (file.FullPath));
         }
 
         [Test]
@@ -460,16 +400,16 @@ namespace MonoTorrent.Client
             Directory.CreateDirectory (Path.GetDirectoryName (file.FullPath));
             File.OpenWrite (file.FullPath).Close ();
 
-            using var writer = new TestPieceWriter ();
+            using var writer = new TestWriter ();
             using var manager = new DiskManager (new EngineSettings (), Factories.Default, writer);
 
             await manager.MoveFilesAsync (new[] { file }, tmp.Path, true);
             Assert.AreEqual (Path.Combine (tmp.Path, file.Path), file.FullPath);
-            Assert.IsTrue (File.Exists (file.FullPath));
+            Assert.IsTrue (writer.FilesWithLength.ContainsKey (file.FullPath));
         }
 
 
-        class AsyncReader : TestPieceWriter
+        class AsyncReader : TestWriter
         {
             public override async ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
             {
@@ -499,7 +439,7 @@ namespace MonoTorrent.Client
             Assert.DoesNotThrowAsync (() => manager.ReadAsync (fileData, new BlockInfo (0, 0, 200), new byte[200]).AsTask ());
         }
 
-        class AsyncWriter : TestPieceWriter
+        class AsyncWriter : TestWriter
         {
             public override async ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
             {

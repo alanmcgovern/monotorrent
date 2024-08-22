@@ -51,7 +51,7 @@ namespace MonoTorrent.Common
         CapturingTorrentCreator creator;
         Source filesSource;
 
-        Factories TestFactories => Factories.Default
+        Factories TestFactories => EngineHelpers.Factories
             .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true });
 
         [SetUp]
@@ -198,7 +198,7 @@ namespace MonoTorrent.Common
         {
             // Create a torrent from files with all zeros
             // and see if it matches the one checked into the repo.
-            var factories = Factories.Default
+            var factories = TestFactories
                 .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true, FillValue = 0 });
 
             var creator = new TorrentCreator (TorrentType.V2Only, factories) {
@@ -229,7 +229,7 @@ namespace MonoTorrent.Common
         {
             // Create a torrent from files with all zeros
             // and see if it matches the one checked into the repo.
-            var factories = Factories.Default
+            var factories = TestFactories
                 .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true, FillValue = 0 });
 
             var creator = new TorrentCreator (TorrentType.V2Only, factories) {
@@ -263,26 +263,21 @@ namespace MonoTorrent.Common
         [Test]
         public async Task CreateV2Torrent_SortFilesCorrectly ()
         {
-            using var releaser = TempDir.Create ();
+            var dir = Path.Combine (Path.Combine ("foo", "bar", "baz"));
+            var fileSource = new CustomFileSource (new List<FileMapping> {
+                new FileMapping (Path.Combine (dir, "A.file"), "A", 4),
+                new FileMapping (Path.Combine (dir, "C.file"), "C",  4),
+                new FileMapping (Path.Combine (dir, "B.file"), "B",  4),
+            });
 
-            var dir = new DirectoryInfo (releaser.Path);
-            var eFile = new FileInfo (Path.Combine (dir.FullName, "E.file"));
-            File.WriteAllText (eFile.FullName, "aoeu");
-
-            var bFile = new FileInfo (Path.Combine (dir.FullName, "B.file"));
-            File.WriteAllText (bFile.FullName, "aoeu");
-
-            var aFileInDir = new FileInfo (Path.Combine (dir.FullName, "Dir/A.file"));
-            if (!aFileInDir.Directory.Exists)
-                aFileInDir.Directory.Create ();
-            File.WriteAllText (aFileInDir.FullName, "aoeu");
-
-            ITorrentFileSource fileSource = new TorrentFileSource (dir.FullName);
-            TorrentCreator torrentCreator = new TorrentCreator (TorrentType.V1V2Hybrid);
+            TorrentCreator torrentCreator = new TorrentCreator (TorrentType.V1V2Hybrid, TestFactories);
             var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
             var torrent = Torrent.Load (encodedTorrent);
 
             Assert.IsNotNull (torrent);
+            Assert.AreEqual ("A", torrent.Files[0].Path);
+            Assert.AreEqual ("B", torrent.Files[1].Path);
+            Assert.AreEqual ("C", torrent.Files[2].Path);
         }
 
 

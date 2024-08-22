@@ -11,7 +11,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SortByLeastConnections ()
         {
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             var manager = new ConnectionManager ("test", engine.Settings, engine.Factories, engine.DiskManager);
 
             var torrents = new[] {

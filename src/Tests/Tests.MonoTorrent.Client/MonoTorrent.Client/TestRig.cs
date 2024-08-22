@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
     public class TestWriter : IPieceWriter
     {
         public List<ITorrentManagerFile> DoNotReadFrom = new List<ITorrentManagerFile> ();
-        public Dictionary<ITorrentManagerFile, long> FilesWithLength = new Dictionary<ITorrentManagerFile, long> ();
+        public Dictionary<string, long> FilesWithLength = new Dictionary<string, long> ();
         public bool DontWrite;
         public byte? FillValue;
 
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
         public int OpenFiles => 0;
         public int MaximumOpenFiles { get; }
 
-        public ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
+        public virtual ReusableTask<int> ReadAsync (ITorrentManagerFile file, long offset, Memory<byte> buffer)
         {
             if (DoNotReadFrom.Contains (file))
                 return ReusableTask.FromResult (0);
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
             return ReusableTask.FromResult (buffer.Length);
         }
 
-        public ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
+        public virtual ReusableTask WriteAsync (ITorrentManagerFile file, long offset, ReadOnlyMemory<byte> buffer)
         {
             return ReusableTask.CompletedTask;
         }
@@ -108,12 +108,19 @@ namespace MonoTorrent.Client
 
         public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
         {
-            return ReusableTask.FromResult (FilesWithLength.ContainsKey (file));
+            return ReusableTask.FromResult (FilesWithLength.ContainsKey (file.FullPath));
         }
 
         public ReusableTask MoveAsync (ITorrentManagerFile file, string newPath, bool overwrite)
         {
-            return ReusableTask.CompletedTask;
+            if (!overwrite && FilesWithLength.ContainsKey (newPath))
+                throw new InvalidOperationException ("File already exists");
+
+            // Move the file as if it were an on-disk file.
+            FilesWithLength[newPath] = FilesWithLength[file.FullPath];
+            FilesWithLength.Remove (file.FullPath);
+
+            return default;
         }
 
         public ReusableTask SetMaximumOpenFilesAsync (int maximumOpenFiles)
@@ -130,16 +137,16 @@ namespace MonoTorrent.Client
 
         public ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions options)
         {
-            if (FilesWithLength.ContainsKey (file))
+            if (FilesWithLength.ContainsKey (file.FullPath))
                 return ReusableTask.FromResult (false);
 
-            FilesWithLength.Add (file, options == FileCreationOptions.PreferPreallocation ? file.Length : 0);
+            FilesWithLength.Add (file.FullPath, options == FileCreationOptions.PreferPreallocation ? file.Length : 0);
             return ReusableTask.FromResult (true);
         }
 
         public ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
         {
-            if (FilesWithLength.TryGetValue (file, out var length))
+            if (FilesWithLength.TryGetValue (file.FullPath, out var length))
                 return ReusableTask.FromResult<long?> (length);
             return ReusableTask.FromResult<long?> (null);
         }
@@ -147,12 +154,12 @@ namespace MonoTorrent.Client
         public ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
         {
             // If the file exists, change it's length
-            if (FilesWithLength.ContainsKey (file))
-                FilesWithLength[file] = length;
+            if (FilesWithLength.ContainsKey (file.FullPath))
+                FilesWithLength[file.FullPath] = length;
 
             // This is successful only if the file existed beforehand. No action is taken
             // if the file did not exist.
-            return ReusableTask.FromResult (FilesWithLength.ContainsKey (file));
+            return ReusableTask.FromResult (FilesWithLength.ContainsKey (file.FullPath));
         }
     }
 
@@ -366,7 +373,7 @@ namespace MonoTorrent.Client
         }
 
         public IPieceWriter Writer {
-            get; set;
+            get; private set;
         }
 
         public ClientEngine Engine { get; }
@@ -452,15 +459,18 @@ namespace MonoTorrent.Client
             this.tier = trackers;
             MetadataMode = metadataMode;
             var cacheDir = Path.Combine (Path.GetDirectoryName (typeof (TestRig).Assembly.Location), "test_cache_dir");
+
+            Writer = writer ?? new TestWriter ();
             var factories = Factories.Default
                 .WithDhtCreator (() => new ManualDhtEngine ())
                 .WithDhtListenerCreator (port => new NullDhtListener ())
                 .WithLocalPeerDiscoveryCreator (() => new ManualLocalPeerListener ())
                 .WithPeerConnectionListenerCreator (endpoint => new CustomListener ())
                 .WithTrackerCreator ("custom", uri => new Tracker (new CustomTrackerConnection (uri)))
+                .WithPieceWriterCreator (files => writer);
                 ;
 
-            Engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (
+            Engine = EngineHelpers.Create (EngineHelpers.CreateSettings (
                 allowLocalPeerDiscovery: true,
                 dhtEndPoint: new IPEndPoint (IPAddress.Any, 12345),
                 cacheDirectory: cacheDir,
@@ -468,8 +478,6 @@ namespace MonoTorrent.Client
             ), factories);
             if (Directory.Exists (Engine.Settings.MetadataCacheDirectory))
                 Directory.Delete (Engine.Settings.MetadataCacheDirectory, true);
-            Engine.DiskManager.SetWriterAsync (writer).GetAwaiter ().GetResult ();
-            Writer = writer;
 
             RecreateManager ().Wait ();
             MetadataPath = Path.Combine (Engine.Settings.MetadataCacheDirectory, $"{Engine.Torrents.Single ().InfoHashes.V1OrV2.ToHex ()}.torrent");

@@ -54,7 +54,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task RequestMetadata ()
         {
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (autoSaveLoadMagnetLinkMetadata: false));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (autoSaveLoadMagnetLinkMetadata: false));
             var torrent = await Torrent.LoadAsync (HybridTorrentPath);
             var manager = await engine.AddAsync (new MagnetLink (torrent.InfoHashes), "bbb");
             var metadataMode = new MetadataMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, "blarp", true);
@@ -81,7 +81,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task RequestMetadata_OnePeerDisconnects ()
         {
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (autoSaveLoadMagnetLinkMetadata: false));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (autoSaveLoadMagnetLinkMetadata: false));
             var torrent = await Torrent.LoadAsync (HybridTorrentPath);
             var manager = await engine.AddAsync (new MagnetLink (torrent.InfoHashes), "bbb");
             manager.Mode = new MetadataMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, "blarp", true);

@@ -183,7 +183,7 @@ namespace MonoTorrent.Client.Modes
             id.SupportsLTMessages = true;
 
             var torrent = TestRig.CreatePrivate ();
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             var manager = await engine.AddAsync (torrent, "");
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
@@ -205,7 +205,7 @@ namespace MonoTorrent.Client.Modes
         public async Task AddPeers_Tracker_Private ()
         {
             var torrent = TestRig.CreatePrivate ();
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             var manager = await engine.AddAsync (torrent, "");
 
             manager.SetTrackerManager (TrackerManager);
@@ -294,7 +294,7 @@ namespace MonoTorrent.Client.Modes
         public async Task EmptyPeerId_PrivateTorrent ()
         {
             var torrent = TestRig.CreatePrivate ();
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             var manager = await engine.AddAsync (torrent, "");
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);
@@ -322,7 +322,7 @@ namespace MonoTorrent.Client.Modes
         public async Task MismatchedPeerId_RequiredToMatch ()
         {
             var torrent = TestRig.CreatePrivate ();
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
 
             var settings = new TorrentSettingsBuilder {
                 RequirePeerIdToMatch = true,
@@ -340,7 +340,7 @@ namespace MonoTorrent.Client.Modes
         public async Task MismatchedPeerId_PrivateTorrent ()
         {
             var torrent = TestRig.CreatePrivate ();
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             Manager = await engine.AddAsync (torrent, "");
 
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);

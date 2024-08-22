@@ -44,28 +44,6 @@ namespace MonoTorrent.Client
     /// </summary>
     public class EngineSettingsBuilder
     {
-        internal static EngineSettings CreateForTests (
-            bool allowLocalPeerDiscovery = false,
-            bool allowPortForwarding = false,
-            bool automaticFastResume = false,
-            bool autoSaveLoadMagnetLinkMetadata = true,
-            IPEndPoint? dhtEndPoint = null,
-            Dictionary<string, IPEndPoint>? listenEndPoints = null,
-            string? cacheDirectory = null,
-            bool usePartialFiles = false)
-        {
-            return new EngineSettingsBuilder {
-                AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
-                AllowPortForwarding = allowPortForwarding,
-                AutoSaveLoadFastResume = automaticFastResume,
-                AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata,
-                CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location)!, "test_cache_dir"),
-                DhtEndPoint = dhtEndPoint,
-                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? new Dictionary<string, IPEndPoint> ()),
-                UsePartialFiles = usePartialFiles,
-            }.ToSettings ();
-        }
-
         TimeSpan connectionTimeout;
         int diskCacheBytes;
         string httpStreamingPrefix;

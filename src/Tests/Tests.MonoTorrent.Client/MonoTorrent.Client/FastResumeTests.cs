@@ -132,7 +132,7 @@ namespace MonoTorrent.Client
         public async Task IgnoreInvalidFastResume ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
+            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
@@ -153,7 +153,7 @@ namespace MonoTorrent.Client
         public async Task DeleteAfterDownloading ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
+            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
@@ -174,7 +174,7 @@ namespace MonoTorrent.Client
         public async Task RetainAfterSeeding ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
+            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
@@ -197,7 +197,7 @@ namespace MonoTorrent.Client
         {
             TestWriter testWriter = null;
             using var tmpDir = TempDir.Create ();
-            using var engine = new ClientEngine (new EngineSettingsBuilder (EngineSettingsBuilder.CreateForTests ()) {
+            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
                 AutoSaveLoadFastResume = true,
                 CacheDirectory = tmpDir.Path,
             }.ToSettings (),

@@ -50,8 +50,8 @@ namespace MonoTorrent.Client
         public async Task AddPeers_Dht ()
         {
             var dht = new ManualDhtEngine ();
-            var factories = Factories.Default.WithDhtCreator (() => dht);
-            var settings = EngineSettingsBuilder.CreateForTests (dhtEndPoint: new IPEndPoint (IPAddress.Any, 1234));
+            var factories = EngineHelpers.Factories.WithDhtCreator (() => dht);
+            var settings = EngineHelpers.CreateSettings (dhtEndPoint: new IPEndPoint (IPAddress.Any, 1234));
 
             using var engine = new ClientEngine (settings, factories);
             var manager = await engine.AddAsync (new MagnetLink (InfoHash.FromMemory (new byte[20])), "asd");
@@ -157,7 +157,7 @@ namespace MonoTorrent.Client
         [Test]
         public void CacheDirectory_IsFile_UpdateSettings ()
         {
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var engine = EngineHelpers.Create ();
             var tmp = TempDir.Create ();
             var cachePath = Path.Combine (tmp.Path, "test.file");
             using (var file = File.Create (cachePath)) { }
@@ -201,8 +201,9 @@ namespace MonoTorrent.Client
         [TestCase (false)]
         public async Task UsePartialFiles_InitiallyOff_ChangeFullPath_ToggleOn (bool createFile)
         {
+            var writer = new TestWriter ();
             var pieceLength = Constants.BlockSize * 4;
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (usePartialFiles: false));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (usePartialFiles: false), EngineHelpers.Factories.WithPieceWriterCreator (t => writer));
             var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
 
             using var tempDir = TempDir.Create ();
@@ -217,7 +218,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (newPath, manager.Files[0].DownloadIncompleteFullPath);
 
             if (createFile)
-                File.Create (manager.Files[0].FullPath).Dispose ();
+                await writer.CreateAsync (manager.Files[0], FileCreationOptions.PreferSparse);
 
             var settings = new EngineSettingsBuilder (engine.Settings) { UsePartialFiles = true }.ToSettings ();
             await engine.UpdateSettingsAsync (settings);
@@ -226,11 +227,11 @@ namespace MonoTorrent.Client
             Assert.AreEqual (newPath + TorrentFileInfo.IncompleteFileSuffix, manager.Files[0].DownloadIncompleteFullPath);
 
             if (createFile) {
-                Assert.IsFalse (File.Exists (newPath));
-                Assert.IsTrue (File.Exists (newPath + TorrentFileInfo.IncompleteFileSuffix));
+                Assert.IsFalse (writer.FilesWithLength.ContainsKey (newPath));
+                Assert.IsTrue (writer.FilesWithLength.ContainsKey (newPath + TorrentFileInfo.IncompleteFileSuffix));
             } else {
-                Assert.IsFalse (File.Exists (newPath));
-                Assert.IsFalse (File.Exists (newPath + TorrentFileInfo.IncompleteFileSuffix));
+                Assert.IsFalse (writer.FilesWithLength.ContainsKey (newPath));
+                Assert.IsFalse (writer.FilesWithLength.ContainsKey (newPath + TorrentFileInfo.IncompleteFileSuffix));
             }
         }
 
@@ -238,7 +239,7 @@ namespace MonoTorrent.Client
         public async Task UsePartialFiles_InitiallyOff_ToggleOn ()
         {
             var pieceLength = Constants.BlockSize * 4;
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (usePartialFiles: false));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (usePartialFiles: false));
             var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
 
             var manager = await engine.AddAsync (torrent, "");
@@ -253,7 +254,7 @@ namespace MonoTorrent.Client
         public async Task UsePartialFiles_InitiallyOn_ToggleOff ()
         {
             var pieceLength = Constants.BlockSize * 4;
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (usePartialFiles: true));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (usePartialFiles: true));
             var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
 
             var manager = await engine.AddAsync (torrent, "");
@@ -269,8 +270,9 @@ namespace MonoTorrent.Client
         [TestCase (false)]
         public async Task UsePartialFiles_InitiallyOn_ChangeFullPath_ToggleOff (bool createFile)
         {
+            var writer = new TestWriter ();
             var pieceLength = Constants.BlockSize * 4;
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (usePartialFiles: true));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (usePartialFiles: true), EngineHelpers.Factories.WithPieceWriterCreator (t => writer));
             var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
 
             using var tempDir = TempDir.Create ();
@@ -285,7 +287,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (newPath + TorrentFileInfo.IncompleteFileSuffix, manager.Files[0].DownloadIncompleteFullPath);
 
             if (createFile)
-                File.Create (manager.Files[0].FullPath).Dispose ();
+                await writer.CreateAsync (manager.Files[0], FileCreationOptions.PreferSparse);
 
             var settings = new EngineSettingsBuilder (engine.Settings) { UsePartialFiles = false }.ToSettings ();
             await engine.UpdateSettingsAsync (settings);
@@ -294,11 +296,11 @@ namespace MonoTorrent.Client
             Assert.AreEqual (newPath, manager.Files[0].DownloadIncompleteFullPath);
 
             if (createFile) {
-                Assert.IsFalse (File.Exists (newPath + TorrentFileInfo.IncompleteFileSuffix));
-                Assert.IsTrue (File.Exists (newPath));
+                Assert.IsFalse (writer.FilesWithLength.ContainsKey (newPath + TorrentFileInfo.IncompleteFileSuffix));
+                Assert.IsTrue (writer.FilesWithLength.ContainsKey (newPath));
             } else {
-                Assert.IsFalse (File.Exists (newPath));
-                Assert.IsFalse (File.Exists (newPath + TorrentFileInfo.IncompleteFileSuffix));
+                Assert.IsFalse (writer.FilesWithLength.ContainsKey (newPath));
+                Assert.IsFalse (writer.FilesWithLength.ContainsKey (newPath + TorrentFileInfo.IncompleteFileSuffix));
             }
         }
 
@@ -306,7 +308,7 @@ namespace MonoTorrent.Client
         public void DownloadMetadata_Cancelled ()
         {
             var cts = new CancellationTokenSource ();
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             var task = engine.DownloadMetadataAsync (new MagnetLink (InfoHashes.FromV1 (new InfoHash (new byte[20]))), cts.Token);
             cts.Cancel ();
             Assert.ThrowsAsync<OperationCanceledException> (() => task);
@@ -316,7 +318,7 @@ namespace MonoTorrent.Client
         public void DownloadMagnetLink_SameTwice ()
         {
             var link = MagnetLink.Parse ("magnet:?xt=urn:btih:1234512345123451234512345123451234512345");
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             var first = engine.AddAsync (link, "");
             Assert.ThrowsAsync<TorrentException> (() => engine.AddAsync (link, ""));
         }
@@ -325,7 +327,7 @@ namespace MonoTorrent.Client
         public void DownloadMetadata_SameTwice ()
         {
             var link = MagnetLink.Parse ("magnet:?xt=urn:btih:1234512345123451234512345123451234512345");
-            using var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             var first = engine.DownloadMetadataAsync (link, CancellationToken.None);
             Assert.ThrowsAsync<TorrentException> (() => engine.DownloadMetadataAsync (link, CancellationToken.None));
         }
@@ -357,8 +359,8 @@ namespace MonoTorrent.Client
         public void GetPortFromListener_ipv4 ()
         {
             var listener = new FakeListener (0);
-            var settingsBuilder = new EngineSettingsBuilder { ListenEndPoints = new System.Collections.Generic.Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, 0) } } };
-            var engine = new ClientEngine (settingsBuilder.ToSettings (), Factories.Default.WithPeerConnectionListenerCreator (t => listener));
+            var settingsBuilder = new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) { ListenEndPoints = new System.Collections.Generic.Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, 0) } } };
+            var engine = EngineHelpers.Create (settingsBuilder.ToSettings (), EngineHelpers.Factories.WithPeerConnectionListenerCreator (t => listener));
             Assert.AreSame (engine.PeerListeners.Single (), listener);
 
             // a port of zero isn't an actual listen port. The listener is not bound.
@@ -380,8 +382,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SaveRestoreState_NoTorrents ()
         {
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
-            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync (), engine.Factories);
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
         }
 
@@ -395,7 +397,7 @@ namespace MonoTorrent.Client
 
             var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary metadata);
 
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (cacheDirectory: tmpDir.Path));
             TorrentManager torrentManager;
             if (addStreaming)
                 torrentManager = await engine.AddStreamingAsync (torrent, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
@@ -405,7 +407,7 @@ namespace MonoTorrent.Client
             await torrentManager.SetFilePriorityAsync (torrentManager.Files[0], Priority.High);
             await torrentManager.MoveFileAsync (torrentManager.Files[1], Path.GetFullPath ("some_fake_path.txt"));
 
-            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync (), engine.Factories);
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
             Assert.AreEqual (engine.Torrents[0].Torrent.Name, restoredEngine.Torrents[0].Torrent.Name);
             Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
@@ -425,13 +427,13 @@ namespace MonoTorrent.Client
         [TestCase (false)]
         public async Task SaveRestoreState_OneMagnetLink (bool addStreaming)
         {
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests ());
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
             if (addStreaming)
                 await engine.AddStreamingAsync (new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
             else
                 await engine.AddAsync (new MagnetLink (new InfoHash (new byte[20]), "test"), "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
 
-            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync (), engine.Factories);
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
             Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
             Assert.AreEqual (engine.Torrents[0].Settings, restoredEngine.Torrents[0].Settings);
@@ -450,12 +452,12 @@ namespace MonoTorrent.Client
             var metadataFile = Path.Combine (tmpDir.Path, "test.torrent");
             File.WriteAllBytes (metadataFile, metadata.Encode ());
 
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (cacheDirectory: tmpDir.Path));
             var torrentManager = await engine.AddStreamingAsync (metadataFile, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = true }.ToSettings ());
             await torrentManager.SetFilePriorityAsync (torrentManager.Files[0], Priority.High);
             await torrentManager.MoveFileAsync (torrentManager.Files[1], Path.GetFullPath ("some_fake_path.txt"));
 
-            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync (), engine.Factories);
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
             Assert.AreEqual (engine.Torrents[0].Torrent.Name, restoredEngine.Torrents[0].Torrent.Name);
             Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
@@ -480,10 +482,10 @@ namespace MonoTorrent.Client
             var metadataFile = Path.Combine (tmpDir.Path, "test.torrent");
             File.WriteAllBytes (metadataFile, metadata.Encode ());
 
-            var engine = new ClientEngine (EngineSettingsBuilder.CreateForTests (cacheDirectory: tmpDir.Path));
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (cacheDirectory: tmpDir.Path));
             await engine.AddStreamingAsync (metadataFile, "mySaveDirectory", new TorrentSettingsBuilder { CreateContainingDirectory = false }.ToSettings ());
 
-            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync ());
+            var restoredEngine = await ClientEngine.RestoreStateAsync (await engine.SaveStateAsync (), engine.Factories);
             Assert.AreEqual (engine.Settings, restoredEngine.Settings);
             Assert.AreEqual (engine.Torrents[0].Torrent.Name, restoredEngine.Torrents[0].Torrent.Name);
             Assert.AreEqual (engine.Torrents[0].SavePath, restoredEngine.Torrents[0].SavePath);
@@ -501,15 +503,16 @@ namespace MonoTorrent.Client
         [Test]
         public async Task StartAsyncAlwaysCreatesEmptyFiles ()
         {
+            var writer = new TestWriter ();
             var files = TorrentFile.Create (Constants.BlockSize * 4, 0, 1, 2, 3);
             using var accessor = TempDir.Create ();
-            using var rig = TestRig.CreateMultiFile (files, Constants.BlockSize * 4, new DiskWriter (), baseDirectory: accessor.Path);
+            using var rig = TestRig.CreateMultiFile (files, Constants.BlockSize * 4, writer, baseDirectory: accessor.Path);
 
             for (int i = 0; i < 2; i++) {
 
                 await rig.Manager.StartAsync ();
                 Assert.DoesNotThrowAsync (() => rig.Manager.WaitForState (TorrentState.Downloading), "Started");
-                Assert.IsTrue (File.Exists (rig.Manager.Files[0].FullPath));
+                Assert.IsTrue (writer.FilesWithLength.ContainsKey (rig.Manager.Files[0].FullPath));
                 Assert.IsTrue (rig.Manager.Files[0].BitField.AllTrue);
 
                 // Files can be moved after they have been created.
@@ -517,7 +520,7 @@ namespace MonoTorrent.Client
 
                 await rig.Manager.StopAsync ();
                 Assert.DoesNotThrowAsync (() => rig.Manager.WaitForState (TorrentState.Stopped), "Stopped");
-                File.Delete (rig.Manager.Files[0].FullPath);
+                writer.FilesWithLength.Remove (rig.Manager.Files[0].FullPath);
             }
         }
 
