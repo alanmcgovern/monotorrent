@@ -1090,10 +1090,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        public Task LoadFastResumeAsync (FastResume data)
-            => LoadFastResumeAsync (data, false);
-
-        internal async Task LoadFastResumeAsync (FastResume data, bool skipStateCheckForTests)
+        public async Task LoadFastResumeAsync (FastResume data)
         {
             if (data == null)
                 throw new ArgumentNullException (nameof (data));
@@ -1101,9 +1098,15 @@ namespace MonoTorrent.Client
             await ClientEngine.MainLoop;
 
             CheckMetadata ();
-            if (State != TorrentState.Stopped && !skipStateCheckForTests)
+            if (State != TorrentState.Stopped)
                 throw new InvalidOperationException ("Can only load FastResume when the torrent is stopped");
-            if (InfoHashes != data.InfoHashes || Torrent!.PieceCount != data.Bitfield.Length)
+
+            // Fast resume data can be a V1 hash or a V2 hash.
+            // At some point in the future the InfoHashes object could serialize both the v1
+            // and v2 hashes to the BEncodedDictionary interchange format... but probably no need?
+            if ((data.InfoHashes.V1 != null && !InfoHashes.Contains (data.InfoHashes.V1)) ||
+                (data.InfoHashes.V2 != null && !InfoHashes.Contains (data.InfoHashes.V2)) ||
+                (Torrent!.PieceCount != data.Bitfield.Length))
                 throw new ArgumentException ("The fast resume data does not match this torrent", "fastResumeData");
 
             for (int i = 0; i < Torrent.PieceCount; i++)
@@ -1165,7 +1168,9 @@ namespace MonoTorrent.Client
 
             await MainLoop.SwitchToThreadpool ();
             var fastResumePath = Engine.Settings.GetFastResumePath (InfoHashes);
-            if (File.Exists (fastResumePath) && FastResume.TryLoad (fastResumePath, out FastResume? fastResume) && InfoHashes == fastResume.InfoHashes) {
+            if (File.Exists (fastResumePath) &&
+                FastResume.TryLoad (fastResumePath, out FastResume? fastResume) &&
+                InfoHashes.Contains (fastResume.InfoHashes.V1OrV2)) {
                 await LoadFastResumeAsync (fastResume);
             }
         }
