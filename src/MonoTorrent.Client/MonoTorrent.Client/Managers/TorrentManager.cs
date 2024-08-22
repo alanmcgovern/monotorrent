@@ -969,13 +969,13 @@ namespace MonoTorrent.Client
                 // If we're only hashing 1 piece then we can start moving files now. This occurs when a torrent
                 // is actively downloading.
                 if (totalToHash == 1)
-                    _ = RefreshPartialDownloadFilePaths (i, 1);
+                    _ = RefreshPartialDownloadFilePaths (i, 1, Engine!.Settings.UsePartialFiles);
             }
 
             // If we're hashing many pieces, wait for the final piece to be hashed, then start trying to move files.
             // This occurs when we're hash checking, or loading, torrents.
             if (totalToHash > 1 && piecesHashed == totalToHash)
-                _ = RefreshPartialDownloadFilePaths (0, files.Count);
+                _ = RefreshPartialDownloadFilePaths (0, files.Count, Engine!.Settings.UsePartialFiles);
 
             if (hashPassed) {
                 List<PeerId> connected = Peers.ConnectedPeers;
@@ -1018,22 +1018,24 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask UpdateUsePartialFiles (bool usePartialFiles)
         {
-            foreach (TorrentFileInfo file in Files)
-                file.UpdatePaths ((file.FullPath, file.DownloadCompleteFullPath, file.DownloadCompleteFullPath  + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "")));
-            await RefreshPartialDownloadFilePaths (0, Files.Count);
+            await RefreshPartialDownloadFilePaths (0, Files.Count, usePartialFiles);
         }
 
-        internal async ReusableTask RefreshPartialDownloadFilePaths (int fileStartIndex, int count)
+        internal async ReusableTask RefreshPartialDownloadFilePaths (int fileStartIndex, int count, bool usePartialFiles)
         {
             var files = Files;
             List<Task>? tasks = null;
             for (int i = fileStartIndex; i < fileStartIndex + count; i++) {
-                if (files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadCompleteFullPath) {
+                var current = files[i].FullPath;
+                var completePath = files[i].DownloadCompleteFullPath;
+                var incompletePath = files[i].DownloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "");
+
+                if (files[i].BitField.AllTrue && files[i].FullPath != completePath) {
                     tasks ??= new List<Task> ();
-                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (files[i].DownloadCompleteFullPath, files[i].DownloadCompleteFullPath, files[i].DownloadIncompleteFullPath)));
-                } else if (!files[i].BitField.AllTrue && files[i].FullPath != files[i].DownloadIncompleteFullPath) {
+                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (completePath, completePath, incompletePath)));
+                } else if (!files[i].BitField.AllTrue && files[i].FullPath != incompletePath) {
                     tasks ??= new List<Task> ();
-                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (files[i].DownloadIncompleteFullPath, files[i].DownloadCompleteFullPath, files[i].DownloadIncompleteFullPath)));
+                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (incompletePath, completePath, incompletePath)));
                 }
             }
             if (tasks != null)

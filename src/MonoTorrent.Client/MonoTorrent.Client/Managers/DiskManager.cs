@@ -498,7 +498,7 @@ namespace MonoTorrent.Client
             await IOLoop;
 
             if (paths.newPath != file.FullPath && await Cache.Writer.ExistsAsync (file)) {
-                await Cache.Writer.MoveAsync (file, paths.newPath, false);
+                await Cache.Writer.MoveAsync (file, paths.newPath, overwrite);
             }
             file.UpdatePaths (paths);
         }
