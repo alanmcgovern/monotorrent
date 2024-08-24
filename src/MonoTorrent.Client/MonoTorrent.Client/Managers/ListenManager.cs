@@ -110,7 +110,8 @@ namespace MonoTorrent.Client
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys, Engine.Factories);
                 if (!await HandleHandshake (peerInfo, e.Connection, result.Handshake!, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose ();
-            } catch {
+            } catch (Exception ex) {
+                logger.Exception (e.Connection, ex, "Unexpected failure handling incoming connection");
                 e.Connection.Dispose ();
             }
         }
@@ -118,29 +119,36 @@ namespace MonoTorrent.Client
         async ReusableTask<bool> HandleHandshake (PeerInfo peerInfo, IPeerConnection connection, HandshakeMessage message, IEncryption decryptor, IEncryption encryptor)
         {
             TorrentManager? man = null;
-            if (message.ProtocolString != Constants.ProtocolStringV100)
+            if (message.ProtocolString != Constants.ProtocolStringV100) {
+                logger.Info (connection, "ProtocolString did not match. Dropping connection...");
                 return false;
+            }
 
-            if (Engine.PeerId.Equals (message.PeerId))
+            if (Engine.PeerId.Equals (message.PeerId)) {
+                logger.Info (connection, "Unintentionally connected to self. Dropping connection...");
                 return false;
+            }
 
             // If we're forcing encrypted connections and this is in plain-text, close it!
-            if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.Contains (EncryptionType.PlainText))
+            if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.Contains (EncryptionType.PlainText)) {
+                logger.Info (connection, "Connection is unencrypted and plain text connections are disabled via the engine Settings. Dropping connection...");
                 return false;
+            }
 
             for (int i = 0; i < Engine.Torrents.Count; i++)
                 if (Engine.Torrents[i].InfoHashes.Contains (message.InfoHash))
                     man = Engine.Torrents[i];
 
             // We're not hosting that torrent
-            if (man == null)
+            if (man == null) {
+                logger.Info (connection, "Connection received for an unknown torrent. Dropping connection...");
                 return false;
+            }
 
-            if (man.State == TorrentState.Stopped)
+            if (!man.Mode.CanAcceptConnections) {
+                logger.InfoFormatted (connection, "The torrent cannot accept incoming connections while in mode: {0}", man.Mode);
                 return false;
-
-            if (!man.Mode.CanAcceptConnections)
-                return false;
+            }
 
             // If this is a hybrid torrent, and the other peer announced with the v1 hash *and* set the bit which indicates
             // they can upgrade to a V2 connection, respond with the V2 hash to upgrade the connection to V2 mode.
