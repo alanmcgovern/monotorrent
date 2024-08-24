@@ -43,9 +43,6 @@ namespace MonoTorrent
 {
     public sealed class Torrent : ITorrentInfo, IEquatable<Torrent>
     {
-        internal static bool SupportsV2Torrents = true;
-        internal static bool SupportsV1V2Torrents = true;
-
         /// <summary>
         /// This method loads a .torrent file from the specified path.
         /// </summary>
@@ -382,15 +379,8 @@ namespace MonoTorrent
 
             hasV1Data = dictionary.ContainsKey ("pieces");
 
-            if (!hasV1Data) {
-                if (hasV2Data) {
-                    if (!SupportsV2Torrents) {
-                        throw new TorrentException ("This torrent contains metadata for bittorrent v2 only. MonoTorrent only supports v1 torrents, or hybrid torrents with v1 and v2 metadata.");
-                    }
-                } else {
-                    throw new TorrentException ("Unsupported torrent version detected.");
-                }
-            }
+            if (!hasV1Data && !hasV2Data)
+                throw new TorrentException ("Unsupported torrent version detected.");
 
             if (hasV1Data) {
                 var data = ((BEncodedString) dictionary["pieces"]).AsMemory ();
@@ -660,16 +650,7 @@ namespace MonoTorrent
             if (hashesV2 == null && Files.All (t => t.StartPieceIndex == t.EndPieceIndex))
                 hashesV2 = LoadHashesV2 (Files, new Dictionary<MerkleRoot, ReadOnlyMerkleTree> (), PieceLength);
 
-            if (SupportsV2Torrents && SupportsV1V2Torrents) {
-                InfoHashes = new InfoHashes (hasV1Data ? InfoHash.FromMemory (infoHashes.SHA1) : default, hasV2Data ? InfoHash.FromMemory (infoHashes.SHA256) : default);
-            } else if (SupportsV2Torrents) {
-                if (!hasV2Data)
-                    InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), default);
-                else
-                    InfoHashes = new InfoHashes (default, InfoHash.FromMemory (infoHashes.SHA256));
-            } else {
-                InfoHashes = new InfoHashes (InfoHash.FromMemory (infoHashes.SHA1), default);
-            }
+            InfoHashes = new InfoHashes (hasV1Data ? InfoHash.FromMemory (infoHashes.SHA1) : default, hasV2Data ? InfoHash.FromMemory (infoHashes.SHA256) : default);
             PieceHashesV1 = InfoHashes.V1 is null ? null : hashesV1;
             PieceHashesV2 = InfoHashes.V2 is null ? null : hashesV2;
         }

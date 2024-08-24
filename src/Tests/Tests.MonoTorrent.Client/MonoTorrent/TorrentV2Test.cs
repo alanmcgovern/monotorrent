@@ -54,22 +54,8 @@ namespace MonoTorrent.Common
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
-            Torrent.SupportsV2Torrents = true;
             HybridTorrent = Torrent.Load (HybridTorrentPath);
             V2OnlyTorrent = Torrent.Load (V2OnlyTorrentPath);
-            Torrent.SupportsV2Torrents = false;
-        }
-
-        [SetUp]
-        public void Setup ()
-        {
-            Torrent.SupportsV2Torrents = true;
-        }
-
-        [TearDown]
-        public void Teardown ()
-        {
-            Torrent.SupportsV2Torrents = false;
         }
 
         [Test]
@@ -98,24 +84,6 @@ namespace MonoTorrent.Common
 
             var hash = Enumerable.Repeat ((byte) 'a', 32).ToArray ().AsMemory ();
             Assert.IsTrue (hash.Span.SequenceEqual (file.PiecesRoot.Span));
-        }
-
-        [Test]
-        public void LoadingMetadataVersion2FailsBEP52Unsupported ()
-        {
-            Torrent.SupportsV2Torrents = false;
-
-            var dict = (BEncodedDictionary) BEncodedValue.Decode (Encoding.UTF8.GetBytes ("d4:infod9:file treed4:dir1d4:dir2d9:fileA.txtd0:d6:lengthi1024e11:pieces root32:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeee12:meta versioni2e12:piece lengthi16382eee"));
-            Assert.Throws<TorrentException> (() => Torrent.Load (dict));
-        }
-
-        [Test]
-        public void LoadingFileTreesFailsWhenBEP52Unsupported ()
-        {
-            Torrent.SupportsV2Torrents = false;
-
-            var dict = (BEncodedDictionary) BEncodedValue.Decode (Encoding.UTF8.GetBytes ("d4:infod9:file treed4:dir1d4:dir2d9:fileA.txtd0:d6:lengthi1024e11:pieces root32:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeee12:piece lengthi16382eee"));
-            Assert.Throws<TorrentException> (() => Torrent.Load (dict));
         }
 
         [Test]
