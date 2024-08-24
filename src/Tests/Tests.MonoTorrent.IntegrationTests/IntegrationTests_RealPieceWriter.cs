@@ -286,13 +286,15 @@ namespace MonoTorrent.IntegrationTests
             }
 
             var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
-            while (seederManager != null && seederManager.State != TorrentState.Seeding)
-                Thread.Sleep (10);
-
             var magnetLink = new MagnetLink (torrent.InfoHashes, "testing", torrent.AnnounceUrls.SelectMany (t => t).ToList (), null, torrent.Size);
             var leecherManager = magnetLinkLeecher
                 ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
                 : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+
+            // Wait for both managers to finish hashing/prepping!
+            if (seederManager != null)
+                await WaitForState (seederManager, TorrentState.Seeding);
+            await WaitForState (leecherManager, TorrentState.FetchingHashes, TorrentState.Metadata, TorrentState.Downloading);
 
             // manually add the leecher to the seeder so we aren't unintentionally dependent on annouce ordering
             if (seederConnectionDirection == Direction.Incoming) {
@@ -460,6 +462,27 @@ namespace MonoTorrent.IntegrationTests
                 await manager.StartAsync ();
 
             return manager;
+        }
+
+        async Task WaitForState (TorrentManager manager, params TorrentState[] possibleStates)
+        {
+            var tcs = new TaskCompletionSource<object> ();
+            var cts = new CancellationTokenSource (TimeSpan.FromSeconds (30));
+            cts.Token.Register (() => tcs.TrySetException (new TimeoutException ()));
+
+            manager.TorrentStateChanged += (o, e) => {
+                if (possibleStates.Contains (e.NewState))
+                    tcs.TrySetResult (null);
+                if (e.NewState == TorrentState.Error)
+                    tcs.SetException (manager.Error?.Exception ?? new Exception ("Unexpected error happened"));
+            };
+
+            if (possibleStates.Contains (manager.State))
+                tcs.TrySetResult (null);
+            if (manager.State == TorrentState.Error)
+                tcs.SetException (manager.Error?.Exception ?? new Exception ("Unexpected error happened"));
+
+            await tcs.Task;
         }
     }
 }
