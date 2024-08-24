@@ -48,7 +48,6 @@ namespace MonoTorrent.IntegrationTests
 
     public abstract class IntegrationTestsBase
     {
-
         const int PieceLength = 32768;
         static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (60);
 
@@ -256,19 +255,28 @@ namespace MonoTorrent.IntegrationTests
 
             var seederIsSeeding = new TaskCompletionSource<bool> ();
             var leecherIsSeeding = new TaskCompletionSource<bool> ();
+            var leecherIsReady = new TaskCompletionSource<bool> ();
+
+            var timeout = new CancellationTokenSource (CancellationTimeout);
+            timeout.Token.Register (() => { seederIsSeeding.TrySetCanceled (); });
+            timeout.Token.Register (() => { leecherIsSeeding.TrySetCanceled (); });
+            timeout.Token.Register (() => { leecherIsReady.TrySetCanceled (); });
+
             EventHandler<TorrentStateChangedEventArgs> seederIsSeedingHandler = (o, e) => {
                 if (e.NewState == TorrentState.Seeding)
                     seederIsSeeding.TrySetResult (true);
-                else if (e.NewState == TorrentState.Downloading)
+                if (e.NewState == TorrentState.Downloading)
                     seederIsSeeding.TrySetResult (false);
-                else if (e.NewState == TorrentState.Error)
+                if (e.NewState == TorrentState.Error)
                     seederIsSeeding.TrySetException (e.TorrentManager.Error.Exception);
             };
 
             EventHandler<TorrentStateChangedEventArgs> leecherIsSeedingHandler = (o, e) => {
+                if (e.NewState == TorrentState.Downloading || e.NewState == TorrentState.FetchingHashes || e.NewState == TorrentState.Metadata)
+                    leecherIsReady.TrySetResult (true);
                 if (e.NewState == TorrentState.Seeding)
                     leecherIsSeeding.TrySetResult (true);
-                else if (e.NewState == TorrentState.Error)
+                if (e.NewState == TorrentState.Error)
                     leecherIsSeeding.TrySetException (e.TorrentManager.Error.Exception);
             };
 
@@ -286,15 +294,17 @@ namespace MonoTorrent.IntegrationTests
             }
 
             var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
+            if (seederManager is null)
+                seederIsSeeding.TrySetResult (true);
+
             var magnetLink = new MagnetLink (torrent.InfoHashes, "testing", torrent.AnnounceUrls.SelectMany (t => t).ToList (), null, torrent.Size);
             var leecherManager = magnetLinkLeecher
                 ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
                 : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
 
             // Wait for both managers to finish hashing/prepping!
-            if (seederManager != null)
-                await WaitForState (seederManager, TorrentState.Seeding);
-            await WaitForState (leecherManager, TorrentState.FetchingHashes, TorrentState.Metadata, TorrentState.Downloading);
+            await seederIsSeeding.Task;
+            await leecherIsReady.Task;
 
             // manually add the leecher to the seeder so we aren't unintentionally dependent on annouce ordering
             if (seederConnectionDirection == Direction.Incoming) {
@@ -306,10 +316,6 @@ namespace MonoTorrent.IntegrationTests
                 var ipAddress = new IPEndPoint (LoopbackAddress, listenerPort);
                 await seederEngine.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{(LoopbackAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6")}://{ipAddress}")));
             }
-
-            var timeout = new CancellationTokenSource (CancellationTimeout);
-            timeout.Token.Register (() => { seederIsSeeding.TrySetCanceled (); });
-            timeout.Token.Register (() => { leecherIsSeeding.TrySetCanceled (); });
 
             if (!useWebSeedDownload) {
                 Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task, "Seeder should be seeding after hashcheck completes");
@@ -462,27 +468,6 @@ namespace MonoTorrent.IntegrationTests
                 await manager.StartAsync ();
 
             return manager;
-        }
-
-        async Task WaitForState (TorrentManager manager, params TorrentState[] possibleStates)
-        {
-            var tcs = new TaskCompletionSource<object> ();
-            var cts = new CancellationTokenSource (TimeSpan.FromSeconds (30));
-            cts.Token.Register (() => tcs.TrySetException (new TimeoutException ()));
-
-            manager.TorrentStateChanged += (o, e) => {
-                if (possibleStates.Contains (e.NewState))
-                    tcs.TrySetResult (null);
-                if (e.NewState == TorrentState.Error)
-                    tcs.SetException (manager.Error?.Exception ?? new Exception ("Unexpected error happened"));
-            };
-
-            if (possibleStates.Contains (manager.State))
-                tcs.TrySetResult (null);
-            if (manager.State == TorrentState.Error)
-                tcs.SetException (manager.Error?.Exception ?? new Exception ("Unexpected error happened"));
-
-            await tcs.Task;
         }
     }
 }
