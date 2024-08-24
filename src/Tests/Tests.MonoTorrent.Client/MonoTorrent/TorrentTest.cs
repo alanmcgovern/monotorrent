@@ -472,13 +472,7 @@ namespace MonoTorrent.Common
         [Test]
         public void V1InfoHashOnly ()
         {
-            (bool before1, bool before2) = (Torrent.SupportsV1V2Torrents, Torrent.SupportsV2Torrents);
-            (Torrent.SupportsV1V2Torrents, Torrent.SupportsV2Torrents) = (true, true);
-            try {
-                Assert.IsNull (Torrent.Load (torrentInfo).InfoHashes.V2);
-            } finally {
-                (Torrent.SupportsV1V2Torrents, Torrent.SupportsV2Torrents) = (before1, before2);
-            }
+            Assert.IsNull (Torrent.Load (torrentInfo).InfoHashes.V2);
         }
 
         [Test]
