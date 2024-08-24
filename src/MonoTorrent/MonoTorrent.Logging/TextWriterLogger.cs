@@ -1,10 +1,10 @@
 ﻿//
-// Logger.cs
+// TextWriterLogger.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2024 Alan McGovern
+// Copyright (C) 2020 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,34 +27,30 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace MonoTorrent.Logging
 {
-    class Logger : ILogger
+    public class TextWriterLogger : IRootLogger
     {
-        public string Name { get; }
+        TextWriter Writer { get; }
 
-        public Logger(string name)
-            => Name = name;
+        public TextWriterLogger (TextWriter writer)
+            => Writer = writer;
 
-        public void Debug (string message)
+        public void Debug (string prefix, string message)
         {
-            LoggerFactory.RootLogger.Debug (Name, message);
+            Writer?.WriteLine ($"DEBUG:{prefix}:{message}");
         }
 
-        public void Error (string message)
+        public void Error (string prefix, string message)
         {
-            LoggerFactory.RootLogger.Debug (Name, message);
+            Writer?.WriteLine ($"ERROR:{prefix}:{message}");
         }
 
-        public void Info (string message)
+        public void Info (string prefix, string message)
         {
-            LoggerFactory.RootLogger.Debug (Name, message);
+            Writer?.WriteLine ($"INFO: {prefix}:{message}");
         }
     }
 }

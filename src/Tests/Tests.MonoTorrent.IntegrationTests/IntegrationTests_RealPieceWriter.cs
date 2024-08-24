@@ -11,9 +11,12 @@ using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Mono.Nat.Logging;
+
 using MonoTorrent;
 using MonoTorrent.Client;
 using MonoTorrent.Connections.TrackerServer;
+using MonoTorrent.Logging;
 using MonoTorrent.PiecePicking;
 using MonoTorrent.PieceWriter;
 
@@ -45,6 +48,7 @@ namespace MonoTorrent.IntegrationTests
 
     public abstract class IntegrationTestsBase
     {
+
         const int PieceLength = 32768;
         static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (60);
 
@@ -61,6 +65,7 @@ namespace MonoTorrent.IntegrationTests
         [OneTimeSetUp]
         public void FixtureSetup ()
         {
+            MonoTorrent.Logging.LoggerFactory.Create ("test");
             (_tracker, _trackerListener) = GetTracker ();
             _httpSeeder = CreateWebSeeder ();
         }
@@ -68,6 +73,7 @@ namespace MonoTorrent.IntegrationTests
         [SetUp]
         public void Setup ()
         {
+            LoggerFactory.Register (new TextWriterLogger (TestContext.Out));
             _failHttpRequest = false;
             string tempDirectory = Path.Combine (Path.GetTempPath (), "monotorrent_tests", $"{NUnit.Framework.TestContext.CurrentContext.Test.Name}-{Path.GetRandomFileName ()}");
 
@@ -96,6 +102,7 @@ namespace MonoTorrent.IntegrationTests
             if (_directory?.Exists == true) {
                 _directory.Delete (true);
             }
+            LoggerFactory.Register (null);
         }
 
         [OneTimeTearDown]

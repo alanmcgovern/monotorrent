@@ -32,7 +32,7 @@ namespace ClientSample
             var torrentsPath = Path.Combine (Environment.CurrentDirectory, "Torrents");
 
 #if DEBUG
-            LoggerFactory.Register (className => new TextLogger (Console.Out, className));
+            LoggerFactory.Register (new TextWriterLogger (Console.Out));
 #endif
 
             // If the torrentsPath does not exist, we want to create it

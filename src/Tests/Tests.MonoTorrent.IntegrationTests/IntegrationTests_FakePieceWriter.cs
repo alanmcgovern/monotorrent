@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using MonoTorrent;
 using MonoTorrent.Client;
 using MonoTorrent.Connections.TrackerServer;
+using MonoTorrent.Logging;
 using MonoTorrent.PieceWriter;
 using MonoTorrent.TrackerServer;
 
@@ -21,7 +22,7 @@ using NUnit.Framework;
 
 using ReusableTasks;
 
-namespace Tests.MonoTorrent.IntegrationTests
+namespace MonoTorrent.IntegrationTests
 {
     [TestFixture]
     public class LargeFiles_FakeIPieceWriter
@@ -161,6 +162,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         [SetUp]
         public void Setup ()
         {
+            LoggerFactory.Register (new TextWriterLogger (TestContext.Out));
             _failHttpRequest = false;
             string tempDirectory = Path.Combine (Path.GetTempPath (), $"{NUnit.Framework.TestContext.CurrentContext.Test.Name}-{Path.GetRandomFileName ()}");
             _directory = Directory.CreateDirectory (tempDirectory);
@@ -191,6 +193,8 @@ namespace Tests.MonoTorrent.IntegrationTests
             if (_directory?.Exists == true) {
                 _directory.Delete (true);
             }
+            LoggerFactory.Register (null);
+
         }
 
         [OneTimeTearDown]
@@ -209,7 +213,7 @@ namespace Tests.MonoTorrent.IntegrationTests
         const string _torrentName = "IntegrationTests";
 
         private HttpListener _httpSeeder;
-        private TrackerServer _tracker;
+        private MonoTorrent.TrackerServer.TrackerServer _tracker;
         private ITrackerListener _trackerListener;
         private DirectoryInfo _directory;
         private DirectoryInfo _seederDir;
@@ -298,11 +302,11 @@ namespace Tests.MonoTorrent.IntegrationTests
             }
         }
 
-        private (TrackerServer, ITrackerListener) GetTracker ()
+        private (MonoTorrent.TrackerServer.TrackerServer, ITrackerListener) GetTracker ()
         {
             for (_trackerPort = 4000; _trackerPort < 4100; _trackerPort++) {
                 try {
-                    var tracker = new TrackerServer ();
+                    var tracker = new MonoTorrent.TrackerServer.TrackerServer ();
                     tracker.AllowUnregisteredTorrents = true;
                     var listenAddress = $"http://{new IPEndPoint (LoopbackAddress, _trackerPort)}/";
 

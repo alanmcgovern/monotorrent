@@ -1,10 +1,10 @@
 ﻿//
-// TextLogger.cs
+// LoggerFactory.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2024 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,34 +27,23 @@
 //
 
 
-using System.IO;
+using System;
 
 namespace MonoTorrent.Logging
 {
-    public class TextLogger : ILogger
+    public static class LoggerFactory
     {
-        string Prefix { get; }
-        TextWriter Writer { get; }
+        /// <summary>
+        /// The factory method used to create new ILogger instances. The <see cref="string"/> parameter
+        /// is the <see cref="Type.FullName"/> for the class the ILogger is associated with. You can
+        /// return <see langword="null"/> for any class to disable logging for that class.
+        /// </summary>
+        public static IRootLogger RootLogger { get; private set; } = new NullLogger ();
 
-        public TextLogger (TextWriter writer, string prefix)
-        {
-            Writer = writer;
-            Prefix = prefix;
-        }
+        public static ILogger? Create (string name)
+            => new Logger (name);
 
-        public void Debug (string message)
-        {
-            Writer?.WriteLine ($"DEBUG:{Prefix}:{message}");
-        }
-
-        public void Error (string message)
-        {
-            Writer?.WriteLine ($"ERROR:{Prefix}:{message}");
-        }
-
-        public void Info (string message)
-        {
-            Writer?.WriteLine ($"INFO: {Prefix}:{message}");
-        }
+        public static void Register (IRootLogger rootLogger)
+            => RootLogger = rootLogger ?? new NullLogger ();
     }
 }

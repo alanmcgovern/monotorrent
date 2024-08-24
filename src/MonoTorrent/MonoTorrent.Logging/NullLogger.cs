@@ -1,5 +1,5 @@
 ﻿//
-// Logger.cs
+// NullLogger.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -35,26 +35,18 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent.Logging
 {
-    class Logger : ILogger
+    class NullLogger : IRootLogger
     {
-        public string Name { get; }
-
-        public Logger(string name)
-            => Name = name;
-
-        public void Debug (string message)
+        public void Debug (string name, string message)
         {
-            LoggerFactory.RootLogger.Debug (Name, message);
         }
 
-        public void Error (string message)
+        public void Error (string name, string message)
         {
-            LoggerFactory.RootLogger.Debug (Name, message);
         }
 
-        public void Info (string message)
+        public void Info (string name, string message)
         {
-            LoggerFactory.RootLogger.Debug (Name, message);
         }
     }
 }
