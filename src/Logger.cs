@@ -136,6 +136,12 @@ namespace MonoTorrent.Logging
                 Writer.Error (string.Format ("{0}{1}{2}", message, Environment.NewLine, ex));
         }
 
+        internal void Exception (IPeerConnection connection, Exception ex, string message)
+        {
+            if (Writer != null)
+                Writer.Error ($"{connection.Uri}: {message}{Environment.NewLine}{ex}");
+        }
+
         internal void ExceptionFormated (Exception ex, string formatString, object p1)
         {
             if (Writer != null)
