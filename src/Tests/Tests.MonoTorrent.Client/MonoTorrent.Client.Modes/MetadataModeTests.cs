@@ -37,6 +37,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Peer.Encryption;
+using MonoTorrent.Logging;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.Messages.Peer.FastPeer;
 using MonoTorrent.Messages.Peer.Libtorrent;
@@ -56,7 +57,8 @@ namespace MonoTorrent.Client.Modes
 
         public async Task Setup (bool metadataMode, bool multiFile = false, bool metadataOnly = false)
         {
-            pair = new ConnectionPair ().WithTimeout ();
+            LoggerFactory.Register (new TextWriterLogger (TestContext.Out));
+            pair = new ConnectionPair ().DisposeAfterTimeout ();
             rig = multiFile ? TestRig.CreateMultiFile (32768, metadataMode) : TestRig.CreateSingleFile (Constants.BlockSize * 27, Constants.BlockSize * 2, metadataMode);
             rig.RecreateManager ().Wait ();
 
@@ -80,6 +82,7 @@ namespace MonoTorrent.Client.Modes
             await rig.Manager.StopAsync ();
             pair.Dispose ();
             rig.Dispose ();
+            LoggerFactory.Register (null);
         }
 
         [Test]

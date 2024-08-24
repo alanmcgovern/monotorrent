@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Modes
         public void Setup ()
         {
             TempDirectory = TempDir.Create ();
-            conn = new ConnectionPair ().WithTimeout ();
+            conn = new ConnectionPair ().DisposeAfterTimeout ();
             PieceWriter = new TestWriter ();
             TrackerManager = new ManualTrackerManager ();
 

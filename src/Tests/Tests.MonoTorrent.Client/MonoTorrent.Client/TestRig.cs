@@ -317,8 +317,6 @@ namespace MonoTorrent.Client
 
     public class ConnectionPair : IDisposable
     {
-        static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (5);
-
         IDisposable CancellationRegistration { get; set; }
 
         public CustomConnection Incoming { get; }
@@ -339,9 +337,9 @@ namespace MonoTorrent.Client
             Outgoing.Dispose ();
         }
 
-        public ConnectionPair WithTimeout ()
+        public ConnectionPair DisposeAfterTimeout ()
         {
-            CancellationTokenSource cancellation = new CancellationTokenSource (Timeout);
+            CancellationTokenSource cancellation = new CancellationTokenSource (TaskExtensions.Timeout);
             CancellationRegistration = cancellation.Token.Register (Dispose);
             return this;
         }

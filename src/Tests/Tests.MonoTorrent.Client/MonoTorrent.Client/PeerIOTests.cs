@@ -46,7 +46,7 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup ()
         {
-            pair = new ConnectionPair ().WithTimeout ();
+            pair = new ConnectionPair ().DisposeAfterTimeout ();
         }
 
         [TearDown]

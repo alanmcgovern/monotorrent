@@ -41,7 +41,7 @@ namespace MonoTorrent
 {
     static class TaskExtensions
     {
-        static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (15);
+        internal static readonly TimeSpan Timeout = System.Diagnostics.Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (20);
 
         public static T TakeWithTimeout<T> (this BlockingCollection<T> collection, string message = null)
         {

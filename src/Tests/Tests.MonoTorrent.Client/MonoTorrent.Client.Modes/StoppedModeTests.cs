@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.Modes
         [SetUp]
         public void Setup ()
         {
-            conn = new ConnectionPair ().WithTimeout ();
+            conn = new ConnectionPair ().DisposeAfterTimeout ();
             Settings = new EngineSettings ();
             DiskManager = new DiskManager (Settings, Factories.Default, new NullWriter ());
             ConnectionManager = new ConnectionManager ("LocalPeerId", Settings, Factories.Default, DiskManager);

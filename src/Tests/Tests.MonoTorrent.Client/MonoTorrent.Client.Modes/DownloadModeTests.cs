@@ -59,7 +59,7 @@ namespace MonoTorrent.Client.Modes
         [SetUp]
         public void Setup ()
         {
-            conn = new ConnectionPair ().WithTimeout ();
+            conn = new ConnectionPair ().DisposeAfterTimeout ();
             Settings = new EngineSettings ();
             PieceWriter = new TestWriter ();
             DiskManager = new DiskManager (Settings, Factories.Default, PieceWriter);

@@ -58,7 +58,7 @@ namespace MonoTorrent.Client.Encryption
         [SetUp]
         public void Setup ()
         {
-            pair = new ConnectionPair ().WithTimeout ();
+            pair = new ConnectionPair ().DisposeAfterTimeout ();
 
             InfoHash = new InfoHash (Enumerable.Repeat ((byte) 255, 20).ToArray ());
             SKeys = new[] {
