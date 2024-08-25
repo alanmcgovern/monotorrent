@@ -340,9 +340,10 @@ namespace MonoTorrent
                 value = MerkleTreeHasher.Hash (value.Span, BitOps.CeilLog2 (PieceLength / Constants.BlockSize));
 
             var fileData = new BEncodedDictionary {
-                {"length", (BEncodedNumber) key.Length },
-                { "pieces root", BEncodedString.FromMemory (value) }
+                {"length", (BEncodedNumber) key.Length }
             };
+            if (!value.IsEmpty)
+                fileData["pieces root"] = BEncodedString.FromMemory (value);
 
             fileTree.Add ("", fileData);
         }
@@ -473,8 +474,9 @@ namespace MonoTorrent
 
             var merkleLayers = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
             if (merkleHashes.Length > 0) {
+                // NOTE: Empty files have no merkle root as they have no data. We still include them in this dictionary so the files are embedded in the torrent.
                 foreach (var file in manager.Files)
-                    merkleLayers.Add (file, merkleHashes.Slice (file.StartPieceIndex * 32, (file.EndPieceIndex - file.StartPieceIndex + 1) * 32));
+                    merkleLayers.Add (file, file.Length == 0 ? default : merkleHashes.Slice (file.StartPieceIndex * 32, file.PieceCount * 32));
             }
             return (sha1Hashes, merkleLayers, fileSHA1Hashes, fileMD5Hashes);
         }

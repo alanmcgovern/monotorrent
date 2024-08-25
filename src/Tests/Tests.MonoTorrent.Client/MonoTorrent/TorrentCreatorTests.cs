@@ -242,6 +242,13 @@ namespace MonoTorrent.Common
             files.Add (new FileMapping ("empty_source", "empty_dest", 0));
 
             var torrentDict = await creator.CreateAsync (new CustomFileSource (files));
+            var fileTree = (BEncodedDictionary) ((BEncodedDictionary) torrentDict["info"])["file tree"];
+
+            // Get the metadata for this file specifically. It should only have a length of zero, nothing else.
+            var emptyFile = (BEncodedDictionary) ((BEncodedDictionary) fileTree["empty_dest"])[""];
+            Assert.IsFalse (emptyFile.ContainsKey ("pieces root"));
+            Assert.AreEqual (new BEncodedNumber(0), emptyFile["length"]);
+
             var actual = Torrent.Load (torrentDict);
             var expected = Torrent.Load (Path.Combine (Path.GetDirectoryName (typeof (TorrentCreatorTests).Assembly.Location), $"test_torrent_64.torrent"));
 
