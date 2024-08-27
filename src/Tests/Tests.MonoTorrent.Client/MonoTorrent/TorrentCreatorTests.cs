@@ -242,6 +242,13 @@ namespace MonoTorrent.Common
             files.Add (new FileMapping ("empty_source", "empty_dest", 0));
 
             var torrentDict = await creator.CreateAsync (new CustomFileSource (files));
+            var fileTree = (BEncodedDictionary) ((BEncodedDictionary) torrentDict["info"])["file tree"];
+
+            // Get the metadata for this file specifically. It should only have a length of zero, nothing else.
+            var emptyFile = (BEncodedDictionary) ((BEncodedDictionary) fileTree["empty_dest"])[""];
+            Assert.IsFalse (emptyFile.ContainsKey ("pieces root"));
+            Assert.AreEqual (new BEncodedNumber(0), emptyFile["length"]);
+
             var actual = Torrent.Load (torrentDict);
             var expected = Torrent.Load (Path.Combine (Path.GetDirectoryName (typeof (TorrentCreatorTests).Assembly.Location), $"test_torrent_64.torrent"));
 
@@ -280,6 +287,42 @@ namespace MonoTorrent.Common
             Assert.AreEqual ("C", torrent.Files[2].Path);
         }
 
+        [Test]
+        public async Task CreateHybridTorrent_SortFilesCorrectly ()
+        {
+            var destFiles = new[] {
+                "A.txt",
+                "B.txt",
+                Path.Combine ("D", "a", "A.txt"),
+                Path.Combine("a", "z", "Z.txt"),
+            };
+
+            var dir = Path.Combine (Path.Combine ("foo", "bar", "baz"));
+            var fileSource = new CustomFileSource (destFiles.Select (t =>
+                new FileMapping (Path.Combine (dir, t), t, 4)
+            ).ToList ());
+
+            TorrentCreator torrentCreator = new TorrentCreator (TorrentType.V1V2Hybrid, TestFactories);
+            var torrent = await torrentCreator.CreateAsync (fileSource);
+
+            var fileTree = (BEncodedDictionary) ((BEncodedDictionary) torrent["info"])["file tree"];
+
+            // Ensure the directory tree was converted into a dictionary tree.
+            Assert.IsTrue (fileTree.ContainsKey ("A.txt"));
+            Assert.IsTrue (fileTree.ContainsKey ("D"));
+            Assert.IsTrue (fileTree.ContainsKey ("a"));
+
+            // Get the metadata for this file specifically. It should only have a length of zero, nothing else.
+            var dFile = (BEncodedDictionary) ((BEncodedDictionary) fileTree["D"]);
+            Assert.IsTrue (dFile.ContainsKey ("a"));
+            Assert.IsTrue (((BEncodedDictionary) dFile["a"]).ContainsKey ("A.txt"));
+
+            var aFile = (BEncodedDictionary) ((BEncodedDictionary) fileTree["a"]);
+            Assert.IsTrue (aFile.ContainsKey ("z"));
+            Assert.IsTrue (((BEncodedDictionary) aFile["z"]).ContainsKey ("Z.txt"));
+
+
+        }
 
         [Test]
         public void CannotCreateTorrentWithAllEmptyFiles ([Values (TorrentType.V1Only, TorrentType.V1V2Hybrid, TorrentType.V2Only)] TorrentType torrentType)
@@ -331,7 +374,7 @@ namespace MonoTorrent.Common
                 var source = new Source {
                     TorrentName = "asd",
                     Files = new[] {
-                        new FileMapping("a", "../../dest1", 123)
+                        new FileMapping("a", Path.Combine ("..", "..", "dest1"), 123)
                     }
                 };
                 new TorrentCreator (TorrentType.V1Only, Factories.Default.WithPieceWriterCreator (files => new DiskWriter (files))).Create (source);

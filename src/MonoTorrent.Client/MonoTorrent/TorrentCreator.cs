@@ -65,12 +65,12 @@ namespace MonoTorrent
             public int PieceLength { get;}
             public long Size { get; }
 
-            public TorrentInfo (InfoHashes infoHashes, IList<ITorrentFile> files, int pieceLength, long size)
+            public TorrentInfo (InfoHashes infoHashes, IList<ITorrentFile> files, int pieceLength)
             {
                 InfoHashes = infoHashes;
                 Files = files;
                 PieceLength = pieceLength;
-                Size = size;
+                Size = files.Sum (t => t.Length + t.Padding);
             }
         }
 
@@ -82,9 +82,9 @@ namespace MonoTorrent
             public TorrentInfo TorrentInfo { get; set; }
             ITorrentInfo? ITorrentManagerInfo.TorrentInfo => TorrentInfo;
 
-            public TorrentManagerInfo (IList<ITorrentManagerFile> files, TorrentInfo torrentInfo)
+            public TorrentManagerInfo (TorrentInfo torrentInfo)
             {
-                Files = files;
+                Files = Array.AsReadOnly (torrentInfo.Files.Cast<ITorrentManagerFile> ().ToArray ());
                 TorrentInfo = torrentInfo;
             }
         }
@@ -240,9 +240,6 @@ namespace MonoTorrent
             if (mappings.Count == 0)
                 throw new ArgumentException ("The file source must contain one or more files", nameof (fileSource));
 
-            mappings.Sort ((left, right) => StringComparer.Ordinal.Compare (left.Destination, right.Destination));
-            Validate (mappings);
-
             return await CreateAsync (fileSource.TorrentName, fileSource, token);
         }
 
@@ -251,37 +248,46 @@ namespace MonoTorrent
 
         internal async Task<BEncodedDictionary> CreateAsync (string name, ITorrentFileSource fileSource, CancellationToken token)
         {
-            var source = fileSource.Files.ToArray ();
+            var source = fileSource.Files.ToList ();
+            foreach (var file in source)
+                if (file.Source.Contains (Path.AltDirectorySeparatorChar) || file.Destination.Contains (Path.AltDirectorySeparatorChar))
+                    throw new InvalidOperationException ("DERP");
+
+            EnsureNoDuplicateFiles (source);
+
             if (source.All (t => t.Length == 0))
                 throw new InvalidOperationException ("All files which were selected to be included this torrent have a length of zero. At least one file must have a non-zero length.");
 
             if (!InfoDict.ContainsKey (PieceLengthKey))
                 PieceLength = RecommendedPieceSize (source.Sum (t => t.Length));
 
-            var rawFiles = source.Select (file => {
-                var length = file.Length;
-                var padding = (int) ((UsePadding  && length % PieceLength > 0) ? PieceLength - (length % PieceLength) : 0);
-                var info = (file.Destination, length, padding, file.Source);
-                return info;
-            }).ToArray ();
 
             // Hybrid and V2 torrents *must* hash files in the same order as they end up being stored in the bencoded dictionary,
-            // which means they must be alphabetical.
+            // which means they must be alphabetical. Do this before creating the TorrentFileInfo objects so the start/end piece indices
+            // are calculated correctly, which is needed so the files are hashed in the correct order for V1 metadata if this is a
+            // hybrid torrent
             if (Type.HasV2 ())
-                rawFiles = rawFiles.OrderBy (t => t.Destination, StringComparer.Ordinal).ToArray ();
+                source = source.OrderBy (t => t.Destination, StringComparer.Ordinal).ToList ();
 
-            // The last non-empty file never has padding bytes
-            var last = rawFiles.Where (t => t.length != 0).Last ();
-            var index = Array.IndexOf (rawFiles, last);
-            rawFiles[index].padding = 0;
+            // The last non-empty file should have no padding bytes. There may be additional
+            // empty files after this one depending on how the files are sorted, but they have
+            // no impact on padding.
+            var lastNonEmptyFileIndex = source.FindLastIndex (t => t.Length > 0);
 
-            var files = TorrentFileInfo.Create (PieceLength, rawFiles);
-            var manager = new TorrentManagerInfo (files,
+            // TorrentFileInfo.Create will sort the files so the empty ones are first.
+            // Resort them before putting them in the BEncodedDictionary metadata for the torrent
+            var files = TorrentFileInfo.Create (PieceLength, source.Select ((file, index) => {
+                var length = file.Length;
+                var padding =  (int) ((UsePadding && index < lastNonEmptyFileIndex && length % PieceLength > 0) ? PieceLength - (length % PieceLength) : 0);
+                var info = (file.Destination, length, padding, file.Source);
+                return info;
+            }).ToArray ());
+
+            var manager = new TorrentManagerInfo (
                 new TorrentInfo (
                     new InfoHashes (Type.HasV1 () ? InfoHash.FromMemory (new byte[20]) : null, Type.HasV2 () ? InfoHash.FromMemory (new byte[32]) : null),
                     files,
-                    PieceLength,
-                    files.Sum (t => t.Length + t.Padding)
+                    PieceLength
                 )
             );
 
@@ -317,8 +323,13 @@ namespace MonoTorrent
                 info["file tree"] = fileTree;
             }
 
+            // re-sort these by destination path if we have BitTorrent v2 metadata. The files were sorted this way originally
+            // but empty ones were popped to the front when creating ITorrentManagerFile objects.
+            if (Type.HasV2 ())
+                files = files.OrderBy (t => t.Path, StringComparer.Ordinal).ToArray ();
+
             if (Type.HasV1 ()) {
-                if (manager.Files.Count == 1 && files[0].Path == name)
+                if (manager.Files.Count == 1 && source[0].Destination == name)
                     CreateSingleFileTorrent (torrent, merkleLayers, fileSHA1Hashes, fileMD5Hashes, files);
                 else
                     CreateMultiFileTorrent (torrent, merkleLayers, fileSHA1Hashes, fileMD5Hashes, files);
@@ -329,7 +340,7 @@ namespace MonoTorrent
 
         void AppendFileTree (ITorrentManagerFile key, ReadOnlyMemory<byte> value, BEncodedDictionary fileTree)
         {
-            var parts = key.Path.Split ('/');
+            var parts = key.Path.Split (Path.DirectorySeparatorChar);
             foreach (var part in parts) {
                 if (!fileTree.TryGetValue (part, out BEncodedValue? inner)) {
                     fileTree[part] = inner = new BEncodedDictionary ();
@@ -340,9 +351,10 @@ namespace MonoTorrent
                 value = MerkleTreeHasher.Hash (value.Span, BitOps.CeilLog2 (PieceLength / Constants.BlockSize));
 
             var fileData = new BEncodedDictionary {
-                {"length", (BEncodedNumber) key.Length },
-                { "pieces root", BEncodedString.FromMemory (value) }
+                {"length", (BEncodedNumber) key.Length }
             };
+            if (!value.IsEmpty)
+                fileData["pieces root"] = BEncodedString.FromMemory (value);
 
             fileTree.Add ("", fileData);
         }
@@ -473,8 +485,9 @@ namespace MonoTorrent
 
             var merkleLayers = new Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> ();
             if (merkleHashes.Length > 0) {
+                // NOTE: Empty files have no merkle root as they have no data. We still include them in this dictionary so the files are embedded in the torrent.
                 foreach (var file in manager.Files)
-                    merkleLayers.Add (file, merkleHashes.Slice (file.StartPieceIndex * 32, (file.EndPieceIndex - file.StartPieceIndex + 1) * 32));
+                    merkleLayers.Add (file, file.Length == 0 ? default : merkleHashes.Slice (file.StartPieceIndex * 32, file.PieceCount * 32));
             }
             return (sha1Hashes, merkleLayers, fileSHA1Hashes, fileMD5Hashes);
         }
@@ -602,16 +615,20 @@ namespace MonoTorrent
             return fileDict;
         }
 
-        static void Validate (List<FileMapping> maps)
+        static void EnsureNoDuplicateFiles (List<FileMapping> maps)
         {
             foreach (FileMapping map in maps)
                 PathValidator.Validate (map.Destination);
 
-            // Ensure all the destination files are unique too. The files should already be sorted.
-            for (int i = 1; i < maps.Count; i++)
-                if (maps[i - 1].Destination == maps[i].Destination)
+            var knownFiles = new Dictionary<string, FileMapping> ();
+            for (int i = 0; i < maps.Count; i++) {
+                if (knownFiles.TryGetValue (maps[i].Destination, out var prior)) {
                     throw new ArgumentException (
-                        $"Files '{maps[i - 1].Source}' and '{maps[i].Source}' both map to the same destination '{maps[i].Destination}'");
+                        $"Files '{maps[i].Source}' and '{prior.Source}' both map to the same destination '{maps[i].Destination}'");
+                } else {
+                    knownFiles.Add (maps[i].Destination, maps[i]);
+                }
+            }
         }
     }
 }
