@@ -143,9 +143,54 @@ namespace MonoTorrent.Common
                 }
             };
 
-            var torrent = Torrent.Load (await CreateTestBenc (type, files));
+            var rawDict = await CreateTestBenc (type, files);
+            var torrent = Torrent.Load (rawDict);
             Assert.AreEqual (0, torrent.Files[0].Padding);
             Assert.AreEqual (0, torrent.Files[1].Padding);
+        }
+
+        [Test]
+        public async Task HybridTorrentWithEmptyFiles ()
+        {
+            // Hybrid torrents must be strictly alphabetically ordered so v1 and v2 metadata ends up
+            // matching. These are in the wrong order.
+            var inputFiles = new Source {
+                TorrentName = "asfg",
+                Files = new[] {
+                    new FileMapping (Path.Combine("a", "File1"), Path.Combine("a", "File1"), 2),
+                    new FileMapping (Path.Combine("a", "File2"), Path.Combine("a", "File2"), 0),
+                    new FileMapping (Path.Combine("a", "File0"), Path.Combine("a", "File0"), 1),
+                }
+            };
+
+            var rawDict = await CreateTestBenc (TorrentType.V1V2Hybrid, inputFiles);
+
+            // Load the torrent for good measure
+            Assert.DoesNotThrow (() => Torrent.Load (rawDict));
+
+            // Validate order in the v1 data. Duplicate the underlying list first as we'll remove padding from it later.
+            var filesList = (BEncodedList) ((BEncodedDictionary) rawDict["info"])["files"];
+
+            // We should have 1 padding file - the last file is empty, so the second last file has
+            // no padding either. Only the first one does.
+            Assert.AreEqual (4, filesList.Count);
+
+            var padding = (BEncodedDictionary) filesList[1];
+            var path = (BEncodedList) padding["path"];
+            Assert.AreEqual (".pad", ((BEncodedString) path[0]).Text);
+            Assert.AreEqual (PieceLength - 1, ((BEncodedNumber) padding["length"]).Number);
+
+            // Remove the padding, then check the order of the actual files!
+            filesList.RemoveAt (1);
+
+            for (int i = 0; i < filesList.Count; i++) {
+                var dict = (BEncodedDictionary) filesList[i];
+                var parts = (BEncodedList) dict["path"];
+                Assert.AreEqual (2, parts.Count);
+                Assert.AreEqual ("a", parts[0].ToString ());
+                Assert.AreEqual ("File" + i, parts[1].ToString ());
+            }
+
         }
 
         [Test]

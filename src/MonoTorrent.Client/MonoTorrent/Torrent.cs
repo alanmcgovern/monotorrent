@@ -428,7 +428,7 @@ namespace MonoTorrent
 
                     case ("files"):
                         // This is the list of files using the v1 torrent format.
-                        v1Files = LoadTorrentFilesV1 ((BEncodedList) keypair.Value, PieceLength);
+                        v1Files = LoadTorrentFilesV1 ((BEncodedList) keypair.Value, PieceLength, hasV1Data && hasV2Data);
                         break;
 
                     case "file tree":
@@ -674,7 +674,7 @@ namespace MonoTorrent
             return result;
         }
 
-        static IList<ITorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength)
+        static IList<ITorrentFile> LoadTorrentFilesV1 (BEncodedList list, int pieceLength, bool isHybridTorrent)
         {
             var sb = new StringBuilder (32);
 
@@ -736,7 +736,16 @@ namespace MonoTorrent
                     // FIXME: Log invalid paths somewhere?
                     continue;
 
+                // If this is *not* a padding file, ensure it is sorted alphabetically higher than the last non-padding file
+                // when loading a hybrid torrent.
+                // 
+                // By BEP52 spec, hybrid torrents Hybrid torrents have padding files inserted between each file, and so must
+                // have a fixed hash order to guarantee that the set up finrequired to have strictly alphabetical file ordering so
+                // the v1 hashes are guaranteed to match  after padding files are inserted.
                 PathValidator.Validate (tup.path);
+                var lastNonPaddingFile = files.FindLast (t => !t.attributes.HasFlag (TorrentFileAttributes.Padding) && t.length > 0);
+                if (isHybridTorrent && !tup.attributes.HasFlag (TorrentFileAttributes.Padding) && lastNonPaddingFile != null && StringComparer.Ordinal.Compare (tup.path, lastNonPaddingFile.path) < 0)
+                    throw new TorrentException ("The list of files must be in strict alphabetical order in a hybrid torrent");
                 files.Add (tup);
             }
 
@@ -804,9 +813,13 @@ namespace MonoTorrent
 
             TorrentFile.Sort (files);
 
-            // padding of last torrent must be 0.
-            var last = files.Last ();
-            files[files.Count - 1] = new TorrentFile (last.Path, last.Length, last.StartPieceIndex, last.EndPieceIndex, last.OffsetInTorrent, last.PiecesRoot, TorrentFileAttributes.None, 0);
+            // padding of last non-empty file must be 0.
+            // There may not be any non-empty files, though that'd be a weird torrent :P
+            var lastIndex = files.FindLastIndex (f => f.Length > 0);
+            if (lastIndex != -1) {
+                var last = files[lastIndex];
+                files[lastIndex] = new TorrentFile (last.Path, last.Length, last.StartPieceIndex, last.EndPieceIndex, last.OffsetInTorrent, last.PiecesRoot, TorrentFileAttributes.None, 0);
+            }
             return Array.AsReadOnly (files.ToArray ());
         }
     }
