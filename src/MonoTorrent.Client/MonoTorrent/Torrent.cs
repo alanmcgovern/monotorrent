@@ -484,8 +484,26 @@ namespace MonoTorrent
                     if (v1File.Length != v2File.Length)
                         throw new TorrentException ("Inconsistent hybrid torrent, file length mismatch.");
 
-                    if (v1File.Padding != v2File.Padding)
-                        throw new TorrentException ("Inconsistent hybrid torrent, file padding mismatch.");
+                    if (v1File.Padding != v2File.Padding) {
+                        // BEP47 says padding is there so the *subsequent* file aligns with a piece start boundary.
+                        // By a literal reading, and in line with the rest of the bittorrent spec, the last file
+                        // can and should be considered the 'end' of the torrent (obviously :p) and so does not
+                        // have a subsequent file, and so does not need padding. Similar to how blocks are requested
+                        // in 16kB chunks, except for the final block which is just wahtever bytes are left over.
+                        //
+                        // Requested a clarification on the BEP. However both variants will need to be supported
+                        // regardless of what the spec says because both are in the wild.
+                        // Issue: https://github.com/bittorrent/bittorrent.org/issues/160
+                        //
+                        // If padding is mandatory for the last file, then remove the code which strips it out
+                        // inside 'LoadTorrentFilesV2'.
+                        if (v1File == v1Files.Last () && v2File == v2Files.Last ()) {
+                            var mutableFiles = v2Files.ToList ();
+                            mutableFiles[v2Files.Count - 1] = new TorrentFile (v2File.Path, v2File.Length, v2File.StartPieceIndex, v2File.EndPieceIndex, v2File.OffsetInTorrent, v2File.PiecesRoot, TorrentFileAttributes.None, v1File.Padding);
+                            v2Files = Array.AsReadOnly (mutableFiles.ToArray ());
+                        } else
+                            throw new TorrentException ("Inconsistent hybrid torrent, file padding mismatch.");
+                    }
                 }
 
                 Files = v2Files;
