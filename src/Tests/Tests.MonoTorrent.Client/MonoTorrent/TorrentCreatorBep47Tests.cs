@@ -296,6 +296,74 @@ namespace MonoTorrent.Common
             Assert.IsTrue (sha256.AsSpan ().SequenceEqual (torrent.CreatePieceHashes ().GetHash (1).V2Hash.Span));
         }
 
+        [Test]
+        public void HybridTorrent_FinalFileHasUnexpectedPadding ([Values(true, false)] bool hasFinalFilePadding)
+        {
+            // Test validating both variants of torrent can be loaded
+            //
+            // https://github.com/bittorrent/bittorrent.org/issues/160
+            //
+            var v1Files = new BEncodedList {
+                new BEncodedDictionary {
+                    { "length", (BEncodedNumber)9 },
+                    { "path", new BEncodedList{ (BEncodedString)"file1.txt" } },
+                },
+                new BEncodedDictionary {
+                    { "attr", (BEncodedString) "p"},
+                    { "length", (BEncodedNumber)32759 },
+                    { "path", new BEncodedList{ (BEncodedString)".pad32759" } },
+                },
+
+                new BEncodedDictionary {
+                    { "length", (BEncodedNumber) 14 },
+                    { "path", new BEncodedList{ (BEncodedString)"file2.txt" } },
+                }
+            };
+
+            if (hasFinalFilePadding)
+                v1Files.Add (new BEncodedDictionary {
+                    { "attr", (BEncodedString) "p" },
+                    { "length", (BEncodedNumber)32754 },
+                    { "path", new BEncodedList{ (BEncodedString)".pad32754" } },
+                });
+
+            var v2Files = new BEncodedDictionary {
+                { "file1.txt", new BEncodedDictionary {
+                    {"", new BEncodedDictionary {
+                        { "length" , (BEncodedNumber) 9 },
+                        { "pieces root", (BEncodedString) Enumerable.Repeat<byte>(0, 32).ToArray () }
+                    } }
+                } },
+
+                { "file2.txt", new BEncodedDictionary {
+                    {"", new BEncodedDictionary {
+                        { "length", (BEncodedNumber) 14 },
+                        { "pieces root", (BEncodedString) Enumerable.Repeat<byte>(1, 32).ToArray () }
+                    } }
+                } },
+            };
+
+            var infoDict = new BEncodedDictionary {
+                {"files", v1Files },
+                {"file tree", v2Files },
+                { "meta version", (BEncodedNumber) 2 },
+                { "name", (BEncodedString) "padding test"},
+                { "piece length", (BEncodedNumber) 32768},
+                { "pieces", (BEncodedString) new byte[40] }
+            };
+
+            var dict = new BEncodedDictionary {
+                { "info", infoDict }
+            };
+
+            var torrent = Torrent.Load (dict);
+            Assert.AreEqual (2, torrent.Files.Count);
+            Assert.AreEqual (9, torrent.Files[0].Length);
+            Assert.AreEqual (32768 - 9, torrent.Files[0].Padding);
+            Assert.AreEqual (14, torrent.Files[1].Length);
+            Assert.AreEqual (hasFinalFilePadding ? 32768 - 14 : 0, torrent.Files[1].Padding);
+        }
+
         static BEncodedString SHA1SumZeros (long length)
         {
             using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA1);
