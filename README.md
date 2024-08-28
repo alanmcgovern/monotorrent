@@ -5,10 +5,6 @@ MonoTorrent
  
 ![Build status (master)](https://img.shields.io/azure-devops/build/alanmcgovern0144/monotorrent/7/master?label=build%20status%20%28master%29) ![Test Status (master)](https://img.shields.io/azure-devops/tests/alanmcgovern0144/monotorrent/7/master?compact_message&label=test%20status%20%28master%29) ![code coverage (master)](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/7/master?label=code%20coverage%20%28master%29)
 
-![Azure DevOps builds (branch)](https://img.shields.io/azure-devops/build/alanmcgovern0144/monotorrent/7/monotorrent-3.0?label=build%20status%20%28monotorrent-3.0%29) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/alanmcgovern0144/monotorrent/7/monotorrent-3.0?compact_message&label=test%20status%20%28monotorrent-3.0%29) ![Azure DevOps coverage (branch)](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/7/monotorrent-3.0?label=code%20coverage%20%28monotorrent-3.0%29)
-
-![Azure DevOps builds (branch)](https://img.shields.io/azure-devops/build/alanmcgovern0144/monotorrent/7/monotorrent-2.0?label=build%20status%20%28monotorrent-2.0%29) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/alanmcgovern0144/monotorrent/7/monotorrent-2.0?compact_message&label=test%20status%20%28monotorrent-2.0%29) ![Azure DevOps coverage (branch)](https://img.shields.io/azure-devops/coverage/alanmcgovern0144/monotorrent/7/monotorrent-2.0?label=code%20coverage%20%28monotorrent-2.0%29)
-
 [![Backers on Open Collective](https://opencollective.com/monotorrent/all/badge.svg?label=Backers)](https://opencollective.com/monotorrent)
 
 
