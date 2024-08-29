@@ -166,8 +166,8 @@ namespace MonoTorrent.Client.Encryption
             var handshakeIn = new HandshakeMessage (InfoHash, IncomingId, Constants.ProtocolStringV100);
             var handshakeOut = new HandshakeMessage (InfoHash, OutgoingId, Constants.ProtocolStringV100);
 
-            var incomingTask = EncryptorFactory.CheckIncomingConnectionAsync (Incoming, incomingEncryption, SKeys, Factories.Default);
-            var outgoingTask = EncryptorFactory.CheckOutgoingConnectionAsync (Outgoing, outgoingEncryption, InfoHash, appendInitialPayload ? handshakeOut : null, Factories.Default);
+            var incomingTask = EncryptorFactory.CheckIncomingConnectionAsync (Incoming, incomingEncryption, SKeys, Factories.Default, TaskExtensions.Timeout);
+            var outgoingTask = EncryptorFactory.CheckOutgoingConnectionAsync (Outgoing, outgoingEncryption, InfoHash, appendInitialPayload ? handshakeOut : null, Factories.Default, TaskExtensions.Timeout);
 
             // If the handshake was not part of the initial payload, send it now.
             var outgoingCrypto = await outgoingTask;

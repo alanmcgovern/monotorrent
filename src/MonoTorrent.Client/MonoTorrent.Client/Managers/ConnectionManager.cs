@@ -146,12 +146,15 @@ namespace MonoTorrent.Client
                 succeeded = false;
             }
 
-            PendingConnects.Remove (state);
-            manager.Peers.ConnectingToPeers.Remove (peer);
             if (manager.Disposed ||
                 !manager.Mode.CanAcceptConnections ||
                 OpenConnections > Settings.MaximumConnections ||
                 manager.OpenConnections > manager.Settings.MaximumConnections) {
+
+                // Remove from pending connects.
+                PendingConnects.Remove (state);
+                manager.Peers.ConnectingToPeers.Remove (peer);
+
                 manager.Peers.AvailablePeers.Add (peer);
                 connection.Dispose ();
                 return;
@@ -165,14 +168,17 @@ namespace MonoTorrent.Client
                 } else {
                     logger.Info (connection, "Connection opened");
 
-                    // FIXME: We should include handshaking in the connection timeout, but allow more time.
-                    // WE no longer create/add a peerid to the main list *before* handshaking is done, so
-                    // we need a way to cancel stuck connection attempts.
-                    ProcessNewOutgoingConnection (manager, peer, connection);
+                    // Reset the connection timer so there's a little bit of extra time for the handshake.
+                    state.Timer.Restart ();
+                    await ProcessNewOutgoingConnection (manager, peer, connection);
                 }
             } catch {
                 // FIXME: Do nothing now?
             } finally {
+                // Either we've successfully handshaked, or the attempt failed. We can remove them from these lists now.
+                PendingConnects.Remove (state);
+                manager.Peers.ConnectingToPeers.Remove (peer);
+
                 // Try to connect to another peer
                 TryConnect ();
             }
@@ -183,7 +189,7 @@ namespace MonoTorrent.Client
             return Torrents.Contains (manager);
         }
 
-        internal async void ProcessNewOutgoingConnection (TorrentManager manager, Peer peer, IPeerConnection connection)
+        internal async ReusableTask ProcessNewOutgoingConnection (TorrentManager manager, Peer peer, IPeerConnection connection)
         {
             var bitfield = new BitField (manager.Bitfield.Length);
             // If we have too many open connections, close the connection
@@ -210,7 +216,7 @@ namespace MonoTorrent.Client
                 var preferredEncryption = EncryptionTypes.GetPreferredEncryption (peer.AllowedEncryption, Settings.AllowedEncryption);
                 if (preferredEncryption.Count == 0)
                     throw new NotSupportedException ("The peer and the engine do not agree on any encryption methods");
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (connection, preferredEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshake, manager.Engine!.Factories);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (connection, preferredEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshake, manager.Engine!.Factories, Settings.ConnectionTimeout);
                 decryptor = result.Decryptor;
                 encryptor = result.Encryptor;
             } catch {
@@ -561,15 +567,12 @@ namespace MonoTorrent.Client
         bool TryConnect (TorrentManager manager)
         {
             int i;
+            // If the torrent isn't active, don't connect to a peer for it
             if (!manager.Mode.CanAcceptConnections)
                 return false;
 
             // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
             if ((manager.Peers.ConnectedPeers.Count + manager.Peers.ConnectingToPeers.Count) >= manager.Settings.MaximumConnections)
-                return false;
-
-            // If the torrent isn't active, don't connect to a peer for it
-            if (!manager.Mode.CanAcceptConnections)
                 return false;
 
             // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer

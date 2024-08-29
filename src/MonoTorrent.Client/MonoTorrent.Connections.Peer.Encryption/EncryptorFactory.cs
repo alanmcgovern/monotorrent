@@ -55,14 +55,12 @@ namespace MonoTorrent.Connections.Peer.Encryption
             }
         }
 
-        static TimeSpan Timeout => Debugger.IsAttached ? TimeSpan.FromHours (1) : TimeSpan.FromSeconds (10);
-
-        internal static async ReusableTask<EncryptorResult> CheckIncomingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash[] sKeys, Factories factories)
+        internal static async ReusableTask<EncryptorResult> CheckIncomingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash[] sKeys, Factories factories, TimeSpan timeout)
         {
             if (!connection.IsIncoming)
                 throw new Exception ("oops");
 
-            using var cts = new CancellationTokenSource (Timeout);
+            using var cts = new CancellationTokenSource (timeout);
             using CancellationTokenRegistration registration = cts.Token.Register (connection.Dispose);
             return await DoCheckIncomingConnectionAsync (connection, allowedEncryption, sKeys, factories).ConfigureAwait (false);
         }
@@ -114,12 +112,12 @@ namespace MonoTorrent.Connections.Peer.Encryption
             throw new EncryptionException ("Invalid handshake received and no decryption works");
         }
 
-        internal static async ReusableTask<EncryptorResult> CheckOutgoingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash infoHash, HandshakeMessage handshake, Factories factories)
+        internal static async ReusableTask<EncryptorResult> CheckOutgoingConnectionAsync (IPeerConnection connection, IList<EncryptionType> allowedEncryption, InfoHash infoHash, HandshakeMessage handshake, Factories factories, TimeSpan timeout)
         {
             if (connection.IsIncoming)
                 throw new Exception ("oops");
 
-            using var cts = new CancellationTokenSource (Timeout);
+            using var cts = new CancellationTokenSource (timeout);
             using CancellationTokenRegistration registration = cts.Token.Register (connection.Dispose);
             return await DoCheckOutgoingConnectionAsync (connection, allowedEncryption, infoHash, handshake, factories).ConfigureAwait (false);
         }

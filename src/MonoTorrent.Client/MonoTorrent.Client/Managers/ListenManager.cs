@@ -100,14 +100,14 @@ namespace MonoTorrent.Client
                 if (!e.Connection.IsIncoming) {
                     var manager = Engine.Torrents.First (t => t.InfoHashes.Contains (e.InfoHash!));
                     var peer = new Peer (peerInfo);
-                    Engine.ConnectionManager.ProcessNewOutgoingConnection (manager, peer, e.Connection);
+                    await Engine.ConnectionManager.ProcessNewOutgoingConnection (manager, peer, e.Connection);
                     return;
                 }
 
                 logger.Info (e.Connection, "ConnectionReceived");
 
                 var supportedEncryptions = Engine.Settings.AllowedEncryption;
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys, Engine.Factories);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys, Engine.Factories, Engine.Settings.ConnectionTimeout);
                 if (!await HandleHandshake (peerInfo, e.Connection, result.Handshake!, result.Decryptor, result.Encryptor))
                     e.Connection.Dispose ();
             } catch (Exception ex) {
