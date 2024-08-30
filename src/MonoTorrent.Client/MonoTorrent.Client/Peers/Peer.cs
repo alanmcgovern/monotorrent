@@ -86,6 +86,11 @@ namespace MonoTorrent.Client
         /// </summary>
         internal int TotalHashFails { get; set; }
 
+        /// <summary>
+        /// The time since the last outgoing connection was attempted
+        /// </summary>
+        internal ValueStopwatch LastConnectionAttempt;
+
         public Peer (PeerInfo peerInfo)
             : this (peerInfo, EncryptionTypes.All)
         {

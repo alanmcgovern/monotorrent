@@ -570,6 +570,31 @@ namespace MonoTorrent.Client.Modes
         }
 
         [Test]
+        public void ShouldConnect ()
+        {
+            var peer = new Peer (new PeerInfo (new Uri ("ipv4://1.2.3.4:56789")));
+            var mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
+
+            Assert.IsFalse (peer.LastConnectionAttempt.IsRunning);
+            Assert.IsTrue (mode.ShouldConnect (peer));
+
+            // pretend we tried to connect
+            peer.LastConnectionAttempt.Restart ();
+            Assert.IsTrue (mode.ShouldConnect (peer));
+
+            // Pretend it failed once - now we need to delay.
+            peer.FailedConnectionAttempts++;
+            peer.LastConnectionAttempt.Restart ();
+            Assert.IsFalse (mode.ShouldConnect (peer));
+
+            peer.LastConnectionAttempt = ValueStopwatch.WithTime (TimeSpan.FromSeconds (20));
+            Assert.IsTrue (mode.ShouldConnect (peer));
+
+            peer.FailedConnectionAttempts++;
+            Assert.IsFalse (mode.ShouldConnect (peer));
+        }
+
+        [Test]
         public void SmallRequestLength ()
         {
             Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);

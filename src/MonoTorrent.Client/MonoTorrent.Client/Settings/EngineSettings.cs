@@ -382,5 +382,15 @@ namespace MonoTorrent.Client
                    MaximumHalfOpenConnections +
                    CacheDirectory.GetHashCode ();
         }
+
+        internal TimeSpan ConnectionRetryDelay (int failedConnectionAttempts)
+        {
+            return failedConnectionAttempts switch {
+                0 => TimeSpan.FromSeconds (0),
+                1 => TimeSpan.FromSeconds (10),
+                2 => TimeSpan.FromSeconds (60),
+                _ => TimeSpan.FromSeconds (180),
+            };
+        }
     }
 }
