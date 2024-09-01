@@ -398,6 +398,8 @@ namespace MonoTorrent.Client
 
         public void AddConnection (IPeerConnection connection)
         {
+            if (!connection.IsIncoming && !Manager.Mode.CanAcceptConnections)
+                throw new NotSupportedException ($"You can't fake an outgoing connection for a torrent manager in the {Manager.Mode} mode");
             Listener.Add (connection.IsIncoming ? null : Manager, connection);
         }
         public PeerId CreatePeer (bool processingQueue)
