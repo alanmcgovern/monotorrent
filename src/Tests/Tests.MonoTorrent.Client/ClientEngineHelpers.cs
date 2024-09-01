@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
+
+using MonoTorrent.Connections;
 
 namespace MonoTorrent.Client
 {
@@ -27,6 +30,7 @@ namespace MonoTorrent.Client
         internal static EngineSettings CreateSettings (
             bool allowLocalPeerDiscovery = false,
             bool allowPortForwarding = false,
+            IList<Connections.EncryptionType> allowedEncryption = null,
             bool automaticFastResume = false,
             bool autoSaveLoadMagnetLinkMetadata = true,
             IPEndPoint dhtEndPoint = null,
@@ -37,6 +41,7 @@ namespace MonoTorrent.Client
             return new EngineSettingsBuilder {
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
                 AllowPortForwarding = allowPortForwarding,
+                AllowedEncryption = (allowedEncryption ?? EncryptionTypes.All).ToList (),
                 AutoSaveLoadFastResume = automaticFastResume,
                 AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata,
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location)!, "test_cache_dir"),
