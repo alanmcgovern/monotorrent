@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.Modes
         public override bool ShouldConnect (Peer peer)
         {
             return !(peer.IsSeeder && Manager.HasMetadata && Manager.Complete)
-                && peer.LastConnectionAttempt.Elapsed >= Settings.ConnectionRetryDelay (peer.FailedConnectionAttempts);
+                && base.ShouldConnect (peer);
         }
 
         public override void Tick (int counter)

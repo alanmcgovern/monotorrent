@@ -154,8 +154,6 @@ namespace MonoTorrent.Client
 
         public EncryptionType EncryptionType => Encryptor.EncryptionType;
 
-        public IList<EncryptionType> SupportedEncryptionTypes => Peer.AllowedEncryption;
-
         public bool IsChoking { get; internal set; }
         public bool IsConnected => !Disposed;
         public bool IsInterested { get; internal set; }

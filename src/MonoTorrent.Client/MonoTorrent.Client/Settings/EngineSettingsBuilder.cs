@@ -122,6 +122,14 @@ namespace MonoTorrent.Client
         public string CacheDirectory { get; set; }
 
         /// <summary>
+        /// The delay between each retry when attempting to establish an outgoing connection attempt to a given peer.
+        /// Typically an array of length 4 specifying a delay of of 10s, 30s, 60s and 120s. This allows 1 initial attempt
+        /// and four retries. If a connection cannot be established after exhausting all retries, the peer's information
+        /// will be discarded.
+        /// </summary>
+        public List<TimeSpan> ConnectionRetryDelays { get; set; }
+
+        /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so
         /// a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
         /// to keep this value within a range of 7-15 seconds unless absolutely necessary.
@@ -333,6 +341,7 @@ namespace MonoTorrent.Client
             AutoSaveLoadFastResume = settings.AutoSaveLoadFastResume;
             AutoSaveLoadMagnetLinkMetadata = settings.AutoSaveLoadMagnetLinkMetadata;
             CacheDirectory = settings.CacheDirectory;
+            ConnectionRetryDelays = new List<TimeSpan> (settings.ConnectionRetryDelays);
             ConnectionTimeout = settings.ConnectionTimeout;
             DhtEndPoint = settings.DhtEndPoint;
             DiskCacheBytes = settings.DiskCacheBytes;
@@ -365,6 +374,11 @@ namespace MonoTorrent.Client
             if (AllowedEncryption.Distinct ().Count () != AllowedEncryption.Count)
                 throw new ArgumentException ("Each encryption type can be specified at most once. Please verify the AllowedEncryption list contains no duplicates", "AllowedEncryption");
 
+            if (ConnectionRetryDelays is null)
+                throw new ArgumentNullException (nameof (ConnectionRetryDelays));
+            if (ConnectionRetryDelays.Any (t => t < TimeSpan.Zero))
+                throw new ArgumentException ("ConnectionRetryDelays cannot be less than zero");
+
             return new EngineSettings (
                 allowedEncryption: AllowedEncryption,
                 allowHaveSuppression: AllowHaveSuppression,
@@ -374,6 +388,7 @@ namespace MonoTorrent.Client
                 autoSaveLoadFastResume: AutoSaveLoadFastResume,
                 autoSaveLoadMagnetLinkMetadata: AutoSaveLoadMagnetLinkMetadata,
                 cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (CacheDirectory),
+                connectionRetryDelays: ConnectionRetryDelays,
                 connectionTimeout: ConnectionTimeout,
                 dhtEndPoint: DhtEndPoint,
                 diskCacheBytes: DiskCacheBytes,

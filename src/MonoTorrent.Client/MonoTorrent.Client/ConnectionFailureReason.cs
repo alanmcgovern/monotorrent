@@ -40,6 +40,11 @@ namespace MonoTorrent.Client
         Unreachable,
 
         /// <summary>
+        /// No compatible IPeerConnection could be instantiated by the <see cref="Factories.CreatePeerConnection(System.Uri)"/> method.
+        /// </summary>
+        UnknownUriSchema,
+
+        /// <summary>
         /// After accepting the connection, a compatible connection encryption method could not
         /// be selected. Alternatively the remote peer could have reached it's open connection
         /// limit and simply closed the connection, or it could mean the peer did not support
