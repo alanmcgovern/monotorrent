@@ -58,6 +58,11 @@ namespace MonoTorrent.Client
         HandshakeFailed,
 
         /// <summary>
+        /// The maximum number of open connections was exceeded after establishing the connection and so the connection was closed.
+        /// </summary>
+        TooManyOpenConnections,
+
+        /// <summary>
         /// There is no clear reason why the connection attempt failed.
         /// </summary>
         Unknown,
