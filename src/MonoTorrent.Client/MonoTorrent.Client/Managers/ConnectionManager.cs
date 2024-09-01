@@ -76,8 +76,6 @@ namespace MonoTorrent.Client
 
         public event EventHandler<AttemptConnectionEventArgs>? BanPeer;
 
-        internal static readonly int ChunkLength = 2096 + 64;   // Download in 2kB chunks to allow for better rate limiting
-
         internal int openConnections;
 
         internal DiskManager DiskManager { get; }
