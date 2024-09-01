@@ -53,6 +53,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public IList<EncryptionType> AllowedEncryption { get; } = EncryptionTypes.All;
 
+        internal IList<IList<EncryptionType>> OutgoingConnectionEncryptionTiers { get; } = Array.Empty<IList<EncryptionType>> ();
+
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
         /// which do not already have that piece. A peer will never request a piece they have already downloaded,
@@ -279,7 +281,9 @@ namespace MonoTorrent.Client
             string httpStreamingPrefix)
         {
             // Make sure this is immutable now
-            AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption);
+            AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption.ToArray ());
+            OutgoingConnectionEncryptionTiers = UpdateEncryptionTiers (AllowedEncryption);
+
             AllowHaveSuppression = allowHaveSuppression;
             AllowLocalPeerDiscovery = allowLocalPeerDiscovery;
             AllowPortForwarding = allowPortForwarding;
@@ -308,6 +312,28 @@ namespace MonoTorrent.Client
             WebSeedConnectionTimeout = webSeedConnectionTimeout;
             WebSeedDelay = webSeedDelay;
             WebSeedSpeedTrigger = webSeedSpeedTrigger;
+        }
+
+        static IList<IList<EncryptionType>> UpdateEncryptionTiers (IList<EncryptionType> allowedEncryption)
+        {
+            var tiers = new List<IList<EncryptionType>> ();
+            while (allowedEncryption.Count > 0) {
+                // If both encrypted methods are consecutive, create a tier consisting of both. The encrypted handshake will take the first
+                // one both sides support. Otherwise, create a tier with just that single method.
+                //
+                // This supports tiers like:
+                //      PlainText, RC4Header, RC4Full       [two tiers]
+                //      RC4Header, PlainText, RC4Full       [three tiers]
+                //      RC4Full, RC4Header, PlainText       [two tiers]
+                if (allowedEncryption.Count >= 2 && allowedEncryption[0] != EncryptionType.PlainText && allowedEncryption[1] != EncryptionType.PlainText) {
+                    tiers.Add (Array.AsReadOnly (new[] { allowedEncryption[0], allowedEncryption[1] }));
+                    allowedEncryption = allowedEncryption.Skip (2).ToArray ();
+                } else {
+                    tiers.Add (Array.AsReadOnly (new[] { allowedEncryption[0] }));
+                    allowedEncryption = allowedEncryption.Skip (1).ToArray ();
+                }
+            }
+            return tiers;
         }
 
         internal string GetDhtNodeCacheFilePath ()
