@@ -443,6 +443,11 @@ namespace MonoTorrent.Client
                     CleanupSocket (manager, id);
                     return false;
                 }
+                if (ShouldBanPeer (id.Peer.Info)) {
+                    logger.Info (id.Connection, "Peer was banned");
+                    CleanupSocket (manager, id);
+                    return false;
+                }
 
                 // Add the PeerId to the lists *before* doing anything asynchronous. This ensures that
                 // all PeerIds are tracked in 'ConnectedPeers' as soon as they're created.
