@@ -870,6 +870,23 @@ namespace MonoTorrent.Client
             }
         }
 
+        public async Task DisconnectPeerAsync (PeerId id)
+        {
+            await ClientEngine.MainLoop;
+            DisconnectPeer (id);
+        }
+
+        internal void DisconnectPeer (PeerId id)
+        {
+            if (id == null)
+                throw new ArgumentNullException (nameof (id));
+
+            if (Peers.ConnectedPeers.Contains (id)) {
+                Engine!.ConnectionManager.CleanupSocket (this, id);
+                Peers.ConnectedPeers.Remove (id);
+            }
+        }
+
         #endregion
 
 
