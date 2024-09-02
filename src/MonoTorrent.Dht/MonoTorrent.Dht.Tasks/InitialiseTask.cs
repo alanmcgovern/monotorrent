@@ -27,6 +27,7 @@
 //
 
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -41,13 +42,16 @@ namespace MonoTorrent.Dht.Tasks
         static readonly string[] DefaultBootstrapRouters = new[] {
             "router.bittorrent.com",
             "router.utorrent.com",
-            "dht.transmissionbt.com"
+            "dht.transmissionbt.com",
+            "dht.aelitis.com",
+            "dht.libtorrent.org:25401",
+            "router.silotis.us"
         };
 
         // Choose a completely arbitrary value here. If we have at least this many
         // nodes in the routing table we can consider it 'healthy' enough to allow
         // the state to change to 'Ready' so torrents can begin searching for peers
-        const int MinHealthyNodes = 32;
+        const int MinHealthyNodes = 4;
 
         readonly List<Node> initialNodes;
         readonly DhtEngine engine;
@@ -100,13 +104,26 @@ namespace MonoTorrent.Dht.Tasks
 
         async Task<Node[]> GenerateBootstrapNodes ()
         {
-            var addresses = await Task.WhenAll (BootstrapRouters.Select (Dns.GetHostAddressesAsync));
-            return addresses
-                .SelectMany (t => t)
-                .Distinct ()
-                .Select (t => new IPEndPoint (t, 6881))
-                .Select (t => new Node (NodeId.Create (), t))
-                .ToArray ();
+            // Parse the bootstrap routers into a dictionary of address/port pairs
+            var addressPortDictionary = new Dictionary<string, int> ();
+            foreach (string router in BootstrapRouters) {
+                string[] parts = router.Split (':');
+                string address = parts[0];
+                int port = parts.Length == 2 ? int.Parse (parts[1]) : 6881;
+                addressPortDictionary[address] = port;
+            }
+            // Resolve the IP addresses of the bootstrap routers
+            var nodes = new ConcurrentBag<Node> ();
+            await Task.WhenAll (addressPortDictionary.Select (async address => {
+                try {
+                    var ipAddresses = await Dns.GetHostAddressesAsync (address.Key);
+                    foreach (var ip in ipAddresses)
+                        nodes.Add (new Node (NodeId.Create (), new IPEndPoint (ip, address.Value)));
+                } catch {
+                    // Ignore any failures
+                }
+            }));
+            return nodes.ToArray ();
         }
 
         async Task SendFindNode (IEnumerable<Node> newNodes)
