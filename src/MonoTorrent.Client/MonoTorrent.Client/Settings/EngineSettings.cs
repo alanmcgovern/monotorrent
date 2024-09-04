@@ -108,6 +108,19 @@ namespace MonoTorrent.Client
         public string CacheDirectory { get; } = Path.Combine (Environment.CurrentDirectory, "cache");
 
         /// <summary>
+        /// The delay between each retry when attempting to establish an outgoing connection attempt to a given peer.
+        /// Typically an array of length 4 specifying a delay of of 10s, 30s, 60s and 120s. This allows 1 initial attempt
+        /// and four retries. If a connection cannot be established after exhausting all retries, the peer's information
+        /// will be discarded.
+        /// </summary>
+        public IList<TimeSpan> ConnectionRetryDelays { get; } = Array.AsReadOnly (new[] {
+            TimeSpan.FromSeconds (10),
+            TimeSpan.FromSeconds (30),
+            TimeSpan.FromSeconds (60),
+            TimeSpan.FromSeconds (120),
+        });
+
+        /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so
         /// a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
         /// to keep this value within a range of 7-15 seconds unless absolutely necessary.
@@ -278,7 +291,7 @@ namespace MonoTorrent.Client
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
             int maximumOpenFiles, int maximumUploadRate, IDictionary<string, IPEndPoint> reportedListenEndPoints, bool usePartialFiles,
             TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
-            string httpStreamingPrefix)
+            string httpStreamingPrefix, IList<TimeSpan> connectionRetryDelays)
         {
             // Make sure this is immutable now
             AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption.ToArray ());
@@ -294,6 +307,7 @@ namespace MonoTorrent.Client
             DiskCacheBytes = diskCacheBytes;
             DiskCachePolicy = diskCachePolicy;
             CacheDirectory = cacheDirectory;
+            ConnectionRetryDelays = Array.AsReadOnly (connectionRetryDelays.ToArray ());
             ConnectionTimeout = connectionTimeout;
             FastResumeMode = fastResumeMode;
             FileCreationOptions = fileCreationMode;
@@ -409,14 +423,17 @@ namespace MonoTorrent.Client
                    CacheDirectory.GetHashCode ();
         }
 
-        internal TimeSpan ConnectionRetryDelay (int failedConnectionAttempts)
+        internal TimeSpan? GetConnectionRetryDelay (int failedConnectionAttempts)
         {
-            return failedConnectionAttempts switch {
-                0 => TimeSpan.FromSeconds (0),
-                1 => TimeSpan.FromSeconds (10),
-                2 => TimeSpan.FromSeconds (60),
-                _ => TimeSpan.FromSeconds (180),
-            };
+            // If we've never failed to connect to the peer, connect immediately.
+            if (failedConnectionAttempts <= 0)
+                return TimeSpan.Zero;
+
+            // If this is the Nth retry (i.e. N previous failure) then we apply
+            // the delay at array position N-1.
+            if (failedConnectionAttempts - 1 < ConnectionRetryDelays.Count)
+                return ConnectionRetryDelays[failedConnectionAttempts - 1];
+            return null;
         }
     }
 }

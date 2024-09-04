@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -21,7 +22,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SortByLeastConnections ()
         {
-            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
+            var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (allowedEncryption: new[] { EncryptionType.PlainText }));
             var manager = new ConnectionManager ("test", engine.Settings, engine.Factories, engine.DiskManager);
 
             var torrents = new[] {
@@ -124,11 +125,13 @@ namespace MonoTorrent.Client
         public async Task CancelPending_SendingHandshake ()
         {
             var fake = new FakeConnection (new Uri ("ipv4://1.2.3.4:56789"));
-            var builder = new EngineSettingsBuilder (EngineHelpers.CreateSettings ());
-            builder.ConnectionTimeout = TimeSpan.FromHours (1);
+            var builder = new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                ConnectionTimeout = TimeSpan.FromHours (1),
+                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.PlainText }
+            };
             var engine = EngineHelpers.Create (
                 builder.ToSettings (),
-                EngineHelpers.Factories.WithPeerConnectionCreator ("ipv4",t => {
+                EngineHelpers.Factories.WithPeerConnectionCreator ("ipv4", t => {
                     return fake;
                 })
             );
@@ -137,7 +140,7 @@ namespace MonoTorrent.Client
 
             var manager = await engine.AddAsync (new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ())), "tmp");
             manager.Mode = new MetadataMode (manager, engine.DiskManager, connectionManager, engine.Settings, "");
-            manager.Peers.AvailablePeers.Add (new Peer (new PeerInfo (fake.Uri), new[] { EncryptionType.PlainText }));
+            manager.Peers.AvailablePeers.Add (new Peer (new PeerInfo (fake.Uri)));
             connectionManager.Add (manager);
 
             await ClientEngine.MainLoop;
@@ -155,6 +158,114 @@ namespace MonoTorrent.Client
             connectionManager.CancelPendingConnects (manager);
             await fake.DisposeAsyncInvokedTask.Task.WithTimeout ();
             Assert.IsTrue (fake.Disposed);
+        }
+
+
+        [Test]
+        public async Task EncryptionTiers_LastMatches ([Values (true, false)] bool addToSeeder)
+        {
+            int failedCount = 0;
+            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowLocalPeerDiscovery = false,
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
+            }.ToSettings ());
+            var leecher = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowLocalPeerDiscovery = false,
+                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
+            }.ToSettings ());
+
+            var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
+            var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
+            var leecherManager = await leecher.AddAsync (magnetLink, "tmp_seeder");
+
+            var ready = Task.WhenAll (seederManager.WaitForState (TorrentState.Metadata), leecherManager.WaitForState (TorrentState.Metadata));
+            await seederManager.StartAsync ();
+            await leecherManager.StartAsync ();
+            await ready;
+
+            var seederConnected = new TaskCompletionSource<PeerId> ();
+            seederManager.PeerConnected += (o, e) => seederConnected.TrySetResult (e.Peer);
+
+            var leecherConnected = new TaskCompletionSource<PeerId> ();
+            leecherManager.PeerConnected += (o, e) => leecherConnected.TrySetResult (e.Peer);
+
+            seederManager.ConnectionAttemptFailed += (o, e) => failedCount++;
+            leecherManager.ConnectionAttemptFailed += (o, e) => failedCount++;
+
+            if (addToSeeder)
+                await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{leecher.PeerListeners[0].LocalEndPoint.Port}")));
+            else
+                await leecherManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{seeder.PeerListeners[0].LocalEndPoint.Port}")));
+            await seederConnected.Task.WithTimeout ();
+            await leecherConnected.Task.WithTimeout ();
+
+            var connectedSeeder = (await seederManager.GetPeersAsync ()).Single ();
+            Assert.AreEqual (0, connectedSeeder.Peer.CleanedUpCount);
+            Assert.AreEqual (0, connectedSeeder.Peer.FailedConnectionAttempts);
+            Assert.AreEqual (EncryptionType.RC4Full, connectedSeeder.EncryptionType);
+
+            connectedSeeder = (await leecherManager.GetPeersAsync ()).Single ();
+            Assert.AreEqual (0, connectedSeeder.Peer.CleanedUpCount);
+            Assert.AreEqual (0, connectedSeeder.Peer.FailedConnectionAttempts);
+            Assert.AreEqual (EncryptionType.RC4Full, connectedSeeder.EncryptionType);
+
+            Assert.AreEqual (0, failedCount);
+
+            await seeder.StopAsync ();
+            await leecher.StopAsync ();
+        }
+
+
+        [Test]
+        public async Task EncryptionTiers_NoneMatch ([Values (true, false)] bool addToSeeder)
+        {
+            int failedCount = 0;
+            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowLocalPeerDiscovery = false,
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText },
+                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromDays (1) },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
+            }.ToSettings ());
+            var leecher = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowLocalPeerDiscovery = false,
+                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full },
+                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromDays (1) },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
+            }.ToSettings ());
+
+            var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
+            var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
+            var leecherManager = await leecher.AddAsync (magnetLink, "tmp_seeder");
+
+            var ready = Task.WhenAll (seederManager.WaitForState (TorrentState.Metadata), leecherManager.WaitForState (TorrentState.Metadata));
+            await seederManager.StartAsync ();
+            await leecherManager.StartAsync ();
+            await ready;
+
+            var peerFailedTask = new TaskCompletionSource<bool> ();
+
+            EventHandler<ConnectionAttemptFailedEventArgs> handler = (o, e) => {
+                failedCount++;
+                peerFailedTask.SetResult (true);
+            };
+            seederManager.ConnectionAttemptFailed += handler;
+            leecherManager.ConnectionAttemptFailed += handler;
+
+            if (addToSeeder)
+                await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{leecher.PeerListeners[0].LocalEndPoint.Port}")));
+            else
+                await leecherManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{seeder.PeerListeners[0].LocalEndPoint.Port}")));
+            await peerFailedTask.Task.WithTimeout ();
+
+            Assert.AreEqual (0, (await seederManager.GetPeersAsync ()).Count);
+            Assert.AreEqual (0, (await leecherManager.GetPeersAsync ()).Count);
+
+            // It failed to connect once (even though we attempted multiple tiers)
+            Assert.AreEqual (1, failedCount);
+            var peer = addToSeeder ? seederManager.Peers.AvailablePeers[0] : leecherManager.Peers.AvailablePeers[0];
+            Assert.AreEqual (1, peer.FailedConnectionAttempts);
         }
     }
 }

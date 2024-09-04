@@ -44,11 +44,6 @@ namespace MonoTorrent.Client
         internal int CleanedUpCount { get; set; }
 
         /// <summary>
-        /// The list of encryption methods which can be used to connect to this peer.
-        /// </summary>
-        internal IList<EncryptionType> AllowedEncryption { get; set; }
-
-        /// <summary>
         /// The number of times we failed to establish an outgoing connection to this peer.
         /// </summary>
         internal int FailedConnectionAttempts { get; set; }
@@ -72,7 +67,7 @@ namespace MonoTorrent.Client
         /// </summary>
         internal bool MaybeStale { get; set; }
 
-        public PeerInfo Info { get; private set; }
+        internal PeerInfo Info { get; private set; }
 
         /// <summary>
         /// The number of times, in a row, that this peer has sent us the blocks for a piece and that
@@ -92,15 +87,8 @@ namespace MonoTorrent.Client
         internal ValueStopwatch LastConnectionAttempt;
 
         public Peer (PeerInfo peerInfo)
-            : this (peerInfo, EncryptionTypes.All)
-        {
-
-        }
-
-        public Peer (PeerInfo peerInfo, IList<EncryptionType> allowedEncryption)
         {
             Info = peerInfo ?? throw new ArgumentNullException (nameof (peerInfo));
-            AllowedEncryption = allowedEncryption ?? throw new ArgumentNullException (nameof (allowedEncryption));
         }
 
         public override bool Equals (object? obj)

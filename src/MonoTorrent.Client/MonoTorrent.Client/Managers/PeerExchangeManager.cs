@@ -135,7 +135,10 @@ namespace MonoTorrent.Client
                 if (!peer.Peer.TryWriteCompactPeer (added.Span.Slice (i * stride, stride), out int written) || written != stride)
                     throw new NotSupportedException ();
 
-                if (EncryptionTypes.SupportsRC4 (peer.Peer.AllowedEncryption)) {
+                // FIXME: Decide whether to tell *other* peers if we believe *this* peer prefers encryption or not. I'm not sure
+                // how this particular decision can be made. We can't ask peers whether or not they prefer encryption, or just happened
+                // to use it because it's what the local monotorrent was configured to prefer/require.
+                if (peer.EncryptionType == EncryptionType.RC4Full || peer.EncryptionType == EncryptionType.RC4Header) {
                     addedDotF.Span[i] = 0x01;
                 } else {
                     addedDotF.Span[i] = 0x00;

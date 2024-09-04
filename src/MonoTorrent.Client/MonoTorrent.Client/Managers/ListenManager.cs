@@ -100,7 +100,10 @@ namespace MonoTorrent.Client
                 if (!e.Connection.IsIncoming) {
                     var manager = Engine.Torrents.First (t => t.InfoHashes.Contains (e.InfoHash!));
                     var peer = new Peer (peerInfo);
-                    await Engine.ConnectionManager.ProcessNewOutgoingConnection (manager, peer, e.Connection);
+                    // FIXME: THis is a hack to inject connections into the engine. Kill the hack, and then we don't have to hardcode that this
+                    // always uses tier[0].
+                    // This is only used for tests, so it's fine.
+                    await Engine.ConnectionManager.ProcessNewOutgoingConnection (manager, peer, e.Connection, Engine.Settings.OutgoingConnectionEncryptionTiers[0]);
                     return;
                 }
 

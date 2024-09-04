@@ -149,8 +149,7 @@ namespace ClientSample
                                                                                     p.Monitor.DownloadRate / 1024.0,
                                                                                     p.AmRequestingPiecesCount,
                                                                                     p.Monitor.UploadRate / 1024.0,
-                                                                                    p.EncryptionType,
-                                                                                    string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
+                                                                                    p.EncryptionType);
                     }
                     AppendFormat (sb, "");
                     AppendFormat (sb, "Incoming:");
@@ -159,8 +158,7 @@ namespace ClientSample
                                                                                     p.Monitor.DownloadRate / 1024.0,
                                                                                     p.AmRequestingPiecesCount,
                                                                                     p.Monitor.UploadRate / 1024.0,
-                                                                                    p.EncryptionType,
-                                                                                    string.Join ("|", p.SupportedEncryptionTypes.Select (t => t.ToString ()).ToArray ()));
+                                                                                    p.EncryptionType);
                     }
 
                     AppendFormat (sb, "", null);
