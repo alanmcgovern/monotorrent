@@ -78,6 +78,8 @@ namespace MonoTorrent.Client
 
         internal int openConnections;
 
+        HashSet<string> BannedPeerIPAddresses = new HashSet<string> ();
+
         internal DiskManager DiskManager { get; }
 
         Factories Factories { get; }
@@ -265,6 +267,9 @@ namespace MonoTorrent.Client
 
                 logger.InfoFormatted (id.Connection, "[outgoing] Received handshake message with peer id '{0}'", handshake.PeerId);
                 manager.Mode.HandleMessage (id, handshake, default);
+
+                if (ShouldBanPeer (peer.Info, AttemptConnectionStage.HandshakeComplete))
+                    return ConnectionFailureReason.Banned;
             } catch {
                 return ConnectionFailureReason.HandshakeFailed;
             }
@@ -391,8 +396,8 @@ namespace MonoTorrent.Client
                 if (canReuse && !LocalPeerId.Equals (peer.Info.PeerId)) {
                     if (!manager.Peers.AvailablePeers.Contains (peer) && peer.CleanedUpCount < 5)
                         manager.Peers.AvailablePeers.Add (peer);
-                    else if (manager.Peers.BannedPeers.Contains (peer) && peer.CleanedUpCount >= 5)
-                        manager.Peers.BannedPeers.Add (peer);
+                    else if (peer.CleanedUpCount >= 5)
+                        BannedPeerIPAddresses.Add (peer.Info.ConnectionUri.Host);
                 }
             } catch (Exception ex) {
                 logger.Exception (ex, "An unexpected error occured cleaning up a connection");
@@ -444,7 +449,7 @@ namespace MonoTorrent.Client
                     CleanupSocket (manager, id);
                     return false;
                 }
-                if (ShouldBanPeer (id.Peer.Info)) {
+                if (ShouldBanPeer (id.Peer.Info, AttemptConnectionStage.HandshakeComplete)) {
                     logger.Info (id.Connection, "Peer was banned");
                     CleanupSocket (manager, id);
                     return false;
@@ -533,13 +538,19 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal bool ShouldBanPeer (PeerInfo peer)
+
+        internal bool ShouldBanPeer (PeerInfo peer, AttemptConnectionStage stage)
         {
+            if (BannedPeerIPAddresses.Count > 0 && BannedPeerIPAddresses.Contains (peer.ConnectionUri.Host))
+                return true;
+
             if (BanPeer == null)
                 return false;
 
-            var e = new AttemptConnectionEventArgs (peer);
+            var e = new AttemptConnectionEventArgs (peer, stage);
             BanPeer (this, e);
+            if (e.BanPeer)
+                BannedPeerIPAddresses.Add (peer.ConnectionUri.Host);
             return e.BanPeer;
         }
 
@@ -593,7 +604,7 @@ namespace MonoTorrent.Client
             Peer peer = manager.Peers.AvailablePeers[i];
             manager.Peers.AvailablePeers.RemoveAt (i);
 
-            if (ShouldBanPeer (peer.Info))
+            if (ShouldBanPeer (peer.Info, AttemptConnectionStage.BeforeConnectionEstablished))
                 return false;
 
             // Connect to the peer

@@ -68,6 +68,12 @@ namespace MonoTorrent.Client
         TooManyOpenConnections,
 
         /// <summary>
+        /// This peer has been banned. This can happen if the peer repeatedly sends data which fails a hashcheck, or it can happen if
+        /// the user of the library has used the <see cref="ConnectionManager.BanPeer"/> event to indicate the peer should be banned.
+        /// </summary>
+        Banned,
+
+        /// <summary>
         /// There is no clear reason why the connection attempt failed.
         /// </summary>
         Unknown,

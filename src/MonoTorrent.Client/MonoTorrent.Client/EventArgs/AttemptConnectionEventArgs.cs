@@ -33,13 +33,22 @@ namespace MonoTorrent.Client
 {
     public class AttemptConnectionEventArgs : EventArgs
     {
+        /// <summary>
+        /// Set the boolean to true if the peer should be banned and the connection closed immediately.
+        /// Default is <see langword="false"/>, which allows the connection to remain open.
+        /// </summary>
         public bool BanPeer { get; set; }
 
         public PeerInfo Peer { get; }
 
+        public AttemptConnectionStage Stage { get; }
+
         public AttemptConnectionEventArgs (PeerInfo peer)
+            : this (peer, AttemptConnectionStage.BeforeConnectionEstablished)
         {
-            Peer = peer;
         }
+
+        public AttemptConnectionEventArgs (PeerInfo peer, AttemptConnectionStage stage)
+            => (Peer, Stage) = (peer, stage);
     }
 }
