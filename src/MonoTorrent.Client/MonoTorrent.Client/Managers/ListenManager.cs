@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
             await ClientEngine.MainLoop;
             var peerInfo = new PeerInfo (e.Connection.Uri);
             try {
-                if (Engine.ConnectionManager.ShouldBanPeer (peerInfo)) {
+                if (Engine.ConnectionManager.ShouldBanPeer (peerInfo, AttemptConnectionStage.BeforeConnectionEstablished)) {
                     e.Connection.Dispose ();
                     return;
                 }
@@ -163,13 +163,12 @@ namespace MonoTorrent.Client
 
             var id = new PeerId (peer, connection, new BitField (man.Bitfield.Length).SetAll (false), infoHash) {
                 Decryptor = decryptor,
-                Encryptor = encryptor
+                Encryptor = encryptor,
+                ClientApp = new Software (message.PeerId),
             };
 
             man.Mode.HandleMessage (id, message, default);
             logger.Info (id.Connection, "Handshake successful handled");
-
-            id.ClientApp = new Software (message.PeerId);
 
             return await Engine.ConnectionManager.IncomingConnectionAcceptedAsync (man, id);
         }
