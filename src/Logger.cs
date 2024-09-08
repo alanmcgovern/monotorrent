@@ -55,7 +55,8 @@ namespace MonoTorrent.Logging
         internal void Info (IPeerConnection connection, string message)
         {
             if (Writer != null)
-                Writer.Info ($"{connection.Uri}: {message}");
+                Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {message}");
+
         }
 
         internal void InfoFormatted (string format, int p1, int p2)
@@ -97,25 +98,25 @@ namespace MonoTorrent.Logging
         internal void InfoFormatted (IPeerConnection connection, string formatString, int p1)
         {
             if (Writer != null)
-                Writer.Info ($"{connection.Uri}: {string.Format (formatString, p1)}");
+                Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {string.Format (formatString, p1)}");
         }
 
         internal void InfoFormatted (IPeerConnection connection, string formatString, int p1, int p2)
         {
             if (Writer != null)
-                Writer.Info ($"{connection.Uri}: {string.Format (formatString, p1, p2)}");
+                Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {string.Format (formatString, p1, p2)}");
         }
 
         internal void InfoFormatted (IPeerConnection connection, string formatString, object p1)
         {
             if (Writer != null)
-                Writer.Info ($"{connection.Uri}: {string.Format (formatString, p1)}");
+                Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {string.Format (formatString, p1)}");
         }
 
         internal void InfoFormatted (IPeerConnection connection, string formatString, object p1, object p2)
         {
             if (Writer != null)
-                Writer.Info ($"{connection.Uri}: {string.Format (formatString, p1, p2)}");
+                Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {string.Format (formatString, p1, p2)}");
         }
 
         internal void Error (string message)
@@ -139,7 +140,7 @@ namespace MonoTorrent.Logging
         internal void Exception (IPeerConnection connection, Exception ex, string message)
         {
             if (Writer != null)
-                Writer.Error ($"{connection.Uri}: {message}{Environment.NewLine}{ex}");
+                Writer.Error ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {message}{Environment.NewLine}{ex}");
         }
 
         internal void ExceptionFormated (Exception ex, string formatString, object p1)
