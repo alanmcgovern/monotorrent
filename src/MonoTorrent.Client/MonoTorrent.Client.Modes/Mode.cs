@@ -74,10 +74,10 @@ namespace MonoTorrent.Client.Modes
         protected Mode (TorrentManager manager, DiskManager diskManager, ConnectionManager connectionManager, EngineSettings settings, IUnchoker? unchoker = null)
         {
             Cancellation = new CancellationTokenSource ();
-            ConnectionManager = connectionManager;
-            DiskManager = diskManager;
-            Manager = manager;
-            Settings = settings;
+            ConnectionManager = connectionManager ?? throw new ArgumentNullException (nameof (connectionManager));
+            DiskManager = diskManager ?? throw new ArgumentNullException (nameof (DiskManager));
+            Manager = manager ?? throw new ArgumentNullException (nameof (manager));
+            Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 
             Unchoker = unchoker ?? new ChokeUnchokeManager (new TorrentManagerUnchokeable (manager));
         }
