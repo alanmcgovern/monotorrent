@@ -216,7 +216,8 @@ namespace MonoTorrent.Client.Modes
 
         public virtual bool ShouldConnect (Peer peer)
         {
-            return peer.LastConnectionAttempt.Elapsed >= Settings.GetConnectionRetryDelay (peer.FailedConnectionAttempts);
+            return peer.WaitUntilNextConnectionAttempt.Elapsed >= Settings.GetConnectionRetryDelay (peer.FailedConnectionAttempts)
+                && peer.WaitUntilNextConnectionAttempt.Elapsed >= Settings.GetConnectionRetryDelay (peer.CleanedUpCount);
         }
 
         protected virtual void HandleGenericExtensionMessage (PeerId id, ExtensionMessage extensionMessage)

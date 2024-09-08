@@ -84,7 +84,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The time since the last outgoing connection was attempted
         /// </summary>
-        internal ValueStopwatch LastConnectionAttempt;
+        internal ValueStopwatch WaitUntilNextConnectionAttempt;
 
         public Peer (PeerInfo peerInfo)
         {

@@ -145,7 +145,7 @@ namespace MonoTorrent.Client
             }
 
             // Always restart the the timer after the connection attempt completes
-            peer.LastConnectionAttempt.Restart ();
+            peer.WaitUntilNextConnectionAttempt.Restart ();
 
             // If the connection attempt failed, decide what to do next. Drop the peer or retry it later.
             if (failureReason.HasValue) {
@@ -441,6 +441,7 @@ namespace MonoTorrent.Client
             if (manager.Peers.ConnectedPeers.Remove (id))
                 Interlocked.Decrement (ref openConnections);
             id.Peer.CleanedUpCount++;
+            id.Peer.WaitUntilNextConnectionAttempt.Restart ();
 
             CleanupSocket (manager, id.Peer, id.Connection);
 
@@ -455,6 +456,7 @@ namespace MonoTorrent.Client
         internal void CleanupSocket (TorrentManager manager, Peer peer, IPeerConnection connection)
         {
             try {
+                logger.Info (connection, "Closing connection");
                 // We can reuse this peer if the connection says so and it's not marked as inactive
                 bool canReuse = (connection?.CanReconnect ?? false)
                     && !manager.InactivePeerManager.InactivePeerList.Contains (peer.Info.ConnectionUri)
