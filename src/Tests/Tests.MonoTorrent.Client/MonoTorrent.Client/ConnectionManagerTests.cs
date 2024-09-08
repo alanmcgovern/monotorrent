@@ -359,11 +359,33 @@ namespace MonoTorrent.Client
             seederPeer = await seederConnected.Task.WithTimeout ();
             leecherPeer = await leecherConnected.Task.WithTimeout ();
 
+            // Ensure we haven't double-disposed the peer
             Assert.AreEqual (1, seederPeer.Peer.CleanedUpCount);
 
             await seeder.StopAsync ();
             await leecher.StopAsync ();
         }
 
+        [Test]
+        public async Task DisposeTwice ()
+        {
+            var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
+            var seeder = EngineHelpers.Create ();
+            var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
+
+            var peerId = PeerId.CreateNull (seederManager.Bitfield.Length, seederManager.InfoHashes.V1OrV2.Truncate ());
+
+            // Each active connection will only be disposed once, even if it is cleaned up multiple times.
+            // It's normal for there to be at least two calls two cleanup - one from any ongoing 'SendAsync' call
+            // and one from ongoing 'ReceiveAsync' call.
+            for (int i = 0; i < 3; i++)
+                seeder.ConnectionManager.CleanupSocket (seederManager, peerId);
+            Assert.AreEqual (1, peerId.Peer.CleanedUpCount);
+
+            peerId = new PeerId (peerId.Peer, NullConnection.Outgoing, peerId.MutableBitField, peerId.ExpectedInfoHash, peerId.Encryptor, peerId.Decryptor, peerId.ClientApp);
+            for (int i = 0; i < 3; i++)
+                seeder.ConnectionManager.CleanupSocket (seederManager, peerId);
+            Assert.AreEqual (2, peerId.Peer.CleanedUpCount);
+        }
     }
 }

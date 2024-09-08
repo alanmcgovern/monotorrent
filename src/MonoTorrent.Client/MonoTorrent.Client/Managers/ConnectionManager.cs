@@ -434,47 +434,44 @@ namespace MonoTorrent.Client
 
         internal void CleanupSocket (TorrentManager manager, PeerId id)
         {
-
-            manager.PieceManager.CancelRequests (id);
-            if (!id.AmChoking)
-                manager.UploadingTo--;
-            if (manager.Peers.ConnectedPeers.Remove (id))
-                Interlocked.Decrement (ref openConnections);
-            id.Peer.CleanedUpCount++;
-            id.Peer.WaitUntilNextConnectionAttempt.Restart ();
-
-            CleanupSocket (manager, id.Peer, id.Connection);
+            // We might dispose the socket from an async send *and* an async receive call.
+            if (id.Disposed)
+                return;
 
             try {
-                manager.Mode.HandlePeerDisconnected (id);
-            } catch (Exception ex) {
-                logger.Exception (ex, "An unexpected error occured calling HandlePeerDisconnected");
-            }
-            id.Dispose ();
-        }
+                manager.PieceManager.CancelRequests (id);
+                if (!id.AmChoking)
+                    manager.UploadingTo--;
+                if (manager.Peers.ConnectedPeers.Remove (id))
+                    Interlocked.Decrement (ref openConnections);
+                id.Peer.CleanedUpCount++;
+                id.Peer.WaitUntilNextConnectionAttempt.Restart ();
 
-        internal void CleanupSocket (TorrentManager manager, Peer peer, IPeerConnection connection)
-        {
-            try {
-                logger.Info (connection, "Closing connection");
+                logger.Info (id.Connection, "Closing connection");
                 // We can reuse this peer if the connection says so and it's not marked as inactive
-                bool canReuse = (connection?.CanReconnect ?? false)
-                    && !manager.InactivePeerManager.InactivePeerList.Contains (peer.Info.ConnectionUri)
-                    && !manager.Engine!.PeerId.Equals (peer.Info.PeerId)
-                    && Settings.GetConnectionRetryDelay(peer.FailedConnectionAttempts).HasValue;
+                bool canReuse = (id.Connection.CanReconnect)
+                    && !manager.InactivePeerManager.InactivePeerList.Contains (id.Peer.Info.ConnectionUri)
+                    && !manager.Engine!.PeerId.Equals (id.Peer.Info.PeerId)
+                    && Settings.GetConnectionRetryDelay (id.Peer.FailedConnectionAttempts).HasValue;
 
-                manager.Peers.ActivePeers.Remove (peer);
+                manager.Peers.ActivePeers.Remove (id.Peer);
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
-                if (canReuse && !LocalPeerId.Equals (peer.Info.PeerId)) {
-                    if (!manager.Peers.AvailablePeers.Contains (peer) && peer.CleanedUpCount < 5)
-                        manager.Peers.AvailablePeers.Add (peer);
-                    else if (peer.CleanedUpCount >= 5)
-                        BannedPeerIPAddresses.Add (peer.Info.ConnectionUri.Host);
+                if (canReuse && !LocalPeerId.Equals (id.Peer.Info.PeerId)) {
+                    if (!manager.Peers.AvailablePeers.Contains (id.Peer) && id.Peer.CleanedUpCount < 5)
+                        manager.Peers.AvailablePeers.Add (id.Peer);
+                    else if (id.Peer.CleanedUpCount >= 5)
+                        BannedPeerIPAddresses.Add (id.Peer.Info.ConnectionUri.Host);
                 }
             } catch (Exception ex) {
                 logger.Exception (ex, "An unexpected error occured cleaning up a connection");
             } finally {
+                id.Dispose ();
+            }
+            try {
+                manager.Mode.HandlePeerDisconnected (id);
+            } catch (Exception ex) {
+                logger.Exception (ex, "An unexpected error occured calling HandlePeerDisconnected");
             }
         }
 
