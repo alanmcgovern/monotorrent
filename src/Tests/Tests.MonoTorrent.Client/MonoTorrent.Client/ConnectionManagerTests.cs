@@ -160,6 +160,31 @@ namespace MonoTorrent.Client
             Assert.IsTrue (fake.Disposed);
         }
 
+        [Test]
+        public async Task ConnectToSelf ()
+        {
+            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowLocalPeerDiscovery = false,
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
+            }.ToSettings ());
+
+            var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
+            var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
+
+            var ready = seederManager.WaitForState (TorrentState.Metadata);
+            await seederManager.StartAsync ();
+            await ready.WithTimeout ();
+
+            var failedPeer = new TaskCompletionSource<ConnectionAttemptFailedEventArgs> ();
+            seederManager.ConnectionAttemptFailed += (o, e) => failedPeer.SetResult (e);
+
+            // Connect to self
+            await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{seeder.PeerListeners[0].LocalEndPoint.Port}")));
+
+            var failedConnection = await failedPeer.Task;
+            Assert.AreEqual (ConnectionFailureReason.ConnectedToSelf, failedConnection.Reason);
+        }
 
         [Test]
         public async Task EncryptionTiers_LastMatches ([Values (true, false)] bool addToSeeder)

@@ -127,11 +127,6 @@ namespace MonoTorrent.Client
                 return false;
             }
 
-            if (Engine.PeerId.Equals (message.PeerId)) {
-                logger.Info (connection, "Unintentionally connected to self. Dropping connection...");
-                return false;
-            }
-
             // If we're forcing encrypted connections and this is in plain-text, close it!
             if (encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.Contains (EncryptionType.PlainText)) {
                 logger.Info (connection, "Connection is unencrypted and plain text connections are disabled via the engine Settings. Dropping connection...");
