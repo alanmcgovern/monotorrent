@@ -568,6 +568,10 @@ namespace MonoTorrent.Client.Modes
                 AppendFastPieces (id, bundle);
 
                 id.MessageQueue.Enqueue (bundle, releaser);
+
+                foreach (var peer in Manager.Peers.ConnectedPeers)
+                    if (peer != id && peer.PeerExchangeManager != null)
+                        peer.PeerExchangeManager.OnAdd (id);
             } else {
                 ConnectionManager.CleanupSocket (Manager, id);
             }
@@ -575,6 +579,10 @@ namespace MonoTorrent.Client.Modes
 
         public virtual void HandlePeerDisconnected (PeerId id)
         {
+            foreach (var peer in Manager.Peers.ConnectedPeers)
+                if (peer != id && peer.PeerExchangeManager != null)
+                    peer.PeerExchangeManager.OnDrop (id);
+
             Manager.RaisePeerDisconnected (id);
         }
 

@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class is used to send each minute a peer excahnge message to peer who have enable this protocol
     /// </summary>
-    class PeerExchangeManager : IDisposable
+    class PeerExchangeManager
     {
         #region Member Variables
 
@@ -49,7 +49,6 @@ namespace MonoTorrent.Client
 
         readonly Queue<PeerId> added6Peers;
         readonly Queue<PeerId> dropped6Peers;
-        bool disposed;
 
         // Peers are about 7 bytes each (if you include the 'dotf' data)
         // Calculate the max peers we can fit in the buffer.
@@ -65,32 +64,33 @@ namespace MonoTorrent.Client
 
         internal PeerExchangeManager (IPeerExchangeSource manager, PeerId id)
         {
-            Manager = manager;
-            PeerId = id;
+            Manager = manager ?? throw new ArgumentNullException(nameof(manager));
+            PeerId = id ?? throw new ArgumentNullException(nameof(id));
 
             addedPeers = new Queue<PeerId> ();
             droppedPeers = new Queue<PeerId> ();
 
             added6Peers = new Queue<PeerId> ();
             dropped6Peers = new Queue<PeerId> ();
-            manager.PeerConnected += OnAdd;
         }
 
-        internal void OnAdd (object? source, PeerConnectedEventArgs args)
+        internal void OnAdd (PeerId peer)
         {
+            ClientEngine.MainLoop.CheckThread ();
             // IPv4 peers will share with IPv4 peers, IPv6 share with 
-            if (args.Peer.Uri.Scheme == "ipv4")
-                addedPeers.Enqueue (args.Peer);
-            else if (args.Peer.Uri.Scheme == "ipv6")
-                added6Peers.Enqueue (args.Peer);
+            if (peer.Peer.Info.ConnectionUri.Scheme == "ipv4")
+                addedPeers.Enqueue (peer);
+            else if (peer.Peer.Info.ConnectionUri.Scheme == "ipv6")
+                added6Peers.Enqueue (peer);
         }
 
-        internal void OnDrop (object? source, PeerDisconnectedEventArgs args)
+        internal void OnDrop (PeerId peer)
         {
-            if (args.Peer.Uri.Scheme == "ipv4")
-                droppedPeers.Enqueue (args.Peer);
-            else if (args.Peer.Uri.Scheme == "ipv6")
-                dropped6Peers.Enqueue (args.Peer);
+            ClientEngine.MainLoop.CheckThread ();
+            if (peer.Peer.Info.ConnectionUri.Scheme == "ipv4")
+                droppedPeers.Enqueue (peer);
+            else if (peer.Peer.Info.ConnectionUri.Scheme == "ipv6")
+                dropped6Peers.Enqueue (peer);
         }
         #endregion
 
@@ -162,15 +162,6 @@ namespace MonoTorrent.Client
                     throw new NotSupportedException ();
 
             return (added, addedDotF, dropped, memoryReleaser);
-        }
-
-        public void Dispose ()
-        {
-            if (disposed)
-                return;
-
-            disposed = true;
-            Manager.PeerConnected -= OnAdd;
         }
 
         #endregion
