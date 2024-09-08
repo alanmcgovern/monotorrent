@@ -76,7 +76,10 @@ namespace MonoTorrent.Connections.Tracker
 
                 var port = parameters.GetReportedAddress (AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6").port;
                 AnnounceResponse? announceResponse = null;
-                foreach (var infoHash in new[] { parameters.InfoHashes.V1!, parameters.InfoHashes.V2! }.Where (t => t != null)) {
+                foreach (var infoHash in new[] { parameters.InfoHashes.V1, parameters.InfoHashes.V2 }) {
+                    if (infoHash is null)
+                        continue;
+
                     var message = new AnnounceMessage (DateTime.Now.GetHashCode (), connectionId, parameters, infoHash, port);
                     (var response, var errorString) = await SendAndReceiveAsync (message);
 
@@ -96,7 +99,7 @@ namespace MonoTorrent.Connections.Tracker
                         throw new NotSupportedException ($"There was no error and no {nameof (AnnounceResponseMessage)} was received");
                     }
                 }
-                return announceResponse!;
+                return announceResponse ?? throw new Exception ("There should have been at least one infohash to announce with");
             } catch (OperationCanceledException) {
                 ConnectionIdTask = null;
                 return new AnnounceResponse (TrackerState.Offline, failureMessage: "Announce could not be completed");

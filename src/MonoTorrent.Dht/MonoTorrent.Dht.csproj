@@ -9,6 +9,7 @@
     <UseCache>true</UseCache>
     <UseEnsureThreadPool>true</UseEnsureThreadPool>
     <UseMainLoop>true</UseMainLoop>
+    <UseNullabilityHelpers>true</UseNullabilityHelpers>
     <UseSimpleSpinLock>true</UseSimpleSpinLock>
     <UseThreadSwitcher>true</UseThreadSwitcher>
     <UseValueStopWatch>true</UseValueStopWatch>

@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 using MonoTorrent.BEncoding;
 
@@ -61,12 +62,12 @@ namespace MonoTorrent.Dht.Messages
 
         public void RegisterSend (QueryMessage message)
         {
-            messages.Add (message.TransactionId, message);
+            messages.Add (message.TransactionId ?? throw new ArgumentException ("The message must have a transaction id set"), message);
         }
 
         public bool UnregisterSend (QueryMessage message)
         {
-            return messages.Remove (message.TransactionId);
+            return messages.Remove (message.TransactionId ?? throw new ArgumentException("The message must have a transaction id set"));
         }
 
         public DhtMessage DecodeMessage (BEncodedDictionary dictionary)
@@ -74,15 +75,15 @@ namespace MonoTorrent.Dht.Messages
             if (!TryDecodeMessage (dictionary, out DhtMessage? message, out string? error))
                 throw new MessageException (ErrorCode.GenericError, error!);
 
-            return message!;
+            return message;
         }
 
-        public bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage? message)
+        public bool TryDecodeMessage (BEncodedDictionary dictionary, [NotNullWhen (true)] out DhtMessage? message)
         {
             return TryDecodeMessage (dictionary, out message, out string? error);
         }
 
-        public bool TryDecodeMessage (BEncodedDictionary dictionary, out DhtMessage? message, out string? error)
+        public bool TryDecodeMessage (BEncodedDictionary dictionary, [NotNullWhen(true)] out DhtMessage? message, out string? error)
         {
             message = null;
             error = null;

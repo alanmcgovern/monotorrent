@@ -395,7 +395,7 @@ namespace MonoTorrent
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
                 switch (keypair.Key.Text) {
                     case ("source"):
-                        Source = keypair.Value.ToString ()!;
+                        Source = keypair.Value.ToString () ?? "";
                         break;
 
                     case ("sha1"):
@@ -407,23 +407,21 @@ namespace MonoTorrent
                         break;
 
                     case ("publisher-url.utf-8"):
-                        if (keypair.Value.ToString ()!.Length > 0)
-                            PublisherUrl = keypair.Value.ToString ()!;
+                        PublisherUrl = ((BEncodedString) keypair.Value).Text;
                         break;
 
                     case ("publisher-url"):
-                        if ((string.IsNullOrEmpty (PublisherUrl)) && (keypair.Value.ToString ()!.Length > 0))
-                            PublisherUrl = keypair.Value.ToString ()!;
+                        if (string.IsNullOrEmpty (PublisherUrl))
+                            PublisherUrl = ((BEncodedString) keypair.Value).Text;
                         break;
 
                     case ("publisher.utf-8"):
-                        if (keypair.Value.ToString ()!.Length > 0)
-                            Publisher = keypair.Value.ToString ()!;
+                        Publisher = keypair.Value.ToString () ?? "";
                         break;
 
                     case ("publisher"):
-                        if ((string.IsNullOrEmpty (Publisher)) && (keypair.Value.ToString ()!.Length > 0))
-                            Publisher = keypair.Value.ToString ()!;
+                        if (string.IsNullOrEmpty (Publisher))
+                            Publisher = keypair.Value.ToString () ?? "";
                         break;
 
                     case ("files"):
@@ -437,13 +435,12 @@ namespace MonoTorrent
                         break;
 
                     case ("name.utf-8"):
-                        if (keypair.Value.ToString ()!.Length > 0)
-                            Name = keypair.Value.ToString ()!;
+                        Name = keypair.Value.ToString () ?? "";
                         break;
 
                     case ("name"):
-                        if ((string.IsNullOrEmpty (Name)) && (keypair.Value.ToString ()!.Length > 0))
-                            Name = keypair.Value.ToString ()!;
+                        if (string.IsNullOrEmpty (Name))
+                            Name = keypair.Value.ToString () ?? "";
                         break;
 
                     case ("piece length"):  // Already handled
@@ -462,11 +459,11 @@ namespace MonoTorrent
             }
 
             // fixup single file v1 file list
-            if (hasV1Data && v1Files.Count == 0)   // Not a multi-file v1 torrent
+            if (hasV1Data && v1Files.Count == 0 && !(hashesV1 is null))   // Not a multi-file v1 torrent
             {
                 long length = long.Parse (dictionary["length"].ToString ()!);
                 string path = Name;
-                int endPiece = Math.Min (hashesV1!.Count - 1, (int) ((length + (PieceLength - 1)) / PieceLength));
+                int endPiece = Math.Min (hashesV1.Count - 1, (int) ((length + (PieceLength - 1)) / PieceLength));
                 v1Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0, TorrentFileAttributes.None, 0) });
             }
 
@@ -537,17 +534,17 @@ namespace MonoTorrent
                         if (torrentInformation.ContainsKey ("announce-list"))
                             break;
                         AnnounceUrls = new List<IList<string>> {
-                            new List<string> { keypair.Value.ToString ()! }.AsReadOnly ()
+                            new List<string> { keypair.Value.ToString () ?? "" }.Where (t => !string.IsNullOrEmpty(t)).ToList ().AsReadOnly ()
                         }.AsReadOnly ();
                         break;
 
                     case ("creation date"):
                         try {
                             try {
-                                CreationDate = UnixEpoch.AddSeconds (long.Parse (keypair.Value.ToString ()!));
+                                CreationDate = UnixEpoch.AddSeconds (long.Parse (keypair.Value.ToString () ?? ""));
                             } catch (Exception e) {
                                 if (e is ArgumentOutOfRangeException)
-                                    CreationDate = UnixEpoch.AddMilliseconds (long.Parse (keypair.Value.ToString ()!));
+                                    CreationDate = UnixEpoch.AddMilliseconds (long.Parse (keypair.Value.ToString () ?? ""));
                                 else
                                     throw;
                             }
@@ -567,30 +564,29 @@ namespace MonoTorrent
                         break;
 
                     case ("comment.utf-8"):
-                        if (keypair.Value.ToString ()!.Length != 0)
-                            Comment = keypair.Value.ToString ()!;       // Always take the UTF-8 version
+                        Comment = keypair.Value.ToString () ?? "";       // Always take the UTF-8 version
                         break;                                          // even if there's an existing value
 
                     case ("comment"):
                         if (string.IsNullOrEmpty (Comment))
-                            Comment = keypair.Value.ToString ()!;
+                            Comment = keypair.Value.ToString () ?? "";
                         break;
 
                     case ("publisher-url.utf-8"):                       // Always take the UTF-8 version
-                        PublisherUrl = keypair.Value.ToString ()!;      // even if there's an existing value
+                        PublisherUrl = ((BEncodedString) keypair.Value).Text;      // even if there's an existing value
                         break;
 
                     case ("publisher-url"):
                         if (string.IsNullOrEmpty (PublisherUrl))
-                            PublisherUrl = keypair.Value.ToString ()!;
+                            PublisherUrl = ((BEncodedString) keypair.Value).Text;
                         break;
 
                     case ("created by"):
-                        CreatedBy = keypair.Value.ToString ()!;
+                        CreatedBy = keypair.Value.ToString () ?? "";
                         break;
 
                     case ("encoding"):
-                        Encoding = keypair.Value.ToString ()!;
+                        Encoding = keypair.Value.ToString () ?? "";
                         break;
 
                     case ("info"):
@@ -611,7 +607,7 @@ namespace MonoTorrent
                                 var tier = new List<string> (bencodedTier.Count);
 
                                 for (int k = 0; k < bencodedTier.Count; k++)
-                                    tier.Add (bencodedTier[k].ToString ()!);
+                                    tier.Add (((BEncodedString) bencodedTier[k]).Text);
 
                                 var resultTier = new List<string> ();
                                 for (int k = 0; k < tier.Count; k++)
@@ -703,7 +699,7 @@ namespace MonoTorrent
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
                     switch (keypair.Key.Text) {
                         case ("attr"):
-                            tup.attributes = AttrStringToAttributesEnum (keypair.Value.ToString ()!);
+                            tup.attributes = AttrStringToAttributesEnum (((BEncodedString) keypair.Value).Text);
                             break;
 
                         case ("sha1"):
@@ -715,7 +711,7 @@ namespace MonoTorrent
                             break;
 
                         case ("length"):
-                            tup.length = long.Parse (keypair.Value.ToString ()!);
+                            tup.length = ((BEncodedNumber) keypair.Value).Number;
                             break;
 
                         case ("path.utf-8"):

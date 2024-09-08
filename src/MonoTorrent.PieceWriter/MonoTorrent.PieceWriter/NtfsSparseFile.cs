@@ -58,15 +58,13 @@ namespace MonoTorrent.PieceWriter
 
         static bool SupportsSparse = true;
 
-        public static void CreateSparse (string filename, long length)
+        public static void CreateSparse (string fullPath, long length)
         {
             if (!SupportsSparse)
                 return;
 
-            // Ensure we have the full path
-            filename = Path.GetFullPath (filename);
             try {
-                if (!CanCreateSparse (filename))
+                if (!CanCreateSparse (fullPath))
                     return;
 
                 // Create a file with the sparse flag enabled
@@ -77,7 +75,7 @@ namespace MonoTorrent.PieceWriter
                 uint attributes = 0x00000080;     // Normal
                 uint creation = 1;                // Only create if new
 
-                using SafeFileHandle handle = CreateFileW (filename, access, sharing, IntPtr.Zero, creation, attributes, IntPtr.Zero);
+                using SafeFileHandle handle = CreateFileW (fullPath, access, sharing, IntPtr.Zero, creation, attributes, IntPtr.Zero);
                 // If we couldn't create the file, bail out
                 if (handle.IsInvalid)
                     return;
@@ -106,15 +104,18 @@ namespace MonoTorrent.PieceWriter
                 // Ignore for now. Maybe if i keep hitting this i should abort future attemts
             }
         }
+
         static bool CanCreateSparse (string volume)
         {
             // Ensure full path is supplied
-            volume = Path.GetPathRoot (volume)!;
+            var root = Path.GetPathRoot (volume);
+            if (root is null)
+                return false;
 
             var volumeName = new StringBuilder (MAX_PATH);
             var systemName = new StringBuilder (MAX_PATH);
 
-            bool result = GetVolumeInformationW (volume, volumeName, MAX_PATH, out _, out _, out uint fsFlags, systemName, MAX_PATH);
+            bool result = GetVolumeInformationW (root, volumeName, MAX_PATH, out _, out _, out uint fsFlags, systemName, MAX_PATH);
             return result && (fsFlags & FILE_SUPPORTS_SPARSE_FILES) == FILE_SUPPORTS_SPARSE_FILES;
         }
 

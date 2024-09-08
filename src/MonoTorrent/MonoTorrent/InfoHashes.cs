@@ -71,7 +71,7 @@ namespace MonoTorrent
         /// If the V1 hash is non-null, then it is returned. Otherwise the V2 hash is returned.
         /// As a result, the V1 hash will be returned if both the V1 and V2 hash are non-null.
         /// </summary>
-        public InfoHash V1OrV2 => (V1 ?? V2)!;
+        public InfoHash V1OrV2 => (V1 ?? V2) ?? throw new InvalidOperationException ("Either the V1 or V2 InfoHash must be non-null");
 
         /// <summary>
         /// Creates an 'InfoHashes' object using the BitTorrent V1 and/or BitTorrent V2 info hashes.
@@ -116,7 +116,7 @@ namespace MonoTorrent
             && other.V2 == V2;
 
         public override int GetHashCode ()
-            => (V1 ?? V2)!.GetHashCode ();
+            => V1OrV2.GetHashCode ();
 
         public int GetMaxByteCount ()
             => (V1 is null ? 0 : 20) + (V2 is null ? 0 : 32);

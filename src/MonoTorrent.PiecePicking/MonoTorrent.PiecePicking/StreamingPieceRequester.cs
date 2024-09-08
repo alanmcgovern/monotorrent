@@ -188,7 +188,7 @@ namespace MonoTorrent.PiecePicking
             // only be made to pieces which *can* be requested? Why not!
             // FIXME add a test for this.
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
-                BitField filtered = null!;
+                BitField? filtered = null;
                 while (peer.CanRequestMorePieces && peer.AmRequestingPiecesCount < maxTotalRequests) {
                     filtered ??= GenerateAlreadyHaves ().Not ().And (available);
                     Span<PieceSegment> buffer = stackalloc PieceSegment[maxTotalRequests - peer.AmRequestingPiecesCount];

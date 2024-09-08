@@ -30,11 +30,14 @@
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Dht.Messages
 {
     sealed class AnnouncePeer : QueryMessage
     {
+        static ILogger Logger = LoggerFactory.Create (nameof (AnnouncePeer));
+
         static readonly BEncodedString InfoHashKey = new BEncodedString ("info_hash");
         static readonly BEncodedString QueryName = new BEncodedString ("announce_peer");
         static readonly BEncodedString PortKey = new BEncodedString ("port");
@@ -71,6 +74,11 @@ namespace MonoTorrent.Dht.Messages
 
             if (!engine.Torrents.ContainsKey (InfoHash))
                 engine.Torrents.Add (InfoHash, new List<Node> ());
+
+            if (TransactionId is null) {
+                Logger.Error ("Transaction id was unexpectedly missing");
+                return;
+            }
 
             DhtMessage response;
             if (engine.TokenManager.VerifyToken (node, Token)) {

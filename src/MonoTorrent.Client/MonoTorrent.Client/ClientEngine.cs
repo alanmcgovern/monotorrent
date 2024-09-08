@@ -907,8 +907,9 @@ namespace MonoTorrent.Client
             // concurrently.
             using (await dhtNodeLocker.EnterAsync ().ConfigureAwait (false)) {
                 var savePath = Settings.GetDhtNodeCacheFilePath ();
-                var parentDir = Path.GetDirectoryName (savePath)!;
-                Directory.CreateDirectory (parentDir);
+                var parentDir = Path.GetDirectoryName (savePath);
+                if (!(parentDir is null))
+                    Directory.CreateDirectory (parentDir);
                 File.WriteAllBytes (savePath, nodes.ToArray ());
             }
         }

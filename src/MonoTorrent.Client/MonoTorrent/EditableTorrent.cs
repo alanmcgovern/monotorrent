@@ -78,7 +78,7 @@ namespace MonoTorrent
         }
 
         protected BEncodedDictionary InfoDict {
-            get => GetDictionary (Metadata, InfoKey)!;
+            get => GetDictionary (Metadata, InfoKey) ?? throw new InvalidOperationException ("The 'info' dictionary is unexpectedly missing");
             private set => SetDictionary (Metadata, InfoKey, value);
         }
 
@@ -127,6 +127,9 @@ namespace MonoTorrent
 
         void Initialise ()
         {
+            if (!Metadata.ContainsKey (InfoKey))
+                Metadata[InfoKey] = new BEncodedDictionary ();
+
             if (!Metadata.TryGetValue (AnnounceListKey, out BEncodedValue? value)) {
                 value = new BEncodedList ();
                 Metadata.Add (AnnounceListKey, value);
@@ -138,9 +141,6 @@ namespace MonoTorrent
 
             if (string.IsNullOrEmpty (Encoding))
                 Encoding = "UTF-8";
-
-            if (InfoDict == null)
-                InfoDict = new BEncodedDictionary ();
         }
 
         protected void CheckCanEditSecure ()

@@ -73,7 +73,7 @@ namespace MonoTorrent.Trackers
             if (value == null)
                 throw new ArgumentNullException (nameof (value));
 
-            queryParams[key] = value.ToString ()!;
+            queryParams[key] = value.ToString () ?? throw new ArgumentException("Calling ToString on the object should not be null", nameof (value));
             return this;
         }
 

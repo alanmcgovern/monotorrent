@@ -28,11 +28,14 @@
 
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Logging;
 
 namespace MonoTorrent.Dht.Messages
 {
     sealed class GetPeers : QueryMessage
     {
+        static ILogger Logger = LoggerFactory.Create (nameof (GetPeers));
+
         static readonly BEncodedString InfoHashKey = new BEncodedString ("info_hash");
         static readonly BEncodedString QueryName = new BEncodedString ("get_peers");
 
@@ -58,6 +61,11 @@ namespace MonoTorrent.Dht.Messages
         public override void Handle (DhtEngine engine, Node node)
         {
             base.Handle (engine, node);
+
+            if (TransactionId is null) {
+                Logger.Error ("Transaction id was unexpectedly missing");
+                return;
+            }
 
             BEncodedString token = engine.TokenManager.GenerateToken (node);
             var response = new GetPeersResponse (engine.RoutingTable.LocalNodeId, TransactionId, token);

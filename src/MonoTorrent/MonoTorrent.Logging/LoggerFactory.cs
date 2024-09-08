@@ -40,7 +40,7 @@ namespace MonoTorrent.Logging
         /// </summary>
         public static IRootLogger RootLogger { get; private set; } = new NullLogger ();
 
-        public static ILogger? Create (string name)
+        public static ILogger Create (string name)
             => new Logger (name);
 
         public static void Register (IRootLogger rootLogger)

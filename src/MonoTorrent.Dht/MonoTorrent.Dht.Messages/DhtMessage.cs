@@ -55,8 +55,8 @@ namespace MonoTorrent.Dht.Messages
 
         public BEncodedString MessageType => (BEncodedString) properties[MessageTypeKey];
 
-        public BEncodedValue TransactionId {
-            get => properties.GetValueOrDefault (TransactionIdKey)!; // FIXME: Can this be made true without the null forgiving operator?
+        public BEncodedValue? TransactionId {
+            get => properties.GetValueOrDefault (TransactionIdKey);
             set {
                 if (value == null)
                     properties.Remove (TransactionIdKey);
