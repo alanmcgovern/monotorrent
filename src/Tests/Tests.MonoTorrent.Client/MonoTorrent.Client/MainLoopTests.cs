@@ -30,16 +30,6 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void TaskTest ()
-        {
-            Assert.AreEqual (5, loop.QueueWait (() => 5), "#1");
-
-            ManualResetEvent handle = new ManualResetEvent (false);
-            loop.QueueWait (() => handle.Set ());
-            Assert.IsTrue (handle.WaitOne (5000, true), "#2");
-        }
-
-        [Test]
         public void RepeatedTask ()
         {
             //Console.WriteLine("Starting");

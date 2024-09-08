@@ -119,13 +119,6 @@ namespace MonoTorrent.Client
             Send(t => action(), null);
         }
 
-        public object QueueWait(Func<object> func)
-        {
-            object? result = null;
-            Send(t => result = func(), null);
-            return result!;
-        }
-
         public void QueueTimeout(TimeSpan span, Func<bool> task)
         {
             if (span.TotalMilliseconds < 1)
