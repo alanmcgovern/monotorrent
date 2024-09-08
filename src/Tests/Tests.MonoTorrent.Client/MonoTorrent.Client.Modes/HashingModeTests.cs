@@ -33,6 +33,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Trackers;
 
 using NUnit.Framework;
@@ -75,7 +76,7 @@ namespace MonoTorrent.Client.Modes
             DiskManager = Manager.Engine.DiskManager;
             ConnectionManager = Manager.Engine.ConnectionManager;
 
-            Peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://123.123.123.123:12345"))), conn.Outgoing, new BitField (Manager.Bitfield.Length).SetAll (true), Manager.InfoHashes.V1OrV2) {
+            Peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://123.123.123.123:12345"))), conn.Outgoing, new BitField (Manager.Bitfield.Length).SetAll (true), Manager.InfoHashes.V1OrV2, PlainTextEncryption.Instance, PlainTextEncryption.Instance, Software.Synthetic) {
                 IsChoking = false,
                 AmInterested = true,
             };

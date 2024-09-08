@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages.Peer;
 
 using NUnit.Framework;
@@ -259,10 +260,10 @@ namespace MonoTorrent.Client
                 new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5355"), new string ('c', 20))),
                 new Peer (new PeerInfo (new Uri ("ipv4://127.0.0.5:5356"), new string ('d', 20)))
             };
-            PeerId a = new PeerId (peers[0], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()), rig.Manager.InfoHashes.V1OrV2);
-            PeerId b = new PeerId (peers[1], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()), rig.Manager.InfoHashes.V1OrV2);
-            PeerId c = new PeerId (peers[2], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()), rig.Manager.InfoHashes.V1OrV2);
-            PeerId d = new PeerId (peers[3], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()), rig.Manager.InfoHashes.V1OrV2);
+            PeerId a = new PeerId (peers[0], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()), rig.Manager.InfoHashes.V1OrV2, PlainTextEncryption.Instance, PlainTextEncryption.Instance, Software.Synthetic);
+            PeerId b = new PeerId (peers[1], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()), rig.Manager.InfoHashes.V1OrV2, PlainTextEncryption.Instance, PlainTextEncryption.Instance, Software.Synthetic);
+            PeerId c = new PeerId (peers[2], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()), rig.Manager.InfoHashes.V1OrV2, PlainTextEncryption.Instance, PlainTextEncryption.Instance, Software.Synthetic);
+            PeerId d = new PeerId (peers[3], NullConnection.Incoming, new BitField (rig.Manager.Torrent.PieceCount ()), rig.Manager.InfoHashes.V1OrV2, PlainTextEncryption.Instance, PlainTextEncryption.Instance, Software.Synthetic);
 
             unchoker.PeerDisconnected (a);
             Assert.AreEqual (1, unchoker.PeerCount, "#1");

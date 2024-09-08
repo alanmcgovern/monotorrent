@@ -52,7 +52,6 @@ namespace MonoTorrent.Client.Modes
     abstract class Mode : IMode
     {
         static readonly Logger logger = Logger.Create (nameof (Mode));
-        static readonly SHA1 AllowedFastHasher = SHA1.Create ();
 
         bool hashingPendingFiles;
         ValueStopwatch lastSendHaveMessage;
@@ -225,49 +224,9 @@ namespace MonoTorrent.Client.Modes
             // Do nothing
         }
 
-        protected virtual void HandleHandshakeMessage (PeerId id, HandshakeMessage message)
+        void HandleHandshakeMessage (PeerId id, HandshakeMessage message)
         {
-            if (!message.ProtocolString.Equals (Constants.ProtocolStringV100)) {
-                logger.InfoFormatted (id.Connection, "Invalid protocol in handshake: {0}", message.ProtocolString);
-                throw new ProtocolException ("Invalid protocol string");
-            }
-
-            // If we got the peer as a "compact" peer, then the peerid will be empty. In this case
-            // we just copy the one that is in the handshake.
-            if (BEncodedString.IsNullOrEmpty (id.Peer.Info.PeerId))
-                id.Peer.UpdatePeerId (message.PeerId);
-
-            // If the infohash doesn't match, dump the connection
-            if (!Manager.InfoHashes.Contains (message.InfoHash)) {
-                logger.Info (id.Connection, "HandShake.Handle - Invalid infohash");
-                throw new TorrentException ("Invalid infohash. Not tracking this torrent");
-            }
-
-            // If the peer id's don't match, dump the connection. This is due to peers faking usually
-            if (!id.Peer.Info.PeerId.Equals (message.PeerId)) {
-                if (Manager.Settings.RequirePeerIdToMatch) {
-                    // Several prominent clients randomise peer ids (at the least, everything based on libtorrent)
-                    // so closing connections when the peer id does not match risks blocking compatibility with many
-                    // clients. Additionally, MonoTorrent has long been configured to default to compact tracker responses
-                    // so the odds of having the peer ID are slim.
-                    logger.InfoFormatted (id.Connection, "HandShake.Handle - Invalid peerid. Expected '{0}' but received '{1}'", id.Peer.Info.PeerId, message.PeerId);
-                    throw new TorrentException ("Supplied PeerID didn't match the one the tracker gave us");
-                } else {
-                    // We don't care about the mismatch for public torrents. uTorrent randomizes its PeerId, as do other clients.
-                    id.Peer.UpdatePeerId (message.PeerId);
-                }
-            }
-
-            // Attempt to parse the application that the peer is using
-            id.ClientApp = new Software (message.PeerId);
-            id.SupportsFastPeer = message.SupportsFastPeer;
-            id.SupportsLTMessages = message.SupportsExtendedMessaging;
-
-            // If they support fast peers, create their list of allowed pieces that they can request off me
-            if (id.SupportsFastPeer && id.AddressBytes.Length > 0 && Manager != null && Manager.HasMetadata) {
-                lock (AllowedFastHasher)
-                    id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes.Span, Manager.InfoHashes, (uint) Manager.Torrent!.PieceCount);
-            }
+            throw new NotSupportedException ("The handshake message should be the first message received.");
         }
 
         protected virtual async void HandlePeerExchangeMessage (PeerId id, PeerExchangeMessage message)
@@ -750,11 +709,8 @@ namespace MonoTorrent.Client.Modes
                     if (connection == null)
                         continue;
 
-                    var id = new PeerId (peer, connection, new BitField (Manager.Bitfield.Length).SetAll (true), Manager.InfoHashes.V1OrV2);
-                    id.Encryptor = PlainTextEncryption.Instance;
-                    id.Decryptor = PlainTextEncryption.Instance;
+                    var id = new PeerId (peer, connection, new BitField (Manager.Bitfield.Length).SetAll (true), Manager.InfoHashes.V1OrV2, PlainTextEncryption.Instance, PlainTextEncryption.Instance, new Software (peer.Info.PeerId));
                     id.IsChoking = false;
-                    id.ClientApp = new Software (id.PeerID);
                     Manager.Peers.ConnectedPeers.Add (id);
                     Interlocked.Increment (ref ConnectionManager.openConnections);
                     Manager.RaisePeerConnected (id);
