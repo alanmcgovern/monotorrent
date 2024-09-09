@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client.Modes;
@@ -160,6 +161,31 @@ namespace MonoTorrent.Client
             Assert.IsTrue (fake.Disposed);
         }
 
+        [Test]
+        public async Task ConnectToSelf ()
+        {
+            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowLocalPeerDiscovery = false,
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
+            }.ToSettings ());
+
+            var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
+            var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
+
+            var ready = seederManager.WaitForState (TorrentState.Metadata);
+            await seederManager.StartAsync ();
+            await ready.WithTimeout ();
+
+            var failedPeer = new TaskCompletionSource<ConnectionAttemptFailedEventArgs> ();
+            seederManager.ConnectionAttemptFailed += (o, e) => failedPeer.SetResult (e);
+
+            // Connect to self
+            await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{seeder.PeerListeners[0].LocalEndPoint.Port}")));
+
+            var failedConnection = await failedPeer.Task;
+            Assert.AreEqual (ConnectionFailureReason.ConnectedToSelf, failedConnection.Reason);
+        }
 
         [Test]
         public async Task EncryptionTiers_LastMatches ([Values (true, false)] bool addToSeeder)
@@ -266,6 +292,100 @@ namespace MonoTorrent.Client
             Assert.AreEqual (1, failedCount);
             var peer = addToSeeder ? seederManager.Peers.AvailablePeers[0] : leecherManager.Peers.AvailablePeers[0];
             Assert.AreEqual (1, peer.FailedConnectionAttempts);
+        }
+
+        [Test]
+        public async Task RetryConnection_AfterTimeout ()
+        {
+            // The first retry should happen immediately, a second retry should take 'forever'.
+            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowLocalPeerDiscovery = false,
+                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromSeconds (1000), TimeSpan.FromSeconds (3000) },
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
+            }.ToSettings ());
+
+            var leecher = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowLocalPeerDiscovery = false,
+                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
+            }.ToSettings ());
+
+            var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
+            var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
+            var leecherManager = await leecher.AddAsync (magnetLink, "tmp_seeder");
+
+            var ready = Task.WhenAll (seederManager.WaitForState (TorrentState.Metadata), leecherManager.WaitForState (TorrentState.Metadata));
+            await seederManager.StartAsync ();
+            await leecherManager.StartAsync ();
+            await ready;
+
+            var seederDisconnected = new ReusableTaskCompletionSource<PeerId> ();
+            seederManager.PeerDisconnected += (o, e) => seederDisconnected.SetResult (e.Peer);
+
+            var leecherDisconnected = new ReusableTaskCompletionSource<PeerId> ();
+            leecherManager.PeerDisconnected += (o, e) => leecherDisconnected.SetResult (e.Peer);
+
+            var seederConnected = new ReusableTaskCompletionSource<PeerId> ();
+            seederManager.PeerConnected += (o, e) => seederConnected.SetResult (e.Peer);
+
+            var leecherConnected = new ReusableTaskCompletionSource<PeerId> ();
+            leecherManager.PeerConnected += (o, e) => leecherConnected.SetResult (e.Peer);
+
+            int failedCount = 0;
+            seederManager.ConnectionAttemptFailed += (o, e) => failedCount++;
+            leecherManager.ConnectionAttemptFailed += (o, e) => failedCount++;
+
+            await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{leecher.PeerListeners[0].LocalEndPoint.Port}")));
+
+            var seederPeer = await seederConnected.Task.WithTimeout ();
+            var leecherPeer = await leecherConnected.Task.WithTimeout ();
+            Assert.AreEqual (0, seederPeer.Peer.CleanedUpCount);
+
+            // Close the connections
+            seederPeer.Connection.Dispose ();
+            leecherPeer.Connection.Dispose ();
+
+            // Send a keepalive message so the engine definitively sees that the socket has been closed.
+            seederPeer.LastMessageSent = ValueStopwatch.WithTime (TimeSpan.FromSeconds (100));
+            leecherPeer.LastMessageSent = ValueStopwatch.WithTime (TimeSpan.FromSeconds (100));
+
+            Assert.IsTrue (seederPeer == await seederDisconnected.Task.WithTimeout ());
+            Assert.IsTrue (leecherPeer == await leecherDisconnected.Task.WithTimeout ());
+
+            seederManager.Peers.AvailablePeers[0].WaitUntilNextConnectionAttempt = ValueStopwatch.WithTime (TimeSpan.FromSeconds(2000));
+
+            // Wait for the retry!
+            seederPeer = await seederConnected.Task.WithTimeout ();
+            leecherPeer = await leecherConnected.Task.WithTimeout ();
+
+            // Ensure we haven't double-disposed the peer
+            Assert.AreEqual (1, seederPeer.Peer.CleanedUpCount);
+
+            await seeder.StopAsync ();
+            await leecher.StopAsync ();
+        }
+
+        [Test]
+        public async Task DisposeTwice ()
+        {
+            var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
+            var seeder = EngineHelpers.Create ();
+            var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
+
+            var peerId = PeerId.CreateNull (seederManager.Bitfield.Length, seederManager.InfoHashes.V1OrV2.Truncate ());
+
+            // Each active connection will only be disposed once, even if it is cleaned up multiple times.
+            // It's normal for there to be at least two calls two cleanup - one from any ongoing 'SendAsync' call
+            // and one from ongoing 'ReceiveAsync' call.
+            for (int i = 0; i < 3; i++)
+                seeder.ConnectionManager.CleanupSocket (seederManager, peerId);
+            Assert.AreEqual (1, peerId.Peer.CleanedUpCount);
+
+            peerId = new PeerId (peerId.Peer, NullConnection.Outgoing, peerId.MutableBitField, peerId.ExpectedInfoHash, peerId.Encryptor, peerId.Decryptor, peerId.ClientApp);
+            for (int i = 0; i < 3; i++)
+                seeder.ConnectionManager.CleanupSocket (seederManager, peerId);
+            Assert.AreEqual (2, peerId.Peer.CleanedUpCount);
         }
     }
 }

@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
@@ -144,14 +145,15 @@ namespace MonoTorrent.Client
             }
 
             // Always restart the the timer after the connection attempt completes
-            peer.LastConnectionAttempt.Restart ();
+            peer.WaitUntilNextConnectionAttempt.Restart ();
 
             // If the connection attempt failed, decide what to do next. Drop the peer or retry it later.
             if (failureReason.HasValue) {
                 peer.FailedConnectionAttempts++;
 
                 // If we have not exhausted all retry attempts, add the peer back for subsequent retry
-                if (Settings.GetConnectionRetryDelay (peer.FailedConnectionAttempts).HasValue)
+                if (failureReason.Value != ConnectionFailureReason.ConnectedToSelf &&
+                    Settings.GetConnectionRetryDelay (peer.FailedConnectionAttempts).HasValue)
                     manager.Peers.AvailablePeers.Add (peer);
 
                 manager.RaiseConnectionAttemptFailed (new ConnectionAttemptFailedEventArgs (peer.Info, failureReason.Value, manager));
@@ -190,6 +192,13 @@ namespace MonoTorrent.Client
 
                 // If the connection did not succeed, dispose the object and try again with a different encryption tier.
                 connection.SafeDispose ();
+
+                // If the error is *not* a retryable error, then bail out and return the failure.
+                // Otherwise loop and try again. A failure to send/receive a handshake is considered to be
+                // an encryption negiotiation failure as for outgoing connections the local client may send a
+                // plaintext handshake and the remote client may discard it as it only accepts encrypted ones.
+                if (latestResult != ConnectionFailureReason.EncryptionNegiotiationFailed)
+                    return latestResult;
             }
 
             // if we got non-null failure reasons, return the most recent one here.
@@ -235,39 +244,44 @@ namespace MonoTorrent.Client
             IEncryption decryptor;
             IEncryption encryptor;
 
+            HandshakeMessage handshake;
             try {
                 // If this is a hybrid torrent and a connection is being made with the v1 infohash, then
                 // set the bit which tells the peer the connection can be upgraded to a bittorrent v2 (BEP52) connection.
                 var canUpgradeToV2 = manager.InfoHashes.IsHybrid;
 
                 // Create a handshake message to send to the peer
-                var handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2.Truncate (), LocalPeerId, Constants.ProtocolStringV100, enableFastPeer: true, enableExtended: true, supportsUpgradeToV2: canUpgradeToV2);
-                logger.InfoFormatted (connection, "[outgoing] Sending handshake message with peer id '{0}'", LocalPeerId);
+                handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2.Truncate (), LocalPeerId, Constants.ProtocolStringV100, enableFastPeer: true, enableExtended: true, supportsUpgradeToV2: canUpgradeToV2);
+                logger.InfoFormatted (connection, "Sending handshake message with peer id '{0}'", LocalPeerId);
 
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (connection, allowedEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshake, Factories, Settings.ConnectionTimeout);
                 decryptor = result.Decryptor;
                 encryptor = result.Encryptor;
+
+                // If plaintext encryption is used, we need to *receive* the remote handshake before we can confirm
+                // that negotiation has completed successfully.
+                handshake = await PeerIO.ReceiveHandshakeAsync (connection, decryptor);
+                if (handshake.ProtocolString != Constants.ProtocolStringV100)
+                    logger.Info (connection, "Received handshake but protocol was unsupported");
             } catch {
+                logger.Info (connection, "Could not receive a handshake from the peer");
                 return ConnectionFailureReason.EncryptionNegiotiationFailed;
             }
 
-            PeerId? id = null;
+            PeerId id;
             try {
                 // Receive their handshake. NOTE: For hybrid torrents the standard is to send the V1 infohash
                 // and if the peer responds with the V2 infohash, treat the connection as a V2 connection. The
                 // biggest (only?) difference is that it means we can request the merkle tree layer hashes from
                 // peers who support v2.
-                HandshakeMessage handshake = await PeerIO.ReceiveHandshakeAsync (connection, decryptor);
-                id = new PeerId (peer, connection, new BitField (manager.Bitfield.Length), manager.InfoHashes.Expand (handshake.InfoHash)) {
-                    Decryptor = decryptor,
-                    Encryptor = encryptor
-                };
-                id.LastMessageReceived.Restart ();
-                id.LastMessageSent.Restart ();
+                id = CreatePeerIdFromHandshake (handshake, peer, connection, manager, encryptor: encryptor, decryptor: decryptor);
+                logger.InfoFormatted (id.Connection, "Received handshake message with peer id '{0}'", handshake.PeerId);
 
-                logger.InfoFormatted (id.Connection, "[outgoing] Received handshake message with peer id '{0}'", handshake.PeerId);
-                manager.Mode.HandleMessage (id, handshake, default);
+                if (LocalPeerId.Equals (handshake.PeerId))
+                    return ConnectionFailureReason.ConnectedToSelf;
 
+                // CreatePeerIdFromHandshake files in the peerid, which is important context for whether or not
+                // the peer connection should be closed.
                 if (ShouldBanPeer (peer.Info, AttemptConnectionStage.HandshakeComplete))
                     return ConnectionFailureReason.Banned;
             } catch {
@@ -296,6 +310,63 @@ namespace MonoTorrent.Client
                 return ConnectionFailureReason.Unknown;
             }
         }
+
+        internal static PeerId CreatePeerIdFromHandshake (HandshakeMessage handshake, Peer peer, IPeerConnection connection, TorrentManager manager, IEncryption encryptor, IEncryption decryptor)
+        {
+            if (!handshake.ProtocolString.Equals (Constants.ProtocolStringV100)) {
+                logger.InfoFormatted (connection, "Invalid protocol in handshake: {0}", handshake.ProtocolString);
+                throw new ProtocolException ("Invalid protocol string");
+            }
+
+            // If the infohash doesn't match, dump the connection
+            if (!manager.InfoHashes.Contains (handshake.InfoHash)) {
+                logger.Info (connection, "HandShake.Handle - Invalid infohash");
+                throw new TorrentException ("Invalid infohash. Not tracking this torrent");
+            }
+
+            // If we got the peer as a "compact" peer, then the peerid will be empty. In this case
+            // we just copy the one that is in the handshake.
+            if (BEncodedString.IsNullOrEmpty (peer.Info.PeerId))
+                peer.UpdatePeerId (handshake.PeerId);
+
+            // If this is a hybrid torrent, and the other peer announced with the v1 hash *and* set the bit which indicates
+            // they can upgrade to a V2 connection, respond with the V2 hash to upgrade the connection to V2 mode.
+            var infoHash = handshake.SupportsUpgradeToV2 && manager.InfoHashes.IsHybrid ? manager.InfoHashes.V2! : manager.InfoHashes.Expand (handshake.InfoHash);
+
+            // Create the peerid now that everything is established.
+            var id = new PeerId (peer, connection, new BitField (manager.Bitfield.Length), infoHash, encryptor: encryptor, decryptor: decryptor, new Software (handshake.PeerId));
+
+            // If the peer id's don't match, dump the connection. This is due to peers faking usually
+            if (!id.Peer.Info.PeerId.Equals (handshake.PeerId)) {
+                if (manager.Settings.RequirePeerIdToMatch) {
+                    // Several prominent clients randomise peer ids (at the least, everything based on libtorrent)
+                    // so closing connections when the peer id does not match risks blocking compatibility with many
+                    // clients. Additionally, MonoTorrent has long been configured to default to compact tracker responses
+                    // so the odds of having the peer ID are slim.
+                    logger.InfoFormatted (id.Connection, "HandShake.Handle - Invalid peerid. Expected '{0}' but received '{1}'", id.Peer.Info.PeerId, handshake.PeerId);
+                    throw new TorrentException ("Supplied PeerID didn't match the one the tracker gave us");
+                } else {
+                    // We don't care about the mismatch for public torrents. uTorrent randomizes its PeerId, as do other clients.
+                    id.Peer.UpdatePeerId (handshake.PeerId);
+                }
+            }
+            // Copy over the capability bits
+            id.SupportsFastPeer = handshake.SupportsFastPeer;
+            id.SupportsLTMessages = handshake.SupportsExtendedMessaging;
+
+            // reset the timers so the connection isn't closed early due to inactivity
+            id.LastMessageReceived.Restart ();
+            id.LastMessageSent.Restart ();
+
+
+            // If they support fast peers, create their list of allowed pieces that they can request off me
+            if (id.SupportsFastPeer && id.AddressBytes.Length > 0 && manager != null && manager.HasMetadata) {
+                lock (AllowedFastHasher)
+                    id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate (AllowedFastHasher, id.AddressBytes.Span, manager.InfoHashes, (uint) manager.Torrent!.PieceCount);
+            }
+            return id;
+        }
+        static readonly SHA1 AllowedFastHasher = SHA1.Create ();
 
         internal async void ReceiveMessagesAsync (IPeerConnection connection, IEncryption decryptor, RateLimiterGroup downloadLimiter, ConnectionMonitor monitor, TorrentManager torrentManager, PeerId id)
         {
@@ -363,45 +434,44 @@ namespace MonoTorrent.Client
 
         internal void CleanupSocket (TorrentManager manager, PeerId id)
         {
-
-            manager.PieceManager.CancelRequests (id);
-            if (!id.AmChoking)
-                manager.UploadingTo--;
-            if (manager.Peers.ConnectedPeers.Remove (id))
-                Interlocked.Decrement (ref openConnections);
-            id.Peer.CleanedUpCount++;
-
-            CleanupSocket (manager, id.Peer, id.Connection);
+            // We might dispose the socket from an async send *and* an async receive call.
+            if (id.Disposed)
+                return;
 
             try {
-                manager.Mode.HandlePeerDisconnected (id);
-            } catch (Exception ex) {
-                logger.Exception (ex, "An unexpected error occured calling HandlePeerDisconnected");
-            }
-            id.Dispose ();
-        }
+                manager.PieceManager.CancelRequests (id);
+                if (!id.AmChoking)
+                    manager.UploadingTo--;
+                if (manager.Peers.ConnectedPeers.Remove (id))
+                    Interlocked.Decrement (ref openConnections);
+                id.Peer.CleanedUpCount++;
+                id.Peer.WaitUntilNextConnectionAttempt.Restart ();
 
-        internal void CleanupSocket (TorrentManager manager, Peer peer, IPeerConnection connection)
-        {
-            try {
+                logger.Info (id.Connection, "Closing connection");
                 // We can reuse this peer if the connection says so and it's not marked as inactive
-                bool canReuse = (connection?.CanReconnect ?? false)
-                    && !manager.InactivePeerManager.InactivePeerList.Contains (peer.Info.ConnectionUri)
-                    && !manager.Engine!.PeerId.Equals (peer.Info.PeerId)
-                    && Settings.GetConnectionRetryDelay(peer.FailedConnectionAttempts).HasValue;
+                bool canReuse = (id.Connection.CanReconnect)
+                    && !manager.InactivePeerManager.InactivePeerList.Contains (id.Peer.Info.ConnectionUri)
+                    && !manager.Engine!.PeerId.Equals (id.Peer.Info.PeerId)
+                    && Settings.GetConnectionRetryDelay (id.Peer.FailedConnectionAttempts).HasValue;
 
-                manager.Peers.ActivePeers.Remove (peer);
+                manager.Peers.ActivePeers.Remove (id.Peer);
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
-                if (canReuse && !LocalPeerId.Equals (peer.Info.PeerId)) {
-                    if (!manager.Peers.AvailablePeers.Contains (peer) && peer.CleanedUpCount < 5)
-                        manager.Peers.AvailablePeers.Add (peer);
-                    else if (peer.CleanedUpCount >= 5)
-                        BannedPeerIPAddresses.Add (peer.Info.ConnectionUri.Host);
+                if (canReuse && !LocalPeerId.Equals (id.Peer.Info.PeerId)) {
+                    if (!manager.Peers.AvailablePeers.Contains (id.Peer) && id.Peer.CleanedUpCount < 5)
+                        manager.Peers.AvailablePeers.Add (id.Peer);
+                    else if (id.Peer.CleanedUpCount >= 5)
+                        BannedPeerIPAddresses.Add (id.Peer.Info.ConnectionUri.Host);
                 }
             } catch (Exception ex) {
                 logger.Exception (ex, "An unexpected error occured cleaning up a connection");
             } finally {
+                id.Dispose ();
+            }
+            try {
+                manager.Mode.HandlePeerDisconnected (id);
+            } catch (Exception ex) {
+                logger.Exception (ex, "An unexpected error occured calling HandlePeerDisconnected");
             }
         }
 
@@ -434,11 +504,6 @@ namespace MonoTorrent.Client
                 bool maxAlreadyOpen = OpenConnections >= Settings.MaximumConnections
                     || manager.OpenConnections >= manager.Settings.MaximumConnections;
 
-                if (LocalPeerId.Equals (id.Peer.Info.PeerId)) {
-                    logger.Info ("Connected to self - disconnecting");
-                    CleanupSocket (manager, id);
-                    return false;
-                }
                 if (manager.Peers.ActivePeers.Contains (id.Peer)) {
                     logger.Info (id.Connection, "Already connected to peer");
                     id.Connection.Dispose ();
@@ -455,6 +520,17 @@ namespace MonoTorrent.Client
                     return false;
                 }
 
+
+                // Send our handshake first, then decide if we've connected to ourselves or not.
+                var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100);
+                await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
+
+                if (LocalPeerId.Equals (id.PeerID)) {
+                    logger.Info ("Connected to self - disconnecting");
+                    CleanupSocket (manager, id);
+                    return false;
+                }
+
                 // Add the PeerId to the lists *before* doing anything asynchronous. This ensures that
                 // all PeerIds are tracked in 'ConnectedPeers' as soon as they're created.
                 logger.Info (id.Connection, "Incoming connection fully accepted");
@@ -466,10 +542,6 @@ namespace MonoTorrent.Client
                 id.WhenConnected.Restart ();
                 // Baseline the time the last block was received
                 id.LastBlockReceived.Reset ();
-
-                // Send our handshake now that we've decided to keep the connection
-                var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), manager.Engine!.PeerId, Constants.ProtocolStringV100);
-                await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
 
                 manager.Mode.HandlePeerConnected (id);
                 id.MessageQueue.SetReady ();

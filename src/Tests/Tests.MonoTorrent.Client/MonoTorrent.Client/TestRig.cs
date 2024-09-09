@@ -41,6 +41,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Connections.Tracker;
 using MonoTorrent.PieceWriter;
 using MonoTorrent.Trackers;
@@ -413,7 +414,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 20; i++)
                 sb.Append ((char) Random.Next ('a', 'z'));
             Peer peer = new Peer (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{(port++)}"), sb.ToString ()));
-            PeerId id = new PeerId (peer, NullConnection.Incoming, new BitField (Manager.Torrent.PieceCount ()).SetAll (false), new InfoHash (new byte[20]));
+            PeerId id = new PeerId (peer, NullConnection.Incoming, new BitField (Manager.Torrent.PieceCount ()).SetAll (false), new InfoHash (new byte[20]), PlainTextEncryption.Instance, PlainTextEncryption.Instance, Software.Synthetic);
             id.SupportsFastPeer = supportsFastPeer;
             id.MessageQueue.SetReady ();
             if (processingQueue)

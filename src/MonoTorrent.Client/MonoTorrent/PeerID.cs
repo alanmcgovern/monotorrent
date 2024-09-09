@@ -110,6 +110,8 @@ namespace MonoTorrent
     /// </summary>
     public struct Software
     {
+        internal static Software Synthetic => new Software (new BEncodedString ("---- synthetic -----"));
+
         static readonly Regex bow = new Regex ("-BOWA");
         static readonly Regex brahms = new Regex ("M/d-/d-/d--");
         static readonly Regex bitlord = new Regex ("exbc..LORD");

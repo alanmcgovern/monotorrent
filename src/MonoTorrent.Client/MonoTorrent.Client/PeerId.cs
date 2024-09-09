@@ -110,7 +110,14 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested, InfoHash expectedInfoHash)
         {
-            var peer = new PeerId (new Peer (new PeerInfo (new Uri ("ipv4://128.127.126.125:12345"), "null peer's id")), new NullPeerConnection () , new BitField (bitfieldLength).SetAll (seeder), expectedInfoHash) {
+            var peer = new PeerId (
+                new Peer (new PeerInfo (new Uri ("ipv4://128.127.126.125:12345"), "null peer's id")),
+                new NullPeerConnection (),
+                new BitField (bitfieldLength).SetAll (seeder),
+                expectedInfoHash,
+                PlainTextEncryption.Instance,
+                PlainTextEncryption.Instance,
+                new Software (BEncodedString.Empty)) {
                 IsChoking = isChoking,
                 AmChoking = true,
                 AmInterested = amInterested,
@@ -147,8 +154,8 @@ namespace MonoTorrent.Client
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
         public ReadOnlyBitField BitField => MutableBitField;
-        internal BitField MutableBitField { get; private set; }
-        public Software ClientApp { get; internal set; }
+        internal BitField MutableBitField { get; }
+        public Software ClientApp { get; }
 
         public Direction ConnectionDirection => Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
 
@@ -175,20 +182,20 @@ namespace MonoTorrent.Client
         /// The remote peer can request these and we'll fulfill the request if we're choking them
         /// </summary>
         internal ReadOnlyMemory<int> AmAllowedFastPieces { get; set; }
-        internal IEncryption Decryptor { get; set; }
+        internal IEncryption Decryptor { get; }
         internal bool Disposed { get; private set; }
-        internal IEncryption Encryptor { get; set; }
+        internal IEncryption Encryptor { get; }
         internal ExtensionSupports ExtensionSupports { get; set; }
         /// <summary>
         /// This is the set of pieces we can request while choked.
         /// </summary>
-        internal List<int> IsAllowedFastPieces { get; set; }
+        internal List<int> IsAllowedFastPieces { get; }
         internal ValueStopwatch LastMessageReceived;
         internal ValueStopwatch LastMessageSent;
         internal ValueStopwatch WhenConnected;
         internal int MaxPendingRequests { get; set; }
         internal int MaxSupportedPendingRequests { get; set; }
-        internal MessageQueue MessageQueue { get; set; }
+        internal MessageQueue MessageQueue { get; }
         internal Peer Peer { get; }
         internal PeerExchangeManager? PeerExchangeManager { get; set; }
         internal ushort Port { get; set; }
@@ -198,10 +205,15 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal PeerId (Peer peer, IPeerConnection connection, BitField bitfield, InfoHash expectedInfoHash)
+        internal PeerId (Peer peer, IPeerConnection connection, BitField bitfield, InfoHash expectedInfoHash, IEncryption encryptor, IEncryption decryptor, Software clientApp)
         {
-            Peer = peer;
+            Peer = peer ?? throw new ArgumentNullException (nameof (peer));
+            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
+            MutableBitField = bitfield ?? throw new ArgumentNullException (nameof (bitfield));
             ExpectedInfoHash = expectedInfoHash ?? throw new ArgumentNullException (nameof (expectedInfoHash));
+            Encryptor = encryptor ?? throw new ArgumentNullException (nameof (encryptor));
+            Decryptor = decryptor ?? throw new ArgumentNullException (nameof (decryptor));
+            ClientApp = clientApp;
 
             AmChoking = true;
             IsChoking = true;
@@ -220,12 +232,6 @@ namespace MonoTorrent.Client
             Monitor = new ConnectionMonitor ();
 
             InitializeTyrant ();
-
-            Connection = connection ?? throw new ArgumentNullException (nameof (connection));
-            Peer = peer ?? throw new ArgumentNullException (nameof (peer));
-            MutableBitField = bitfield;
-            Decryptor = PlainTextEncryption.Instance;
-            Encryptor = PlainTextEncryption.Instance;
         }
 
         #endregion
