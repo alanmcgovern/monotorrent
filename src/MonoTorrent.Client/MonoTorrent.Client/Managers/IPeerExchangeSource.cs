@@ -8,9 +8,6 @@ namespace MonoTorrent.Client
 {
     interface IPeerExchangeSource
     {
-        event EventHandler<PeerConnectedEventArgs> PeerConnected;
-        event EventHandler<PeerDisconnectedEventArgs> PeerDisconnected;
-
         TorrentSettings Settings { get; }
     }
 }
