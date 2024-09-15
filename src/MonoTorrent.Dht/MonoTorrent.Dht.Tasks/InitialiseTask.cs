@@ -38,12 +38,6 @@ namespace MonoTorrent.Dht.Tasks
 {
     class InitialiseTask
     {
-        static readonly string[] DefaultBootstrapRouters = new[] {
-            "router.bittorrent.com",
-            "router.utorrent.com",
-            "dht.transmissionbt.com"
-        };
-
         // Choose a completely arbitrary value here. If we have at least this many
         // nodes in the routing table we can consider it 'healthy' enough to allow
         // the state to change to 'Ready' so torrents can begin searching for peers
@@ -57,7 +51,7 @@ namespace MonoTorrent.Dht.Tasks
         string[] BootstrapRouters { get; set; }
 
         public InitialiseTask (DhtEngine engine)
-            : this (engine, Enumerable.Empty<Node> (), DefaultBootstrapRouters)
+            : this (engine, Enumerable.Empty<Node> (), DhtEngine.DefaultBootstrapRouters.ToArray ())
         {
 
         }
@@ -66,7 +60,7 @@ namespace MonoTorrent.Dht.Tasks
         {
             this.engine = engine;
             initialNodes = nodes.ToList ();
-            BootstrapRouters = bootstrapRouters.Length == 0 ? DefaultBootstrapRouters : bootstrapRouters.ToArray ();
+            BootstrapRouters = bootstrapRouters;
             initializationComplete = new TaskCompletionSource<object?> ();
         }
 
@@ -100,13 +94,24 @@ namespace MonoTorrent.Dht.Tasks
 
         async Task<Node[]> GenerateBootstrapNodes ()
         {
-            var addresses = await Task.WhenAll (BootstrapRouters.Select (Dns.GetHostAddressesAsync));
-            return addresses
-                .SelectMany (t => t)
-                .Distinct ()
-                .Select (t => new IPEndPoint (t, 6881))
-                .Select (t => new Node (NodeId.Create (), t))
-                .ToArray ();
+            // Handle when one, or more, of the bootstrap nodes are offline
+            var results = new List<Node> ();
+
+            var tasks = BootstrapRouters.Select (Dns.GetHostAddressesAsync).ToList ();
+            while (tasks.Count > 0) {
+                var completed = await Task.WhenAny (tasks);
+                tasks.Remove (completed);
+
+                try {
+                    var addresses = await completed;
+                    foreach (var v in addresses)
+                        results.Add (new Node (NodeId.Create (), new IPEndPoint (v, 6881)));
+                } catch {
+
+                }
+            }
+
+            return results.ToArray ();
         }
 
         async Task SendFindNode (IEnumerable<Node> newNodes)
@@ -139,7 +144,7 @@ namespace MonoTorrent.Dht.Tasks
                 }
             }
 
-            if (initialNodes.Count > 0 && engine.RoutingTable.NeedsBootstrap)
+            if (initialNodes.Count > 0 && engine.RoutingTable.NeedsBootstrap && BootstrapRouters.Length > 0)
                 await new InitialiseTask (engine).ExecuteAsync ();
         }
     }

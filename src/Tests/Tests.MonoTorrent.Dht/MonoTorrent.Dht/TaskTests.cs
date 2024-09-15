@@ -62,12 +62,10 @@ namespace MonoTorrent.Dht
         [Repeat (10)]
         public async Task InitialiseFailure ()
         {
-            // FIXME: this flakily fails sometimes... why? DNS timeouts?
-            // Block until we've checked the status moved to Initializing
             var errorSource = new TaskCompletionSource<object> ();
             listener.MessageSent += (o, e) => errorSource.Task.GetAwaiter ().GetResult ();
 
-            await engine.StartAsync (new byte[26]);
+            await engine.StartAsync (new byte[26], Array.Empty<string> ());
             Assert.AreEqual (DhtState.Initialising, engine.State);
 
             // Then set an error and make sure the engine state moves to 'NotReady'

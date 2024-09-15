@@ -63,6 +63,12 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
+        internal static readonly IList<string> DefaultBootstrapRouters = Array.AsReadOnly (new[] {
+            "router.bittorrent.com",
+            "router.utorrent.com",
+            "dht.transmissionbt.com"
+        });
+
         static readonly TimeSpan DefaultAnnounceInternal = TimeSpan.FromMinutes (10);
         static readonly TimeSpan DefaultMinimumAnnounceInterval = TimeSpan.FromMinutes (3);
 
@@ -272,7 +278,7 @@ namespace MonoTorrent.Dht
             => StartAsync (ReadOnlyMemory<byte>.Empty);
 
         public Task StartAsync (ReadOnlyMemory<byte> initialNodes)
-            => StartAsync (Node.FromCompactNode (BEncodedString.FromMemory (initialNodes)).Concat (PendingNodes), Array.Empty<string> ());
+            => StartAsync (Node.FromCompactNode (BEncodedString.FromMemory (initialNodes)).Concat (PendingNodes), DefaultBootstrapRouters.ToArray ());
 
         public Task StartAsync (params string[] bootstrapRouters)
             => StartAsync (Array.Empty<Node> (), bootstrapRouters);

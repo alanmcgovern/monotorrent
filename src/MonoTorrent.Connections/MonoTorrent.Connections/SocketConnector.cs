@@ -59,8 +59,6 @@ namespace MonoTorrent.Connections
 
         static void HandleOperationCompleted (object? sender, SocketAsyncEventArgs e)
         {
-            // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
-            // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
             var tcs = (ReusableTaskCompletionSource<int>) e.UserToken!;
             SocketError error = e.SocketError;
 
