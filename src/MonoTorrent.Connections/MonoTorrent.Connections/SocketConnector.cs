@@ -107,8 +107,12 @@ namespace MonoTorrent.Connections
             args.UserToken = tcs;
 
             try {
-                if (!socket.ConnectAsync (args))
-                    tcs.SetResult (0);
+                if (!socket.ConnectAsync (args)) {
+                    if (args.SocketError == SocketError.Success)
+                        tcs.SetResult (0);
+                    else
+                        tcs.SetException (new SocketException ((int) args.SocketError));
+                }
 
                 await tcs.Task;
             } catch {
