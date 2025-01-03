@@ -62,7 +62,7 @@ namespace MonoTorrent
             public IList<ITorrentFile> Files { get; }
             public InfoHashes InfoHashes { get; }
             public string Name => "";
-            public int PieceLength { get;}
+            public int PieceLength { get; }
             public long Size { get; }
 
             public TorrentInfo (InfoHashes infoHashes, IList<ITorrentFile> files, int pieceLength)
@@ -166,7 +166,7 @@ namespace MonoTorrent
         public TorrentCreator (TorrentType type)
             : this (type, Factories.Default)
         {
-            
+
         }
         public TorrentCreator (Factories factories)
             : this (TorrentType.V1V2Hybrid, factories)
@@ -249,9 +249,11 @@ namespace MonoTorrent
         internal async Task<BEncodedDictionary> CreateAsync (string name, ITorrentFileSource fileSource, CancellationToken token)
         {
             var source = fileSource.Files.ToList ();
-            foreach (var file in source)
-                if (file.Source.Contains (Path.AltDirectorySeparatorChar) || file.Destination.Contains (Path.AltDirectorySeparatorChar))
-                    throw new InvalidOperationException ("DERP");
+            if (Path.AltDirectorySeparatorChar != Path.DirectorySeparatorChar) {
+                foreach (var file in source)
+                    if (file.Source.Contains (Path.AltDirectorySeparatorChar) || file.Destination.Contains (Path.AltDirectorySeparatorChar))
+                        throw new InvalidOperationException ("DERP");
+            }
 
             EnsureNoDuplicateFiles (source);
 
@@ -278,7 +280,7 @@ namespace MonoTorrent
             // Resort them before putting them in the BEncodedDictionary metadata for the torrent
             var files = TorrentFileInfo.Create (PieceLength, source.Select ((file, index) => {
                 var length = file.Length;
-                var padding =  (int) ((UsePadding && index < lastNonEmptyFileIndex && length % PieceLength > 0) ? PieceLength - (length % PieceLength) : 0);
+                var padding = (int) ((UsePadding && index < lastNonEmptyFileIndex && length % PieceLength > 0) ? PieceLength - (length % PieceLength) : 0);
                 var info = (file.Destination, length, padding, file.Source);
                 return info;
             }).ToArray ());
@@ -456,7 +458,7 @@ namespace MonoTorrent
 
                 if (currentFile.EndPieceIndex == piece) {
                     while (currentFile != null && currentFile.EndPieceIndex == piece) {
-                        OnHashed (new TorrentCreatorEventArgs (currentFile.FullPath, currentFile.Length, currentFile.Length, torrentInfo.PieceIndexToByteOffset(piece) + sizeOfCurrentPiece, torrentInfo.Size));
+                        OnHashed (new TorrentCreatorEventArgs (currentFile.FullPath, currentFile.Length, currentFile.Length, torrentInfo.PieceIndexToByteOffset (piece) + sizeOfCurrentPiece, torrentInfo.Size));
 
                         files = files.Slice (1);
                         currentFile = files.Length == 0 ? null : files.Span[0];
