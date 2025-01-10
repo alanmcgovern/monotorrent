@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         internal BitField BitField { get; }
         ReadOnlyBitField ITorrentManagerFile.BitField => BitField;
 
-        public Priority Priority { get; set; } = Priority.Normal;
+        public Priority Priority { get; set; } = Priority.DoNotDownload;
 
         public string Path => TorrentFile.Path;
 
