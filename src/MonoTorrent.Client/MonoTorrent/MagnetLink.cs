@@ -213,6 +213,11 @@ namespace MonoTorrent
                 sb.Append (Name.UrlEncodeQueryUTF8 ());
             }
 
+            if (Size.HasValue) {
+                sb.Append ("&xl=");
+                sb.Append (Size.Value);
+            }
+
             foreach (string tracker in AnnounceUrls) {
                 sb.Append ("&tr=");
                 sb.Append (tracker.UrlEncodeQueryUTF8 ());
