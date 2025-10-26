@@ -700,7 +700,7 @@ namespace MonoTorrent.Client.Modes
         void DownloadLogic (int counter)
         {
             if (ClientEngine.SupportsWebSeed && (DateTime.Now - Manager.StartTime) > Settings.WebSeedDelay && (Manager.Monitor.DownloadRate < Settings.WebSeedSpeedTrigger || Settings.WebSeedSpeedTrigger == 0)) {
-                foreach (Uri uri in Manager.Torrent!.HttpSeeds) {
+                foreach (Uri uri in Manager.MagnetLink.Webseeds.Select(x => new Uri(x))) {
                     var peer = new Peer (new PeerInfo (uri, CreatePeerId ()));
                     if (Manager.Peers.Contains (peer) || Manager.Peers.ConnectedPeers.Any (p => p.Uri == uri))
                         continue;

@@ -448,7 +448,7 @@ namespace MonoTorrent.Client
         {
             Engine = engine;
             Files = Array.Empty<ITorrentManagerFile> ();
-            MagnetLink = magnetLink ?? new MagnetLink (torrent!.InfoHashes, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), null, torrent.Size);
+            MagnetLink = magnetLink ?? new MagnetLink (torrent!.InfoHashes, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), torrent.HttpSeeds.Select(x => x.OriginalString), torrent.Size);
             PieceHashes = new PieceHashes (null, null);
             Settings = settings;
             Torrent = torrent;
