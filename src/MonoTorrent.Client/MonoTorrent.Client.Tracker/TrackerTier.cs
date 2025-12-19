@@ -152,12 +152,14 @@ namespace MonoTorrent.Trackers
                 var tracker = Trackers[(ActiveTrackerIndex + i) % Trackers.Count];
                 try {
                     var response = await DoAnnounceAsync (args, tracker, token);
-                    var dict = response.Peers;
-                    AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true, dict));
-                    LastAnnounce = ValueStopwatch.StartNew ();
-                    LastAnnounceSucceeded = true;
-                    logger.InfoFormatted ("Announced to {0}", tracker.Uri);
-                    return;
+                    if (response.State == TrackerState.Ok) {
+                        var dict = response.Peers;
+                        AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, true, dict));
+                        LastAnnounce = ValueStopwatch.StartNew ();
+                        LastAnnounceSucceeded = true;
+                        logger.InfoFormatted ("Announced to {0}", tracker.Uri);
+                        return;
+                    }
                 } catch {
                     logger.ErrorFormatted ("Could not announce to {0}", tracker.Uri);
                     AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, false));
