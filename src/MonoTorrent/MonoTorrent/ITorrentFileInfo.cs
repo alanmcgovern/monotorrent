@@ -39,17 +39,17 @@ namespace MonoTorrent
         /// <summary>
         /// If the file is currently being downloaded, this will be the same as <see cref="DownloadIncompleteFullPath"/>. Otherwise it will be <see cref="DownloadCompleteFullPath"/>
         /// </summary>
-        string FullPath { get; }
+        SpanStringList FullPath { get; }
 
         /// <summary>
         /// The file will exist at this path after it has been fully downloaded.
         /// </summary>
-        string DownloadCompleteFullPath { get; }
+        SpanStringList DownloadCompleteFullPath { get; }
 
         /// <summary>
         /// The file will exist at this path when it is partially downloaded. This value may be the same as <see cref="DownloadCompleteFullPath"/>.
         /// </summary>
-        string DownloadIncompleteFullPath { get; }
+        SpanStringList DownloadIncompleteFullPath { get; }
 
         /// <summary>
         /// The priority of the file when downloading.

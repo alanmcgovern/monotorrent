@@ -28,20 +28,42 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Runtime;
+using System.Text;
+#if NET8_0_OR_GREATER
+using System.Buffers;
+#endif
 
 namespace MonoTorrent.Client
 {
     class TorrentFileInfo : ITorrentManagerFile
     {
+        static readonly Dictionary<char, string> InvalidCharsReplaces;
+#if NET8_0_OR_GREATER
+        static readonly SearchValues<char> InvalidChars;
+#else
+        static readonly char[] InvalidChars;
+#endif
+        static TorrentFileInfo ()
+        {
+            var chars = System.IO.Path.GetInvalidFileNameChars ()
+                .Where (a => a != System.IO.Path.DirectorySeparatorChar && a != System.IO.Path.AltDirectorySeparatorChar).ToArray ();
+#if NET8_0_OR_GREATER
+            InvalidChars = SearchValues.Create (chars);
+#else
+            InvalidChars = chars;
+#endif
+            InvalidCharsReplaces = chars.ToDictionary (a => a, a => $"_{Convert.ToString (a, 16)}_");
+        }
+
         public static string IncompleteFileSuffix => ".!mt";
 
-        public string DownloadCompleteFullPath { get; private set; }
+        public SpanStringList DownloadCompleteFullPath { get; private set; }
 
-        public string DownloadIncompleteFullPath { get; private set; }
+        public SpanStringList DownloadIncompleteFullPath { get; private set; }
 
-        public string FullPath { get; private set; }
+        public SpanStringList FullPath { get; private set; }
 
         ITorrentFile TorrentFile { get; }
 
@@ -66,7 +88,7 @@ namespace MonoTorrent.Client
 
         public MerkleRoot PiecesRoot => TorrentFile.PiecesRoot;
 
-        public TorrentFileInfo (ITorrentFile torrentFile, string fullPath)
+        public TorrentFileInfo (ITorrentFile torrentFile, SpanStringList fullPath)
         {
             TorrentFile = torrentFile;
             FullPath = DownloadCompleteFullPath = DownloadIncompleteFullPath = fullPath;
@@ -95,34 +117,92 @@ namespace MonoTorrent.Client
 
         internal static string PathEscape (string path)
         {
-            foreach (var illegal in System.IO.Path.GetInvalidPathChars ())
-                path = path.Replace ($"{illegal}", Convert.ToString (illegal, 16));
-            return path;
+            int index = path.AsSpan ().IndexOfAny (InvalidChars);
+            if (index == -1)
+                return path;
+            ReadOnlySpan<char> remaining = path.AsSpan ();
+            var sb = new StringBuilder ();
+            int start = 0;
+            int length = path.Length;
+            while (index >= 0) {
+                sb.Append (path, start, index);
+                sb.Append (InvalidCharsReplaces[remaining[index]]);
+                remaining = remaining.Slice (index + 1);
+                start = start + index + 1;
+                length = length - index - 1;
+                index = remaining.IndexOfAny (InvalidChars);
+            }
+
+            sb.Append (path, start, length);
+
+            return sb.ToString ();
         }
 
-        internal static string PathAndFileNameEscape (string path)
+        internal static SpanStringList PathAndFileNameEscape (string path)
         {
-            var probableFilenameIndex = path.LastIndexOf (System.IO.Path.DirectorySeparatorChar);
-            var dir = probableFilenameIndex == -1 ? "" : path.Substring (0, probableFilenameIndex);
-            var filename = probableFilenameIndex == -1 ? path : path.Substring (probableFilenameIndex + 1);
+            int index = path.AsSpan ().IndexOfAny (InvalidChars);
+            if (index == -1)
+                return new SpanStringList (path);
+            ReadOnlySpan<char> remaining = path.AsSpan ();
+            SpanStringList? sb = null;
+            int start = 0;
+            var length = path.Length;
+            while (index >= 0) {
+                if (sb is null) {
+                    sb = new SpanStringList (path, start, index);
+                } else {
+                    sb = sb.Append (path, start, index);
+                }
 
-            dir = PathEscape (dir);
+                sb = sb.Append (InvalidCharsReplaces[remaining[index]]);
+                remaining = remaining.Slice (index + 1);
+                start = start + index + 1;
+                length = length - index - 1;
+                index = remaining.IndexOfAny (InvalidChars);
+            }
 
-            foreach (var illegal in System.IO.Path.GetInvalidFileNameChars ())
-                filename = filename.Replace ($"{illegal}", $"_{Convert.ToString (illegal, 16)}_");
-            return System.IO.Path.Combine (dir, filename);
+            sb = sb.Append (path, start, length);
+
+            return sb;
         }
 
-        internal static (string path, string completePath, string incompletePath) GetNewPaths (string newPath, bool usePartialFiles, bool isComplete)
+        internal static (SpanStringList path, SpanStringList completePath, SpanStringList incompletePath) GetNewPaths (string newPath, bool usePartialFiles, bool isComplete)
         {
-            var downloadCompleteFullPath = newPath;
-            var downloadIncompleteFullPath = downloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "");
-            newPath = isComplete ? downloadCompleteFullPath : downloadIncompleteFullPath;
+            var path = new SpanStringList (newPath);
+            var downloadCompleteFullPath = path;
+            SpanStringList downloadIncompleteFullPath;
+            if (usePartialFiles) {
+                downloadIncompleteFullPath = downloadCompleteFullPath;
+                downloadIncompleteFullPath = downloadIncompleteFullPath.Append (TorrentFileInfo.IncompleteFileSuffix);
+            } else {
+                downloadIncompleteFullPath = downloadCompleteFullPath;
+            }
 
-            return (newPath, downloadCompleteFullPath, downloadIncompleteFullPath);
+            path = isComplete ? downloadCompleteFullPath : downloadIncompleteFullPath;
+
+            return (path, downloadCompleteFullPath, downloadIncompleteFullPath);
         }
 
-        internal void UpdatePaths ((string newPath, string downloadCompletePath, string downloadIncompletePath) paths)
+        internal static (SpanStringList path, SpanStringList completePath, SpanStringList incompletePath) GetNewPaths (string containingDirectory, string newPath, bool usePartialFiles, bool isComplete)
+        {
+            var path = new SpanStringList (containingDirectory);
+            path = path.Append (System.IO.Path.DirectorySeparatorChar.ToString ());
+            path = path.Append(newPath);
+            var downloadCompleteFullPath = path;
+            SpanStringList downloadIncompleteFullPath;
+            if (usePartialFiles) {
+                downloadIncompleteFullPath = downloadCompleteFullPath;
+                downloadIncompleteFullPath = downloadIncompleteFullPath.Append(TorrentFileInfo.IncompleteFileSuffix);
+            } else {
+                downloadIncompleteFullPath = downloadCompleteFullPath;
+            }
+
+            path = isComplete ? downloadCompleteFullPath : downloadIncompleteFullPath;
+
+            return (path, downloadCompleteFullPath, downloadIncompleteFullPath);
+        }
+
+        internal void UpdatePaths ((SpanStringList newPath, SpanStringList downloadCompletePath, SpanStringList downloadIncompletePath) paths)
         {
             FullPath = paths.newPath;
             DownloadCompleteFullPath = paths.downloadCompletePath;

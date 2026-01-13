@@ -121,30 +121,32 @@ namespace MonoTorrent.PieceWriter
         {
             await new EnsureThreadPool ();
 
-            if (File.Exists (file.FullPath))
+            var fullPath = file.FullPath.ToString ();
+
+            if (File.Exists (fullPath))
                 return false;
 
-            var parent = Path.GetDirectoryName (file.FullPath);
+            var parent = Path.GetDirectoryName (fullPath);
             if (!string.IsNullOrEmpty (parent))
                 Directory.CreateDirectory (parent);
 
             if (options == FileCreationOptions.PreferPreallocation) {
 #if NETSTANDARD2_0 || NETSTANDARD2_1 || NET5_0 || NETCOREAPP3_0 || NET472
-                    if (!File.Exists (file.FullPath))
-                        using (var fs = new FileStream (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete)) {
+                    if (!File.Exists (fullPath))
+                        using (var fs = new FileStream (fullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete)) {
                             fs.SetLength (file.Length);
                             fs.Seek (file.Length - 1, SeekOrigin.Begin);
                             fs.Write (new byte[1]);
                         }
 #else
-                File.OpenHandle (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, FileOptions.None, file.Length).Dispose ();
+                File.OpenHandle (fullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, FileOptions.None, file.Length).Dispose ();
 #endif
             } else {
                 try {
-                    NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
+                    NtfsSparseFile.CreateSparse (fullPath, file.Length);
                 } catch {
                     // who cares if we can't pre-allocate a sparse file. Try a regular file!
-                    new FileStream (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete).Dispose ();
+                    new FileStream (fullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete).Dispose ();
                 }
             }
             return true;
@@ -196,12 +198,13 @@ namespace MonoTorrent.PieceWriter
             await CloseAllAsync (data).ConfigureAwait (false);
 
             await new EnsureThreadPool ();
-            if (File.Exists (file.FullPath)) {
+            var fullPath = file.FullPath.ToString ();
+            if (File.Exists (fullPath)) {
                 if (overwrite)
                     File.Delete (newPath);
 
                 Directory.CreateDirectory (Path.GetDirectoryName (newPath)!);
-                File.Move (file.FullPath, newPath);
+                File.Move (fullPath, newPath);
             }
         }
 
@@ -227,11 +230,12 @@ namespace MonoTorrent.PieceWriter
         public async ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
         {
             await new EnsureThreadPool ();
-            var info = new FileInfo (file.FullPath);
+            var fullPath = file.FullPath.ToString ();
+            var info = new FileInfo (fullPath);
             if (!info.Exists)
                 return false;
 
-            using (var fileStream = new FileStream (file.FullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None))
+            using (var fileStream = new FileStream (fullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None))
                 fileStream.SetLength (file.Length);
             return true;
         }
@@ -292,11 +296,12 @@ namespace MonoTorrent.PieceWriter
             // We're about to do file manipulation, so swap to a threadpool thread to avoid hanging the DiskIO loop.
             await new EnsureThreadPool ();
 
-            if (!File.Exists (file.FullPath)) {
-                if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
+            var fullPath = file.FullPath.ToString ();
+            if (!File.Exists (fullPath)) {
+                if (Path.GetDirectoryName (fullPath) is string parentDirectory)
                     Directory.CreateDirectory (parentDirectory);
             }
-            freshStreamData.Stream = new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite | FileShare.Delete);
+            freshStreamData.Stream = new RandomFileReaderWriter (fullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite | FileShare.Delete);
             return (freshStreamData.Stream, freshStreamDataReleaser);
         }
 

@@ -456,13 +456,13 @@ namespace MonoTorrent
 
                 if (currentFile.EndPieceIndex == piece) {
                     while (currentFile != null && currentFile.EndPieceIndex == piece) {
-                        OnHashed (new TorrentCreatorEventArgs (currentFile.FullPath, currentFile.Length, currentFile.Length, torrentInfo.PieceIndexToByteOffset(piece) + sizeOfCurrentPiece, torrentInfo.Size));
+                            OnHashed (currentFile.FullPath, currentFile.Length, currentFile.Length, torrentInfo.PieceIndexToByteOffset (piece) + sizeOfCurrentPiece, torrentInfo.Size);
 
                         files = files.Slice (1);
                         currentFile = files.Length == 0 ? null : files.Span[0];
                     }
                 } else {
-                    OnHashed (new TorrentCreatorEventArgs (currentFile.FullPath, torrentInfo.PieceIndexToByteOffset (piece) - currentFile.OffsetInTorrent + sizeOfCurrentPiece, currentFile.Length, torrentInfo.PieceIndexToByteOffset (piece) + sizeOfCurrentPiece, torrentInfo.Size));
+                        OnHashed (currentFile.FullPath, torrentInfo.PieceIndexToByteOffset (piece) - currentFile.OffsetInTorrent + sizeOfCurrentPiece, currentFile.Length, torrentInfo.PieceIndexToByteOffset (piece) + sizeOfCurrentPiece, torrentInfo.Size);
                 }
 
                 // Asynchronously begin reading the *next* piece and computing the hash for that piece.
@@ -492,8 +492,8 @@ namespace MonoTorrent
             return (sha1Hashes, merkleLayers, fileSHA1Hashes, fileMD5Hashes);
         }
 
-        protected virtual void OnHashed (TorrentCreatorEventArgs args)
-            => Hashed?.InvokeAsync (this, args);
+        protected virtual void OnHashed (SpanStringList file, long fileHashed, long fileTotal, long overallHashed, long overallTotal)
+            => Hashed?.InvokeAsync (this, new TorrentCreatorEventArgs (file, fileHashed, fileTotal, overallHashed, overallTotal));
 
         async ReusableTask AppendPerFileHashes (ITorrentManagerInfo manager, IncrementalHash? fileMD5, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileMD5Hashes, IncrementalHash? fileSHA1, Dictionary<ITorrentManagerFile, ReadOnlyMemory<byte>> fileSHA1Hashes, long offset, Memory<byte> buffer)
         {

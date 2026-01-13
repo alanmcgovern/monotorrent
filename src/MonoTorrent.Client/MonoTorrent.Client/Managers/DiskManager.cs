@@ -479,11 +479,15 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal Task MoveFileAsync (ITorrentManagerFile file, (string newPath, string downloadComplete, string downloadIncomplete) paths)
-            => MoveFileAsync ((TorrentFileInfo) file, paths);
+        internal Task MoveFileAsync (ITorrentManagerFile file, (SpanStringList newPath, SpanStringList downloadComplete, SpanStringList downloadIncomplete) paths)
+        {
+            return MoveFileAsync ((TorrentFileInfo) file, paths);
+        }
 
-        internal Task MoveFileAsync (TorrentFileInfo file, (string newPath, string downloadComplete, string downloadIncomplete) paths)
-            => MoveFileAsync (file, paths, false);
+        internal Task MoveFileAsync (TorrentFileInfo file, (SpanStringList newPath, SpanStringList downloadComplete, SpanStringList downloadIncomplete) paths)
+        {
+            return MoveFileAsync (file, paths, false);
+        }
 
         internal async Task MoveFilesAsync (IList<ITorrentManagerFile> files, string newRoot, bool overwrite)
         {
@@ -493,7 +497,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        async Task MoveFileAsync (TorrentFileInfo file, (string newPath, string downloadCompletePath, string downloadIncompletePath) paths, bool overwrite)
+        async Task MoveFileAsync (TorrentFileInfo file, (SpanStringList newPath, SpanStringList downloadCompletePath, SpanStringList downloadIncompletePath) paths, bool overwrite)
         {
             await IOLoop;
 

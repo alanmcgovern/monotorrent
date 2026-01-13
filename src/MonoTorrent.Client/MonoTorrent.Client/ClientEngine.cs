@@ -500,7 +500,7 @@ namespace MonoTorrent.Client
                         File.Delete (path);
             }
             if (mode.HasFlag (RemoveMode.DownloadedDataOnly)) {
-                foreach (var path in manager.Files.Select (f => f.FullPath))
+                foreach (var path in manager.Files.Select (f => f.FullPath.ToString ()))
                     if (File.Exists (path))
                         File.Delete (path);
                 // FIXME: Clear the empty directories.

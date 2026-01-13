@@ -25,8 +25,9 @@ namespace MonoTorrent.Common
 
             }
 
-            protected override void OnHashed (TorrentCreatorEventArgs e)
+            protected override void OnHashed (SpanStringList file, long fileHashed, long fileTotal, long overallHashed, long overallTotal)
             {
+                var e = new TorrentCreatorEventArgs (file, fileHashed, fileTotal, overallHashed, overallTotal);
                 if (!HashedEventArgs.TryGetValue (e.CurrentFile, out List<TorrentCreatorEventArgs> value))
                     HashedEventArgs[e.CurrentFile] = value = new List<TorrentCreatorEventArgs> ();
                 value.Add (e);

@@ -36,7 +36,7 @@ using System.Threading.Tasks;
 
 namespace MonoTorrent
 {
-#if NET472 || NET5_0 || NET6_0 || NETCOREAPP3_0 || NETSTANDARD2_0 || NETSTANDARD2_1
+#if NET472 || NET5_0 || NET6_0 || NET8_0 || NETCOREAPP3_0 || NETSTANDARD2_0 || NETSTANDARD2_1
     static class UdpClientExtensions
     {
         public static Task<int> SendAsync (this UdpClient client, ReadOnlyMemory<byte> datagram, int bytes, IPEndPoint? endPoint)
