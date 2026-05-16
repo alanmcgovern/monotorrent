@@ -37,11 +37,24 @@ namespace MonoTorrent.Trackers
     class TrackerRequestFactory : ITrackerRequestFactory
     {
         TorrentManager Manager { get; }
+        Func<string, (string?, int)> ReportedAddressFunc;
 
         public TrackerRequestFactory (TorrentManager manager)
         {
             Manager = manager;
+            ReportedAddressFunc = (type) => {
+                ClientEngine engine = Manager.Engine!;
+                if (engine == null)
+                    return (null, -1);
+
+                string? ip = null;
+                int port = engine.GetOverrideOrActualListenPort (type).GetValueOrDefault (-1);
+                if (engine.Settings.ReportedListenEndPoints.TryGetValue (type, out var reportedAddress))
+                    ip = reportedAddress.Address.ToString ();
+                return (ip, port);
+            };
         }
+
 
         public AnnounceRequest CreateAnnounce (TorrentEvent clientEvent)
         {
@@ -53,14 +66,6 @@ namespace MonoTorrent.Trackers
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
-            Func<string, (string?, int)> reportedAddressFunc = type => {
-                string? ip = null;
-                int port = engine.GetOverrideOrActualListenPort (type).GetValueOrDefault (-1);
-                if (engine.Settings.ReportedListenEndPoints.TryGetValue (type, out var reportedAddress))
-                    ip = reportedAddress.Address.ToString ();
-                return (ip, port);
-            };
-
             // FIXME: In metadata mode we need to pretend we need to download data otherwise
             // tracker optimisations might result in no peers being sent back.
             long bytesLeft = 1000;
@@ -71,7 +76,7 @@ namespace MonoTorrent.Trackers
                                           Manager.Monitor.DataBytesSent,
                                           bytesLeft,
                                           clientEvent, Manager.InfoHashes, requireEncryption, Manager.Engine!.PeerId.AsMemory (),
-                                          reportedAddressFunc, supportsEncryption);
+                                          ReportedAddressFunc, supportsEncryption);
         }
 
         public ScrapeRequest CreateScrape ()

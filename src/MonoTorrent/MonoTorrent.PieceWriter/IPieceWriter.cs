@@ -168,7 +168,7 @@ namespace MonoTorrent.PieceWriter
             int done = 0;
 
             if (todoFile > 0) {
-                done = await writer.ReadAsync (file, offset, buffer.Slice (0, todoFile));
+                done = await writer.ReadAsync (file, offset, buffer.Slice (0, todoFile)).ConfigureAwait (false);
                 if (done < todoFile)
                     return (done, 0);
             }

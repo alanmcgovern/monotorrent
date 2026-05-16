@@ -48,10 +48,5 @@ namespace MonoTorrent
             : base (message, innerException)
         {
         }
-
-        public TorrentException (System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-            : base (info, context)
-        {
-        }
     }
 }

@@ -711,7 +711,8 @@ namespace MonoTorrent.Client
 
             if (manager.CanUseDht) {
                 int successfullyAdded = await manager.AddPeersAsync (e.Peers);
-                manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));
+                if (successfullyAdded > 0)
+                    manager.RaisePeersFound (new DhtPeersAdded (manager, successfullyAdded, e.Peers.Count));
             } else {
                 // This is only used for unit testing to validate that even if the DHT engine
                 // finds peers for a private torrent, we will not add them to the manager.

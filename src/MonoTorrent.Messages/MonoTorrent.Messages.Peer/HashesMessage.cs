@@ -128,11 +128,7 @@ namespace MonoTorrent.Messages.Peer
             title += $"{Environment.NewLine}\t Length: {Length}";
             title += $"{Environment.NewLine}\t ProofLayers: {ProofLayers}";
             title += $"{Environment.NewLine}\t Data length: {Hashes.Length} ({Hashes.Length / 32} hashes)";
-#if NETSTANDARD2_0 || NET472
-            title += $"{Environment.NewLine}\t Full message: {Convert.ToBase64String(Encode().ToArray ())})";
-#else
             title += $"{Environment.NewLine}\t Full message: {Convert.ToBase64String (Encode ().Span)})";
-#endif
             return title;
         }
     }

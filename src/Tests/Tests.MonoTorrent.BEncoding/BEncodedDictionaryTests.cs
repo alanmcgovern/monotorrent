@@ -188,5 +188,29 @@ namespace MonoTorrent.BEncoding
             Assert.IsTrue (span.infoHashes.SHA1.Span.SequenceEqual (stream.infohashes.SHA1.Span));
             Assert.IsTrue (span.infoHashes.SHA256.Span.SequenceEqual (stream.infohashes.SHA256.Span));
         }
+
+        [Test]
+        public void AddRemoveItem()
+        {
+            var dict = new BEncodedDictionary ();
+            dict.Add ("key1", new BEncodedString ("value"));
+            Assert.AreEqual (1, dict.Count);
+            Assert.IsTrue (dict.TryGetValue ("key1", out var value));
+            Assert.IsFalse (dict.TryGetValue ("key2", out value));
+
+            dict.Add ("key2", new BEncodedString ("value"));
+            Assert.AreEqual (2, dict.Count);
+            Assert.IsTrue (dict.TryGetValue ("key2", out value));
+
+            dict.Remove ("key1");
+            Assert.AreEqual (1, dict.Count);
+            Assert.IsFalse (dict.TryGetValue ("key1", out value));
+            Assert.IsTrue (dict.TryGetValue ("key2", out value));
+
+            dict.Remove ("key2");
+            Assert.AreEqual (0, dict.Count);
+            Assert.IsFalse (dict.TryGetValue ("key1", out value));
+            Assert.IsFalse (dict.TryGetValue ("key2", out value));
+        }
     }
 }

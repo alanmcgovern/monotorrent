@@ -93,26 +93,6 @@ namespace MonoTorrent.Client
             }).ToArray ();
         }
 
-        internal static string PathEscape (string path)
-        {
-            foreach (var illegal in System.IO.Path.GetInvalidPathChars ())
-                path = path.Replace ($"{illegal}", Convert.ToString (illegal, 16));
-            return path;
-        }
-
-        internal static string PathAndFileNameEscape (string path)
-        {
-            var probableFilenameIndex = path.LastIndexOf (System.IO.Path.DirectorySeparatorChar);
-            var dir = probableFilenameIndex == -1 ? "" : path.Substring (0, probableFilenameIndex);
-            var filename = probableFilenameIndex == -1 ? path : path.Substring (probableFilenameIndex + 1);
-
-            dir = PathEscape (dir);
-
-            foreach (var illegal in System.IO.Path.GetInvalidFileNameChars ())
-                filename = filename.Replace ($"{illegal}", $"_{Convert.ToString (illegal, 16)}_");
-            return System.IO.Path.Combine (dir, filename);
-        }
-
         internal static (string path, string completePath, string incompletePath) GetNewPaths (string newPath, bool usePartialFiles, bool isComplete)
         {
             var downloadCompleteFullPath = newPath;

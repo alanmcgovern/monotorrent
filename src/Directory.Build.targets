@@ -5,8 +5,7 @@
     <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\alpha.txt')">-alpha.unstable</MonoTorrentReleaseSuffix>
     <MonoTorrentReleaseSuffix Condition="Exists ('$(GitCommitsRelativeTo)\beta.txt')">-beta</MonoTorrentReleaseSuffix>
 
-    <Nullable Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'">annotations</Nullable>
-    <Nullable Condition="$(TargetFramework) != 'netstandard2.0' And $(TargetFramework) != 'net472'">enable</Nullable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup Condition="$(GitInfoVersion) != ''">
@@ -16,7 +15,6 @@
 
   <ItemGroup>
     <PackageReference Update="Mono.Nat" Version="$(MonoNatVersion)" />
-    <PackageReference Update="StandardSocketsHttpHandler" Version="$(StandardSocketsHttpHandlerVersion)" />
   </ItemGroup>
   
   <ItemGroup>
@@ -28,19 +26,15 @@
     <Compile Condition="$(UseIListExtensions)" Include="$(MSBuildThisFileDirectory)IListExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseLogger)" Include="$(MSBuildThisFileDirectory)Logger.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseMainLoop)" Include="$(MSBuildThisFileDirectory)MainLoop.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Condition="$(UseMemoryExtensions)" Include="$(MSBuildThisFileDirectory)MemoryExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Condition="$(UseNullabilityHelpers)" Include="$(MSBuildThisFileDirectory)NullabilityAttributes.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseSemaphoreSlimExtensions)" Include="$(MSBuildThisFileDirectory)SemaphoreSlimExtensions.cs" Link="Linked\%(Filename)%(Extension)" />
     <Compile Condition="$(UseSimpleSpinLock)" Include="$(MSBuildThisFileDirectory)SimpleSpinLock.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseThreadSwitcher)" Include="$(MSBuildThisFileDirectory)ThreadSwitcher.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseTorrentFileExtensions)" Include="$(MSBuildThisFileDirectory)TorrentFileExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
-    <Compile Condition="$(UseUdpClientExtensions)" Include="$(MSBuildThisFileDirectory)UdpClientExtensions.cs" Link="Linked\%(FileName)%(Extension)" />
     <Compile Condition="$(UseValueStopWatch)" Include="$(MSBuildThisFileDirectory)ValueStopwatch.cs" Link="Linked\%(FileName)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Update="ReusableTasks" Version="$(ReusableTasksVersion)" />
-    <PackageReference Update="System.Memory" Version="$(SystemMemoryVersion)" />
   </ItemGroup>
 
   <Target Name="CreateOutDirectory" BeforeTargets="_GetAllRestoreProjectPathItems;Restore;BeforeResolveReferences;CollectPackageReferences">

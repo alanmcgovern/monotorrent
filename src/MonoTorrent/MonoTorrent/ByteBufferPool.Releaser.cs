@@ -28,17 +28,20 @@
 
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 
 namespace MonoTorrent
 {
     public partial class ByteBufferPool
     {
-        public readonly struct Releaser : IDisposable
+        public readonly struct Releaser : IMemoryOwner<byte>
         {
             readonly int Counter;
             readonly ByteBuffer Buffer;
             readonly ByteBufferPool Pool;
+
+            public Memory<byte> Memory => Buffer.Memory;
 
             internal Releaser (ByteBufferPool pool, ByteBuffer buffer)
             {

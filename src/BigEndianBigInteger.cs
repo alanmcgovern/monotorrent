@@ -39,37 +39,11 @@ namespace MonoTorrent
 
         readonly BigInteger Value;
 
-#if NETSTANDARD2_0 || NET472
-        public BigEndianBigInteger (ReadOnlySpan<byte> span)
-        {
-            var littleEndianArray = new byte[span.Length + 1];
-
-            // Swap endian-ness and append a trailing '0' to ensure the value is treated as
-            // a positive integer
-            for (int i = 0; i < span.Length; i++)
-                littleEndianArray[span.Length - 1 - i] = span[i];
-
-            Value = new BigInteger (littleEndianArray);
-        }
-        public byte[] ToByteArray ()
-        {
-            byte[] littleEndianArray = Value.ToByteArray ();
-            int count = littleEndianArray.Length;
-            while (count > 0 && littleEndianArray[count - 1] == 0)
-                count--;
-
-            byte[] result = new byte[count];
-            for (int i = 0; i < count; i++)
-                result[i] = littleEndianArray[count - i - 1];
-            return result;
-        }
-#else
         public BigEndianBigInteger (ReadOnlySpan<byte> span)
             => Value = new BigInteger (span, true, true);
 
         public byte[] ToByteArray ()
             => Value.ToByteArray (true, true);
-#endif
 
         public BigEndianBigInteger (BigInteger value)
             => Value = value;

@@ -82,6 +82,8 @@ namespace MonoTorrent.Connections.Peer
 
         Task RateLimiterTask { get; set; }
 
+        UdpClient SendingClient { get; }
+
         public LocalPeerDiscovery ()
             : base (new IPEndPoint (IPAddress.Any, MulticastAddressV4.Port))
         {
@@ -90,6 +92,9 @@ namespace MonoTorrent.Connections.Peer
             BaseSearchString = $"BT-SEARCH * HTTP/1.1\r\nHost: {MulticastAddressV4.Address}:{MulticastAddressV4.Port}\r\nPort: {{0}}\r\nInfohash: {{1}}\r\ncookie: {Cookie}\r\n\r\n\r\n";
             PendingAnnounces = new Queue<(InfoHash, IPEndPoint)> ();
             RateLimiterTask = Task.CompletedTask;
+            SendingClient = new UdpClient ();
+            SendingClient.Client.SendBufferSize = 1024;
+            SendingClient.Client.ReceiveBufferSize = 1024;
         }
 
         /// <summary>
@@ -119,7 +124,6 @@ namespace MonoTorrent.Connections.Peer
 
             await RateLimiterTask;
 
-            using var sendingClient = new UdpClient ();
             var nics = NetworkInterface.GetAllNetworkInterfaces ();
 
             while (true) {
@@ -140,8 +144,8 @@ namespace MonoTorrent.Connections.Peer
 
                 foreach (var nic in nics) {
                     try {
-                        sendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
-                        await sendingClient.SendAsync (data, data.Length, MulticastAddressV4).ConfigureAwait (false);
+                        SendingClient.Client.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder (nic.GetIPProperties ().GetIPv4Properties ().Index));
+                        await SendingClient.SendAsync (data, data.Length, MulticastAddressV4).ConfigureAwait (false);
                     } catch {
                         // If data can't be sent, just ignore the error
                     }
@@ -191,6 +195,8 @@ namespace MonoTorrent.Connections.Peer
             base.Start (token);
 
             var UdpClient = new UdpClient (PreferredLocalEndPoint);
+            UdpClient.Client.SendBufferSize = 1024;
+            UdpClient.Client.ReceiveBufferSize = 32768;
             LocalEndPoint = (IPEndPoint?) UdpClient.Client.LocalEndPoint;
 
             token.Register (() => UdpClient.Dispose ());

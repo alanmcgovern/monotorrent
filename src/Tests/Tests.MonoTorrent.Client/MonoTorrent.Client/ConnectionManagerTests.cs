@@ -60,10 +60,10 @@ namespace MonoTorrent.Client
 
             public ReusableTaskCompletionSource<bool> ConnectAsyncInvokedTask = new ReusableTaskCompletionSource<bool> ();
             public ReusableTaskCompletionSource<bool> ConnectAsyncResultTask = new ReusableTaskCompletionSource<bool> ();
-            public async ReusableTask ConnectAsync ()
+            public async ReusableTask<bool> ConnectAsync ()
             {
                 ConnectAsyncInvokedTask.SetResult (true);
-                await ConnectAsyncResultTask.Task;
+                return await ConnectAsyncResultTask.Task;
             }
 
             public TaskCompletionSource<bool> DisposeAsyncInvokedTask = new TaskCompletionSource<bool> ();
@@ -83,9 +83,9 @@ namespace MonoTorrent.Client
                 return await ReceiveAsyncResultTask.Task;
             }
 
-            public ReusableTaskCompletionSource<Memory<byte>> SendAsyncInvokedTask = new ReusableTaskCompletionSource<Memory<byte>> ();
+            public ReusableTaskCompletionSource<ReadOnlyMemory<byte>> SendAsyncInvokedTask = new ReusableTaskCompletionSource<ReadOnlyMemory<byte>> ();
             public ReusableTaskCompletionSource<int> SendAsyncResultTask = new ReusableTaskCompletionSource<int> ();
-            public async ReusableTask<int> SendAsync (Memory<byte> buffer)
+            public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
             {
                 SendAsyncInvokedTask.SetResult (buffer);
                 return await SendAsyncResultTask.Task;

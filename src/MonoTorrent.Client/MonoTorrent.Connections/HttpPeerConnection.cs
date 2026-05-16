@@ -85,25 +85,24 @@ namespace MonoTorrent.Connections.Peer
                 buffer.AsSpan (offset, count).Fill (0);
                 return count;
             }
-#if !NETSTANDARD2_0 && !NET472
+
             public override int Read (Span<byte> buffer)
             {
                 buffer.Fill (0);
                 return buffer.Length;
             }
-#endif
+
             public override Task<int> ReadAsync (byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             {
                 buffer.AsSpan (offset, count).Fill (0);
                 return Task.FromResult (count);
             }
-#if !NETSTANDARD2_0 && !NET472
             public override ValueTask<int> ReadAsync (Memory<byte> buffer, CancellationToken cancellationToken = default)
             {
                 buffer.Span.Fill (0);
                 return new ValueTask<int> (buffer.Length);
             }
-#endif
+
             public override long Seek (long offset, SeekOrigin origin)
                 => throw new NotImplementedException ();
 
@@ -169,9 +168,9 @@ namespace MonoTorrent.Connections.Peer
 
         #endregion Constructors
 
-        public ReusableTask ConnectAsync ()
+        public ReusableTask<bool> ConnectAsync ()
         {
-            return ReusableTask.CompletedTask;
+            return ReusableTask.FromResult (true);
         }
 
         public async ReusableTask<int> ReceiveAsync (Memory<byte> socketBuffer)
@@ -304,7 +303,7 @@ namespace MonoTorrent.Connections.Peer
             throw new WebException ("Unable to download the required data from the server");
         }
 
-        public async ReusableTask<int> SendAsync (Memory<byte> socketBuffer)
+        public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> socketBuffer)
         {
             SendResult = new TaskCompletionSource<object?> ();
 

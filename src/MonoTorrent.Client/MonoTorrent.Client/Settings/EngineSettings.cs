@@ -203,7 +203,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The maximum number of concurrent connection attempts overall. Defaults to 8.
         /// </summary>
-        public int MaximumHalfOpenConnections { get; } = 8;
+        public int MaximumHalfOpenConnections { get; } = 12;
 
         /// <summary>
         /// The maximum upload rate, in bytes per second, overall. A value of 0 means unlimited. defaults to 0.

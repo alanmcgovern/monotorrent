@@ -41,7 +41,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
 {
-    public sealed class Torrent : ITorrentInfo, IEquatable<Torrent>
+    public sealed partial class Torrent : ITorrentInfo, IEquatable<Torrent>
     {
         /// <summary>
         /// This method loads a .torrent file from the specified path.
@@ -367,23 +367,23 @@ namespace MonoTorrent
         void ProcessInfo (BEncodedDictionary dictionary, ref PieceHashesV1? hashesV1, ref bool hasV1Data, ref bool hasV2Data)
         {
             InfoMetadata = dictionary.Encode ();
-            PieceLength = int.Parse (dictionary["piece length"].ToString ()!);
+            PieceLength = (int) ((BEncodedNumber) dictionary[Cache.PieceLength]).Number;
             hasV1Data = false;
             hasV2Data = false;
 
-            if (dictionary.TryGetValue ("meta version", out BEncodedValue? metaVersion)) {
+            if (dictionary.TryGetValue (Cache.MetaVersion, out BEncodedValue? metaVersion)) {
                 if (metaVersion is BEncodedNumber metadataVersion) {
                     hasV2Data = metadataVersion.Number == 2;
                 }
             }
 
-            hasV1Data = dictionary.ContainsKey ("pieces");
+            hasV1Data = dictionary.ContainsKey (Cache.Pieces);
 
             if (!hasV1Data && !hasV2Data)
                 throw new TorrentException ("Unsupported torrent version detected.");
 
             if (hasV1Data) {
-                var data = ((BEncodedString) dictionary["pieces"]).AsMemory ();
+                var data = ((BEncodedString) dictionary[Cache.Pieces]).AsMemory ();
                 if (data.Length % 20 != 0)
                     throw new TorrentException ("Invalid infohash detected");
                 hashesV1 = new PieceHashesV1 (data, 20);
@@ -393,75 +393,53 @@ namespace MonoTorrent
             IList<ITorrentFile> v2Files = Array.Empty<ITorrentFile> ();
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
-                switch (keypair.Key.Text) {
-                    case ("source"):
-                        Source = keypair.Value.ToString () ?? "";
-                        break;
+                if (keypair.Key == Cache.Source)
+                    Source = (keypair.Value as BEncodedString)?.Text ?? "";
 
-                    case ("sha1"):
-                        SHA1 = ((BEncodedString) keypair.Value).Span.ToArray ();
-                        break;
+                else if (keypair.Key == Cache.Sha1)
+                    SHA1 = (keypair.Value as BEncodedString)?.AsMemory () ?? default;
 
-                    case ("ed2k"):
-                        ED2K = ((BEncodedString) keypair.Value).Span.ToArray ();
-                        break;
+                else if (keypair.Key == Cache.Ed2k)
+                    ED2K = (keypair.Value as BEncodedString)?.AsMemory () ?? default;
 
-                    case ("publisher-url.utf-8"):
-                        PublisherUrl = ((BEncodedString) keypair.Value).Text;
-                        break;
+                else if (keypair.Key == Cache.PublisherUrlUtf8)
+                    PublisherUrl = (keypair.Value as BEncodedString)?.Text ?? "";
 
-                    case ("publisher-url"):
-                        if (string.IsNullOrEmpty (PublisherUrl))
-                            PublisherUrl = ((BEncodedString) keypair.Value).Text;
-                        break;
+                else if (keypair.Key == Cache.PublisherUrl) {
+                    if (string.IsNullOrEmpty (PublisherUrl))
+                        PublisherUrl = (keypair.Value as BEncodedString)?.Text ?? "";
+                } else if (keypair.Key == Cache.PublisherUtf8)
+                    Publisher = (keypair.Value as BEncodedString)?.Text ?? "";
 
-                    case ("publisher.utf-8"):
-                        Publisher = keypair.Value.ToString () ?? "";
-                        break;
+                else if (keypair.Key == Cache.Publisher) {
+                    if (string.IsNullOrEmpty (Publisher))
+                        Publisher = (keypair.Value as BEncodedString)?.Text ?? "";
+                } else if (keypair.Key == Cache.Files)
+                    // This is the list of files using the v1 torrent format.
+                    v1Files = LoadTorrentFilesV1 ((BEncodedList) keypair.Value, PieceLength, hasV1Data && hasV2Data);
 
-                    case ("publisher"):
-                        if (string.IsNullOrEmpty (Publisher))
-                            Publisher = keypair.Value.ToString () ?? "";
-                        break;
+                else if (keypair.Key == Cache.FileTree)
+                    // This is the list of files using the v2 torrent format.
+                    v2Files = LoadTorrentFilesV2 ((BEncodedDictionary) dictionary[Cache.FileTree], PieceLength, hasV1Data && hasV2Data);
 
-                    case ("files"):
-                        // This is the list of files using the v1 torrent format.
-                        v1Files = LoadTorrentFilesV1 ((BEncodedList) keypair.Value, PieceLength, hasV1Data && hasV2Data);
-                        break;
+                else if (keypair.Key == Cache.NameUtf8)
+                    Name = (keypair.Value as BEncodedString)?.Text ?? "";
 
-                    case "file tree":
-                        // This is the list of files using the v2 torrent format.
-                        v2Files = LoadTorrentFilesV2 ((BEncodedDictionary) dictionary["file tree"], PieceLength, hasV1Data && hasV2Data);
-                        break;
-
-                    case ("name.utf-8"):
-                        Name = keypair.Value.ToString () ?? "";
-                        break;
-
-                    case ("name"):
-                        if (string.IsNullOrEmpty (Name))
-                            Name = keypair.Value.ToString () ?? "";
-                        break;
-
-                    case ("piece length"):  // Already handled
-                        break;
-
-                    case ("length"):
-                        break;      // This is a singlefile torrent
-
-                    case ("private"):
-                        IsPrivate = (keypair.Value.ToString () == "1") ? true : false;
-                        break;
-
-                    default:
-                        break;
-                }
+                else if (keypair.Key == Cache.Name) {
+                    if (string.IsNullOrEmpty (Name))
+                        Name = (keypair.Value as BEncodedString)?.Text ?? "";
+                } else if (keypair.Key == Cache.PieceLength) {
+                    // Already handled
+                } else if (keypair.Key == Cache.Length) {
+                    // This is a singlefile torrent
+                } else if (keypair.Key == Cache.Private)
+                    IsPrivate = (keypair.Value.ToString () == "1") ? true : false;
             }
 
             // fixup single file v1 file list
             if (hasV1Data && v1Files.Count == 0 && !(hashesV1 is null))   // Not a multi-file v1 torrent
             {
-                long length = long.Parse (dictionary["length"].ToString ()!);
+                long length = ((BEncodedNumber) dictionary[Cache.Length]).Number;
                 string path = Name;
                 int endPiece = Math.Min (hashesV1.Count - 1, (int) ((length + (PieceLength - 1)) / PieceLength));
                 v1Files = Array.AsReadOnly<ITorrentFile> (new[] { new TorrentFile (path, length, 0, endPiece, 0, TorrentFileAttributes.None, 0) });
@@ -525,135 +503,102 @@ namespace MonoTorrent
             PieceHashesV1? hashesV1 = null;
             PieceHashesV2? hashesV2 = null;
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation) {
-                if (keypair.Value is BEncodedString && keypair.Value.ToString () == String.Empty)
+                if (keypair.Value is BEncodedString bs && bs == BEncodedString.Empty)
                     continue;
 
-                switch (keypair.Key.Text) {
-                    case ("announce"):
-                        // Ignore this if we have an announce-list
-                        if (torrentInformation.ContainsKey ("announce-list"))
-                            break;
-                        AnnounceUrls = new List<IList<string>> {
-                            new List<string> { keypair.Value.ToString () ?? "" }.Where (t => !string.IsNullOrEmpty(t)).ToList ().AsReadOnly ()
-                        }.AsReadOnly ();
-                        break;
+                if (keypair.Key == Cache.Announce) {
+                    // Ignore this if we have an announce-list
+                    if (torrentInformation.ContainsKey ("announce-list"))
+                        continue;
 
-                    case ("creation date"):
+                    AnnounceUrls = new List<IList<string>> {
+                        new List<string> { (keypair.Value as BEncodedString)?.Text ?? "" }.Where (t => !string.IsNullOrEmpty(t)).ToList ().AsReadOnly ()
+                    }.AsReadOnly ();
+                } else if (keypair.Key == Cache.CreationDate) {
+                    try {
                         try {
-                            try {
-                                CreationDate = UnixEpoch.AddSeconds (long.Parse (keypair.Value.ToString () ?? ""));
-                            } catch (Exception e) {
-                                if (e is ArgumentOutOfRangeException)
-                                    CreationDate = UnixEpoch.AddMilliseconds (long.Parse (keypair.Value.ToString () ?? ""));
-                                else
-                                    throw;
-                            }
+                            CreationDate = UnixEpoch.AddSeconds (long.Parse (keypair.Value.ToString () ?? ""));
                         } catch (Exception e) {
                             if (e is ArgumentOutOfRangeException)
-                                throw new BEncodingException ("Argument out of range exception when adding seconds to creation date.", e);
-                            else if (e is FormatException)
-                                throw new BEncodingException ($"Could not parse {keypair.Value} into a number", e);
+                                CreationDate = UnixEpoch.AddMilliseconds (long.Parse (keypair.Value.ToString () ?? ""));
                             else
                                 throw;
                         }
-                        break;
+                    } catch (Exception e) {
+                        if (e is ArgumentOutOfRangeException)
+                            throw new BEncodingException ("Argument out of range exception when adding seconds to creation date.", e);
+                        else if (e is FormatException)
+                            throw new BEncodingException ($"Could not parse {keypair.Value} into a number", e);
+                        else
+                            throw;
+                    }
+                } else if (keypair.Key == Cache.Nodes) {
+                    if (keypair.Value is BEncodedList list)
+                        Nodes = list;
+                } else if (keypair.Key == Cache.CommentUtf8) {
+                    Comment = (keypair.Value as BEncodedString)?.Text ?? "";       // Always take the UTF-8 version
+                } else if (keypair.Key == Cache.Comment) {
+                    if (string.IsNullOrEmpty (Comment))
+                        Comment = (keypair.Value as BEncodedString)?.Text ?? "";
+                } else if (keypair.Key == Cache.PublisherUrlUtf8) {
+                    PublisherUrl = (keypair.Value as BEncodedString)?.Text ?? "";      // even if there's an existing value
+                } else if (keypair.Key == Cache.PublisherUrl) {
+                    if (string.IsNullOrEmpty (PublisherUrl))
+                        PublisherUrl = (keypair.Value as BEncodedString)?.Text ?? "";
+                } else if (keypair.Key == Cache.CreatedBy) {
+                    CreatedBy = (keypair.Value as BEncodedString)?.Text ?? "";
+                } else if (keypair.Key == Cache.Encoding) {
+                    Encoding = (keypair.Value as BEncodedString)?.Text ?? "";
+                } else if (keypair.Key == Cache.Info) {
+                    ProcessInfo (((BEncodedDictionary) keypair.Value), ref hashesV1, ref hasV1Data, ref hasV2Data);
+                } else if (keypair.Key == Cache.Name) {
+                    // Handled elsewhere
+                } else if (keypair.Key == Cache.AnnounceList) {
+                    if (keypair.Value is BEncodedString)
+                        continue;
 
-                    case ("nodes"):
-                        if (keypair.Value is BEncodedList list)
-                            Nodes = list;
-                        break;
+                    var result = new List<IList<string>> ();
+                    var announces = (BEncodedList) keypair.Value;
+                    for (int j = 0; j < announces.Count; j++) {
+                        if (announces[j] is BEncodedList bencodedTier) {
+                            var tier = new List<string> (bencodedTier.Count);
 
-                    case ("comment.utf-8"):
-                        Comment = keypair.Value.ToString () ?? "";       // Always take the UTF-8 version
-                        break;                                          // even if there's an existing value
+                            for (int k = 0; k < bencodedTier.Count; k++)
+                                tier.Add (((BEncodedString) bencodedTier[k]).Text);
 
-                    case ("comment"):
-                        if (string.IsNullOrEmpty (Comment))
-                            Comment = keypair.Value.ToString () ?? "";
-                        break;
+                            var resultTier = new List<string> ();
+                            for (int k = 0; k < tier.Count; k++)
+                                resultTier.Add (tier[k]);
 
-                    case ("publisher-url.utf-8"):                       // Always take the UTF-8 version
-                        PublisherUrl = ((BEncodedString) keypair.Value).Text;      // even if there's an existing value
-                        break;
-
-                    case ("publisher-url"):
-                        if (string.IsNullOrEmpty (PublisherUrl))
-                            PublisherUrl = ((BEncodedString) keypair.Value).Text;
-                        break;
-
-                    case ("created by"):
-                        CreatedBy = keypair.Value.ToString () ?? "";
-                        break;
-
-                    case ("encoding"):
-                        Encoding = keypair.Value.ToString () ?? "";
-                        break;
-
-                    case ("info"):
-                        ProcessInfo (((BEncodedDictionary) keypair.Value), ref hashesV1, ref hasV1Data, ref hasV2Data);
-                        break;
-
-                    case ("name"):                                               // Handled elsewhere
-                        break;
-
-                    case ("announce-list"):
-                        if (keypair.Value is BEncodedString)
-                            break;
-
-                        var result = new List<IList<string>> ();
-                        var announces = (BEncodedList) keypair.Value;
-                        for (int j = 0; j < announces.Count; j++) {
-                            if (announces[j] is BEncodedList bencodedTier) {
-                                var tier = new List<string> (bencodedTier.Count);
-
-                                for (int k = 0; k < bencodedTier.Count; k++)
-                                    tier.Add (((BEncodedString) bencodedTier[k]).Text);
-
-                                var resultTier = new List<string> ();
-                                for (int k = 0; k < tier.Count; k++)
-                                    resultTier.Add (tier[k]);
-
-                                if (resultTier.Count != 0)
-                                    result.Add (tier.AsReadOnly ());
-                            } else {
-                                throw new BEncodingException (
-                                    $"Non-BEncodedList found in announce-list (found {announces[j].GetType ()})");
-                            }
+                            if (resultTier.Count != 0)
+                                result.Add (tier.AsReadOnly ());
+                        } else {
+                            throw new BEncodingException (
+                                $"Non-BEncodedList found in announce-list (found {announces[j].GetType ()})");
                         }
-                        if (result.Count > 0)
-                            AnnounceUrls = result.AsReadOnly ();
-                        break;
+                    }
+                    if (result.Count > 0)
+                        AnnounceUrls = result.AsReadOnly ();
+                } else if (keypair.Key == Cache.PieceLayers) {
+                    var dict = (BEncodedDictionary) keypair.Value;
 
-                    case ("httpseeds"):
-                        // This form of web-seeding is not supported.
-                        break;
+                    var merkleTrees = dict.ToDictionary (
+                        key => MerkleRoot.FromMemory (key.Key.AsMemory ()),
+                        kvp => ReadOnlyMerkleTree.FromLayer (PieceLength, ((BEncodedString) kvp.Value).Span, MerkleRoot.FromMemory (kvp.Key.AsMemory ()))
+                    );
 
-                    case "piece layers":
-                        var dict = (BEncodedDictionary) keypair.Value;
-
-                        var merkleTrees = dict.ToDictionary (
-                            key => MerkleRoot.FromMemory (key.Key.AsMemory ()),
-                            kvp => ReadOnlyMerkleTree.FromLayer (PieceLength, ((BEncodedString) kvp.Value).Span, MerkleRoot.FromMemory (kvp.Key.AsMemory ()))
-                        );
-
-                        hashesV2 = LoadHashesV2 (Files, merkleTrees, PieceLength);
-                        break;
-
-                    case ("url-list"):
-                        if (keypair.Value is BEncodedString httpSeedString) {
-                            if (Uri.TryCreate (httpSeedString.Text, UriKind.Absolute, out Uri? httpSeedUri)) {
+                    hashesV2 = LoadHashesV2 (Files, merkleTrees, PieceLength);
+                } else if (keypair.Key == Cache.UrlList) {
+                    if (keypair.Value is BEncodedString httpSeedString) {
+                        if (Uri.TryCreate (httpSeedString.Text, UriKind.Absolute, out Uri? httpSeedUri)) {
+                            HttpSeeds.Add (httpSeedUri);
+                        }
+                    } else if (keypair.Value is BEncodedList httpSeedList) {
+                        foreach (BEncodedString str in httpSeedList)
+                            if (Uri.TryCreate (str.Text, UriKind.Absolute, out Uri? httpSeedUri)) {
                                 HttpSeeds.Add (httpSeedUri);
                             }
-                        } else if (keypair.Value is BEncodedList httpSeedList) {
-                            foreach (BEncodedString str in httpSeedList)
-                                if (Uri.TryCreate (str.Text, UriKind.Absolute, out Uri? httpSeedUri)) {
-                                    HttpSeeds.Add (httpSeedUri);
-                                }
-                        }
-                        break;
-
-                    default:
-                        break;
+                    }
                 }
             }
 
@@ -669,20 +614,20 @@ namespace MonoTorrent
             PieceHashesV2 = InfoHashes.V2 is null ? null : hashesV2;
         }
 
-        static TorrentFileAttributes AttrStringToAttributesEnum (string attr)
+        static TorrentFileAttributes AttrStringToAttributesEnum (ReadOnlySpan<byte> attr)
         {
             var result = TorrentFileAttributes.None;
 
-            if (attr.Contains ("l"))
+            if (attr.Contains ((byte)'l'))
                 result |= TorrentFileAttributes.Symlink;
 
-            if (attr.Contains ("x"))
+            if (attr.Contains ((byte)'x'))
                 result |= TorrentFileAttributes.Executable;
 
-            if (attr.Contains ("h"))
+            if (attr.Contains ((byte)'h'))
                 result |= TorrentFileAttributes.Hidden;
 
-            if (attr.Contains ("p"))
+            if (attr.Contains ((byte)'p'))
                 result |= TorrentFileAttributes.Padding;
 
             return result;
@@ -697,68 +642,37 @@ namespace MonoTorrent
                 var tup = new TorrentFileTuple ();
 
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
-                    switch (keypair.Key.Text) {
-                        case ("attr"):
-                            tup.attributes = AttrStringToAttributesEnum (((BEncodedString) keypair.Value).Text);
-                            break;
-
-                        case ("sha1"):
-                            tup.sha1 = ((BEncodedString) keypair.Value).AsMemory ();
-                            break;
-
-                        case ("ed2k"):
-                            tup.ed2k = ((BEncodedString) keypair.Value).AsMemory ();
-                            break;
-
-                        case ("length"):
-                            tup.length = ((BEncodedNumber) keypair.Value).Number;
-                            break;
-
-                        case ("path.utf-8"):
-                            foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
-                                if (!BEncodedString.IsNullOrEmpty (str)) {
-                                    sb.Append (str.Text);
-                                    sb.Append (Path.DirectorySeparatorChar);
-                                }
-                            }
-                            tup.path = sb.ToString (0, sb.Length - 1);
-                            sb.Remove (0, sb.Length);
-                            break;
-
-                        case ("path"):
-                            if (string.IsNullOrEmpty (tup.path)) {
-                                foreach (BEncodedString str in ((BEncodedList) keypair.Value)) {
-                                    if (!BEncodedString.IsNullOrEmpty (str)) {
-                                        sb.Append (str.Text);
-                                        sb.Append (Path.DirectorySeparatorChar);
-                                    }
-                                }
-                                tup.path = sb.ToString (0, sb.Length - 1);
-                                sb.Remove (0, sb.Length);
-                            }
-                            break;
-
-                        case ("md5sum"):
-                            tup.md5sum = ((BEncodedString) keypair.Value).AsMemory ();
-                            break;
-
-                        default:
-                            break; //FIXME: Log unknown values
-                    }
+                    if (keypair.Key == Cache.Attr)
+                        tup.attributes = AttrStringToAttributesEnum (((BEncodedString) keypair.Value).Span);
+                    else if (keypair.Key == Cache.Sha1)
+                        tup.sha1 = ((BEncodedString) keypair.Value).AsMemory ();
+                    else if (keypair.Key == Cache.Ed2k)
+                        tup.ed2k = ((BEncodedString) keypair.Value).AsMemory ();
+                    else if (keypair.Key == Cache.Length)
+                        tup.length = ((BEncodedNumber) keypair.Value).Number;
+                    else if (keypair.Key == Cache.PathUtf8) {
+                        tup.path = GeneratePath ((BEncodedList) keypair.Value);
+                    } else if (keypair.Key == Cache.Path && string.IsNullOrEmpty (tup.path)) {
+                        tup.path = GeneratePath ((BEncodedList) keypair.Value);
+                    } else if (keypair.Key == Cache.MD5Sum)
+                        tup.md5sum = ((BEncodedString) keypair.Value).AsMemory ();
                 }
+
                 if (tup.path == null)
                     // FIXME: Log invalid paths somewhere?
                     continue;
+
+                // Ensure path is valid
+                PathValidator.Validate (tup.path);
 
                 // If this is *not* a padding file, ensure it is sorted alphabetically higher than the last non-padding file
                 // when loading a hybrid torrent.
                 // 
                 // By BEP52 spec, hybrid torrents Hybrid torrents have padding files inserted between each file, and so must
                 // have a fixed hash order to guarantee that the set up finrequired to have strictly alphabetical file ordering so
-                // the v1 hashes are guaranteed to match  after padding files are inserted.
-                PathValidator.Validate (tup.path);
-                var lastNonPaddingFile = files.FindLast (t => !t.attributes.HasFlag (TorrentFileAttributes.Padding) && t.length > 0);
-                if (isHybridTorrent && !tup.attributes.HasFlag (TorrentFileAttributes.Padding) && lastNonPaddingFile != null && StringComparer.Ordinal.Compare (tup.path, lastNonPaddingFile.path) < 0)
+                // the v1 hashes are guaranteed to match after padding files are inserted.
+                var lastNonPaddingFile = files.FindLast (t => (t.attributes & TorrentFileAttributes.Padding) != TorrentFileAttributes.Padding && t.length > 0);
+                if (isHybridTorrent && (tup.attributes & TorrentFileAttributes.Padding) != TorrentFileAttributes.Padding && lastNonPaddingFile != null && PathPartComparer.Instance.Compare (tup.path, lastNonPaddingFile.path) < 0)
                     throw new TorrentException ("The list of files must be in strict alphabetical order in a hybrid torrent");
                 files.Add (tup);
             }
@@ -781,16 +695,43 @@ namespace MonoTorrent
             return new PieceHashesV2 (pieceLength, files, hashes);
         }
 
-        static void LoadTorrentFilesV2 (string key, BEncodedDictionary data, List<ITorrentFile> files, int pieceLength, ref int totalPieces, string path, bool isHybrid)
+        static string GeneratePath (IList<BEncodedValue> pathSegments)
         {
-            if (key == "") {
-                var length = ((BEncodedNumber) data["length"]).Number;
+            // Calculate the size of the resulting string.
+            int strLength = pathSegments.Count - 1;
+            for (int i = 0; i < pathSegments.Count; i++) {
+                var segment = (BEncodedString) pathSegments[i];
+                if (segment == BEncodedString.Empty)
+                    throw new ArgumentException ("The path for a file must not contain any empty segments");
+
+                strLength += System.Text.Encoding.UTF8.GetCharCount (((BEncodedString) pathSegments[i]).Span);
+            }
+
+            // Create it!
+            var path = string.Create (strLength, pathSegments, static (span, segments) => {
+                for (int i = 0; i < segments.Count; i++) {
+                    var segment = (BEncodedString) segments[i];
+                    span = span.Slice (System.Text.Encoding.UTF8.GetChars (segment.Span, span));
+                    if (span.Length > 0) {
+                        span[0] = Path.DirectorySeparatorChar;
+                        span = span.Slice (1);
+                    }
+                }
+            });
+            return path;
+        }
+
+        static void LoadTorrentFilesV2 (BEncodedString key, BEncodedDictionary data, List<ITorrentFile> files, int pieceLength, ref int totalPieces, BEncodedList pathSegments, bool isHybrid)
+        {
+            if (key == BEncodedString.Empty) {
+                var path = GeneratePath (pathSegments);
+                var length = ((BEncodedNumber) data[Cache.Length]).Number;
                 if (length == 0) {
                     files.Insert (0, new TorrentFile (path, length, 0, 0, 0, TorrentFileAttributes.None, 0));
                 } else {
                     totalPieces++;
                     var offsetInTorrent = (files.LastOrDefault ()?.OffsetInTorrent ?? 0) + (files.LastOrDefault ()?.Length ?? 0) + (files.LastOrDefault ()?.Padding ?? 0);
-                    var piecesRoot = data.TryGetValue ("pieces root", out var value) ? MerkleRoot.FromMemory (((BEncodedString) value).AsMemory ()) : MerkleRoot.Empty;
+                    var piecesRoot = data.TryGetValue (Cache.PiecesRoot, out var value) ? MerkleRoot.FromMemory (((BEncodedString) value).AsMemory ()) : MerkleRoot.Empty;
 
                     // A v2 only torrent *never* has padding. However, a hybrid v1/v2 torrent
                     // will *always* have padding as the v1 metadata will have padding files.
@@ -813,7 +754,9 @@ namespace MonoTorrent
                 }
             } else {
                 foreach (var entry in data) {
-                    LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, Path.Combine (path, key), isHybrid);
+                    pathSegments.Add (key);
+                    LoadTorrentFilesV2 (entry.Key, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, pathSegments, isHybrid);
+                    pathSegments.RemoveAt (pathSegments.Count - 1);
                 }
             }
         }
@@ -823,7 +766,7 @@ namespace MonoTorrent
             var files = new List<ITorrentFile> ();
             int totalPieces = -1;
             foreach (var entry in fileTree)
-                LoadTorrentFilesV2 (entry.Key.Text, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, "", isHybrid);
+                LoadTorrentFilesV2 (entry.Key, (BEncodedDictionary) entry.Value, files, pieceLength, ref totalPieces, new BEncodedList (), isHybrid);
 
             TorrentFile.Sort (files);
 

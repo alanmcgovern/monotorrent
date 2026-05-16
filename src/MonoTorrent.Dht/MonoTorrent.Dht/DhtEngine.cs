@@ -40,6 +40,8 @@ using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Dht.Tasks;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Dht
 {
     enum ErrorCode
@@ -252,7 +254,7 @@ namespace MonoTorrent.Dht
             return details.Encode ();
         }
 
-        internal async Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
+        internal async ReusableTask<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
         {
             await MainLoop;
 

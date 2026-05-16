@@ -51,7 +51,7 @@ namespace MonoTorrent
 
         public ulong[] Data { get; }
         public int Length { get; }
-        public int TrueCount { get; set; }
+        public int TrueCount { get; private set; }
 
         Span<ulong> Span => Data;
 
@@ -188,28 +188,15 @@ namespace MonoTorrent
             for (int i = loopStart; i <= loopEnd; i++) {
                 ref ulong current = ref Span[i];
                 if (current == 0) {        // This one has no true values
-#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NET472 && !NET5_0 && !NETCOREAPP3_0 && !NET6_0
                     var next = Span.Slice (i + 1).IndexOfAnyExcept (0ul);
                     if (next != -1)
                         i += next;
-#endif
                     continue;
                 }
 
                 int start = i * StorageBitCount;
                 int end = start + (StorageBitCount - 1);
 
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
-                start = (start < startIndex) ? startIndex : start;
-                end = (end > Length) ? Length : end;
-                end = (end > endIndex) ? endIndex : end;
-                if (end == Length && end > 0)
-                    end--;
-
-                for (int j = start; j <= end; j++)
-                    if (Get (j))     // This piece is true
-                        return j;
-#else
                 var mask = ulong.MaxValue;
                 if (start < startIndex)
                     mask &= ulong.MaxValue >> (startIndex - start);
@@ -219,7 +206,6 @@ namespace MonoTorrent
                 if (mask == 0)
                     continue;
                 return System.Numerics.BitOperations.LeadingZeroCount (mask) + start;
-#endif
             }
 
             return -1;              // Nothing is true
@@ -274,27 +260,14 @@ namespace MonoTorrent
             for (int i = loopStart; i <= loopEnd; i++) {
                 ref ulong current = ref Span[i];
                 if (current == ulong.MaxValue && i != loopEnd) {        // This one has no false values
-#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NET472 && !NET5_0 && !NETCOREAPP3_0 && !NET6_0
                     var next = Span.Slice (i + 1).IndexOfAnyExcept (ulong.MaxValue);
                     if (next != -1)
                         i += next;
-#endif
                     continue;
                 }
                 start = i * StorageBitCount;
                 end = start + StorageBitCount - 1;
 
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET472
-                start = (start < startIndex) ? startIndex : start;
-                end = (end > Length) ? Length : end;
-                end = (end > endIndex) ? endIndex : end;
-                if (end == Length && end > 0)
-                    end--;
-
-                for (int j = start; j <= end; j++)
-                    if (!Get (j))     // This piece is false
-                        return j;
-#else
                 var mask = ulong.MaxValue;
                 if (start < startIndex)
                     mask &= ulong.MaxValue >> (startIndex - start);
@@ -304,7 +277,6 @@ namespace MonoTorrent
                 if (mask == 0)
                     continue;
                 return System.Numerics.BitOperations.LeadingZeroCount (mask) + start;
-#endif
             }
 
             return -1;              // Nothing is true

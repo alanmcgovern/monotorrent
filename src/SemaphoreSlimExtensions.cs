@@ -116,23 +116,6 @@ namespace MonoTorrent
             }
         }
 
-        public void ChangeCount (int newCount)
-        {
-            if (newCount < 0)
-                throw new ArgumentOutOfRangeException (nameof (newCount));
-
-            lock (Cache) {
-                // If we have increased the number of slots, kick off the required number of pending tasks
-                // to consume the new slots.
-                if (newCount == 0 || newCount > Count) {
-                    var delta = newCount - Count;
-                    while ((newCount == 0 || delta-- > 0) && nextWaiter.Count > 0)
-                        nextWaiter.Dequeue ().SetResult (null);
-                }
-                Count = newCount;
-            }
-        }
-
         void ReleaseOne ()
         {
             lock (Cache) {

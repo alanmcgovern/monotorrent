@@ -685,7 +685,7 @@ namespace MonoTorrent.Client
                 ContainingDirectory = SavePath;
             else {
                 PathValidator.Validate (Torrent.Name);
-                ContainingDirectory = Path.GetFullPath (Path.Combine (SavePath, TorrentFileInfo.PathEscape (Torrent.Name)));
+                ContainingDirectory = Path.GetFullPath (Path.Combine (SavePath, TorrentFilePathEscaper.PathEscape (Torrent.Name)));
             }
 
             if (!ContainingDirectory.StartsWith (SavePath))
@@ -696,7 +696,7 @@ namespace MonoTorrent.Client
             Files = Torrent.Files.Select (file => {
 
                 // Generate the paths when 'UsePartialFiles' is enabled.
-                var paths = TorrentFileInfo.GetNewPaths (Path.Combine (ContainingDirectory, TorrentFileInfo.PathAndFileNameEscape (file.Path)), usePartialFiles: true, isComplete: true);
+                var paths = TorrentFileInfo.GetNewPaths (Path.Combine (ContainingDirectory, TorrentFilePathEscaper.PathAndFileNameEscape (file.Path)), usePartialFiles: true, isComplete: true);
                 var downloadCompleteFullPath = paths.completePath;
                 var downloadIncompleteFullPath = paths.incompletePath;
 
@@ -708,7 +708,12 @@ namespace MonoTorrent.Client
                     downloadIncompleteFullPath = downloadCompleteFullPath;
                 }
 
-                var currentPath = File.Exists (downloadCompleteFullPath) ? downloadCompleteFullPath : downloadIncompleteFullPath;
+                var currentPath = Engine!.Settings.UsePartialFiles ? downloadIncompleteFullPath : downloadCompleteFullPath;
+                if (File.Exists (downloadCompleteFullPath))
+                    currentPath = downloadCompleteFullPath;
+                else if (File.Exists (downloadIncompleteFullPath))
+                    currentPath = downloadIncompleteFullPath;
+
                 var torrentFileInfo = new TorrentFileInfo (file, currentPath);
                 torrentFileInfo.UpdatePaths ((currentPath, downloadCompleteFullPath, downloadIncompleteFullPath));
                 return torrentFileInfo;
@@ -1030,10 +1035,16 @@ namespace MonoTorrent.Client
                 var completePath = files[i].DownloadCompleteFullPath;
                 var incompletePath = files[i].DownloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "");
 
-                if (files[i].BitField.AllTrue && files[i].FullPath != completePath) {
+                // When initially loading a torrent we might discover a file on disk with either the regular filename
+                // or the !mt suffix indicating a partial file. At this point we don't necessarily know if the file is
+                // complete or not as we may not have fastresume data and the file may not have been hashed. We load the
+                // file from that location regardless of the 'UsePartialFile' setting and so will always need to move files
+                // whenever this API is called as we can't assume the three properties are correctly set. No filesystem
+                // move will happen if it is in the correct place already.
+                if (files[i].BitField.AllTrue) {
                     tasks ??= new List<Task> ();
                     tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (completePath, completePath, incompletePath)));
-                } else if (!files[i].BitField.AllTrue && files[i].FullPath != incompletePath) {
+                } else if (!files[i].BitField.AllTrue) {
                     tasks ??= new List<Task> ();
                     tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (incompletePath, completePath, incompletePath)));
                 }

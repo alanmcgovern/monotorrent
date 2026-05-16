@@ -20,55 +20,6 @@ namespace MonoTorrent.PieceWriter
         ReusableTask WriteAsync (ReadOnlyMemory<byte> buffer, long offset);
     }
 
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET5_0 || NETCOREAPP3_0 || NET472
-    class RandomFileReaderWriter : IFileReaderWriter
-    {
-        public bool CanWrite { get; }
-        public long Length { get; }
-        FileStream Handle { get; }
-
-        public RandomFileReaderWriter (string fullPath, long length, FileMode fileMode, FileAccess access, FileShare share)
-        {
-            Handle = new FileStream (fullPath, fileMode, access, share, 1, FileOptions.None);
-            CanWrite = access.HasFlag (FileAccess.Write);
-            Length = length;
-        }
-
-        public void Dispose ()
-        {
-            Handle.Dispose ();
-        }
-
-        public async ReusableTask FlushAsync ()
-        {
-            await new EnsureThreadPool ();
-            Handle.Flush ();
-        }
-
-        public async ReusableTask<int> ReadAsync (Memory<byte> buffer, long offset)
-        {
-            if (offset + buffer.Length > Length)
-                throw new ArgumentOutOfRangeException (nameof (offset));
-
-            await new EnsureThreadPool ();
-            if (Handle.Position != offset)
-                Handle.Seek (offset, SeekOrigin.Begin);
-            return Handle.Read (buffer);
-        }
-
-        public async ReusableTask WriteAsync (ReadOnlyMemory<byte> buffer, long offset)
-        {
-            if (offset + buffer.Length > Length)
-                throw new ArgumentOutOfRangeException (nameof (offset));
-
-            await new EnsureThreadPool ();
-            if (Handle.Position != offset)
-                Handle.Seek (offset, SeekOrigin.Begin);
-            Handle.Write (buffer);
-        }
-    }
-#else
-
     class RandomFileReaderWriter : IFileReaderWriter
     {
         public bool CanWrite { get; }
@@ -108,5 +59,4 @@ namespace MonoTorrent.PieceWriter
             RandomAccess.Write (Handle, buffer.Span, offset);
         }
     }
-#endif
 }
