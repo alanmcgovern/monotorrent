@@ -35,14 +35,14 @@ namespace MonoTorrent.Client
         [Test]
         public void PathIsValid ([ValueSource(nameof(ValidPaths))] string path)
         {
-            Assert.AreEqual (path, TorrentFileInfo.PathAndFileNameEscape (path));
+            Assert.AreEqual (path, TorrentFilePathEscaper.PathAndFileNameEscape (path));
             Assert.DoesNotThrow (() => Path.Combine (path, "test"));
         }
 
         [Test]
         public void PathContainsInvalidChar ([ValueSource(nameof(InvalidPaths))] string path)
         {
-            var escaped = TorrentFileInfo.PathAndFileNameEscape (path);
+            var escaped = TorrentFilePathEscaper.PathAndFileNameEscape (path);
             Assert.AreNotEqual (path, escaped);
             Assert.IsTrue (Path.GetInvalidFileNameChars ().All (t => !Path.GetFileName (escaped).Contains (t)));
             Assert.IsTrue (Path.GetInvalidPathChars ().All (t => !Path.GetDirectoryName (escaped).Contains (t)));
@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
         [Test]
         public void PathAndFilenameContainInvalidChars ([ValueSource (nameof (InvalidPathAndFilenames))] string path)
         {
-            var escaped = TorrentFileInfo.PathAndFileNameEscape (path);
+            var escaped = TorrentFilePathEscaper.PathAndFileNameEscape (path);
             Assert.AreNotEqual (path, escaped);
             Assert.IsTrue (Path.GetInvalidFileNameChars ().All (t => !Path.GetFileName (escaped).Contains (t)));
             Assert.IsTrue (Path.GetInvalidPathChars ().All (t => !Path.GetDirectoryName (escaped).Contains (t)));
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
         [Test]
         public void FilenameContainsInvalidChar ([ValueSource (nameof (InvalidFilenames))] string path)
         {
-            var escaped = TorrentFileInfo.PathAndFileNameEscape (path);
+            var escaped = TorrentFilePathEscaper.PathAndFileNameEscape (path);
             Assert.AreNotEqual (path, escaped);
             Assert.IsTrue (Path.GetInvalidFileNameChars ().All (t => !Path.GetFileName (escaped).Contains (t)));
             Assert.IsTrue (Path.GetInvalidPathChars ().All (t => !Path.GetDirectoryName (escaped).Contains (t)));

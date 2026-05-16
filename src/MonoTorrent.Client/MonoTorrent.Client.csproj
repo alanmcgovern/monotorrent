@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
 
     <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
@@ -16,8 +16,6 @@
     <UseIListExtensions>true</UseIListExtensions>
     <UseLogger>true</UseLogger>
     <UseMainLoop>true</UseMainLoop>
-    <UseMemoryExtensions>true</UseMemoryExtensions>
-    <UseNullabilityHelpers>true</UseNullabilityHelpers>
     <UseSemaphoreSlimExtensions>true</UseSemaphoreSlimExtensions>
     <UseSimpleSpinLock>true</UseSimpleSpinLock>
     <UseThreadSwitcher>true</UseThreadSwitcher>
@@ -30,8 +28,6 @@
     <PackageReference Include="GitInfo" />
     <PackageReference Include="Mono.Nat" ExcludeAssets="compile" />
     <PackageReference Include="ReusableTasks" />
-    <PackageReference Include="System.Memory" Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" />
-    <PackageReference Include="StandardSocketsHttpHandler" Condition="$(TargetFramework) == 'netcoreapp3.0' Or $(TargetFramework) == 'netstandard2.1' Or $(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" />
   </ItemGroup>
 
   <!-- NuGet related properties. We need to run this as part of the 'PackDependsOn' dependencies
@@ -97,14 +93,10 @@
     <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(TargetFramework) == 'net472'">
-    <Reference Include="System.Web" />
-    <Reference Include="System.Net.Http" />
-  </ItemGroup>
-
    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
     <ItemGroup>
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'All'))" />
     </ItemGroup>
   </Target>
+
 </Project>

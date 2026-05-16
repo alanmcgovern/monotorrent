@@ -62,8 +62,8 @@ namespace MonoTorrent.Dht
 
         public Bucket (NodeId min, NodeId max)
         {
-            Min = min ?? throw new ArgumentNullException (nameof (min));
-            Max = max ?? throw new ArgumentNullException (nameof (max));
+            Min = min;
+            Max = max;
 
             CanSplit = (Max - Min) > MaxCapacity;
             LastChangedDelta = TimeSpan.FromDays (1);
@@ -102,9 +102,6 @@ namespace MonoTorrent.Dht
 
         public bool CanContain (NodeId id)
         {
-            if (id == null)
-                throw new ArgumentNullException (nameof (id));
-
             return Min <= id && Max > id;
         }
 

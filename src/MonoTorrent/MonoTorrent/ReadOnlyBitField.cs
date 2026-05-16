@@ -39,12 +39,12 @@ using System.Text;
 
 namespace MonoTorrent
 {
-    public class ReadOnlyBitField
+    public sealed class ReadOnlyBitField
     {
         internal static ReadOnlyBitField From (BitFieldData data)
             => new ReadOnlyBitField (data);
 
-        BitFieldData Data { get; }
+        internal BitFieldData Data { get; private set; }
 
         public bool AllFalse => Data.AllFalse;
 

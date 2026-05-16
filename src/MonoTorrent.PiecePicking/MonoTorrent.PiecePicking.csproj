@@ -1,13 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup>
     <UseCache>true</UseCache>
     <UseIListExtensions>true</UseIListExtensions>
-    <UseNullabilityHelpers>true</UseNullabilityHelpers>
     <UseSimpleSpinLock>true</UseSimpleSpinLock>
   </PropertyGroup>
 

@@ -288,6 +288,116 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public async Task CreateHybridTorrent_PadNonEmptyFiles ()
+        {
+            var factories = TestFactories
+            .WithPieceWriterCreator (maxOpenFiles => new TestWriter { DontWrite = true, FillValue = (byte) 'a' });
+
+            var files = new[] {
+                "a/b/c/d".Replace ('/', Path.DirectorySeparatorChar),
+                "a/b/c/e".Replace ('/', Path.DirectorySeparatorChar),
+                "a/b/d".Replace ('/', Path.DirectorySeparatorChar),
+                "a/b/e".Replace ('/', Path.DirectorySeparatorChar),
+                "a/b/f".Replace ('/', Path.DirectorySeparatorChar),
+            };
+
+            var fileSource = new CustomFileSource ([
+                new FileMapping (files[0], files[0], 4),
+                new FileMapping (files[1], files[1], 5),
+                new FileMapping (files[2], files[2], 0),
+                new FileMapping (files[3], files[3], 0),
+                new FileMapping (files[4], files[4], 6),
+            ]);
+
+            TorrentCreator torrentCreator = new TorrentCreator (TorrentType.V1V2Hybrid, factories);
+            var dict = await torrentCreator.CreateAsync (fileSource);
+
+            var originalTorrent = Torrent.Load (dict);
+
+            // rearrange the zero length files to emulate implementations which create torrents like:
+            // - file1: length 5
+            // - file2: length 0
+            // - file3: length 0
+            // - file4 (padding ): length (piecelength - 5)
+            //
+            // Most (all?) implementations put padding files right after the file with the content and
+            // ignore the empty ones. I suspect an implementation used to put padding *right before* the
+            // next non-empty file was added and was adjusted to add padding immediately after the file
+            // with content was added.
+            var filesInDict = (BEncodedList) ((BEncodedDictionary) dict["info"])["files"];
+            var paddingFile = filesInDict.Single (t => int.Parse (((BEncodedDictionary) t)["length"].ToString ()) == torrentCreator.PieceLength - 5);
+            var indexOfPaddingFile = filesInDict.IndexOf (paddingFile);
+
+            var finalFile = filesInDict.Single (t => int.Parse (((BEncodedDictionary) t)["length"].ToString ()) == 6);
+
+            filesInDict.Insert (filesInDict.IndexOf (finalFile), paddingFile);
+            filesInDict.RemoveAt (indexOfPaddingFile);
+
+            var rearrangedTorrent = Torrent.Load (dict);
+
+            // Futz one more time, add a padding file right at the end.
+            // Some implementations use this, but it's not clear why.
+            filesInDict.Add (new BEncodedDictionary {
+                {
+                    "attr",
+                    (BEncodedString) "p"
+                },
+                {
+                    "length",
+                    (BEncodedNumber) (torrentCreator.PieceLength - 6)
+                },
+                {
+                    "path", new BEncodedList {
+                       (BEncodedString)".pad",
+                       (BEncodedString) "32762"
+                    }
+                }
+            });
+
+            // After manually adding the padding file the v1 hashes are incorrect as they were
+            // generated without the padding data. That's ok for this particular test.
+            var extraPaddingTorrent = Torrent.Load (dict);
+
+            foreach (var torrent in new[] { originalTorrent, rearrangedTorrent, extraPaddingTorrent }) {
+                Assert.AreEqual (5, torrent.Files.Count);
+
+                Assert.AreEqual (4, torrent.Files.Single (t => t.Path == files[0]).Length);
+                Assert.AreEqual (torrentCreator.PieceLength - 4, torrent.Files.Single (t => t.Path == files[0]).Padding);
+
+                Assert.AreEqual (5, torrent.Files.Single (t => t.Path == files[1]).Length);
+                Assert.AreEqual (torrentCreator.PieceLength - 5, torrent.Files.Single (t => t.Path == files[1]).Padding);
+
+                Assert.AreEqual (0, torrent.Files.Single (t => t.Path == files[2]).Length);
+                Assert.AreEqual (0, torrent.Files.Single (t => t.Path == files[2]).Padding);
+
+                Assert.AreEqual (0, torrent.Files.Single (t => t.Path == files[3]).Length);
+                Assert.AreEqual (0, torrent.Files.Single (t => t.Path == files[3]).Padding);
+
+                Assert.AreEqual (6, torrent.Files.Single (t => t.Path == files[4]).Length);
+                Assert.AreEqual (torrent == extraPaddingTorrent ? torrentCreator.PieceLength - 6 : 0, torrent.Files.Single (t => t.Path == files[4]).Padding);
+            }
+        }
+
+        [Test]
+        public async Task CreateHybridTorrent_SortedCorrectly ()
+        {
+            // Ensure base directories 'foo' and 'foo a' sort correctly
+            // as the may appear as 'foo/' and 'foo a/' which has a different sort order.
+            // We have to get the sort order right to match the v1 and v2 layouts.
+            var fileSource = new CustomFileSource ([
+                new FileMapping (Path.Combine ("a", "b"), Path.Combine ("a", "b"), 4),
+                new FileMapping (Path.Combine ("a a", "b"),Path.Combine ("a a", "b"), 4),
+                new FileMapping ("b", "b", 4),
+            ]);
+
+            TorrentCreator torrentCreator = new TorrentCreator (TorrentType.V1V2Hybrid, TestFactories);
+            var dict = await torrentCreator.CreateAsync (fileSource);
+            var torrent = Torrent.Load (dict);
+            var fileTree = (BEncodedDictionary) ((BEncodedDictionary) dict["info"])["file tree"];
+
+        }
+
+        [Test]
         public async Task CreateHybridTorrent_SortFilesCorrectly ()
         {
             var destFiles = new[] {
@@ -320,8 +430,6 @@ namespace MonoTorrent.Common
             var aFile = (BEncodedDictionary) ((BEncodedDictionary) fileTree["a"]);
             Assert.IsTrue (aFile.ContainsKey ("z"));
             Assert.IsTrue (((BEncodedDictionary) aFile["z"]).ContainsKey ("Z.txt"));
-
-
         }
 
         [Test]

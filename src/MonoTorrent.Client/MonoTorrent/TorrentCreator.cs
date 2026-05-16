@@ -267,7 +267,7 @@ namespace MonoTorrent
             // are calculated correctly, which is needed so the files are hashed in the correct order for V1 metadata if this is a
             // hybrid torrent
             if (Type.HasV2 ())
-                source = source.OrderBy (t => t.Destination, StringComparer.Ordinal).ToList ();
+                source = source.OrderBy (t => t.Destination, PathPartComparer.Instance).ToList ();
 
             // The last non-empty file should have no padding bytes. There may be additional
             // empty files after this one depending on how the files are sorted, but they have
@@ -326,7 +326,7 @@ namespace MonoTorrent
             // re-sort these by destination path if we have BitTorrent v2 metadata. The files were sorted this way originally
             // but empty ones were popped to the front when creating ITorrentManagerFile objects.
             if (Type.HasV2 ())
-                files = files.OrderBy (t => t.Path, StringComparer.Ordinal).ToArray ();
+                files = files.OrderBy (t => t.Path, PathPartComparer.Instance).ToArray ();
 
             if (Type.HasV1 ()) {
                 if (manager.Files.Count == 1 && source[0].Destination == name)

@@ -129,16 +129,7 @@ namespace MonoTorrent.PieceWriter
                 Directory.CreateDirectory (parent);
 
             if (options == FileCreationOptions.PreferPreallocation) {
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NET5_0 || NETCOREAPP3_0 || NET472
-                    if (!File.Exists (file.FullPath))
-                        using (var fs = new FileStream (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete)) {
-                            fs.SetLength (file.Length);
-                            fs.Seek (file.Length - 1, SeekOrigin.Begin);
-                            fs.Write (new byte[1]);
-                        }
-#else
                 File.OpenHandle (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, FileOptions.None, file.Length).Dispose ();
-#endif
             } else {
                 try {
                     NtfsSparseFile.CreateSparse (file.FullPath, file.Length);

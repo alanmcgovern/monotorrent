@@ -114,6 +114,27 @@ namespace MonoTorrent.BEncoding
         }
 
         [Test]
+        public void ValidNumbers()
+        {
+            // Test valid numbers to ensure we haven't broken anything
+            var testCases = new[] {
+                ("i0e", 0L),
+                ("i1e", 1L),
+                ("i42e", 42L),
+                ("i-42e", -42L),
+                ("i999999999999999999e", 999999999999999999L),
+                ("i-999999999999999999e", -999999999999999999L)
+            };
+
+            foreach (var (encoded, expected) in testCases)
+            {
+                var data = Encoding.UTF8.GetBytes (encoded);
+                var result = BEncodedValue.Decode<BEncodedNumber> (data);
+                Assert.AreEqual (expected, result.Number);
+            }
+        }
+
+        [Test]
         public void benNumber_AllPowersOf10 ()
         {
             for (long value = 1L; value > 0; value *= 10) {
@@ -131,6 +152,47 @@ namespace MonoTorrent.BEncoding
                         Assert.AreEqual (expected, result.Number);
                 }
             }
+        }
+
+        [Test]
+        public void benNumber_NegativeZero()
+        {
+            var data = Encoding.UTF8.GetBytes ("i-0e");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (data));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (data)));
+        }
+
+
+        [Test]
+        public void benNumber_LeadingZero ()
+        {
+            var data = Encoding.UTF8.GetBytes ("i00e");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (data));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (data)));
+        }
+
+        [Test]
+        public void benNumber_NegativeLeadingZero ()
+        {
+            var data = Encoding.UTF8.GetBytes ("i-03e");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (data));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (data)));
+        }
+
+        [Test]
+        public void benNumber_NoContent()
+        {
+            var data = Encoding.UTF8.GetBytes ("ie");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (data));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (data)));
+        }
+
+        [Test]
+        public void benNumber_NegativeNoContent ()
+        {
+            var data = Encoding.UTF8.GetBytes ("i-e");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (data));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (data)));
         }
 
         [Test]

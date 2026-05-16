@@ -34,6 +34,8 @@ using System.Threading.Tasks;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.PiecePicking;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client
 {
     /// <summary>
@@ -154,7 +156,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task<int> CurrentRequestCountAsync ()
+        public async ReusableTask<int> CurrentRequestCountAsync ()
         {
             if (!Initialised)
                 return 0;

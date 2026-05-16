@@ -36,7 +36,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
+    struct NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
         internal static readonly NodeId Minimum = NodeId.FromMemory (new byte[20]);
         internal static readonly NodeId Maximum = NodeId.FromMemory (Enumerable.Repeat ((byte) 255, 20).ToArray ());
@@ -94,15 +94,15 @@ namespace MonoTorrent.Dht
             => Bytes;
 
         public int CompareTo (object? obj)
-            => CompareTo (obj as NodeId);
+            => obj is NodeId n ? CompareTo (n) : 1;
 
-        public int CompareTo (NodeId? other)
-            => other is null ? 1 : Span.SequenceCompareTo (other.Span);
+        public int CompareTo (NodeId other)
+            => Span.SequenceCompareTo (other!.Span);
 
         public override bool Equals (object? obj)
             => obj is NodeId node && node == this;
 
-        public bool Equals (NodeId? other)
+        public bool Equals (NodeId other)
             => this == other;
 
         public override int GetHashCode ()
@@ -119,54 +119,34 @@ namespace MonoTorrent.Dht
             var clone = new byte[left.Span.Length];
             for (int i = 0; i < right.Span.Length; i++)
                 clone[i] = (byte)(left.Span[i] ^ right.Span[i]);
-            return NodeId.FromMemory (new ReadOnlyMemory<byte> (clone));
+            return NodeId.FromMemory (clone);
         }
 
         public static NodeId operator - (NodeId first, NodeId second)
-        {
-            return new NodeId (new BigEndianBigInteger (first.Span) - new BigEndianBigInteger (second.Span));
-        }
+            => new NodeId (new BigEndianBigInteger (first.Span) - new BigEndianBigInteger (second.Span));
 
         public static bool operator > (NodeId first, NodeId second)
-        {
-            return first.CompareTo (second) > 0;
-        }
+            => first.CompareTo (second) > 0;
 
         public static bool operator > (NodeId first, int second)
-        {
-            return new BigEndianBigInteger (first.Span) > second;
-        }
+            => new BigEndianBigInteger (first.Span) > second;
 
         public static bool operator < (NodeId first, NodeId second)
-        {
-            return first.CompareTo (second) < 0;
-        }
+            => first.CompareTo (second) < 0;
 
         public static bool operator < (NodeId first, int second)
-        {
-            return new BigEndianBigInteger (first.Span) < second;
-        }
+            => new BigEndianBigInteger (first.Span) < second;
 
         public static bool operator <= (NodeId first, NodeId second)
-        {
-            return first.CompareTo (second) <= 0;
-        }
+            => first.CompareTo (second) <= 0;
 
         public static bool operator >= (NodeId first, NodeId second)
-        {
-            return first.CompareTo (second) >= 0;
-        }
+            => first.CompareTo (second) >= 0;
 
-        public static bool operator == (NodeId? first, NodeId? second)
-        {
-            if (first is null)
-                return second is null;
-            if (second is null)
-                return false;
-            return first.Span.SequenceEqual (second.Span);
-        }
+        public static bool operator == (NodeId first, NodeId second)
+            => first.Span.SequenceEqual (second.Span);
 
-        public static bool operator != (NodeId? first, NodeId? second)
-            => !(first == second);
+        public static bool operator != (NodeId first, NodeId second)
+            => !first.Span.SequenceEqual (second.Span);
     }
 }

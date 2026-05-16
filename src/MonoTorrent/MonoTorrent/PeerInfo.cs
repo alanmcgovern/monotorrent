@@ -60,22 +60,26 @@ namespace MonoTorrent
         }
 
         public PeerInfo (Uri connectionUri, BEncodedString peerId, bool maybeSeeder)
-            : this (connectionUri, peerId, maybeSeeder, IPAddress.TryParse (connectionUri.Host, out var ip) ? new IPEndPoint (ip, connectionUri.Port) : null)
+            : this (connectionUri, peerId, maybeSeeder, null)
         {
-
         }
 
-        internal PeerInfo (Uri connectionUri, BEncodedString peerId, bool maybeSeeder, IPEndPoint? endPoint)
-            => (ConnectionUri, PeerId, MaybeSeeder, EndPoint) = (connectionUri ?? throw new ArgumentNullException (nameof (connectionUri)), peerId ?? throw new ArgumentNullException (nameof (BEncodedString)), maybeSeeder, endPoint);
+        PeerInfo (Uri connectionUri, BEncodedString peerId, bool maybeSeeder, IPEndPoint? endPoint)
+        {
+            ConnectionUri = connectionUri ?? throw new ArgumentNullException (nameof (connectionUri));
+            PeerId = peerId ?? throw new ArgumentNullException (nameof (peerId));
+            MaybeSeeder = maybeSeeder;
+            EndPoint = endPoint ?? (IPAddress.TryParse (connectionUri.Host, out var ip) ? new IPEndPoint (ip, connectionUri.Port) : null);
+        }
 
         public override bool Equals (object? obj)
             => Equals (obj as PeerInfo);
 
         public bool Equals (PeerInfo? other)
-            => ConnectionUri.Equals (other?.ConnectionUri);
+            => EndPoint is not null ? EndPoint.Equals (other?.EndPoint) : ConnectionUri.Equals (other?.ConnectionUri);
 
         public override int GetHashCode ()
-            => ConnectionUri.GetHashCode ();
+            => EndPoint is not null ? EndPoint.GetHashCode () : ConnectionUri.GetHashCode ();
 
         public byte[] CompactPeer ()
         {
@@ -128,17 +132,13 @@ namespace MonoTorrent
 
             var stride = sizeOfIP + 2;
 
-            // Round it off into a multipl eof 'stride' bytes.
+            // Round it off into a multiple of 'stride' bytes.
             buffer = buffer.Slice (0, (buffer.Length / stride) * stride);
 
             while (buffer.Length > 0) {
                 var ipBuffer = buffer.Slice (0, sizeOfIP);
                 var portBuffer = buffer.Slice (sizeOfIP, 2);
-#if NETSTANDARD2_0 || NET472
-                var ip = new IPAddress (ipBuffer.ToArray ());
-#else
                 var ip = new IPAddress (ipBuffer);
-#endif
                 var port = BinaryPrimitives.ReadUInt16BigEndian (portBuffer);
 
                 var endPoint = new IPEndPoint (ip, port);

@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         public bool IsIncoming { get; }
         public Uri Uri { get; } = new Uri ("test://1234.com:3434");
 
-        public ReusableTask ConnectAsync ()
+        public ReusableTask<bool> ConnectAsync ()
         {
             throw new NotImplementedException ();
         }
@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
             throw new NotImplementedException ();
         }
 
-        public ReusableTask<int> SendAsync (Memory<byte> buffer)
+        public ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
         {
             throw new NotImplementedException ();
         }

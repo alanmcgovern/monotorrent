@@ -39,13 +39,11 @@ namespace MonoTorrent.Connections.Peer
 {
     public sealed class SocketPeerConnection : IPeerConnection
     {
-        static readonly EventHandler<SocketAsyncEventArgs> Handler = HandleOperationCompleted;
-
         public ReadOnlyMemory<byte> AddressBytes { get; }
 
         public bool CanReconnect => !IsIncoming;
 
-        CancellationTokenSource ConnectCancellation { get; }
+        CancellationTokenSource Cancellation { get; }
 
         ISocketConnector? Connector { get; }
 
@@ -55,16 +53,9 @@ namespace MonoTorrent.Connections.Peer
 
         public bool IsIncoming { get; }
 
-        ReusableTaskCompletionSource<int> ReceiveTcs { get; }
-
-        ReusableTaskCompletionSource<int> SendTcs { get; }
-
         Socket? Socket { get; set; }
 
         public Uri Uri { get; }
-
-        SocketAsyncEventArgs? ReceiveArgs { get; set; }
-        SocketAsyncEventArgs? SendArgs { get; set; }
 
         #region Constructors
 
@@ -91,31 +82,13 @@ namespace MonoTorrent.Connections.Peer
                 };
             }
 
-            ConnectCancellation = new CancellationTokenSource ();
+            Cancellation = new CancellationTokenSource ();
             Connector = connector;
             EndPoint = new IPEndPoint (IPAddress.Parse (uri.Host), uri.Port);
             AddressBytes = EndPoint.Address.GetAddressBytes ();
             IsIncoming = isIncoming;
             Socket = socket;
             Uri = uri;
-
-            ReceiveTcs = new ReusableTaskCompletionSource<int> ();
-            SendTcs = new ReusableTaskCompletionSource<int> ();
-        }
-
-        static void HandleOperationCompleted (object? sender, SocketAsyncEventArgs e)
-        {
-            // Don't retain the TCS forever. Note we do not want to null out the byte[] buffer
-            // as we *do* want to retain that so that we can avoid the expensive SetBuffer calls.
-            var tcs = (ReusableTaskCompletionSource<int>) e.UserToken!;
-            SocketError error = e.SocketError;
-            int transferred = e.BytesTransferred;
-            e.RemoteEndPoint = null;
-
-            if (error != SocketError.Success)
-                tcs.SetException (new SocketException ((int) error));
-            else
-                tcs.SetResult (transferred);
         }
 
         #endregion
@@ -123,94 +96,34 @@ namespace MonoTorrent.Connections.Peer
 
         #region Async Methods
 
-        public async ReusableTask ConnectAsync ()
+        public async ReusableTask<bool> ConnectAsync ()
         {
             if (Connector == null)
                 throw new InvalidOperationException ("This connection represents an incoming connection");
 
-            Socket = await Connector.ConnectAsync (Uri, ConnectCancellation.Token);
-            if (Disposed) {
-                Socket.Dispose ();
-                throw new SocketException ((int) SocketError.Shutdown);
-            }
-        }
-
-        public ReusableTask<int> ReceiveAsync (Memory<byte> buffer)
-        {
-            if (Socket is null)
-                throw new InvalidOperationException ("The underlying socket is not connected");
-
-            if (ReceiveArgs == null) {
-                ReceiveArgs = new SocketAsyncEventArgs ();
-                ReceiveArgs.Completed += Handler;
-                ReceiveArgs .UserToken = ReceiveTcs;
-            }
-            SetBuffer (ReceiveArgs, buffer);
-
-            SocketAsyncEventArgs args = ReceiveArgs;
-
-            AsyncFlowControl? control = null;
-            if (!ExecutionContext.IsFlowSuppressed ())
-                control = ExecutionContext.SuppressFlow ();
-
             try {
-                if (!Socket.ReceiveAsync (args))
-                    ReceiveTcs.SetResult (args.BytesTransferred);
-            } catch (ObjectDisposedException) {
-                ReceiveTcs.SetResult (0);
-            } finally {
-                control?.Undo ();
+                Socket = await Connector.ConnectAsync (Uri, Cancellation.Token).ConfigureAwait (false);
+                if (Disposed) {
+                    Socket.Dispose ();
+                    return false;
+                }
+            } catch {
+                return false;
             }
-
-            return ReceiveTcs.Task;
+            return true;
         }
 
-        public ReusableTask<int> SendAsync (Memory<byte> buffer)
-        {
-            if (Socket is null)
-                throw new InvalidOperationException ("The underlying socket is not connected");
+        public async ReusableTask<int> ReceiveAsync (Memory<byte> buffer)
+            => await (Socket?.ReceiveAsync (buffer).ConfigureAwait (false) ?? throw new InvalidOperationException ("The underlying socket is not connected"));
 
-            if (SendArgs == null) {
-                SendArgs = new SocketAsyncEventArgs ();
-                SendArgs.Completed += Handler;
-                SendArgs.UserToken = SendTcs;
-            }
-            SetBuffer (SendArgs, buffer);
-
-            SocketAsyncEventArgs args = SendArgs;
-
-            AsyncFlowControl? control = null;
-            if (!ExecutionContext.IsFlowSuppressed ())
-                control = ExecutionContext.SuppressFlow ();
-
-            try {
-                if (!Socket.SendAsync (args))
-                    SendTcs.SetResult (buffer.Length);
-            } catch (ObjectDisposedException) {
-                SendTcs.SetResult (0);
-            } finally {
-                control?.Undo ();
-            }
-
-            return SendTcs.Task;
-        }
+        public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
+            => await (Socket?.SendAsync (buffer).ConfigureAwait (false) ?? throw new InvalidOperationException ("The underlying socket is not connected"));
 
         public void Dispose ()
         {
             Disposed = true;
-            ConnectCancellation.Cancel ();
+            Cancellation.Cancel ();
             Socket?.Dispose ();
-        }
-
-        static void SetBuffer (SocketAsyncEventArgs args, Memory<byte> buffer)
-        {
-#if NETSTANDARD2_0 || NET472
-            if (!MemoryMarshal.TryGetArray (buffer, out ArraySegment<byte> segment))
-                throw new ArgumentException ("Could not retrieve the underlying buffer");
-            args.SetBuffer (segment.Array, segment.Offset, segment.Count);
-#else
-            args.SetBuffer (buffer);
-#endif
         }
     }
 

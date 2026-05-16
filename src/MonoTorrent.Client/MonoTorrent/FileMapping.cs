@@ -27,6 +27,9 @@
 //
 
 
+using System;
+using System.IO;
+
 namespace MonoTorrent
 {
     public struct FileMapping

@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 
@@ -208,7 +209,8 @@ namespace MonoTorrent.Client
         async ReusableTask<ConnectionFailureReason?> DoConnectToPeer (TorrentManager manager, Peer peer, IPeerConnection connection, IList<EncryptionType> allowedEncryption)
         {
             try {
-                await NetworkIO.ConnectAsync (connection);
+                if (!await NetworkIO.ConnectAsync (connection))
+                    return ConnectionFailureReason.Unreachable;
             } catch {
                 // A failure to connect is unlikely to be fixed by retrying a different encryption method, so bail out immediately.
                 return ConnectionFailureReason.Unreachable;
@@ -252,7 +254,7 @@ namespace MonoTorrent.Client
 
                 // Create a handshake message to send to the peer
                 handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2.Truncate (), LocalPeerId, Constants.ProtocolStringV100, enableFastPeer: true, enableExtended: true, supportsUpgradeToV2: canUpgradeToV2);
-                logger.InfoFormatted (connection, "Sending handshake message with peer id '{0}'", LocalPeerId);
+                logger.InfoFormatted (connection, "Sending handshake message with peer id '{0}' and infohash: {1}", LocalPeerId, handshake.InfoHash.ToHex());
 
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (connection, allowedEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshake, Factories, Settings.ConnectionTimeout);
                 decryptor = result.Decryptor;
@@ -263,8 +265,8 @@ namespace MonoTorrent.Client
                 handshake = await PeerIO.ReceiveHandshakeAsync (connection, decryptor);
                 if (handshake.ProtocolString != Constants.ProtocolStringV100)
                     logger.Info (connection, "Received handshake but protocol was unsupported");
-            } catch {
-                logger.Info (connection, "Could not receive a handshake from the peer");
+            } catch (Exception) {
+                logger.Info (connection, "Could not receive a handshake from the peer using: " + string.Join (",", allowedEncryption.Select (t => t.ToString ())));
                 return ConnectionFailureReason.EncryptionNegiotiationFailed;
             }
 
@@ -275,7 +277,7 @@ namespace MonoTorrent.Client
                 // biggest (only?) difference is that it means we can request the merkle tree layer hashes from
                 // peers who support v2.
                 id = CreatePeerIdFromHandshake (handshake, peer, connection, manager, encryptor: encryptor, decryptor: decryptor);
-                logger.InfoFormatted (id.Connection, "Received handshake message with peer id '{0}'", handshake.PeerId);
+                logger.Info (id.Connection, string.Format ("Received handshake message with peer id '{0}' for hash: {1}. Upgradeable: {2}", handshake.PeerId, handshake.InfoHash.ToHex(), handshake.SupportsUpgradeToV2));
 
                 if (LocalPeerId.Equals (handshake.PeerId))
                     return ConnectionFailureReason.ConnectedToSelf;
@@ -406,7 +408,7 @@ namespace MonoTorrent.Client
                     (PeerMessage message, PeerMessage.Releaser releaser) = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager, currentBuffer).ConfigureAwait (false);
                     HandleReceivedMessage (id, torrentManager, message, releaser);
                 }
-            } catch {
+            } catch (Exception) {
                 await ClientEngine.MainLoop;
                 CleanupSocket (torrentManager, id);
             } finally {
@@ -523,6 +525,8 @@ namespace MonoTorrent.Client
 
                 // Send our handshake first, then decide if we've connected to ourselves or not.
                 var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100);
+                logger.Info (id.Connection, string.Format ("Responding with infohash: {0}. Upgradeable: {1}", handshake.InfoHash.ToHex(), handshake.SupportsUpgradeToV2));
+
                 await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
 
                 if (LocalPeerId.Equals (id.PeerID)) {

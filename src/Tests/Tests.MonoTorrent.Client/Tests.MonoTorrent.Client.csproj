@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,11 +16,6 @@
     <ProjectReference Include="..\..\MonoTorrent.PortForwarding\MonoTorrent.PortForwarding.csproj" />
     <ProjectReference Include="..\..\MonoTorrent.Trackers\MonoTorrent.Trackers.csproj" />
     <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$(TargetFramework) == 'net472'">
-    <Reference Include="System.Web" />
-    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup>

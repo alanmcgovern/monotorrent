@@ -251,14 +251,33 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task UsePartialFiles_InitiallyOn_ToggleOff ()
+        [TestCase (false, false)]
+        [TestCase (true, false)]
+        [TestCase (true, true)]
+        public async Task UsePartialFiles_InitiallyOn_ToggleOff (bool createFileFirst, bool usePartialFileName)
         {
             var pieceLength = Constants.BlockSize * 4;
             var engine = EngineHelpers.Create (EngineHelpers.CreateSettings (usePartialFiles: true));
             var torrent = TestRig.CreateMultiFileTorrent (TorrentFile.Create (pieceLength, Constants.BlockSize, Constants.BlockSize * 2, Constants.BlockSize * 3), pieceLength, out BEncoding.BEncodedDictionary _);
 
+            var filePathComplete = Path.Combine (Environment.CurrentDirectory, torrent.Name, torrent.Files[0].Path);
+            var filePathIncomplete = Path.Combine (Environment.CurrentDirectory, torrent.Name, torrent.Files[0].Path) + TorrentFileInfo.IncompleteFileSuffix;
+
+            Directory.CreateDirectory (Path.GetDirectoryName (filePathComplete));
+            File.Delete (filePathComplete);
+            File.Delete (filePathIncomplete);
+
+            if (createFileFirst) {
+                File.WriteAllBytes (usePartialFileName ? filePathIncomplete : filePathComplete, new byte[1]);
+            }
+
             var manager = await engine.AddAsync (torrent, "");
-            Assert.AreNotEqual (manager.Files[0].DownloadCompleteFullPath, manager.Files[0].DownloadIncompleteFullPath);
+            Assert.AreEqual (filePathComplete, manager.Files[0].DownloadCompleteFullPath);
+            Assert.AreEqual (filePathIncomplete, manager.Files[0].DownloadIncompleteFullPath);
+            if (createFileFirst)
+                Assert.AreEqual (usePartialFileName ? filePathIncomplete : filePathComplete, manager.Files[0].FullPath);
+            else
+                Assert.AreEqual (filePathIncomplete, manager.Files[0].FullPath);
 
             var settings = new EngineSettingsBuilder (engine.Settings) { UsePartialFiles = false }.ToSettings ();
             await engine.UpdateSettingsAsync (settings);

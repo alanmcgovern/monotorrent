@@ -35,13 +35,11 @@ namespace MonoTorrent
 {
     static class StringExtensions
     {
-        static readonly Encoding UTF8 = Encoding.UTF8;
-
         public static string UrlEncodeQueryUTF8 (this string str)
-            => HttpUtility.UrlEncode (str, UTF8).Replace("+", "%20");
+            => HttpUtility.UrlEncode (str, Encoding.UTF8).Replace("+", "%20");
 
         public static string UrlEncodeUTF8 (this string str)
-            => HttpUtility.UrlEncode (str, UTF8);
+            => HttpUtility.UrlEncode (str, Encoding.UTF8);
 
         public static string UrlDecodeUTF8 (this string str)
             => HttpUtility.UrlDecode (str, Encoding.UTF8);

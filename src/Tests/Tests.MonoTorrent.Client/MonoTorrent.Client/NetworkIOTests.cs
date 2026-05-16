@@ -78,11 +78,11 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void DisposeBeforeConnect ()
+        public async Task DisposeBeforeConnect ()
         {
             using var c = Factories.Default.CreatePeerConnection (new Uri ($"ipv4://127.0.0.1:12345"));
             c.Dispose ();
-            Assert.ThrowsAsync<ObjectDisposedException> (async () => await NetworkIO.ConnectAsync (c));
+            Assert.IsFalse (await NetworkIO.ConnectAsync (c));
         }
 
         [Test]
@@ -99,7 +99,7 @@ namespace MonoTorrent.Client
 
                 c.Dispose ();
                 using var releaser = MemoryPool.Default.Rent (123, out Memory<byte> buffer);
-                Assert.AreEqual (0, await c.ReceiveAsync (buffer).WithTimeout ());
+                Assert.ThrowsAsync<ObjectDisposedException> (() => c.ReceiveAsync (buffer).WithTimeout ());
             } finally {
                 listener.Stop ();
             }
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
 
                 c.Dispose ();
                 using var releaser = MemoryPool.Default.Rent (123, out Memory<byte> buffer);
-                Assert.AreEqual (0, await c.SendAsync (buffer).WithTimeout ());
+                Assert.ThrowsAsync<ObjectDisposedException> (() => c.SendAsync (buffer).WithTimeout ());
             } finally {
                 listener.Stop ();
             }

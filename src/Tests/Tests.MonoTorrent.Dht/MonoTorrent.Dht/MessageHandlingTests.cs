@@ -66,7 +66,7 @@ namespace MonoTorrent.Dht
             var task = engine.SendQueryAsync (ping, node);
 
             // The query should complete, and the message should not have timed out.
-            Assert.IsTrue (task.Wait (100000), "#1");
+            Assert.IsTrue (task.AsTask ().Wait (100000), "#1");
             Assert.IsTrue (pingSuccessful.Task.Wait (1000), "#2");
             Assert.IsTrue (pingSuccessful.Task.Result, "#3");
             Assert.IsFalse (DhtMessageFactory.IsRegistered (ping.TransactionId), "#4");
@@ -184,7 +184,7 @@ namespace MonoTorrent.Dht
             listener.RaiseMessageReceived (new PingResponse (node.Id, ping.TransactionId), node.EndPoint);
 
             // The query should complete, and the message should not have timed out.
-            Assert.IsTrue (task.Wait (1000), "#1");
+            Assert.IsTrue (task.AsTask ().Wait (1000), "#1");
             Assert.IsTrue (pingSuccessful.Task.Wait (1000), "#2");
             Assert.IsTrue (pingSuccessful.Task.Result, "#3");
             Assert.AreEqual (0, engine.MessageLoop.PendingQueries, "#4");

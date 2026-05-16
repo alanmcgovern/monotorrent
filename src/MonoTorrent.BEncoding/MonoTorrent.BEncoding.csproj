@@ -1,24 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net5.0;netcoreapp3.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
-    <AllowUnsafeBlocks Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'">true</AllowUnsafeBlocks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup>
     <UseBitOps>true</UseBitOps>
-    <UseMemoryExtensions>true</UseMemoryExtensions>
-    <UseNullabilityHelpers>true</UseNullabilityHelpers>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="GitInfo" />
-    <PackageReference Include="System.Memory" Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$(TargetFramework) == 'net472'">
-    <Reference Include="System.Web" />
-    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
 </Project>

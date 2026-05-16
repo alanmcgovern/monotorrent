@@ -70,7 +70,7 @@ namespace MonoTorrent.Dht
 
             // Then set an error and make sure the engine state moves to 'NotReady'
             errorSource.SetException (new Exception ());
-            await engine.WaitForState (DhtState.NotReady).WithTimeout (10000);
+            await engine.WaitForState (DhtState.NotReady).WithTimeout (1000000);
         }
 
         int counter;

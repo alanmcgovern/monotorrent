@@ -55,7 +55,7 @@ namespace MonoTorrent.Common
         public void FixtureSetup ()
         {
             HybridTorrent = Torrent.Load (HybridTorrentPath);
-            V2OnlyTorrent = Torrent.Load (V2OnlyTorrentPath);
+            V2OnlyTorrent = Torrent.Load (File.ReadAllBytes(V2OnlyTorrentPath));
         }
 
         [Test]

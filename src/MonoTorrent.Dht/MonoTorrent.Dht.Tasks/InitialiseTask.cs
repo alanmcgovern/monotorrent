@@ -121,7 +121,7 @@ namespace MonoTorrent.Dht.Tasks
 
             foreach (Node node in newNodes) {
                 var request = new FindNode (engine.LocalId, engine.LocalId);
-                activeRequests.Add (engine.SendQueryAsync (request, node));
+                activeRequests.Add (engine.SendQueryAsync (request, node).AsTask ());
                 nodes.Add (node);
             }
 
@@ -138,7 +138,7 @@ namespace MonoTorrent.Dht.Tasks
                     foreach (Node node in Node.FromCompactNode (response.Nodes)) {
                         if (nodes.Add (node)) {
                             var request = new FindNode (engine.LocalId, engine.LocalId);
-                            activeRequests.Add (engine.SendQueryAsync (request, node));
+                            activeRequests.Add (engine.SendQueryAsync (request, node).AsTask ());
                         }
                     }
                 }

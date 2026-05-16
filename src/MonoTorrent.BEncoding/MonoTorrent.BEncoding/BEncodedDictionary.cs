@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -55,167 +56,264 @@ namespace MonoTorrent.BEncoding
         public static (BEncodedDictionary torrent, RawInfoHashes infohashes) DecodeTorrent (Stream stream)
             => BEncodeDecoder.DecodeTorrent (stream);
 
-        readonly SortedList<BEncodedString, BEncodedValue> dictionary;
+        KeyValuePair<BEncodedString, BEncodedValue>[] items;
+
+        public int Count { get; private set; }
+
+        bool ICollection<KeyValuePair<BEncodedString, BEncodedValue>>.IsReadOnly => false;
 
         /// <summary>
-        /// Create a new BEncodedDictionary
+        /// Returns a snapshot of the keys in this dictionary. This is a copy of the keys, so modifying the returned collection will not affect the dictionary.
         /// </summary>
+        ICollection<BEncodedString> IDictionary<BEncodedString, BEncodedValue>.Keys {
+            get {
+                var arr = new BEncodedString[Count];
+                for (int i = 0; i < Count; i++)
+                    arr[i] = items[i].Key;
+                return arr;
+            }
+        }
+
+        /// <summary>
+        /// Returns a snapshot of the values in this dictionary. This is a copy of the values, so modifying the returned collection will not affect the dictionary.
+        /// </summary>
+        ICollection<BEncodedValue> IDictionary<BEncodedString, BEncodedValue>.Values {
+            get {
+                var arr = new BEncodedValue[Count];
+                for (int i = 0; i < Count; i++)
+                    arr[i] = items[i].Value;
+                return arr;
+            }
+        }
+
+        public BEncodedValue this[BEncodedString key] {
+            get {
+                int index = BinarySearch (key);
+                if (index < 0)
+                    throw new KeyNotFoundException ();
+
+                return items[index].Value;
+            }
+            set {
+                int index = BinarySearch (key);
+
+                if (index >= 0) {
+                    items[index] = new (key, value);
+                    return;
+                }
+
+                Insert (~index, key, value);
+            }
+        }
+
         public BEncodedDictionary ()
         {
-            dictionary = new SortedList<BEncodedString, BEncodedValue> ();
+            items = new KeyValuePair<BEncodedString, BEncodedValue>[4];
         }
 
-        /// <summary>
-        /// Encodes the dictionary to a byte[]
-        /// </summary>
-        /// <param name="buffer">The buffer to encode the data to</param>
-        /// <returns></returns>
-        public override int Encode (Span<byte> buffer)
+        public void Add (BEncodedString key, BEncodedValue value)
         {
-            //Dictionaries start with 'd'
-            buffer[0] = (byte) 'd';
-            int written = 1;
+            int index = BinarySearch (key);
+            if (index >= 0)
+                throw new ArgumentException ("Duplicate key");
 
-            for (int i = 0; i < dictionary.Keys.Count; i++) {
-                written += dictionary.Keys[i].Encode (buffer.Slice (written));
-                written += dictionary.Values[i].Encode (buffer.Slice (written));
+            Insert (~index, key, value);
+        }
+
+        Memory<KeyValuePair<BEncodedString, BEncodedValue>> AsMemory ()
+            => items.AsMemory (0, Count);
+
+        Span<KeyValuePair<BEncodedString, BEncodedValue>> AsSpan ()
+            => items.AsSpan (0, Count);
+
+        private int BinarySearch (BEncodedString key)
+        {
+            int lo = 0, hi = Count - 1;
+            while (lo <= hi) {
+                int mid = (lo + hi) >> 1;
+                int cmp = items[mid].Key.CompareTo (key);
+
+                if (cmp == 0)
+                    return mid;
+                if (cmp < 0)
+                    lo = mid + 1;
+                else
+                    hi = mid - 1;
             }
 
-            // Dictionaries end with 'e'
-            buffer[written ++] = (byte) 'e';
-            return written;
+            return ~lo;
         }
 
-        /// <summary>
-        /// Returns the size of the dictionary in bytes using UTF8 encoding
-        /// </summary>
-        /// <returns></returns>
-        public override int LengthInBytes ()
+        public void Clear ()
         {
-            int length = 2; // Account for the prefix/suffix
-
-            for (int i = 0; i < dictionary.Keys.Count; i++) {
-                length += dictionary.Keys[i].LengthInBytes ();
-                length += dictionary.Values[i].LengthInBytes ();
-            }
-
-            return length;
+            Array.Clear (items, 0, Count);
+            Count = 0;
         }
+
+        public bool ContainsKey (BEncodedString key)
+            => BinarySearch (key) >= 0;
+
+        public void Add (KeyValuePair<BEncodedString, BEncodedValue> item)
+            => Add (item.Key, item.Value);
+
+        public bool Contains (KeyValuePair<BEncodedString, BEncodedValue> item)
+            => TryGetValue (item.Key, out var v) && v.Equals (item.Value);
+
+        public void CopyTo (KeyValuePair<BEncodedString, BEncodedValue>[] array, int arrayIndex)
+            => AsSpan ().CopyTo (array.AsSpan (arrayIndex));
 
         public override bool Equals (object? obj)
         {
-            if (!(obj is BEncodedDictionary other))
+            if (ReferenceEquals (this, obj))
+                return true;
+
+            if (obj is not BEncodedDictionary other)
                 return false;
 
-            if (dictionary.Count != other.dictionary.Count)
+            if (Count != other.Count)
                 return false;
 
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
-                if (!other.TryGetValue (keypair.Key, out BEncodedValue? val))
+            foreach (ref var item in AsSpan ()) {
+                if (!other.TryGetValue (item.Key, out var v))
                     return false;
 
-                if (!keypair.Value.Equals (val))
+                if (!item.Value.Equals (v))
                     return false;
             }
 
             return true;
         }
 
-        public override int GetHashCode ()
+        public override int Encode (Span<byte> buffer)
         {
-            int result = 0;
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary) {
-                result ^= keypair.Key.GetHashCode ();
-                result ^= keypair.Value.GetHashCode ();
+            buffer[0] = (byte) 'd';
+            int written = 1;
+
+            foreach (ref var item in AsSpan ()) {
+                written += item.Key.Encode (buffer.Slice (written));
+                written += item.Value.Encode (buffer.Slice (written));
             }
 
-            return result;
+            buffer[written++] = (byte) 'e';
+            return written;
+        }
+
+        private void EnsureCapacity (int size)
+        {
+            if (size <= items.Length)
+                return;
+
+            int newSize = items.Length * 2;
+            if (newSize < size)
+                newSize = size;
+
+            Array.Resize (ref items, newSize);
+        }
+
+        public override int LengthInBytes ()
+        {
+            // the 'd' and 'e' for the dictionary
+            int length = 2;
+
+            foreach (ref var item in AsSpan ()) {
+                length += item.Key.LengthInBytes ();
+                length += item.Value.LengthInBytes ();
+            }
+
+            return length;
+        }
+
+        public Enumerator GetEnumerator ()
+            => new Enumerator (AsMemory ());
+
+        public BEncodedValue? GetValueOrDefault (BEncodedString key)
+            => TryGetValue (key, out BEncodedValue? value) ? value : null;
+
+        public BEncodedValue? GetValueOrDefault (BEncodedString key, BEncodedValue? defaultValue)
+            => TryGetValue (key, out BEncodedValue? value) ? value : defaultValue;
+
+        IEnumerator<KeyValuePair<BEncodedString, BEncodedValue>> IEnumerable<KeyValuePair<BEncodedString, BEncodedValue>>.GetEnumerator ()
+            => GetEnumerator ();
+
+        IEnumerator IEnumerable.GetEnumerator ()
+            => GetEnumerator ();
+
+        public override int GetHashCode ()
+        {
+            var hc = new HashCode ();
+            foreach (ref var item in AsSpan ()) {
+                hc.Add (item.Key.GetHashCode ());
+                hc.Add (item.Value.GetHashCode ());
+            }
+            return hc.ToHashCode ();
+        }
+
+        private void Insert (int index, BEncodedString key, BEncodedValue value)
+        {
+            EnsureCapacity (Count * 2);
+
+            if (index < Count) {
+                Array.Copy (items, index, items, index + 1, Count - index);
+            }
+
+            items[index] = new (key, value);
+            Count++;
+        }
+
+        public bool Remove (BEncodedString key)
+        {
+            int index = BinarySearch (key);
+            if (index < 0)
+                return false;
+
+            Array.Copy (items, index + 1, items, index, Count - index - 1);
+            Count--;
+            items[Count] = default;
+            return true;
+        }
+
+        public bool Remove (KeyValuePair<BEncodedString, BEncodedValue> item)
+            => Remove (item.Key);
+
+        public bool TryGetValue (BEncodedString key, [MaybeNullWhen (false)] out BEncodedValue value)
+        {
+            int index = BinarySearch (key);
+            if (index >= 0) {
+                value = items[index].Value;
+                return true;
+            }
+
+            value = null!;
+            return false;
         }
 
         public override string ToString ()
             => $"BEncodedDictionary [{Count} items]";
 
-        public void Add (BEncodedString key, BEncodedValue value)
+        public struct Enumerator : IEnumerator<KeyValuePair<BEncodedString, BEncodedValue>>
         {
-            dictionary.Add (key, value);
-        }
+            private readonly ReadOnlyMemory<KeyValuePair<BEncodedString, BEncodedValue>> items;
+            private int index;
+            public KeyValuePair<BEncodedString, BEncodedValue> Current
+                => items.Span[index];
 
-        public void Add (KeyValuePair<BEncodedString, BEncodedValue> item)
-        {
-            dictionary.Add (item.Key, item.Value);
-        }
-        public void Clear ()
-        {
-            dictionary.Clear ();
-        }
+            object IEnumerator.Current => Current;
 
-        public bool Contains (KeyValuePair<BEncodedString, BEncodedValue> item)
-        {
-            if (!dictionary.ContainsKey (item.Key))
-                return false;
+            internal Enumerator (ReadOnlyMemory<KeyValuePair<BEncodedString, BEncodedValue>> items)
+            {
+                this.items = items;
+                this.index = -1;
+            }
 
-            return dictionary[item.Key].Equals (item.Value);
-        }
+            public bool MoveNext ()
+                => ++index < items.Length;
 
-        public bool ContainsKey (BEncodedString key)
-        {
-            return dictionary.ContainsKey (key);
-        }
+            void IDisposable.Dispose ()
+            {
+            }
 
-        public void CopyTo (KeyValuePair<BEncodedString, BEncodedValue>[] array, int arrayIndex)
-        {
-            foreach (var item in dictionary)
-                array[arrayIndex++] = new KeyValuePair<BEncodedString, BEncodedValue> (item.Key, item.Value);
-        }
-
-        public int Count => dictionary.Count;
-
-        public BEncodedValue? GetValueOrDefault (BEncodedString key)
-        {
-            return GetValueOrDefault (key, null);
-        }
-
-        public BEncodedValue? GetValueOrDefault (BEncodedString key, BEncodedValue? defaultValue)
-        {
-            return dictionary.TryGetValue (key, out BEncodedValue? value) ? value : defaultValue;
-        }
-
-        public bool IsReadOnly => false;
-
-        public bool Remove (BEncodedString key)
-        {
-            return dictionary.Remove (key);
-        }
-
-        public bool Remove (KeyValuePair<BEncodedString, BEncodedValue> item)
-        {
-            return dictionary.Remove (item.Key);
-        }
-
-#pragma warning disable 8767
-        public bool TryGetValue (BEncodedString key, [MaybeNullWhen (false)] out BEncodedValue value)
-#pragma warning restore 8767
-        {
-            return dictionary.TryGetValue (key, out value);
-        }
-
-        public BEncodedValue this[BEncodedString key] {
-            get => dictionary[key];
-            set => dictionary[key] = value;
-        }
-
-        public ICollection<BEncodedString> Keys => dictionary.Keys;
-
-        public ICollection<BEncodedValue> Values => dictionary.Values;
-
-        public IEnumerator<KeyValuePair<BEncodedString, BEncodedValue>> GetEnumerator ()
-        {
-            return dictionary.GetEnumerator ();
-        }
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
-        {
-            return dictionary.GetEnumerator ();
+            void IEnumerator.Reset ()
+                => index = -1;
         }
     }
 }

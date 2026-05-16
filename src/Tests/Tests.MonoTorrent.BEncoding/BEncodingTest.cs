@@ -28,6 +28,7 @@
 
 
 using System.IO;
+using System.Linq;
 using System.Text;
 
 using NUnit.Framework;
@@ -179,25 +180,49 @@ namespace MonoTorrent.BEncoding
         [Test]
         public void DecodeString_NoColon ()
         {
-            string benString = "12";
-            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString)));
+            var benString = Encoding.UTF8.GetBytes("12");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (benString));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream(benString)));
+        }
+
+        [Test]
+        public void DecodeString_NoContent ()
+        {
+            var benString = Encoding.UTF8.GetBytes("12:");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (benString));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (benString)));
+        }
+
+        [Test]
+        public void DecodeString_InvalidSeparator ()
+        {
+            var benString = Encoding.UTF8.GetBytes ("4atest");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (benString));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (benString)));
+        }
+
+        [Test]
+        public void DecodeString_LongLongLength ()
+        {
+            var benString = Encoding.UTF8.GetBytes ("999999999999999999:test");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (benString));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (benString)));
         }
 
         [Test]
         public void DecodeString_TooShort ()
         {
-            string benString = "5:test";
-            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (Encoding.UTF8.GetBytes (benString)));
+            var benString = Encoding.UTF8.GetBytes ("5:test");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (benString));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream(benString)));
         }
 
-        static bool ByteMatch (byte[] first, byte[] second)
+        [Test]
+        public void DecodeString_ZeroPrefixed ()
         {
-            if (first.Length != second.Length)
-                return false;
-            for (int i = 0; i < first.Length; i++)
-                if (first[i] != second[i])
-                    return false;
-            return true;
+            var benString = Encoding.UTF8.GetBytes ("05:test5");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (benString));
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (benString)));
         }
     }
 }

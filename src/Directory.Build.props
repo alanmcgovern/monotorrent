@@ -16,13 +16,10 @@
     <UseIListExtensions>false</UseIListExtensions>
     <UseLogger>false</UseLogger>
     <UseMainLoop>false</UseMainLoop>
-    <UseMemoryExtensions>false</UseMemoryExtensions>
-    <UseNullabilityHelpers>false</UseNullabilityHelpers>
     <UseSemaphoreSlimExtensions>false</UseSemaphoreSlimExtensions>
     <UseSimpleSpinLock>false</UseSimpleSpinLock>
     <UseThreadSwitcher>false</UseThreadSwitcher>
     <UseTorrentFileExtensions>false</UseTorrentFileExtensions>
-    <UseUdpClientExtensions>false</UseUdpClientExtensions>
     <UseValueStopWatch>false</UseValueStopWatch>
   </PropertyGroup>
 
@@ -30,9 +27,7 @@
   <PropertyGroup>
     <!-- Use a fixed version for the core libraries so end-users can upgrade as desired -->
     <GitInfoVersion>2.0.34</GitInfoVersion>
-    <ReusableTasksVersion>4.0.0</ReusableTasksVersion>
-    <StandardSocketsHttpHandlerVersion>2.2.0.4</StandardSocketsHttpHandlerVersion>
-    <SystemMemoryVersion>4.5.1</SystemMemoryVersion>
+    <ReusableTasksVersion>5.0.0</ReusableTasksVersion>
     <MonoNatVersion>3.0</MonoNatVersion>
   </PropertyGroup>
 
@@ -41,7 +36,7 @@
     <NoWarn>1701;1702;1591;0419;netsdk1138</NoWarn>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
 
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>12.0</LangVersion>
     <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <Deterministic>true</Deterministic>
@@ -50,9 +45,8 @@
 
     <Out Condition=" '$(Out)' == ''">$(MSBuildThisFileDirectory)..\out</Out>
 
-    <!-- These are essentially junk if i'm compiling against net472/NetStandard2.0 and newer targets.
-         Most rules result in uncompilable net472 code, so let's ignore them as i don't want to wade
-         through fixing/ignoring hundreds of rules with little real-world value. -->
+    <!-- These are essentially junk. Ain't no-one gonna sift through 1000s of pointless messages.
+          I wouldn't even ask an AI tool to implement these. -->
     <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
     <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
     <RestoreLockedMode Condition="$(CI) and '$(RestoreLockedMode)' == ''">false</RestoreLockedMode>

@@ -124,7 +124,7 @@ namespace MonoTorrent.Client.Modes
             while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
                 if (m is LTMetadata metadata) {
                     if (metadata.MetadataMessageType == LTMetadata.MessageType.Data) {
-                        stream.Write (metadata.MetadataPiece);
+                        stream.Write (metadata.MetadataPiece.Span);
                         length--;
                     }
                 }

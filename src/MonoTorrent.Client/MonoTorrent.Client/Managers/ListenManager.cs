@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
             var peer = new Peer (peerInfo);
             peer.UpdatePeerId (message.PeerId);
 
-            logger.InfoFormatted (connection, "Received handshake with peer_id '{0}'", message.PeerId);
+            logger.InfoFormatted (connection, "Received handshake with peer_id '{0}' and InfoHash {1}", message.PeerId, message.InfoHash);
 
             var id = ConnectionManager.CreatePeerIdFromHandshake (message, peer, connection, man, encryptor: encryptor, decryptor: decryptor);
             logger.Info (id.Connection, "Handshake successful handled");

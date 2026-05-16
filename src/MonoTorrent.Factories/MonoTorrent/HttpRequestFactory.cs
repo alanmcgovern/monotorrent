@@ -39,27 +39,16 @@ namespace MonoTorrent
         {
             TimeSpan pooledConnectionLifetime = TimeSpan.FromMinutes (2);
 
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP3_0 || NET472
-            if (family != AddressFamily.InterNetwork && family != AddressFamily.InterNetworkV6)
-                return new StandardSocketsHttpHandler { PooledConnectionLifetime = pooledConnectionLifetime };
-            return new StandardSocketsHttpHandler {
-#else
             if (family != AddressFamily.InterNetwork && family != AddressFamily.InterNetworkV6)
                 return new SocketsHttpHandler { PooledConnectionLifetime = pooledConnectionLifetime };
             return new SocketsHttpHandler {
-#endif
                 PooledConnectionLifetime = pooledConnectionLifetime,
                 ConnectCallback = async (context, cancellationToken) => {
                     {
                         var socket = new Socket (family, SocketType.Stream, ProtocolType.Tcp);
                         try {
                             socket.NoDelay = true;
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP3_0 || NET472
-                            using (cancellationToken.Register (socket.Dispose))
-                                await socket.ConnectAsync (context.DnsEndPoint.Host, context.DnsEndPoint.Port);
-#else
                             await socket.ConnectAsync (context.DnsEndPoint.Host, context.DnsEndPoint.Port, cancellationToken);
-#endif
                             return new NetworkStream (socket, ownsSocket: true);
                         } catch {
                             socket.Dispose ();

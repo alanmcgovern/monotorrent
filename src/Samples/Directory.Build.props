@@ -10,8 +10,7 @@
     <!-- Use the latest API/ABI compatible version for the sample projects -->
     <GitInfoVersion></GitInfoVersion>
     <MonoNatVersion>3.*</MonoNatVersion>
-    <ReusableTasksVersion>4.*</ReusableTasksVersion>
-    <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
+    <ReusableTasksVersion>5.*</ReusableTasksVersion>
   </PropertyGroup>
 
 </Project>

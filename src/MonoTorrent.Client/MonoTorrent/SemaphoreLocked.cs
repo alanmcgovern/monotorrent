@@ -35,7 +35,7 @@ namespace MonoTorrent
 
         public async ReusableTask<Accessor> EnterAsync ()
         {
-            return new Accessor (Value, await Locker.EnterAsync ());
+            return new Accessor (Value, await Locker.EnterAsync ().ConfigureAwait (false));
         }
 
         public readonly struct Accessor : IDisposable
