@@ -59,9 +59,7 @@ namespace MonoTorrent
         ReadOnlyBitField? ReadOnlyWrapper => (readOnlyWrapper ??= ReadOnlyBitField.From (Data));
 
         public BitField (ReadOnlyBitField other)
-        {
-            Data = new BitFieldData (other.Data);
-        }
+          => Data = new BitFieldData (other.Data);
 
         public BitField (ReadOnlySpan<byte> array, int length)
             => Data = new BitFieldData (array, length);

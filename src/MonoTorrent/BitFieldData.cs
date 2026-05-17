@@ -49,7 +49,7 @@ namespace MonoTorrent
         const int StorageByteCount = sizeof (ulong);
         const int StorageBitCount = StorageByteCount * 8;
 
-        public ulong[] Data { get; }
+        public ulong[]? Data { get; private set; }
         public int Length { get; }
         public int TrueCount { get; private set; }
 
@@ -65,40 +65,53 @@ namespace MonoTorrent
 
         internal void From (ReadOnlySpan<byte> buffer)
         {
+            InitDataIfNeeded ();
             int end = Length / StorageBitCount;
             for (int i = 0; i < end; i++) {
-                Data[i] = BinaryPrimitives.ReadUInt64BigEndian (buffer);
+                Data![i] = BinaryPrimitives.ReadUInt64BigEndian (buffer);
                 buffer = buffer.Slice (StorageByteCount);
             }
 
             int shift = StorageBitCount - 8;
             for (int i = end * StorageBitCount; i < Length; i += 8) {
-                Data[Data.Length - 1] |= (ulong) buffer[0] << shift;
+                Data![Data.Length - 1] |= (ulong) buffer[0] << shift;
                 buffer = buffer.Slice (1);
                 shift -= 8;
             }
             ZeroUnusedBits ();
 
             int count = 0;
-            for (int i = 0; i < Data.Length; i++)
+            for (int i = 0; i < Data!.Length; i++)
                 count += BitOps.PopCount (Data[i]);
             TrueCount = count;
+            if (AllFalse || AllTrue) {
+                Data = null;
+            }
         }
 
         internal void ZeroUnusedBits ()
         {
             int shift = Length % StorageBitCount;
             if (shift != 0)
-                Data[Data.Length - 1] &= ulong.MaxValue << (StorageBitCount - shift);
+                Data![Data.Length - 1] &= ulong.MaxValue << (StorageBitCount - shift);
         }
 
+        internal void InitDataIfNeeded ()
+        {
+            if (Data != null)
+                return;
+            Data = new ulong[(Length + StorageBitCount - 1) / StorageBitCount];
+            if (AllTrue) {
+                Span.Fill (ulong.MaxValue);
+                ZeroUnusedBits ();
+            }
+        }
 
         public BitFieldData (int length)
         {
             if (length < 1)
                 throw new ArgumentOutOfRangeException (nameof (length), "Length must be greater than zero");
 
-            Data = new ulong[(length + StorageBitCount - 1) / StorageBitCount];
             Length = length;
         }
 
@@ -107,7 +120,7 @@ namespace MonoTorrent
             if (other == null)
                 throw new ArgumentNullException (nameof (other));
 
-            Data = (ulong[]) other.Data.Clone ();
+            Data = (ulong[]?) other.Data?.Clone ();
             Length = other.Length;
             TrueCount = other.TrueCount;
         }
@@ -131,20 +144,37 @@ namespace MonoTorrent
             get {
                 if (index < 0 || index >= Length)
                     throw new ArgumentOutOfRangeException (nameof (index));
-                return TrueCount == Length || Get (index);
+                if (AllTrue)
+                    return true;
+                if (AllFalse)
+                    return false;
+                return Get (index);
             }
             set {
                 if (index < 0 || index >= Length)
                     throw new ArgumentOutOfRangeException (nameof (index));
 
+                if (AllTrue && value || AllFalse && !value)
+                    return;
+                InitDataIfNeeded ();
+
                 if (value) {
-                    if ((Span[index >> 6] & (1ul << (63 - (index & 63)))) == 0)// If it's not already true
-                        TrueCount++;                                        // Increase true count
-                    Span[index >> 6] |= (1ul << (63 - index & 63));
+                    if ((Span[index >> 6] & (1ul << (63 - (index & 63)))) != 0)
+                        return; // If it's already true just return
+                    TrueCount++; 
+                    if (AllTrue)
+                        Data = null;
+                    else
+                        Span[index >> 6] |= (1ul << (63 - index & 63));
                 } else {
-                    if ((Span[index >> 6] & (1ul << (63 - (index & 63)))) != 0)// If it's not already false
-                        TrueCount--;                                        // Decrease true count
-                    Span[index >> 6] &= ~(1ul << (63 - (index & 63)));
+                    if ((Span[index >> 6] & (1ul << (63 - (index & 63)))) == 0)
+                        return; // If it's already false just return
+
+                    TrueCount--;
+                    if (AllFalse)
+                        Data = null;
+                    else
+                        Span[index >> 6] &= ~(1ul << (63 - (index & 63)));
                 }
             }
         }
@@ -152,7 +182,7 @@ namespace MonoTorrent
         public override bool Equals (object? obj)
             => obj is BitFieldData other
             && TrueCount == other.TrueCount
-            && Span.SequenceEqual (other.Span);
+            && (Data == null && other.Data == null || Span.SequenceEqual (other.Span));
 
         /// <summary>
         /// Returns the index of the first <see langword="true" /> bit in the bitfield.
@@ -219,7 +249,13 @@ namespace MonoTorrent
             if (Length != value.Length)
                 throw new ArgumentException ("BitFields are of different lengths", nameof (value));
 
-            value.Span.CopyTo (Span);
+            if (value.AllTrue || value.AllFalse) {
+                Data = null;
+            } else {
+                InitDataIfNeeded ();
+                value.Span.CopyTo (Span);
+            }
+
             TrueCount = value.TrueCount;
         }
 
@@ -288,8 +324,13 @@ namespace MonoTorrent
 
         public IEnumerator<bool> GetEnumerator ()
         {
-            for (int i = 0; i < Length; i++)
-                yield return Get (i);
+            if (AllTrue || AllFalse) {
+                for (int i = 0; i < Length; i++)
+                    yield return AllTrue;
+            } else {
+                for (int i = 0; i < Length; i++)
+                    yield return Get (i);
+            }
         }
 
         public int CountTrue (ReadOnlyBitField selector)
@@ -299,6 +340,13 @@ namespace MonoTorrent
 
             if (selector.Length != Length)
                 throw new ArgumentException ("The selector should be the same length as this bitfield", nameof (selector));
+
+            if (selector.AllFalse || AllFalse)
+                return 0;
+            if (selector.AllTrue)
+                return TrueCount;
+            if (AllTrue)
+                return selector.TrueCount;
 
             int count = 0;
             var data = Span;
@@ -315,6 +363,11 @@ namespace MonoTorrent
 
         public override int GetHashCode ()
         {
+            if (AllFalse)
+                return 0;
+            if (AllTrue)
+                return (int) (ulong.MaxValue * (ulong) Length);
+
             ulong count = 0;
             for (int i = 0; i < Span.Length; i++)
                 count += Span[i];
@@ -325,6 +378,8 @@ namespace MonoTorrent
         public byte[] ToBytes ()
         {
             byte[] data = new byte[LengthInBytes];
+            if (AllFalse)
+                return data;
             ToBytes (data);
             return data;
         }
@@ -335,6 +390,16 @@ namespace MonoTorrent
                 throw new ArgumentNullException (nameof (buffer));
             if (buffer.Length < LengthInBytes)
                 throw new ArgumentOutOfRangeException ($"The buffer must be able to store at least {LengthInBytes} bytes");
+
+            int shift;
+            if (AllFalse || AllTrue) {
+                var span = buffer.Slice (0, LengthInBytes);
+                span.Fill (AllTrue ? byte.MaxValue : byte.MinValue);
+                shift = Length % 8;
+                if (shift != 0)
+                    buffer[buffer.Length - 1] &= (byte)(byte.MaxValue << (8 - shift));
+                return LengthInBytes;
+            }
 
             int end = Length / 64;
             int offset = 0;
@@ -349,7 +414,7 @@ namespace MonoTorrent
                 buffer[offset++] = (byte) (Span[i] >> 0);
             }
 
-            int shift = StorageBitCount - 8;
+            shift = StorageBitCount - 8;
             for (int i = end * StorageBitCount; i < Length; i += 8) {
                 buffer[offset++] = (byte) (Span[Span.Length - 1] >> shift);
                 shift -= 8;
@@ -361,6 +426,11 @@ namespace MonoTorrent
         [ExcludeFromCodeCoverage]
         string ToDebuggerString ()
         {
+            if (AllTrue)
+                return nameof (AllTrue);
+            if (AllFalse)
+                return nameof (AllFalse);
+
             var sb = new StringBuilder (Span.Length * 16);
             for (int i = 0; i < Length; i++) {
                 sb.Append (Get (i) ? 'T' : 'F');
@@ -390,21 +460,27 @@ namespace MonoTorrent
 
         public void SetAll (bool value)
         {
-            if ((TrueCount == Length && value) || (!value && TrueCount == 0))
-                return;
-
             if (value) {
-                Span.Fill (ulong.MaxValue);
-                ZeroUnusedBits ();
                 TrueCount = Length;
             } else {
-                Span.Fill (0);
                 TrueCount = 0;
             }
+
+            Data = null;
         }
 
         public void Not ()
         {
+            if (AllTrue) {
+                TrueCount = 0;
+                return;
+            }
+
+            if (AllFalse) {
+                TrueCount = Length;
+                return;
+            }
+
             var data = Span;
             for (int i = 0; i < data.Length; i++)
                 data[i] = ~data[i];
@@ -417,6 +493,18 @@ namespace MonoTorrent
         {
             Check (value);
 
+            if (AllFalse || value.AllFalse) {
+                TrueCount = 0;
+                Data = null;
+                return;
+            }
+
+            if (value.AllTrue) {
+                return;
+            }
+
+            InitDataIfNeeded ();
+
             var data = Span;
             var valueData = value.Span;
             int count = 0;
@@ -426,6 +514,8 @@ namespace MonoTorrent
                 data[i] = result;
             }
             TrueCount = count;
+            if (AllFalse || AllTrue)
+                Data = null;
         }
 
         public void NAnd (ReadOnlyBitField value)
@@ -437,6 +527,7 @@ namespace MonoTorrent
             if (value.AllTrue) {
                 SetAll (false);
             } else {
+                InitDataIfNeeded ();
                 int count = 0;
                 ref ulong data = ref Span[0];
                 ref ulong dataEnd = ref Unsafe.Add (ref data, Span.Length);
@@ -450,6 +541,8 @@ namespace MonoTorrent
                     valueData = ref Unsafe.Add (ref valueData, 1);
                 } while (Unsafe.IsAddressLessThan (ref data, ref dataEnd));
                 TrueCount = count;
+                if (AllFalse || AllTrue)
+                    Data = null;
             }
         }
 
@@ -457,6 +550,17 @@ namespace MonoTorrent
         {
             Check (value);
 
+            if (AllTrue || value.AllTrue) {
+                TrueCount = Length;
+                Data = null;
+                return;
+            }
+
+            if (value.AllFalse) {
+                return;
+            }
+
+            InitDataIfNeeded ();
             int count = 0;
             var data = Span;
             var valueData = value.Span;
@@ -466,12 +570,23 @@ namespace MonoTorrent
                 data[i] = result;
             }
             TrueCount = count;
+            if (AllFalse || AllTrue)
+                Data = null;
         }
 
         public void Xor (ReadOnlyBitField value)
         {
             Check (value);
 
+            if (value.AllFalse)
+                return;
+            if (value.AllTrue && AllTrue) {
+                TrueCount = 0;
+                Data = null;
+                return;
+            }
+
+            InitDataIfNeeded ();
             int count = 0;
             var data = Span;
             var valueData = value.Span;
@@ -481,6 +596,8 @@ namespace MonoTorrent
                 data[i] = result;
             }
             TrueCount = count;
+            if (AllFalse || AllTrue)
+                Data = null;
         }
 
         void Check (ReadOnlyBitField value)
