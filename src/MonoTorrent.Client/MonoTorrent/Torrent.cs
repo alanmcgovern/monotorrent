@@ -595,8 +595,7 @@ namespace MonoTorrent
                         }
                     } else if (keypair.Value is BEncodedList httpSeedList) {
                         foreach (BEncodedString str in httpSeedList)
-                            if (Uri.TryCreate (str.Text, UriKind.Absolute, out Uri? httpSeedUri)) {
-                                Console.WriteLine ("successfully parsed {0} as {1}", str.Text, httpSeedUri);
+                            if (str.Span.StartsWith ("http"u8) && Uri.TryCreate (str.Text, UriKind.Absolute, out Uri? httpSeedUri)) {
                                 HttpSeeds.Add (httpSeedUri);
                             }
                     }
