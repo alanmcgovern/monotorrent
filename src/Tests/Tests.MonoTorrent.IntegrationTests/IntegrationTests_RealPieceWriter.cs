@@ -27,6 +27,7 @@ using ReusableTasks;
 namespace MonoTorrent.IntegrationTests
 {
     [TestFixture]
+    [Platform (Include ="Win")]
     public class IPv4IntegrationTests : IntegrationTestsBase
     {
         public IPv4IntegrationTests ()
@@ -37,6 +38,7 @@ namespace MonoTorrent.IntegrationTests
     }
 
     [TestFixture]
+    [Platform (Include ="Win")]
     public class IPv6IntegrationTests : IntegrationTestsBase
     {
         public IPv6IntegrationTests ()
