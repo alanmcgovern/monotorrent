@@ -157,31 +157,23 @@ namespace MonoTorrent.Client.Modes
 
         async ReusableTask CreateOrTruncateFiles ()
         {
-            foreach (TorrentFileInfo file in Manager.Files.Where (t => t.Priority != Priority.DoNotDownload)) {
+            foreach (TorrentFileInfo file in Manager.Files.Where (static file => file.Priority != Priority.DoNotDownload)) {
                 var maybeLength = await DiskManager.GetLengthAsync (file).ConfigureAwait (false);
-                // If the file doesn't exist, create it.
-                if (!maybeLength.HasValue)
-                    await DiskManager.CreateAsync (file, Settings.FileCreationOptions).ConfigureAwait (false);
 
-                // Otherwise if the destination file is larger than it should be, truncate it
-                else if (maybeLength.Value > file.Length)
+                // If the destination file is larger than it should be, truncate it
+                if (maybeLength.HasValue && maybeLength.Value > file.Length)
                     await DiskManager.SetLengthAsync (file, file.Length).ConfigureAwait (false);
 
+                // If the file doesn't exist and is zero length, create it now.
+                if (!maybeLength.HasValue && file.Length == 0)
+                    await DiskManager.CreateAsync (file, Settings.FileCreationOptions).ConfigureAwait (false);
+
+                // Zero length files can be marked as complete now as they definitely exist and are definitely the right size.
                 if (file.Length == 0)
                     file.BitField[0] = true;
             }
 
-            // Then check if any 'DoNotDownload' file overlaps with a file we are downloading.
-            var downloadingFiles = Manager.Files.Where (t => t.Priority != Priority.DoNotDownload).ToArray ();
-            foreach (var ignoredFile in Manager.Files.Where (t => t.Priority == Priority.DoNotDownload)) {
-                foreach (var downloading in downloadingFiles) {
-                    if (ignoredFile.Overlaps (downloading))
-                        await DiskManager.CreateAsync (ignoredFile, Settings.FileCreationOptions);
-                }
-            }
-
-            // After potentially creating or truncating files, refresh the state.
-            await Manager.RefreshAllFilesCorrectLengthAsync ();
+            Manager.RefreshAllFilesDownloadableOrDownloaded ();
         }
 
         async void SendAnnounces ()

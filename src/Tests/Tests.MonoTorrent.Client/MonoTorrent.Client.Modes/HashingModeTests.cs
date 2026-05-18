@@ -151,7 +151,7 @@ namespace MonoTorrent.Client.Modes
             }
 
             await mode.WaitForHashingToComplete ();
-            Assert.IsFalse (Manager.AllFilesCorrectLength);
+            Assert.IsFalse (Manager.FilesAreNotMissingOrTooLarge);
 
             // All files are correctly sized and exist.
             foreach (var file in Manager.Files) {
@@ -159,24 +159,24 @@ namespace MonoTorrent.Client.Modes
             }
 
             await mode.WaitForHashingToComplete ();
-            Assert.IsTrue (Manager.AllFilesCorrectLength);
+            Assert.IsTrue (Manager.FilesAreNotMissingOrTooLarge);
 
             // One zero length file is missing
             var zeroLengthFile = Manager.Files.First (t => t.Length == 0);
             PieceWriter.FilesWithLength.Remove (zeroLengthFile.FullPath);
 
             await mode.WaitForHashingToComplete ();
-            Assert.IsFalse (Manager.AllFilesCorrectLength);
+            Assert.IsFalse (Manager.FilesAreNotMissingOrTooLarge);
 
             // One file is too large
             PieceWriter.FilesWithLength[zeroLengthFile.FullPath] = 1;
             await mode.WaitForHashingToComplete ();
-            Assert.IsFalse (Manager.AllFilesCorrectLength);
+            Assert.IsFalse (Manager.FilesAreNotMissingOrTooLarge);
 
             // Back to normal!
             PieceWriter.FilesWithLength[zeroLengthFile.FullPath] = 0;
             await mode.WaitForHashingToComplete ();
-            Assert.IsTrue (Manager.AllFilesCorrectLength);
+            Assert.IsTrue (Manager.FilesAreNotMissingOrTooLarge);
         }
 
         [Test]

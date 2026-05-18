@@ -37,6 +37,11 @@ namespace MonoTorrent.Client
     {
         public static string IncompleteFileSuffix => ".!mt";
 
+        /// <summary>
+        /// This is the actual size of the file on-disk, or null if the file does not exist. This is set when loading fast resume or when hashing.
+        /// </summary>
+        public long? CachedActualLength { get; set; }
+
         public string DownloadCompleteFullPath { get; private set; }
 
         public string DownloadIncompleteFullPath { get; private set; }
@@ -59,6 +64,9 @@ namespace MonoTorrent.Client
 
         public int EndPieceIndex => TorrentFile.EndPieceIndex;
 
+        /// <summary>
+        /// This is the expected size of the file once fully downloaded
+        /// </summary>
         public long Length => TorrentFile.Length;
 
         public long Padding => TorrentFile.Padding;

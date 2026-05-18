@@ -93,6 +93,16 @@ namespace MonoTorrent.Client.Modes
             // Delete any existing fast resume data. We will need to recreate it after hashing completes.
             await Manager.MaybeDeleteFastResumeAsync ();
 
+            // Check the size of all files first. It's easier than trying to insert it into the logic below as it'd have to be in several places.
+            foreach (TorrentFileInfo file in Manager.Files) {
+                var length = await DiskManager.GetLengthAsync (file);
+                file.CachedActualLength = length;
+
+                // If this is a zero length file, mark it as downloaded if it exists.
+                if (file.Length == 0)
+                    file.BitField[0] = length.HasValue && length.Value == 0;
+            }
+
             bool atLeastOneDoNotDownload = Manager.Files.Any (t => t.Priority == Priority.DoNotDownload);
             if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {
                 int piecesHashed = 0;
@@ -129,7 +139,8 @@ namespace MonoTorrent.Client.Modes
                     Manager.OnPieceHashed (i, false, i + 1, Manager.Torrent.PieceCount);
             }
 
-            await Manager.RefreshAllFilesCorrectLengthAsync ();
+            // If we successfully hashed all the files we still need to ensure they are the correct length
+            Manager.RefreshAllFilesDownloadableOrDownloaded ();
         }
 
         public void Dispose ()

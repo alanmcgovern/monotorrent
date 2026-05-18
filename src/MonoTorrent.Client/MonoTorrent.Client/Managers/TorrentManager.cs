@@ -100,45 +100,47 @@ namespace MonoTorrent.Client
             bool needsToUpdateSelector = file.Priority == Priority.DoNotDownload || priority == Priority.DoNotDownload;
             var oldPriority = file.Priority;
 
-            if (oldPriority == Priority.DoNotDownload && !(await Engine.DiskManager.CheckFileExistsAsync (file))) {
-                // Always create the file the user requested to download
-                await Engine.DiskManager.CreateAsync (file, Engine.Settings.FileCreationOptions);
+            if (oldPriority == Priority.DoNotDownload) {
+                var maybeLength = await Engine.DiskManager.GetLengthAsync (file);
+                ((TorrentFileInfo) file).CachedActualLength = maybeLength;
+                // If the file does not exist *and* it's a zero length file, create it immediately.
+                if (!maybeLength.HasValue) {
+                    if (file.Length == 0) {
+                        await Engine.DiskManager.CreateAsync (file, Engine.Settings.FileCreationOptions);
+                        ((TorrentFileInfo) file).BitField[0] = true;
+                    }
+                }
 
-                if (file.Length == 0)
-                    ((TorrentFileInfo) file).BitField[0] = await Engine.DiskManager.CheckFileExistsAsync (file);
+                // The file already exists but is too large - time to truncate
+                if (maybeLength.HasValue && maybeLength.Value > file.Length)
+                    await Engine.DiskManager.SetLengthAsync (file, file.Length);
             }
 
             // Update the priority for the file itself now that we've successfully created it!
             ((TorrentFileInfo) file).Priority = priority;
 
-            if (oldPriority == Priority.DoNotDownload && file.Length > 0) {
-                // Look for any file which are still marked DoNotDownload but also overlap this file.
-                // We need to create those ones too because if there are three 400kB files and the
-                // piece length is 512kB, and the first file is set to 'DoNotDownload', then we still
-                // need to create it as we'll download the first 512kB under bittorrent v1.
-                foreach (var maybeCreateFile in Files.Where (t => t.Priority == Priority.DoNotDownload && t.Length > 0)) {
-                    // If this file overlaps, create it!
-                    if (maybeCreateFile.Overlaps(file) && !(await Engine.DiskManager.CheckFileExistsAsync (maybeCreateFile)))
-                        await Engine.DiskManager.CreateAsync (maybeCreateFile, Engine.Settings.FileCreationOptions);
-                }
-            }
-;
+            // We do need to recheck the length of every file here. 
+            RefreshAllFilesDownloadableOrDownloaded ();
 
             // With the new priority, calculate which files we're actively downloading!
             if (needsToUpdateSelector) {
                 // If we change the priority of a file we need to figure out which files are marked
                 // as 'DoNotDownload' and which ones are downloadable.
                 PartialProgressSelector.SetAll (false);
-                if (Files.All (t => t.Priority != Priority.DoNotDownload)) {
+                if (Files.All (static t => t.Priority != Priority.DoNotDownload)) {
                     PartialProgressSelector.SetAll (true);
                 } else {
                     PartialProgressSelector.SetAll (false);
-                    foreach (var f in Files.Where (t => t.Priority != Priority.DoNotDownload))
+                    foreach (var f in Files.Where (static t => t.Priority != Priority.DoNotDownload))
                         PartialProgressSelector.SetTrue ((f.StartPieceIndex, f.EndPieceIndex));
                 }
             }
 
             Mode.HandleFilePriorityChanged (file, oldPriority);
+
+            // If large files were truncated *or* zero-length missing files were created the torrent may be eligible to move to Seeding mode now.
+            if (Mode is DownloadMode downloadMode && Complete)
+                _ = downloadMode.UpdateSeedingDownloadingState ();
         }
 
         /// <summary>
@@ -181,7 +183,7 @@ namespace MonoTorrent.Client
         /// all files have the correct length. If some files are marked as 'DoNotDownload' then the
         /// torrent will not be considered to be Complete until they are downloaded.
         /// </summary>
-        public bool Complete => Bitfield.AllTrue && AllFilesCorrectLength;
+        public bool Complete => Bitfield.AllTrue && FilesAreNotMissingOrTooLarge;
 
         internal bool Disposed { get; private set; }
 
@@ -231,7 +233,7 @@ namespace MonoTorrent.Client
         internal void SetNeedsHashCheck ()
         {
             HashChecked = false;
-            AllFilesCorrectLength = false;
+            FilesAreNotMissingOrTooLarge = false;
             if (Engine != null && Engine.Settings.AutoSaveLoadFastResume) {
                 var path = Engine.Settings.GetFastResumePath (InfoHashes);
                 if (File.Exists (path))
@@ -248,7 +250,10 @@ namespace MonoTorrent.Client
 
         public bool HashChecked { get; private set; }
 
-        internal bool AllFilesCorrectLength { get; private set; }
+        /// <summary>
+        /// True if there are no files marked with priority 'DoNotDownload'
+        /// </summary>
+        internal bool FilesAreNotMissingOrTooLarge { get; private set; }
 
         /// <summary>
         /// The number of times a piece is downloaded, but is corrupt and fails the hashcheck and must be re-downloaded.
@@ -1001,7 +1006,7 @@ namespace MonoTorrent.Client
                     InvokePieceHashedAsync ();
             }
 
-            if (Mode is DownloadMode downloadMode && Bitfield.AllTrue)
+            if (Mode is DownloadMode downloadMode && Complete)
                 _ = downloadMode.UpdateSeedingDownloadingState ();
         }
 
@@ -1127,29 +1132,40 @@ namespace MonoTorrent.Client
             for (int i = 0; i < Torrent.PieceCount; i++)
                 OnPieceHashed (i, data.Bitfield[i], i + 1, Torrent.PieceCount);
 
-            UnhashedPieces.From (data.UnhashedPieces);
+            // Zero length files aren't in fast resume, so just check them here.
+            foreach (TorrentFileInfo file in Files) {
+                var maybeLength = await Engine!.DiskManager.GetLengthAsync (file);
+                file.CachedActualLength = maybeLength;
+                if (file.Length == 0)
+                    file.BitField[0] = maybeLength.HasValue && maybeLength.Value == 0;
+            }
 
-            await RefreshAllFilesCorrectLengthAsync ();
+            // Now refresh the state to see if the torrent is actually complete.
+            // We don't re-check file lengths in this codepath as we assume that if
+            // the fast resume data says "all good" then the user hasn't broken the
+            // underlying files by appending data to them.
+            RefreshAllFilesDownloadableOrDownloaded ();
+            UnhashedPieces.From (data.UnhashedPieces);
             HashChecked = true;
         }
 
-        internal async ReusableTask RefreshAllFilesCorrectLengthAsync ()
+        internal void RefreshAllFilesDownloadableOrDownloaded ()
         {
-            var allFilesCorrectLength = true;
-            foreach (TorrentFileInfo file in Files) {
-                var maybeLength = await Engine!.DiskManager.GetLengthAsync (file);
+            FilesAreNotMissingOrTooLarge = Files.All (static t => {
+                // If any zero length files are missing then this torrent cannot be considered complete even if all non-zero length files have been downloaded.
+                // You have to start downloading the torrent to create these.
+                var file = (TorrentFileInfo) t;
+                if (file.Length == 0 && !file.CachedActualLength.HasValue)
+                    return false;
 
-                // Empty files aren't stored in fast resume data because it's as easy to just check if they exist on disk.
-                if (file.Length == 0)
-                    file.BitField[0] = maybeLength.HasValue;
+                // If any of the files are larger than they should be, the torrent cannot be considered incomplete.
+                // You have to start downloading to truncate this files.
+                if (file.CachedActualLength.GetValueOrDefault (0) > file.Length)
+                    return false;
 
-                // If any file doesn't exist, or any file is too large, indicate that something is wrong.
-                // If files exist but are too short, then we can assume everything is fine and the torrent just
-                // needs to be downloaded.
-                if (file.Priority != Priority.DoNotDownload && (!maybeLength.HasValue || maybeLength > file.Length))
-                    allFilesCorrectLength = false;
-            }
-            AllFilesCorrectLength = allFilesCorrectLength;
+                // Otherwise there's no reason to block this torrent from being considered complete.
+                return true;
+            });
         }
 
         public async Task<FastResume> SaveFastResumeAsync ()
