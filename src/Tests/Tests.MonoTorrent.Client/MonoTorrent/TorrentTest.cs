@@ -68,8 +68,9 @@ namespace MonoTorrent.Common
                 { "info", CreateInfoDict () },
                 { "private", new BEncodedString ("1") },
                 { "url-list", new BEncodedList() {
-                    new BEncodedString ("https://example.com/8/items/"),
+                    new BEncodedString ("htTps://example.com/8/items/"),
                     new BEncodedString ("/8/items/"), // this should be ignored on loading
+                    new BEncodedString ("8/items/"), // this should be ignored on loading
                 } }
             };
             torrent = Torrent.Load (torrentInfo);
