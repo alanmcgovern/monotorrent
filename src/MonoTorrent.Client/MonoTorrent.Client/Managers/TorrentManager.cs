@@ -137,10 +137,6 @@ namespace MonoTorrent.Client
             }
 
             Mode.HandleFilePriorityChanged (file, oldPriority);
-
-            // If large files were truncated *or* zero-length missing files were created the torrent may be eligible to move to Seeding mode now.
-            if (Mode is DownloadMode downloadMode && Complete)
-                _ = downloadMode.UpdateSeedingDownloadingState ();
         }
 
         /// <summary>
