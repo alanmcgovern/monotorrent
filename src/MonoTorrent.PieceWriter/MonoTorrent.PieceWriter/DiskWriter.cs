@@ -213,8 +213,10 @@ namespace MonoTorrent.PieceWriter
             using (await Limiter.EnterAsync ()) {
                 (var reader, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
                 using (releaser)
-                    if (reader != null)
-                        return await RandomAccess.ReadAsync (reader, buffer, offset).ConfigureAwait (false);
+                    if (reader != null) {
+                        await new EnsureThreadPool ();
+                        return RandomAccess.Read (reader, buffer.Span, offset);
+                    }
                 return 0;
             }
         }
@@ -245,8 +247,10 @@ namespace MonoTorrent.PieceWriter
 
             using (await Limiter.EnterAsync ()) {
                 (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
-                using (releaser)
-                    await RandomAccess.WriteAsync (writer!, buffer, offset).ConfigureAwait (false);
+                using (releaser) {
+                    await new EnsureThreadPool ();
+                    RandomAccess.Write (writer!, buffer.Span, offset);
+                }
             }
         }
 
