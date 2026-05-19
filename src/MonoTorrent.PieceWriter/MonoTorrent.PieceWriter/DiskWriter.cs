@@ -240,7 +240,7 @@ namespace MonoTorrent.PieceWriter
             using (await Limiter.EnterAsync ()) {
                 (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
                 using (releaser)
-                    await writer.WriteAsync (buffer, offset).ConfigureAwait (false);
+                    await writer!.WriteAsync (buffer, offset).ConfigureAwait (false);
             }
         }
 
@@ -250,7 +250,7 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.CompletedTask;
         }
 
-        internal async ReusableTask<(IFileReaderWriter, ReusableSemaphore.Releaser)> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
+        async ReusableTask<(IFileReaderWriter?, ReusableSemaphore.Releaser)> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
         {
             if (!Streams.TryGetValue (file, out AllStreams? allStreams))
                 allStreams = Streams[file] = new AllStreams ();
@@ -259,6 +259,7 @@ namespace MonoTorrent.PieceWriter
             // in the method. If we already have a cached FileStream we won't need to swap threads before returning it.
             StreamData freshStreamData;
             ReusableSemaphore.Releaser freshStreamDataReleaser;
+            bool fileExists = false;
             using (await allStreams.Locker.EnterAsync ()) {
                 // We should check if the on-disk file needs truncation if this is the very first time we're opening it.
                 foreach (var existing in allStreams.Streams) {
@@ -271,6 +272,10 @@ namespace MonoTorrent.PieceWriter
                         }
                     }
                 }
+
+                fileExists = allStreams.Streams.Count > 0 || File.Exists (file.FullPath);
+                if (!fileExists && access == FileAccess.Read)
+                    return (null, default);
 
                 // Create the stream data and acquire the lock immediately, so any async invocation of MaybeRemoveOldestStream can't kill the stream. 
                 freshStreamData = new StreamData ();
