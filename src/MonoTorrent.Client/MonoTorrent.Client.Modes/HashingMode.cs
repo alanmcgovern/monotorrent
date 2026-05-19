@@ -28,6 +28,7 @@
 
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -93,18 +94,26 @@ namespace MonoTorrent.Client.Modes
             // Delete any existing fast resume data. We will need to recreate it after hashing completes.
             await Manager.MaybeDeleteFastResumeAsync ();
 
-            // Check the size of all files first. It's easier than trying to insert it into the logic below as it'd have to be in several places.
-            foreach (TorrentFileInfo file in Manager.Files) {
-                var length = await DiskManager.GetLengthAsync (file);
-                file.CachedActualLength = length;
+            // Files can only exist if their save directory exists.
+            bool anyExisted = Directory.Exists (Manager.SavePath);
 
-                // If this is a zero length file, mark it as downloaded if it exists.
-                if (file.Length == 0)
-                    file.BitField[0] = length.HasValue && length.Value == 0;
+            // Check the size of all files first. It's easier than trying to insert it into the logic below as it'd have to be in several places.
+            if (anyExisted) {
+                // If the directory existed, it's worth checking if any files exist while we gather their sizes.
+                anyExisted = false;
+                foreach (TorrentFileInfo file in Manager.Files) {
+                    var length = await DiskManager.GetLengthAsync (file);
+                    file.CachedActualLength = length;
+
+                    anyExisted |= length.HasValue;
+                    // If this is a zero length file, mark it as downloaded if it exists.
+                    if (file.Length == 0)
+                        file.BitField[0] = length.HasValue && length.Value == 0;
+                }
             }
 
             bool atLeastOneDoNotDownload = Manager.Files.Any (t => t.Priority == Priority.DoNotDownload);
-            if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {
+            if (anyExisted) {
                 int piecesHashed = 0;
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 // bep52: Properly support this
