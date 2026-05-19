@@ -33,8 +33,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Microsoft.Win32.SafeHandles;
 
 using ReusableTasks;
 
@@ -42,28 +45,20 @@ namespace MonoTorrent.PieceWriter
 {
     public class DiskWriter : IPieceWriter
     {
-        class Comparer : IEqualityComparer<ITorrentManagerFile>
-        {
-            public static Comparer Instance { get; } = new Comparer ();
-
-            public bool Equals (ITorrentManagerFile? x, ITorrentManagerFile? y)
-                => x == y;
-
-            public int GetHashCode (ITorrentManagerFile obj)
-                => obj.GetHashCode ();
-        }
-
         class AllStreams
         {
             public ReusableSemaphore Locker = new ReusableSemaphore (1);
             public List<StreamData> Streams = new List<StreamData> ();
+
+            public bool FileExists = false;
         }
 
         class StreamData
         {
             public ReusableSemaphore Locker = new ReusableSemaphore (1);
+            public FileAccess Access;
             public long LastUsedStamp = Stopwatch.GetTimestamp ();
-            public IFileReaderWriter? Stream;
+            public SafeFileHandle? Stream;
         }
 
 
@@ -128,17 +123,22 @@ namespace MonoTorrent.PieceWriter
             if (!string.IsNullOrEmpty (parent))
                 Directory.CreateDirectory (parent);
 
+            OpenOrCreateFile (file.FullPath, file.Length, FileAccess.Write, options).Dispose ();
+            return true;
+        }
+
+        SafeFileHandle OpenOrCreateFile (string filePath, long length, FileAccess access, FileCreationOptions options)
+        {
             if (options == FileCreationOptions.PreferPreallocation) {
-                File.OpenHandle (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, FileOptions.None, file.Length).Dispose ();
+                return File.OpenHandle (filePath, FileMode.OpenOrCreate, access, FileShare.ReadWrite | FileShare.Delete, FileOptions.None, length);
             } else {
                 try {
-                    NtfsSparseFile.CreateSparse (file.FullPath, file.Length);
+                    NtfsSparseFile.CreateSparse (filePath, length);
                 } catch {
                     // who cares if we can't pre-allocate a sparse file. Try a regular file!
-                    new FileStream (file.FullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete).Dispose ();
                 }
+                return File.OpenHandle (filePath, FileMode.OpenOrCreate, access, FileShare.ReadWrite | FileShare.Delete, FileOptions.None);
             }
-            return true;
         }
 
         public ReusableTask<bool> ExistsAsync (ITorrentManagerFile file)
@@ -158,10 +158,12 @@ namespace MonoTorrent.PieceWriter
 
             if (Streams.TryGetValue (file, out AllStreams? allStreams)) {
                 using var releaser = await allStreams.Locker.EnterAsync ();
+
+                await new EnsureThreadPool ();
                 foreach (var data in allStreams.Streams) {
-                    using (await data.Locker.EnterAsync ()) {
-                        await data.Stream!.FlushAsync ();
-                    }
+                    using (await data.Locker.EnterAsync ())
+                        if (data.Access != FileAccess.Read)
+                            RandomAccess.FlushToDisk (data.Stream!);
                 }
             }
         }
@@ -180,8 +182,10 @@ namespace MonoTorrent.PieceWriter
             if (file is null)
                 throw new ArgumentNullException (nameof (file));
 
-            if (!Streams.TryGetValue (file, out AllStreams? data))
+            if (!Streams.TryGetValue (file, out AllStreams? data)) {
                 Streams[file] = data = new AllStreams ();
+                data.FileExists = await ExistsAsync (file);
+            }
 
             using var releaser = await data.Locker.EnterAsync ();
             await CloseAllAsync (data).ConfigureAwait (false);
@@ -207,10 +211,10 @@ namespace MonoTorrent.PieceWriter
                 throw new ArgumentOutOfRangeException (nameof (offset));
 
             using (await Limiter.EnterAsync ()) {
-                (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
+                (var reader, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.Read).ConfigureAwait (false);
                 using (releaser)
-                    if (writer != null)
-                        return await writer.ReadAsync (buffer, offset).ConfigureAwait (false);
+                    if (reader != null)
+                        return await RandomAccess.ReadAsync (reader, buffer, offset).ConfigureAwait (false);
                 return 0;
             }
         }
@@ -222,8 +226,10 @@ namespace MonoTorrent.PieceWriter
             if (!info.Exists)
                 return false;
 
-            using (var fileStream = new FileStream (file.FullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1, FileOptions.None))
-                fileStream.SetLength (file.Length);
+            (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.ReadWrite);
+            using (releaser)
+                RandomAccess.SetLength (writer!, length);
+
             return true;
         }
 
@@ -240,7 +246,7 @@ namespace MonoTorrent.PieceWriter
             using (await Limiter.EnterAsync ()) {
                 (var writer, var releaser) = await GetOrCreateStreamAsync (file, FileAccess.ReadWrite).ConfigureAwait (false);
                 using (releaser)
-                    await writer!.WriteAsync (buffer, offset).ConfigureAwait (false);
+                    await RandomAccess.WriteAsync (writer!, buffer, offset).ConfigureAwait (false);
             }
         }
 
@@ -250,21 +256,25 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.CompletedTask;
         }
 
-        async ReusableTask<(IFileReaderWriter?, ReusableSemaphore.Releaser)> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
+        async ReusableTask<(SafeFileHandle?, ReusableSemaphore.Releaser)> GetOrCreateStreamAsync (ITorrentManagerFile file, FileAccess access)
         {
-            if (!Streams.TryGetValue (file, out AllStreams? allStreams))
+            if (!Streams.TryGetValue (file, out AllStreams? allStreams)) {
                 allStreams = Streams[file] = new AllStreams ();
+                allStreams.FileExists = await ExistsAsync (file);
+            }
+
+            if (access == FileAccess.Read && !allStreams.FileExists)
+                return (default, default);
 
             // If this completes synchronously we will want to swap threads before doing file manipulation later
             // in the method. If we already have a cached FileStream we won't need to swap threads before returning it.
             StreamData freshStreamData;
             ReusableSemaphore.Releaser freshStreamDataReleaser;
-            bool fileExists = false;
             using (await allStreams.Locker.EnterAsync ()) {
                 // We should check if the on-disk file needs truncation if this is the very first time we're opening it.
                 foreach (var existing in allStreams.Streams) {
                     if (existing.Locker.TryEnter (out ReusableSemaphore.Releaser r)) {
-                        if (((access & FileAccess.Write) != FileAccess.Write) || existing.Stream!.CanWrite) {
+                        if (((access & FileAccess.Write) != FileAccess.Write) || (existing.Access & FileAccess.Write) == FileAccess.Write) {
                             existing.LastUsedStamp = Stopwatch.GetTimestamp ();
                             return (existing.Stream!, r);
                         } else {
@@ -273,12 +283,9 @@ namespace MonoTorrent.PieceWriter
                     }
                 }
 
-                fileExists = allStreams.Streams.Count > 0 || File.Exists (file.FullPath);
-                if (!fileExists && access == FileAccess.Read)
-                    return (null, default);
-
                 // Create the stream data and acquire the lock immediately, so any async invocation of MaybeRemoveOldestStream can't kill the stream. 
                 freshStreamData = new StreamData ();
+                freshStreamData.Access = access;
                 freshStreamDataReleaser = await freshStreamData.Locker.EnterAsync ();
                 allStreams.Streams.Add (freshStreamData);
                 OpenFiles++;
@@ -292,7 +299,8 @@ namespace MonoTorrent.PieceWriter
                 if (Path.GetDirectoryName (file.FullPath) is string parentDirectory)
                     Directory.CreateDirectory (parentDirectory);
             }
-            freshStreamData.Stream = new RandomFileReaderWriter (file.FullPath, file.Length, FileMode.OpenOrCreate, access, FileShare.ReadWrite | FileShare.Delete);
+            freshStreamData.Stream = OpenOrCreateFile (file.FullPath, file.Length, access, FileCreationOptions.PreferSparse);
+            allStreams.FileExists = true;
             return (freshStreamData.Stream, freshStreamDataReleaser);
         }
 
