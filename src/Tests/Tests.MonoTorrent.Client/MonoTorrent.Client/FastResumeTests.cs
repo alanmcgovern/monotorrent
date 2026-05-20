@@ -244,7 +244,6 @@ namespace MonoTorrent.Client
             );
 
             var first = new TaskCompletionSource<object> ();
-            var second = new TaskCompletionSource<object> ();
 
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
@@ -256,17 +255,16 @@ namespace MonoTorrent.Client
             Assert.IsTrue (manager.HashChecked);
             manager.Engine.DiskManager.GetHashAsyncOverride = (torrent, pieceIndex, dest) => {
                 first.SetResult (null);
-                second.Task.Wait ();
                 new byte[20].CopyTo (dest.V1Hash);
                 return Task.FromResult (true);
             };
-            var hashCheckTask = manager.HashCheckAsync (false);
-            await first.Task.WithTimeout ();
-            Assert.IsFalse (File.Exists (path));
+            await manager.HashCheckAsync (false);
 
-            second.SetResult (null);
-            await hashCheckTask.WithTimeout ();
-            Assert.IsTrue (File.Exists (path));
+            // There are no files so we never call GetHashAsync
+            Assert.IsFalse (first.Task.IsCompleted);
+            Assert.IsTrue (manager.Bitfield.AllFalse);
+            foreach (var file in manager.Files)
+                Assert.IsTrue (file.BitField.AllFalse);
         }
     }
 }
