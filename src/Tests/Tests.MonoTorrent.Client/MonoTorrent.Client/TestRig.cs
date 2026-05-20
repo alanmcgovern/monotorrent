@@ -170,7 +170,8 @@ namespace MonoTorrent.Client
         public List<AnnounceRequest> AnnounceParameters = new List<AnnounceRequest> ();
         public List<DateTime> ScrapedAt = new List<DateTime> ();
 
-        public bool FailAnnounce;
+        public AnnounceResponse CustomResponse;
+        public bool FailAnnounceWithException;
         public bool FailScrape;
 
         public bool CanScrape => true;
@@ -186,8 +187,10 @@ namespace MonoTorrent.Client
         public ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest parameters, CancellationToken token)
         {
             AnnouncedAt.Add (DateTime.Now);
-            if (FailAnnounce)
+            if (FailAnnounceWithException)
                 throw new TrackerException ("Deliberately failing announce request", null);
+            if (CustomResponse is not null)
+                return ReusableTask.FromResult (CustomResponse);
 
             AnnounceParameters.Add (parameters);
             var dict = new Dictionary<InfoHash, IList<PeerInfo>> {

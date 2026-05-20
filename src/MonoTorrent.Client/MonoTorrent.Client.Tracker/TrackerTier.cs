@@ -146,10 +146,14 @@ namespace MonoTorrent.Trackers
             // Update before sending an announce so 'CanSendAnnounce' starts to return 'false'.
             LastAnnounce = ValueStopwatch.StartNew ();
 
-            // If a specific tracker is passed to this method then only announce to that tracker. Otherwise
-            // we should try all trackers in a round-robin fashion.
+            // Try all trackers in a round-robin fashion.
+            //
+            // NOTE: every time we call 'DoAnnounceAsync' we update the active tracker index, so we need to
+            // capture it now so we start at the correct tracker and continue sequentially through the remainder
+            // if it fails.
+            var startingTracker = ActiveTrackerIndex;
             for (int i = 0; i < Trackers.Count; i++) {
-                var tracker = Trackers[(ActiveTrackerIndex + i) % Trackers.Count];
+                var tracker = Trackers[(startingTracker + i) % Trackers.Count];
                 try {
                     var response = await DoAnnounceAsync (args, tracker, token);
                     if (response.State == TrackerState.Ok) {
@@ -159,6 +163,9 @@ namespace MonoTorrent.Trackers
                         LastAnnounceSucceeded = true;
                         logger.InfoFormatted ("Announced to {0}", tracker.Uri);
                         return;
+                    } else {
+                        logger.ErrorFormatted ("Could not announce to {0}", tracker.Uri);
+                        AnnounceComplete?.Invoke (this, new AnnounceResponseEventArgs (tracker, false));
                     }
                 } catch {
                     logger.ErrorFormatted ("Could not announce to {0}", tracker.Uri);
