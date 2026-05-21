@@ -34,6 +34,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Messages.Efficient;
 using MonoTorrent.Dht.Tasks;
 
 using NUnit.Framework;
@@ -46,7 +47,7 @@ namespace MonoTorrent.Dht
         DhtEngine engine;
         TestListener listener;
         Node node;
-        readonly BEncodedString transactionId = "aa";
+        readonly TransactionId transactionId = TransactionId.NextId ();
 
         [SetUp]
         public async Task Setup ()
@@ -55,7 +56,7 @@ namespace MonoTorrent.Dht
             listener = new TestListener ();
             engine = new DhtEngine ();
             await engine.SetListenerAsync (listener);
-            node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 4));
+            node = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Parse("1.2.3.4"), 555));
         }
 
         [Test]
@@ -65,12 +66,12 @@ namespace MonoTorrent.Dht
             var errorSource = new TaskCompletionSource<object> ();
             listener.MessageSent += (o, e) => errorSource.Task.GetAwaiter ().GetResult ();
 
-            await engine.StartAsync (new byte[26], Array.Empty<string> ());
+            await engine.StartAsync (node.CompactNode ().Span.ToArray (), Array.Empty<string> ());
             Assert.AreEqual (DhtState.Initialising, engine.State);
 
             // Then set an error and make sure the engine state moves to 'NotReady'
             errorSource.SetException (new Exception ());
-            await engine.WaitForState (DhtState.NotReady).WithTimeout (1000000);
+            await engine.WaitForState (DhtState.NotReady).WithTimeout (1000);
         }
 
         int counter;
@@ -79,8 +80,7 @@ namespace MonoTorrent.Dht
         {
             engine.MessageLoop.Timeout = TimeSpan.Zero;
 
-            Ping ping = new Ping (engine.LocalId);
-            ping.TransactionId = transactionId;
+            var ping = KrpcMessageEncoder.EncodePing (transactionId, engine.LocalId);
             engine.MessageLoop.QuerySent += delegate (object o, SendQueryEventArgs e) {
                 if (e.TimedOut)
                     counter++;
@@ -93,14 +93,13 @@ namespace MonoTorrent.Dht
         [Test]
         public async Task SendQueryTaskSucceed ()
         {
-            var ping = new Ping (engine.LocalId) {
-                TransactionId = transactionId
-            };
+            var ping = KrpcMessageEncoder.EncodePing (transactionId, engine.LocalId);
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
-                if (message is Ping && message.TransactionId.Equals (ping.TransactionId)) {
+                var message = KrpcMessage.Parse (data);
+                //engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
+                if (message.QueryMethod == QueryMethod.Ping && message.TransactionId.SequenceEqual (transactionId)) {
                     counter++;
-                    PingResponse response = new PingResponse (node.Id, transactionId);
+                    var response = KrpcMessageEncoder.EncodePingResponse (transactionId, node.Id.Span);
                     listener.RaiseMessageReceived (response, node.EndPoint);
                 }
             };
@@ -119,7 +118,7 @@ namespace MonoTorrent.Dht
             int nodeCount = 0;
             Bucket b = new Bucket ();
             for (int i = 0; i < Bucket.MaxCapacity; i++) {
-                Node n = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i));
+                Node n = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Any, i));
                 n.Seen ();
                 b.Add (n);
             }
@@ -129,7 +128,8 @@ namespace MonoTorrent.Dht
             b.Nodes[5].Seen (TimeSpan.FromDays (3));
 
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), endpoint, out DhtMessage message);
+                var message = KrpcMessage.Parse (data);
+                //engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), endpoint, out DhtMessage message);
 
                 b.Nodes.Sort ((l, r) => l.LastSeen.CompareTo (r.LastSeen));
                 if ((endpoint.Port == 3 && nodeCount == 0) ||
@@ -137,7 +137,7 @@ namespace MonoTorrent.Dht
                      (endpoint.Port == 5 && nodeCount == 2)) {
                     Node n = b.Nodes.Find (no => no.EndPoint.Port == endpoint.Port);
                     n.Seen ();
-                    PingResponse response = new PingResponse (n.Id, message.TransactionId);
+                    var response = KrpcMessageEncoder.EncodePingResponse (message.TransactionId, n.Id.Span);
                     listener.RaiseMessageReceived (response, n.EndPoint);
                     nodeCount++;
                 }
@@ -153,21 +153,21 @@ namespace MonoTorrent.Dht
         {
             List<Node> nodes = new List<Node> ();
             for (int i = 0; i < 5; i++)
-                nodes.Add (new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i)));
+                nodes.Add (new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Any, i)));
 
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
+                var message = KrpcMessage.Parse (data);
+                //engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
 
                 Node current = nodes.Find (n => n.EndPoint.Port.Equals (endpoint.Port));
                 if (current == null)
                     return;
 
-                if (message is Ping) {
-                    PingResponse r = new PingResponse (current.Id, message.TransactionId);
+                if (message.QueryMethod == QueryMethod.Ping) {
+                    var r = KrpcMessageEncoder.EncodePingResponse (message.TransactionId, current.Id.Span);
                     listener.RaiseMessageReceived (r, current.EndPoint);
-                } else if (message is FindNode) {
-                    FindNodeResponse response = new FindNodeResponse (current.Id, message.TransactionId);
-                    response.Nodes = "";
+                } else if (message.QueryMethod == QueryMethod.FindNode) {
+                    var response = KrpcMessageEncoder.EncodeFindNodeResponse (message.TransactionId, current.Id.Span, default);
                     listener.RaiseMessageReceived (response, current.EndPoint);
                 }
             };
@@ -193,9 +193,9 @@ namespace MonoTorrent.Dht
         public async Task ReplaceNodeTest ()
         {
             engine.MessageLoop.Timeout = TimeSpan.FromMilliseconds (0);
-            Node replacement = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Loopback, 1337));
+            Node replacement = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Loopback, 1337));
             for (int i = 0; i < 4; i++) {
-                var n = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, i));
+                var n = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Any, i));
                 n.Seen (TimeSpan.FromDays (i));
                 engine.RoutingTable.Add (n);
             }

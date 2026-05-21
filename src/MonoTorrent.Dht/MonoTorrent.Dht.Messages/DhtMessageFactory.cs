@@ -33,112 +33,39 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Dht.Messages.Efficient;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Dht.Messages
 {
     class DhtMessageFactory
     {
-        static readonly BEncodedString QueryNameKey = new BEncodedString ("q");
-        static readonly BEncodedString MessageTypeKey = new BEncodedString ("y");
-        static readonly BEncodedString TransactionIdKey = new BEncodedString ("t");
-        static readonly Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
-
-        readonly Dictionary<(BEncodedValue, IPEndPoint), QueryMessage> messages = new Dictionary<(BEncodedValue, IPEndPoint), QueryMessage> ();
-
+        readonly Dictionary<(TransactionId, CompactEndPoint), ReadOnlyMemory<byte>> messages = new Dictionary<(TransactionId, CompactEndPoint), ReadOnlyMemory<byte>> ();
 
         public int RegisteredMessages => messages.Count;
 
-        static DhtMessageFactory ()
+        internal bool IsRegistered (ReadOnlySpan<byte> transactionId, CompactEndPoint endPoint)
         {
-            queryDecoders.Add (new BEncodedString ("announce_peer"), d => new AnnouncePeer (d));
-            queryDecoders.Add (new BEncodedString ("find_node"), d => new FindNode (d));
-            queryDecoders.Add (new BEncodedString ("get_peers"), d => new GetPeers (d));
-            queryDecoders.Add (new BEncodedString ("ping"), d => new Ping (d));
+            if (transactionId.Length != 2)
+                throw new NotSupportedException ();
+
+            return messages.ContainsKey ((TransactionId.From (transactionId), endPoint));
         }
 
-        internal bool IsRegistered (BEncodedValue transactionId, IPEndPoint destination)
+        public void RegisterSend (ReadOnlySpan<byte> transactionId, ReadOnlyMemory<byte> queryMessage, CompactEndPoint endPoint)
         {
-            return messages.ContainsKey ((transactionId, destination));
+            if (transactionId.Length != 2)
+                throw new InvalidOperationException ("Transaction ids should be 2 byte BEncodedStrings");
+
+            messages.Add ((TransactionId.From (transactionId), endPoint), queryMessage);
         }
 
-        public void RegisterSend (QueryMessage message, IPEndPoint destination)
+        public bool UnregisterSend (ReadOnlySpan<byte> transactionId, CompactEndPoint endPoint)
         {
-            if (message is null)
-                throw new ArgumentNullException (nameof (message));
-            if (message.TransactionId is null)
-                throw new ArgumentException ("The message must have a transaction id set");
-            if (destination is null)
-                throw new ArgumentNullException (nameof (destination));
+            if (transactionId.Length != 2)
+                throw new InvalidOperationException ("Transaction ids should be 2 byte BEncodedStrings");
 
-            messages.Add (((BEncodedValue) message.TransactionId, destination), message);
-        }
-
-        public bool UnregisterSend (QueryMessage message, IPEndPoint destination)
-        {
-            if (message is null)
-                throw new ArgumentNullException (nameof (message));
-            if (message.TransactionId is null)
-                throw new ArgumentException ("The message must have a transaction id set");
-            if (destination is null)
-                throw new ArgumentNullException (nameof (destination));
-
-            return messages.Remove ((message.TransactionId, destination));
-        }
-
-        public DhtMessage DecodeMessage (BEncodedDictionary dictionary, IPEndPoint source)
-        {
-            if (!TryDecodeMessage (dictionary, source, out DhtMessage? message, out string? error))
-                throw new MessageException (ErrorCode.GenericError, error!);
-
-            return message;
-        }
-
-        public bool TryDecodeMessage (BEncodedDictionary dictionary, IPEndPoint source, [NotNullWhen (true)] out DhtMessage? message)
-        {
-            return TryDecodeMessage (dictionary, source, out message, out string? error);
-        }
-
-        public bool TryDecodeMessage (BEncodedDictionary dictionary, IPEndPoint? source, [NotNullWhen(true)] out DhtMessage? message, out string? error)
-        {
-            message = null;
-            error = null;
-
-            if (!dictionary.TryGetValue (MessageTypeKey, out BEncodedValue? messageType)) {
-                message = null;
-                error = "The BEncodedDictionary did not contain the 'q' key, so the message type could not be identified";
-                return false;
-            }
-
-            if (messageType.Equals (QueryMessage.QueryType)) {
-                message = queryDecoders[(BEncodedString) dictionary[QueryNameKey]] (dictionary);
-            } else if (messageType.Equals (ErrorMessage.ErrorType)) {
-                message = new ErrorMessage (dictionary);
-                messages.Remove ((message.TransactionId!, source!));
-            } else {
-                if (source is null)
-                    throw new InvalidOperationException ("Attempted to decode a response but no source IP was supplied");
-                var key = ((BEncodedValue) dictionary[TransactionIdKey], source!);
-                if (messages.TryGetValue (key, out QueryMessage? query)) {
-                    messages.Remove (key);
-                    try {
-                        message = query.CreateResponse (dictionary);
-                    } catch {
-                        error = "Response dictionary was invalid";
-                    }
-                } else {
-                    error = "Response had bad transaction ID";
-                }
-            }
-
-            // If the transaction ID is null, or invalid, we should bail out
-            if (message != null && message.TransactionId == null)
-                error = "Response had a null transation ID";
-
-            // If the node ID is null, or invalid, we should bail out
-            if (message != null && message.Id == null)
-                error = "Response had a null node ID";
-
-            return error == null && message != null;
+            return messages.Remove ((TransactionId.From (transactionId), endPoint));
         }
     }
 }

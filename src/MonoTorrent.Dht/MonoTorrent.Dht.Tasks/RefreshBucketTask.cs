@@ -30,6 +30,7 @@
 using System.Threading.Tasks;
 
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Messages.Efficient;
 
 namespace MonoTorrent.Dht.Tasks
 {
@@ -52,7 +53,8 @@ namespace MonoTorrent.Dht.Tasks
             bucket.SortBySeen ();
 
             foreach (Node node in bucket.Nodes.ToArray ()) {
-                var message = new FindNode (engine.LocalId, node.Id);
+                var transactionId = TransactionId.NextId ();
+                var message = KrpcMessageEncoder.EncodeFindNode (transactionId, engine.LocalId, node.Id.Span);
 
                 SendQueryEventArgs args = await engine.SendQueryAsync (message, node);
                 if (!args.TimedOut)

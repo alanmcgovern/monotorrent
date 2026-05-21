@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Messages.Efficient;
 
 using NUnit.Framework;
 
@@ -12,7 +13,7 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class MessageHandlingTests
     {
-        readonly BEncodedString transactionId = "cc";
+        readonly TransactionId transactionId = TransactionId.NextId ();
         DhtEngine engine;
         Node node;
         TestListener listener;
@@ -22,7 +23,7 @@ namespace MonoTorrent.Dht
         public async Task Setup ()
         {
             listener = new TestListener ();
-            node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0));
+            node = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Any, 0));
             engine = new DhtEngine ();
             await engine.SetListenerAsync (listener);
         }
@@ -39,25 +40,26 @@ namespace MonoTorrent.Dht
             int failedCount = 0;
             var pingSuccessful = new TaskCompletionSource<bool> ();
 
-            var ping = new Ping (node.Id) {
-                TransactionId = transactionId
-            };
+            var ping = KrpcMessageEncoder.EncodePing (transactionId, node.Id.Span);
 
             engine.MessageLoop.QuerySent += (o, e) => {
+                var query = KrpcMessage.Parse (e.Query);
+                var response = KrpcMessage.Parse (e.Response);
                 // This ping should not time out.
-                if (e.Query.TransactionId.Equals (ping.TransactionId))
-                    pingSuccessful.TrySetResult (!e.TimedOut && e.Response == null && e.Error != null);
+                if (query.TransactionId.SequenceEqual (transactionId))
+                    pingSuccessful.TrySetResult (!e.TimedOut && response.MessageType == KrpcType.Error);
             };
 
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
+                var message = KrpcMessage.Parse (data);
+                //engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
 
                 // This TransactionId should be registered and it should be pending a response.
-                if (!DhtMessageFactory.IsRegistered (ping.TransactionId, node.EndPoint) || engine.MessageLoop.PendingQueries != 1)
+                if (!DhtMessageFactory.IsRegistered (transactionId, node.EndPoint) || engine.MessageLoop.PendingQueries != 1)
                     pingSuccessful.TrySetResult (false);
 
-                if (message.TransactionId.Equals (ping.TransactionId)) {
-                    listener.RaiseMessageReceived (new ErrorMessage (ping.TransactionId, ErrorCode.ServerError, "Ooops"), node.EndPoint);
+                if (message.TransactionId.SequenceEqual(transactionId)) {
+                    listener.RaiseMessageReceived (KrpcMessageEncoder.EncodeError (message.TransactionId, (int) ErrorCode.ServerError, "Ooops"u8), node.EndPoint);
                     failedCount++;
                 }
             };
@@ -69,7 +71,7 @@ namespace MonoTorrent.Dht
             Assert.IsTrue (task.AsTask ().Wait (100000), "#1");
             Assert.IsTrue (pingSuccessful.Task.Wait (1000), "#2");
             Assert.IsTrue (pingSuccessful.Task.Result, "#3");
-            Assert.IsFalse (DhtMessageFactory.IsRegistered (ping.TransactionId, node.EndPoint), "#4");
+            Assert.IsFalse (DhtMessageFactory.IsRegistered (transactionId, node.EndPoint), "#4");
             Assert.AreEqual (0, engine.MessageLoop.PendingQueries, "#5");
             Assert.AreEqual (1, failedCount, "#6");
         }
@@ -88,15 +90,17 @@ namespace MonoTorrent.Dht
 
             var tcs = new TaskCompletionSource<object> ();
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
+                var message = KrpcMessage.Parse (data);
+                //engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
 
-                if (message is Ping && endpoint.Equals (node.EndPoint)) {
-                    var response = new PingResponse (node.Id, message.TransactionId);
+                if (message.QueryMethod == QueryMethod.Ping && endpoint.Equals (node.EndPoint)) {
+                    var response = KrpcMessageEncoder.EncodePingResponse (message.TransactionId, node.Id.Span);
                     listener.RaiseMessageReceived (response, endpoint);
                 }
             };
             engine.MessageLoop.QuerySent += (o, e) => {
-                if (e.Query is Ping && e.EndPoint.Equals (node.EndPoint))
+                var query = KrpcMessage.Parse (e.Query);
+                if (query.QueryMethod == QueryMethod.Ping && e.EndPoint.Equals (node.EndPoint))
                     tcs.TrySetResult (null);
             };
 
@@ -114,31 +118,30 @@ namespace MonoTorrent.Dht
         public void PingTimeout ()
         {
             bool pingSuccessful = false;
-            var ping = new Ping (node.Id) {
-                TransactionId = transactionId
-            };
+            var ping = KrpcMessageEncoder.EncodePing (transactionId, node.Id.Span);
 
             bool timedOutPingSuccessful = false;
-            var timedOutPing = new Ping (node.Id) {
-                TransactionId = (BEncodedNumber) 5
-            };
+            var timedOutPingTransactionId = TransactionId.NextId ();
+            var timedOutPing = KrpcMessageEncoder.EncodePing (timedOutPingTransactionId, node.Id.Span);
 
             listener.MessageSent += (data, endpoint) => {
-                engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
+                var message = KrpcMessage.Parse (data);
+                //engine.MessageLoop.DhtMessageFactory.TryDecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (data.Span), node.EndPoint, out DhtMessage message);
 
-                if (message.TransactionId.Equals (ping.TransactionId)) {
-                    var response = new PingResponse (node.Id, transactionId);
+                if (message.TransactionId.SequenceEqual (transactionId)) {
+                    var response = KrpcMessageEncoder.EncodePingResponse (transactionId, node.Id.Span);
                     listener.RaiseMessageReceived (response, endpoint);
                 }
             };
 
             engine.MessageLoop.QuerySent += (o, e) => {
                 // This ping should not time out.
-                if (e.Query.TransactionId.Equals (ping.TransactionId))
+                var query = KrpcMessage.Parse (e.Query);
+                if (query.TransactionId.SequenceEqual (transactionId))
                     pingSuccessful = !e.TimedOut;
 
                 // This ping should time out.
-                if (e.Query.TransactionId.Equals (timedOutPing.TransactionId))
+                if (query.TransactionId.SequenceEqual (timedOutPingTransactionId))
                     timedOutPingSuccessful = e.TimedOut;
             };
 
@@ -164,13 +167,12 @@ namespace MonoTorrent.Dht
         {
             // See what happens if we receive a query with the same ID as a pending query we are sending.
             var pingSuccessful = new TaskCompletionSource<bool> ();
-            var ping = new Ping (node.Id) {
-                TransactionId = transactionId
-            };
+            var ping = KrpcMessageEncoder.EncodePing (transactionId, node.Id.Span);
 
             engine.MessageLoop.QuerySent += (o, e) => {
                 // This ping should not time out.
-                if (e.Query.TransactionId.Equals (ping.TransactionId))
+                var query = KrpcMessage.Parse (e.Query);
+                if (query.TransactionId.SequenceEqual (transactionId))
                     pingSuccessful.TrySetResult (!e.TimedOut);
             };
 
@@ -178,10 +180,11 @@ namespace MonoTorrent.Dht
             var task = engine.SendQueryAsync (ping, node);
 
             // Some other node sends us a Query with the same transaction ID
-            listener.RaiseMessageReceived (ping, new IPEndPoint (IPAddress.Any, 9876));
+            listener.RaiseMessageReceived (ping, new CompactEndPoint (IPAddress.Any, 9876));
 
             // Now we receive a response to our original ping
-            listener.RaiseMessageReceived (new PingResponse (node.Id, ping.TransactionId), node.EndPoint);
+            var response = KrpcMessageEncoder.EncodePingResponse (transactionId, node.Id.Span);
+            listener.RaiseMessageReceived (response, node.EndPoint);
 
             // The query should complete, and the message should not have timed out.
             Assert.IsTrue (task.AsTask ().Wait (1000), "#1");

@@ -31,12 +31,14 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Connections.Dht
 {
     class NullDhtListener : IDhtListener
     {
 #pragma warning disable 0067
-        public event Action<ReadOnlyMemory<byte>, IPEndPoint>? MessageReceived;
+        public event Action<ReadOnlyMemory<byte>, CompactEndPoint>? MessageReceived;
         public event EventHandler<EventArgs>? StatusChanged;
 #pragma warning restore 0067
 
@@ -49,9 +51,9 @@ namespace MonoTorrent.Connections.Dht
 
         public ListenerStatus Status { get; } = ListenerStatus.NotListening;
 
-        public Task SendAsync (ReadOnlyMemory<byte> buffer, IPEndPoint endpoint)
+        public ReusableTask SendAsync (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint)
         {
-            return Task.CompletedTask;
+            return ReusableTask.CompletedTask;
         }
 
         public void Start ()

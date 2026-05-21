@@ -27,10 +27,13 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Messages.Efficient;
 
 namespace MonoTorrent.Dht.Tasks
 {
@@ -41,7 +44,7 @@ namespace MonoTorrent.Dht.Tasks
         readonly int port;
 
         public AnnounceTask (DhtEngine engine, InfoHash infoHash, int port)
-            : this (engine, new NodeId (infoHash), port)
+            : this (engine, new NodeId (infoHash.Span), port)
         {
 
         }
@@ -63,7 +66,8 @@ namespace MonoTorrent.Dht.Tasks
             var announceTasks = new List<Task> ();
             foreach (Node n in nodes) {
                 if (n.Token != null) {
-                    var query = new AnnouncePeer (engine.LocalId, infoHash, port, n.Token);
+                    var id = TransactionId.NextId ();
+                    var query = KrpcMessageEncoder.EncodeAnnouncePeer (id, engine.LocalId, infoHash.Span, ((BEncodedString) n.Token).Span, port, false);
                     announceTasks.Add (engine.SendQueryAsync (query, n).AsTask ());
                 }
             }

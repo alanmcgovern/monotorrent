@@ -26,7 +26,7 @@ namespace MonoTorrent.Dht
             table.Clear ();
             for (int i = 0; i < Bucket.MaxCapacity; i++) {
                 byte[] id = (byte[]) this.id.Clone ();
-                table.Add (new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0)));
+                table.Add (new Node (new NodeId (id), new CompactEndPoint (IPAddress.Any, 0)));
             }
 
             Assert.AreEqual (1, table.CountNodes (), "#a");
@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < Bucket.MaxCapacity * 3; i++) {
                 byte[] id = (byte[]) this.id.Clone ();
                 id[0] += (byte) i;
-                table.Add (new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0)));
+                table.Add (new Node (new NodeId (id), new CompactEndPoint (IPAddress.Any, 0)));
             }
 
             Assert.AreEqual (Bucket.MaxCapacity * 3, table.CountNodes (), "#1");

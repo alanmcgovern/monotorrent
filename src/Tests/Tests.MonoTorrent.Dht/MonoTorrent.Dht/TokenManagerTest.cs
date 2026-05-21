@@ -28,6 +28,7 @@
 //
 //
 
+using System;
 using System.Net;
 using System.Security.Cryptography;
 
@@ -42,50 +43,50 @@ namespace MonoTorrent.Dht
     {
         TokenManager manager;
         Node node;
-        BEncodedString token;
+        ReadOnlyMemory<byte> token;
 
         [SetUp]
         public void Setup ()
         {
             manager = new TokenManager ();
-            node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Parse ("127.0.0.1"), 25));
+            node = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Parse ("127.0.0.1"), 25));
             token = manager.GenerateToken (node);
         }
 
         [Test]
         public void CanGenerateToken ([Values("::1", "127.0.0.1")] string ipAddress)
         {
-            var node = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Parse (ipAddress), 25));
+            var node = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Parse (ipAddress), 25));
             var token = manager.GenerateToken (node);
-            Assert.IsTrue (manager.VerifyToken (node, token));
+            Assert.IsTrue (manager.VerifyToken (node, token.Span));
         }
 
         [Test]
         public void InvalidateOldTokens ()
         {
-            Assert.IsTrue (manager.VerifyToken (node, token), "#1");
+            Assert.IsTrue (manager.VerifyToken (node, token.Span), "#1");
 
             manager.RefreshTokens ();
-            Assert.IsTrue (manager.VerifyToken (node, token), "#2");
+            Assert.IsTrue (manager.VerifyToken (node, token.Span), "#2");
 
             manager.RefreshTokens ();
-            Assert.IsFalse (manager.VerifyToken (node, token), "#3");
+            Assert.IsFalse (manager.VerifyToken (node, token.Span), "#3");
         }
 
         [Test]
         public void InvalidTokenForNode ()
         {
-            var otherNode = new Node (node.Id, new IPEndPoint (IPAddress.Parse ("127.0.0.2"), 25));
-            Assert.IsFalse (manager.VerifyToken (otherNode, token), "#1");
+            var otherNode = new Node (node.Id, new CompactEndPoint (IPAddress.Parse ("127.0.0.2"), 25));
+            Assert.IsFalse (manager.VerifyToken (otherNode, token.Span), "#1");
 
-            otherNode = new Node (node.Id, new IPEndPoint (IPAddress.Parse ("127.0.0.1"), 26));
-            Assert.IsFalse (manager.VerifyToken (otherNode, token), "#2");
+            otherNode = new Node (node.Id, new CompactEndPoint (IPAddress.Parse ("127.0.0.1"), 26));
+            Assert.IsFalse (manager.VerifyToken (otherNode, token.Span), "#2");
         }
 
         [Test]
         public void TokenChangesAfterRefresh ()
         {
-            Assert.AreEqual (token, manager.GenerateToken (node), "#1");
+            Assert.IsTrue (token.Span.SequenceEqual (manager.GenerateToken (node).Span), "#1");
 
             manager.RefreshTokens ();
             Assert.AreNotEqual (token, manager.GenerateToken (node), "#2");

@@ -21,7 +21,7 @@ namespace MonoTorrent.Dht
                 id = new byte[20];
                 id[19] = (byte) i;
                 nodes.Add (new NodeId (id));
-                table.Add (new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0)));
+                table.Add (new Node (new NodeId (id), new CompactEndPoint (IPAddress.Any, 0)));
             }
 
             nodes.Sort (delegate (NodeId left, NodeId right) {

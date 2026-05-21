@@ -38,6 +38,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Messages.Efficient;
 using MonoTorrent.Dht.Tasks;
 
 using ReusableTasks;
@@ -97,7 +98,7 @@ namespace MonoTorrent.Dht
         public DhtState State { get; private set; }
 
         internal TimeSpan BucketRefreshTimeout { get; set; }
-        internal NodeId LocalId => RoutingTable.LocalNodeId;
+        internal ReadOnlySpan<byte> LocalId => RoutingTable.LocalNodeId.Span;
         internal MessageLoop MessageLoop { get; }
         public int NodeCount => RoutingTable.CountNodes ();
         IEnumerable<Node> PendingNodes { get; set; }
@@ -144,7 +145,11 @@ namespace MonoTorrent.Dht
         }
 
         internal async ReusableTask Add (Node node)
-            => await SendQueryAsync (new Ping (RoutingTable.LocalNodeId), node);
+        {
+            var id = TransactionId.NextId ();
+            var query = KrpcMessageEncoder.EncodePing (id, RoutingTable.LocalNodeId.Span);
+            await SendQueryAsync (query, node);
+        }
 
         public async ReusableTask AnnounceAsync (InfoHash infoHash, int port)
         {
@@ -211,7 +216,7 @@ namespace MonoTorrent.Dht
 
         internal void RaisePeersFound (NodeId infoHash, IList<PeerInfo> peers)
         {
-            PeersFound?.Invoke (this, new PeersFoundEventArgs (InfoHash.FromMemory (infoHash.AsMemory ()), peers));
+            PeersFound?.Invoke (this, new PeersFoundEventArgs (new InfoHash (infoHash.Span), peers));
         }
 
         void RaiseStateChanged (DhtState newState)
@@ -243,22 +248,20 @@ namespace MonoTorrent.Dht
         {
             await MainLoop;
 
-            var details = new BEncodedList ();
+            Memory<byte> buffer = new byte[RoutingTable.CountNodes () * 26];
 
+            var tmp = buffer;
             foreach (Bucket b in RoutingTable.Buckets) {
                 foreach (Node n in b.Nodes)
                     if (n.State != NodeState.Bad)
-                        details.Add (n.CompactNode ());
-
-                if (b.Replacement != null)
-                    if (b.Replacement.State != NodeState.Bad)
-                        details.Add (b.Replacement.CompactNode ());
+                        tmp = tmp.Slice (n.CompactNode (tmp.Span));
             }
 
-            return details.Encode ();
+            // If we've skipped bad nodes, slice the empty bytes at the end away.
+            return buffer.Slice (0, buffer.Length - tmp.Length);
         }
 
-        internal async ReusableTask<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
+        internal async ReusableTask<SendQueryEventArgs> SendQueryAsync (ReadOnlyMemory<byte> query, Node node)
         {
             await MainLoop;
 
@@ -284,13 +287,13 @@ namespace MonoTorrent.Dht
             => StartAsync (ReadOnlyMemory<byte>.Empty);
 
         public ReusableTask StartAsync (ReadOnlyMemory<byte> initialNodes)
-            => StartAsync (Node.FromCompactNode (BEncodedString.FromMemory (initialNodes)).Concat (PendingNodes), DefaultBootstrapRouters.ToArray ());
+            => StartAsync (Node.FromCompactNodes (BEncodedString.FromMemory (initialNodes)).Concat (PendingNodes), DefaultBootstrapRouters.ToArray ());
 
         public ReusableTask StartAsync (params string[] bootstrapRouters)
             => StartAsync (Array.Empty<Node> (), bootstrapRouters);
 
         public ReusableTask StartAsync (ReadOnlyMemory<byte> initialNodes, params string[] bootstrapRouters)
-            => StartAsync (Node.FromCompactNode (BEncodedString.FromMemory (initialNodes)).Concat (PendingNodes), bootstrapRouters);
+            => StartAsync (Node.FromCompactNodes (initialNodes.Span).Concat (PendingNodes), bootstrapRouters);
 
         async ReusableTask StartAsync (IEnumerable<Node> nodes, string[] bootstrapRouters)
         {

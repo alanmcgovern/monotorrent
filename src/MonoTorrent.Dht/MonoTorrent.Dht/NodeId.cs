@@ -30,6 +30,7 @@
 
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using MonoTorrent.BEncoding;
@@ -38,60 +39,47 @@ namespace MonoTorrent.Dht
 {
     readonly struct NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
-        internal static readonly NodeId Minimum = NodeId.FromMemory (new byte[20]);
-        internal static readonly NodeId Maximum = NodeId.FromMemory (Enumerable.Repeat ((byte) 255, 20).ToArray ());
-        static readonly Random Random = new Random ();
+        [InlineArray (20)]
+        struct Storage
+        {
+            internal byte _element;
+        }
+        readonly Storage _data;
+
+
+        internal static readonly NodeId Minimum = new NodeId ((ReadOnlySpan<byte>) new byte[20]);
+        internal static readonly NodeId Maximum = new NodeId ((ReadOnlySpan<byte>) Enumerable.Repeat ((byte) 255, 20).ToArray ());
 
         public static NodeId Create ()
         {
-            var b = new byte[20];
-            lock (Random)
-                Random.NextBytes (b);
-            return NodeId.FromMemory (b);
+            Storage d = new Storage ();
+            Random.Shared.NextBytes (d);
+            return new NodeId (in d);
         }
 
-        internal static NodeId FromMemory (ReadOnlyMemory<byte> memory)
-            => new NodeId (memory);
-
-        ReadOnlyMemory<byte> Bytes { get; }
-
-        public ReadOnlySpan<byte> Span => Bytes.Span;
+        public ReadOnlySpan<byte> Span
+            => MemoryMarshal.CreateReadOnlySpan (ref Unsafe.AsRef (in _data._element), 20);
 
         internal NodeId (BigEndianBigInteger value)
         {
-            var b = value.ToByteArray ();
-            if (b.Length < 20) {
-                byte[] newBytes = new byte[20];
-                b.AsSpan ().CopyTo (newBytes.AsSpan ().Slice (newBytes.Length - b.Length, b.Length));
-                b = newBytes;
-            }
-
-            if (b.Length != 20)
+            var b = value.GetByteCount ();
+            if (b > 20)
                 throw new ArgumentException ("The provided value cannot be represented in 160bits", nameof (value));
-            Bytes = b;
+
+            Span<byte> dest = _data;
+            if (!value.TryWriteBytes (dest.Slice (dest.Length - b), out int written) || written != b)
+                throw new ArgumentException ("Could not write the integer to the buffer");
         }
 
-        internal NodeId (InfoHash infoHash)
+        internal NodeId (ReadOnlySpan<byte> value)
         {
-            if (infoHash is null)
-                throw new ArgumentNullException (nameof (infoHash));
-            Bytes = infoHash.AsMemory ();
+            if (value.Length != 20)
+                throw new ArgumentException ("value should be exactly 20 bytes", nameof (value));
+            value.CopyTo (_data);
         }
 
-        internal NodeId (BEncodedString value)
-        {
-            if (value is null)
-                throw new ArgumentNullException (nameof (value));
-            if (value.Span.Length != 20)
-                throw new ArgumentException ("BEncodedString should be exactly 20 bytes", nameof (value));
-            Bytes = value.AsMemory ();
-        }
-
-        NodeId (ReadOnlyMemory<byte> memory)
-            => (Bytes) = memory;
-
-        public ReadOnlyMemory<byte> AsMemory ()
-            => Bytes;
+        NodeId (in Storage storage)
+            => _data = storage;
 
         public int CompareTo (object? obj)
             => obj is NodeId n ? CompareTo (n) : 1;
@@ -116,10 +104,11 @@ namespace MonoTorrent.Dht
 
         public static NodeId operator ^ (NodeId left, NodeId right)
         {
-            var clone = new byte[left.Span.Length];
+            var storage = new Storage ();
+            Span<byte> clone = storage;
             for (int i = 0; i < right.Span.Length; i++)
                 clone[i] = (byte)(left.Span[i] ^ right.Span[i]);
-            return NodeId.FromMemory (clone);
+            return new NodeId (in storage);
         }
 
         public static NodeId operator - (NodeId first, NodeId second)

@@ -27,6 +27,7 @@
 //
 
 
+using System;
 using System.Net;
 
 using MonoTorrent.Dht.Messages;
@@ -35,38 +36,30 @@ namespace MonoTorrent.Dht
 {
     struct SendQueryEventArgs
     {
-        public IPEndPoint EndPoint { get; }
-        public ErrorMessage? Error { get; }
+        public CompactEndPoint EndPoint { get; }
         public Node Node { get; }
-        public QueryMessage Query { get; }
-        public ResponseMessage? Response { get; }
-        public bool TimedOut => Response == null && Error == null;
+        public ReadOnlyMemory<byte> Query { get; }
 
-        public SendQueryEventArgs (Node node, IPEndPoint endpoint, QueryMessage query)
+        /// <summary>
+        /// The response message may be an Error if something invalid was sent.
+        /// </summary>
+        public ReadOnlyMemory<byte> Response { get; }
+        public bool TimedOut => Response.IsEmpty;
+
+        public SendQueryEventArgs (Node node, CompactEndPoint endpoint, ReadOnlyMemory<byte> query)
         {
             EndPoint = endpoint;
-            Error = null;
             Node = node;
-            Query = query;
+            Query = query.ToArray ();
             Response = null;
         }
 
-        public SendQueryEventArgs (Node node, IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
+        public SendQueryEventArgs (Node node, CompactEndPoint endpoint, ReadOnlyMemory<byte> query, ReadOnlyMemory<byte> response)
         {
             EndPoint = endpoint;
-            Error = null;
             Node = node;
-            Query = query;
+            Query = query.ToArray ();
             Response = response;
-        }
-
-        public SendQueryEventArgs (Node node, IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
-        {
-            EndPoint = endpoint;
-            Error = error;
-            Node = node;
-            Query = query;
-            Response = null;
         }
     }
 }

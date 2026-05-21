@@ -27,12 +27,16 @@
 //
 
 
+using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Messages.Efficient;
 
 namespace MonoTorrent.Dht.Tasks
 {
@@ -105,7 +109,7 @@ namespace MonoTorrent.Dht.Tasks
                 try {
                     var addresses = await completed;
                     foreach (var v in addresses)
-                        results.Add (new Node (NodeId.Create (), new IPEndPoint (v, 6881)));
+                        results.Add (new Node (NodeId.Create (), new CompactEndPoint (v, 6881)));
                 } catch {
 
                 }
@@ -117,10 +121,11 @@ namespace MonoTorrent.Dht.Tasks
         async Task SendFindNode (IEnumerable<Node> newNodes)
         {
             var activeRequests = new List<Task<SendQueryEventArgs>> ();
-            var nodes = new ClosestNodesCollection (engine.LocalId);
+            var nodes = new ClosestNodesCollection (engine.RoutingTable.LocalNodeId);
 
             foreach (Node node in newNodes) {
-                var request = new FindNode (engine.LocalId, engine.LocalId);
+                var transactionId = TransactionId.NextId ();
+                var request = KrpcMessageEncoder.EncodeFindNode (transactionId, engine.LocalId, engine.LocalId);
                 activeRequests.Add (engine.SendQueryAsync (request, node).AsTask ());
                 nodes.Add (node);
             }
@@ -130,14 +135,15 @@ namespace MonoTorrent.Dht.Tasks
                 activeRequests.Remove (completed);
 
                 SendQueryEventArgs args = await completed;
-                if (args.Response != null) {
+                if (!args.Response.IsEmpty) {
                     if (engine.RoutingTable.CountNodes () >= MinHealthyNodes)
                         initializationComplete.TrySetResult (null);
 
-                    var response = (FindNodeResponse) args.Response;
-                    foreach (Node node in Node.FromCompactNode (response.Nodes)) {
+                    var response = KrpcMessage.Parse (args.Response);
+                    foreach (Node node in Node.FromCompactNodes (response.Response.Nodes)) {
                         if (nodes.Add (node)) {
-                            var request = new FindNode (engine.LocalId, engine.LocalId);
+                            var id = TransactionId.NextId ();
+                            var request = KrpcMessageEncoder.EncodeFindNode (id, engine.LocalId, engine.LocalId);
                             activeRequests.Add (engine.SendQueryAsync (request, node).AsTask ());
                         }
                     }

@@ -135,25 +135,9 @@ namespace MonoTorrent.Dht
         public ICollection<Node> GetClosest (NodeId target)
         {
             var closestNodes = new ClosestNodesCollection (target);
-
-            // Buckets have a capacity of 8 and are split in two whenever they are
-            // full. As such we should always be able to find the 8 closest nodes
-            // by adding the nodes of the matching bucket, the bucket above, and the
-            // bucket below.
-            int firstBucketIndex = Buckets.FindIndex (t => t.CanContain (target));
-            foreach (Node node in Buckets[firstBucketIndex].Nodes)
-                closestNodes.Add (node);
-
-            // Try the bucket before this one
-            if (firstBucketIndex > 0)
-                foreach (Node node in Buckets[firstBucketIndex - 1].Nodes)
+            foreach (var bucket in Buckets)
+                foreach (var node in bucket.Nodes)
                     closestNodes.Add (node);
-
-            // Try the bucket after this one
-            if (firstBucketIndex < (Buckets.Count - 1))
-                foreach (Node node in Buckets[firstBucketIndex + 1].Nodes)
-                    closestNodes.Add (node);
-
             return closestNodes;
         }
 

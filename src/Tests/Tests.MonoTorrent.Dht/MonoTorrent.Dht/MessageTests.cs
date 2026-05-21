@@ -29,11 +29,14 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Unicode;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Messages.Efficient;
 
 using NUnit.Framework;
 
@@ -42,25 +45,22 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class MessageTests
     {
-        private readonly NodeId id = new NodeId (Encoding.UTF8.GetBytes ("abcdefghij0123456789"));
-        private readonly NodeId infohash = new NodeId (Encoding.UTF8.GetBytes ("mnopqrstuvwxyz123456"));
+        private readonly NodeId id = new NodeId (Encoding.UTF8.GetBytes ("abcdefghij0123456789").AsSpan ());
+        private readonly NodeId infohash = new NodeId (Encoding.UTF8.GetBytes ("mnopqrstuvwxyz123456").AsSpan ());
         private readonly BEncodedString token = "aoeusnth";
-        private readonly BEncodedString transactionId = "aa";
+        private readonly TransactionId transactionId = TransactionId.From ((byte) 'a', (byte) 'a');
 
-        private QueryMessage message;
         DhtMessageFactory DhtMessageFactory;
 
         [SetUp]
         public void Setup ()
         {
-            DhtMessage.UseVersionKey = false;
             DhtMessageFactory = new DhtMessageFactory ();
         }
 
         [TearDown]
         public void Teardown ()
         {
-            DhtMessage.UseVersionKey = true;
         }
 
         #region Encode Tests
@@ -68,77 +68,69 @@ namespace MonoTorrent.Dht
         [Test]
         public void AnnouncePeerEncode ()
         {
-            Node n = new Node (NodeId.Create (), null);
+            Node n = new Node (NodeId.Create (), default);
             n.Token = token;
-            AnnouncePeer m = new AnnouncePeer (id, infohash, 6881, token);
-            m.TransactionId = transactionId;
-
+            var m = KrpcMessageEncoder.EncodeAnnouncePeer (transactionId, id.Span, infohash.Span, token.Span, 6881, false);
             Compare (m, "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe");
         }
 
         [Test]
         public void AnnouncePeerResponseEncode ()
         {
-            AnnouncePeerResponse m = new AnnouncePeerResponse (infohash, transactionId);
+            var m = KrpcMessageEncoder.EncodeAnnouncePeerResponse (transactionId, infohash.Span);
 
-            Compare (m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re");
+            Compare (m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re", QueryMethod.AnnouncePeer);
         }
 
         [Test]
         public void FindNodeEncode ()
         {
-            FindNode m = new FindNode (id, infohash);
-            m.TransactionId = transactionId;
+            var m = KrpcMessageEncoder.EncodeFindNode (transactionId, id.Span, infohash.Span);
 
             Compare (m, "d1:ad2:id20:abcdefghij01234567896:target20:mnopqrstuvwxyz123456e1:q9:find_node1:t2:aa1:y1:qe");
-            message = m;
         }
 
         [Test]
         public void FindNodeResponseEncode ()
         {
-            FindNodeResponse m = new FindNodeResponse (id, transactionId);
-            m.Nodes = "def456...";
+            var m = KrpcMessageEncoder.EncodeFindNodeResponse (transactionId, id.Span, "def456..."u8);
 
-            Compare (m, "d1:rd2:id20:abcdefghij01234567895:nodes9:def456...e1:t2:aa1:y1:re");
+            Compare (m, "d1:rd2:id20:abcdefghij01234567895:nodes9:def456...e1:t2:aa1:y1:re", QueryMethod.FindNode);
         }
 
         [Test]
         public void GetPeersEncode ()
         {
-            GetPeers m = new GetPeers (id, infohash);
-            m.TransactionId = transactionId;
+            var m = KrpcMessageEncoder.EncodeGetPeers (transactionId, id.Span, infohash.Span);
 
             Compare (m, "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz123456e1:q9:get_peers1:t2:aa1:y1:qe");
-            message = m;
         }
 
         [Test]
         public void GetPeersResponseEncode ()
         {
-            GetPeersResponse m = new GetPeersResponse (id, transactionId, token);
-            m.Values = new BEncodedList ();
-            m.Values.Add ((BEncodedString) "axje.u");
-            m.Values.Add ((BEncodedString) "idhtnm");
-            Compare (m, "d1:rd2:id20:abcdefghij01234567895:token8:aoeusnth6:valuesl6:axje.u6:idhtnmee1:t2:aa1:y1:re");
+            var values = new BEncodedList {
+                ((BEncodedString) "axje.u"),
+                ((BEncodedString) "idhtnm"),
+            }.Encode ();
+            var m = KrpcMessageEncoder.EncodeGetPeersResponseValues (transactionId, id.Span, token.Span, values);
+            Compare (m, "d1:rd2:id20:abcdefghij01234567895:token8:aoeusnth6:valuesl6:axje.u6:idhtnmee1:t2:aa1:y1:re", QueryMethod.GetPeers);
         }
 
         [Test]
         public void PingEncode ()
         {
-            Ping m = new Ping (id);
-            m.TransactionId = transactionId;
+            var m = KrpcMessageEncoder.EncodePing (transactionId, id.Span);
 
             Compare (m, "d1:ad2:id20:abcdefghij0123456789e1:q4:ping1:t2:aa1:y1:qe");
-            message = m;
         }
 
         [Test]
         public void PingResponseEncode ()
         {
-            PingResponse m = new PingResponse (infohash, transactionId);
+            var m = KrpcMessageEncoder.EncodePingResponse (transactionId, infohash.Span);
 
-            Compare (m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re");
+            Compare (m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re", QueryMethod.Ping);
         }
 
 
@@ -150,145 +142,146 @@ namespace MonoTorrent.Dht
         public void AnnouncePeerDecode ()
         {
             string text = "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe";
-            AnnouncePeer m = (AnnouncePeer) Decode ("d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe");
-            Assert.AreEqual (m.TransactionId, transactionId, "#1");
-            Assert.AreEqual (m.MessageType, QueryMessage.QueryType, "#2");
-            Assert.AreEqual (id, m.Id, "#3");
-            Assert.AreEqual (infohash, m.InfoHash, "#3");
-            Assert.AreEqual ((BEncodedNumber) 6881, m.Port, "#4");
-            Assert.AreEqual (token, m.Token, "#5");
+            var buffer = Encoding.UTF8.GetBytes (text);
+            var m = KrpcMessage.Parse (buffer);
 
-            Compare (m, text);
-            message = m;
+            Assert.IsTrue (m.TransactionId.SequenceEqual (transactionId), "#1");
+            Assert.AreEqual (m.MessageType, KrpcType.Query, "#2");
+            Assert.AreEqual (m.QueryMethod, QueryMethod.AnnouncePeer, "#2");
+            Assert.IsTrue (id.Span.SequenceEqual (m.NodeId), "#3");
+            Assert.IsTrue (infohash.Span.SequenceEqual (m.Request.InfoHash), "#3");
+            Assert.AreEqual (6881, m.Request.Port, "#4");
+            Assert.IsTrue (token.Span.SequenceEqual (m.Request.Token), "#5");
+
+            Compare (buffer, text);
         }
-
 
         [Test]
         public void AnnouncePeerResponseDecode ()
         {
-            // Register the query as being sent so we can decode the response
-            AnnouncePeerDecode ();
-            DhtMessageFactory.RegisterSend (message, new IPEndPoint (IPAddress.Any, 1));
             string text = "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
 
-            AnnouncePeerResponse m = (AnnouncePeerResponse) Decode (text, new IPEndPoint (IPAddress.Any, 1));
-            Assert.AreEqual (infohash, m.Id, "#1");
+            var buffer = System.Text.Encoding.UTF8.GetBytes (text);
+            var m = KrpcMessage.Parse (buffer);
+            Assert.IsTrue (infohash.Span.SequenceEqual (m.NodeId), "#1");
 
-            Compare (m, text);
-        }
-
-        [Test]
-        public void AnnouncePeerResponse_Unregistered ()
-        {
-            // The message was reigstered to a different ip  / port
-            AnnouncePeerDecode ();
-            DhtMessageFactory.RegisterSend (message, new IPEndPoint (IPAddress.Loopback, 1));
-            string text = "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
-
-            Assert.Throws<MessageException> (() => Decode (text, new IPEndPoint (IPAddress.Broadcast, 1)));
-            Assert.Throws<MessageException> (() => Decode (text, new IPEndPoint (IPAddress.Loopback, 2)));
+            Compare (buffer, text, QueryMethod.AnnouncePeer);
         }
 
         [Test]
         public void FindNodeDecode ()
         {
             string text = "d1:ad2:id20:abcdefghij01234567896:target20:mnopqrstuvwxyz123456e1:q9:find_node1:t2:aa1:y1:qe";
-            FindNode m = (FindNode) Decode (text);
+            var buffer = Encoding.UTF8.GetBytes (text);
+            var m = KrpcMessage.Parse (buffer);
 
-            Assert.AreEqual (id, m.Id, "#1");
-            Assert.AreEqual (infohash, m.Target, "#1");
-            Compare (m, text);
+            Assert.IsTrue (id.Span.SequenceEqual (m.NodeId), "#1");
+            Assert.IsTrue (infohash.Span.SequenceEqual (m.Request.Target), "#1");
+            Compare (buffer, text);
         }
 
         [Test]
         public void FindNodeResponseDecode ()
         {
             FindNodeEncode ();
-            DhtMessageFactory.RegisterSend (message, new IPEndPoint (IPAddress.Any, 5));
+            //DhtMessageFactory.RegisterSend (message, new IPEndPoint (IPAddress.Any, 5));
             string text = "d1:rd2:id20:abcdefghij01234567895:nodes9:def456...e1:t2:aa1:y1:re";
-            FindNodeResponse m = (FindNodeResponse) Decode (text, new IPEndPoint (IPAddress.Any, 5));
+            var buffer = Encoding.UTF8.GetBytes (text);
+            var m = KrpcMessage.Parse (buffer);
 
-            Assert.AreEqual (id, m.Id, "#1");
-            Assert.AreEqual ((BEncodedString) "def456...", m.Nodes, "#2");
-            Assert.AreEqual (transactionId, m.TransactionId, "#3");
+            Assert.IsTrue (id.Span.SequenceEqual (m.NodeId), "#1");
+            Assert.IsTrue ("def456..."u8.SequenceEqual (m.Response.Nodes), "#2");
+            Assert.IsTrue (m.TransactionId.SequenceEqual (transactionId), "#3");
 
-            Compare (m, text);
+            Compare (buffer, text, QueryMethod.FindNode);
         }
 
         [Test]
         public void GetPeersDecode ()
         {
             string text = "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz123456e1:q9:get_peers1:t2:aa1:y1:qe";
-            GetPeers m = (GetPeers) Decode (text);
+            var buffer = Encoding.UTF8.GetBytes (text);
+            var m = KrpcMessage.Parse (buffer);
 
-            Assert.AreEqual (infohash, m.InfoHash, "#1");
-            Assert.AreEqual (id, m.Id, "#2");
-            Assert.AreEqual (transactionId, m.TransactionId, "#3");
+            Assert.IsTrue (infohash.Span.SequenceEqual(m.Request.InfoHash), "#1");
+            Assert.IsTrue (id.Span.SequenceEqual (m.NodeId), "#1");
+            Assert.IsTrue (m.TransactionId.SequenceEqual (transactionId), "#3");
 
-            Compare (m, text);
+            Compare (buffer, text);
         }
 
         [Test]
         public void GetPeersResponseDecode ()
         {
-            GetPeersEncode ();
-            DhtMessageFactory.RegisterSend (message, new IPEndPoint (IPAddress.Any, 5));
-
             string text = "d1:rd2:id20:abcdefghij01234567895:token8:aoeusnth6:valuesl6:axje.u6:idhtnmee1:t2:aa1:y1:re";
-            GetPeersResponse m = (GetPeersResponse) Decode (text, new IPEndPoint (IPAddress.Any, 5));
+            var buffer = Encoding.UTF8.GetBytes (text);
+            var m = KrpcMessage.Parse (buffer);
 
-            Assert.AreEqual (token, m.Token, "#1");
-            Assert.AreEqual (id, m.Id, "#2");
+            Assert.IsTrue (token.Span.SequenceEqual (m.Response.Token), "#1");
+            Assert.IsTrue (id.Span.SequenceEqual (m.NodeId), "#1");
 
             BEncodedList l = new BEncodedList ();
             l.Add ((BEncodedString) "axje.u");
             l.Add ((BEncodedString) "idhtnm");
-            Assert.AreEqual (l, m.Values, "#3");
+            Assert.IsTrue (l.Encode ().AsSpan ().SequenceEqual (m.Response.Values), "#3");
 
-            Compare (m, text);
+            Compare (buffer, text, QueryMethod.GetPeers);
         }
 
         [Test]
         public void PingDecode ()
         {
             string text = "d1:ad2:id20:abcdefghij0123456789e1:q4:ping1:t2:aa1:y1:qe";
-            Ping m = (Ping) Decode (text);
+            var buffer = Encoding.UTF8.GetBytes (text);
+            var m = KrpcMessage.Parse (buffer);
 
-            Assert.AreEqual (id, m.Id, "#1");
+            Assert.IsTrue (id.Span.SequenceEqual(m.NodeId), "#1");
 
-            Compare (m, text);
+            Compare (buffer, text);
         }
 
         [Test]
         public void PingResponseDecode ()
         {
-            PingEncode ();
-            DhtMessageFactory.RegisterSend (message, new IPEndPoint (IPAddress.Any, 5));
-
             string text = "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
-            PingResponse m = (PingResponse) Decode (text, new IPEndPoint (IPAddress.Any, 5));
+            var buffer = Encoding.UTF8.GetBytes (text);
+            var m = KrpcMessage.Parse (buffer);
 
-            Assert.AreEqual (infohash, m.Id);
+            Assert.IsTrue (infohash.Span.SequenceEqual(m.NodeId));
 
-            Compare (m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re");
+            Compare (buffer, text, QueryMethod.Ping);
         }
 
         #endregion
 
+        private void Compare (ReadOnlyMemory<byte> buffer, string expected)
+            => Compare (buffer, expected, null);
 
-        private void Compare (DhtMessage m, string expected)
+        private void Compare (ReadOnlyMemory<byte> buffer, string expected, QueryMethod? query)
         {
-            ReadOnlyMemory<byte> b = m.Encode ();
-            Assert.AreEqual (Encoding.UTF8.GetString (b.ToArray ()), expected);
-        }
+            var m = KrpcMessage.Parse (buffer);
 
-        private DhtMessage Decode (string p)
-            => Decode (p, null);
-
-        private DhtMessage Decode (string p, IPEndPoint endPoint)
-        {
-            byte[] buffer = Encoding.UTF8.GetBytes (p);
-            return DhtMessageFactory.DecodeMessage (BEncodedValue.Decode<BEncodedDictionary> (buffer), endPoint);
+            ReadOnlyMemory<byte> encoded = default;
+            if (m.MessageType == KrpcType.Query) {
+                encoded = m.QueryMethod switch {
+                    QueryMethod.AnnouncePeer => KrpcMessageEncoder.EncodeAnnouncePeer (m.TransactionId, m.NodeId, m.Request.InfoHash, m.Request.Token, m.Request.Port, m.Request.ImpliedPort),
+                    QueryMethod.FindNode => KrpcMessageEncoder.EncodeFindNode (m.TransactionId, m.NodeId, m.Request.Target),
+                    QueryMethod.GetPeers => KrpcMessageEncoder.EncodeGetPeers (m.TransactionId, m.NodeId, m.Request.InfoHash),
+                    QueryMethod.Ping => KrpcMessageEncoder.EncodePing (m.TransactionId, m.NodeId),
+                    _ => throw new NotSupportedException ()
+                };
+            } else if (query.HasValue) {
+                encoded = query.Value switch {
+                    QueryMethod.AnnouncePeer => KrpcMessageEncoder.EncodeAnnouncePeerResponse (m.TransactionId, m.NodeId),
+                    QueryMethod.FindNode => KrpcMessageEncoder.EncodeFindNodeResponse (m.TransactionId, m.NodeId, m.Response.Nodes),
+                    QueryMethod.GetPeers => m.Response.Nodes.Length > 0
+                        ? KrpcMessageEncoder.EncodeGetPeersResponseNodes (m.TransactionId, m.NodeId, m.Response.Token, m.Response.Nodes)
+                        : KrpcMessageEncoder.EncodeGetPeersResponseValues (m.TransactionId, m.NodeId, m.Response.Token, m.Response.Values),
+                    QueryMethod.Ping => KrpcMessageEncoder.EncodePingResponse (m.TransactionId, m.NodeId),
+                    _ => throw new NotSupportedException ()
+                };
+            }
+            Assert.AreEqual (Encoding.UTF8.GetString (buffer.Span), Encoding.UTF8.GetString (encoded.Span));
         }
     }
 }

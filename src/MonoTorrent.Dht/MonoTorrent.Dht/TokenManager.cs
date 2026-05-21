@@ -33,12 +33,11 @@ using System.Net.Sockets;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 
-using MonoTorrent.BEncoding;
-
 namespace MonoTorrent.Dht
 {
     class TokenManager
     {
+        public int TokenLength => 8;
         Memory<byte> currentSecret;
         Memory<byte> previousSecret;
 
@@ -50,11 +49,23 @@ namespace MonoTorrent.Dht
             RandomNumberGenerator.Fill (previousSecret.Span);
         }
 
-        public BEncodedString GenerateToken (Node node)
+        public ReadOnlyMemory<byte> GenerateToken (Node node)
         {
-            var token = new byte[8];
+            var token = new byte[TokenLength];
             GenerateToken (node, currentSecret.Span, token);
-            return BEncodedString.FromMemory (token);
+            return token;
+        }
+
+        public bool TryGenerateToken (Node node, Span<byte> dest, out int written)
+        {
+            if (dest.Length < TokenLength) {
+                written = 0;
+                return false;
+            } else {
+                GenerateToken (node, currentSecret.Span, dest.Slice (0, TokenLength));
+                written = TokenLength;
+                return true;
+            }
         }
 
         void GenerateToken (Node node, ReadOnlySpan<byte> secret, Span<byte> token)
@@ -80,19 +91,19 @@ namespace MonoTorrent.Dht
             RandomNumberGenerator.Fill (currentSecret.Span);
         }
 
-        public bool VerifyToken (Node node, BEncodedString token)
+        public bool VerifyToken (Node node, ReadOnlySpan<byte> token)
         {
-            if (token.Span.Length != 8)
+            if (token.Length != 8)
                 return false;
 
             Span<byte> expected = stackalloc byte[8];
 
             GenerateToken (node, currentSecret.Span, expected);
-            if (token.Span.SequenceEqual (expected))
+            if (token.SequenceEqual (expected))
                 return true;
 
             GenerateToken (node, previousSecret.Span, expected);
-            return token.Span.SequenceEqual (expected);
+            return token.SequenceEqual (expected);
         }
     }
 }

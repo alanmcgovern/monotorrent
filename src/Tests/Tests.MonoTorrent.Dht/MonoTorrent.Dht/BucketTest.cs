@@ -79,8 +79,8 @@ namespace MonoTorrent.Dht
         [Test]
         public void SortBySeen ()
         {
-            var oldNode = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 0));
-            var newNode = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Any, 1));
+            var oldNode = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Any, 0));
+            var newNode = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Any, 1));
 
             var bucket = new Bucket {
                 oldNode,

@@ -27,21 +27,58 @@
 //
 
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Xml.Schema;
 
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    static class TransactionId
+    [InlineArray (2)]
+    struct TransactionId : IEquatable<TransactionId>
     {
-        static int current;
+        byte _bytes;
 
-        public static BEncodedString NextId ()
+        static int _current;
+
+        internal static TransactionId From (ReadOnlySpan<byte> span)
         {
-            int value = Interlocked.Increment (ref current);
-            byte[] data = new[] { (byte) (value >> 8), (byte) value };
-            return BEncodedString.FromMemory (data);
+            if (span.Length != 2)
+                throw new ArgumentException ("Length should be exactly 2", nameof (span));
+
+            var id = new TransactionId ();
+            id[0] = span[0];
+            id[1] = span[1];
+            return id;
         }
+
+        internal static TransactionId From (byte a, byte b)
+        {
+            var id = new TransactionId ();
+            id[0] = a;
+            id[1] = b;
+            return id;
+        }
+
+        public static TransactionId NextId ()
+        {
+            var val = (ushort) Interlocked.Increment (ref _current);
+            var id = new TransactionId ();
+            id[0] = (byte) (val >> 8);
+            id[1] = (byte) val;
+            return id;
+        }
+
+        public bool Equals (TransactionId other)
+            => this[0] == other[0] && this[1] == other[1];
+
+        public override bool Equals ([NotNullWhen (true)] object? obj)
+            => obj is TransactionId id && Equals (id);
+
+        public override int GetHashCode ()
+            => this[1] << 8 | this[0];
     }
 }

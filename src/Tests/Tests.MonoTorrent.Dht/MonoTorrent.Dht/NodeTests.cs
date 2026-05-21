@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void CompactPort ()
         {
-            Node n = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Parse ("1.21.121.3"), 511));
+            Node n = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Parse ("1.21.121.3"), 511));
             BEncodedString port = n.CompactEndPoint ();
             Assert.AreEqual (1, port.Span[0], "#1");
             Assert.AreEqual (21, port.Span[1], "#1");
@@ -59,14 +59,14 @@ namespace MonoTorrent.Dht
             Node n = Node.FromCompactNode (buffer.AsSpan ());
 
             Assert.IsTrue (buffer.AsSpan (0, 20).SequenceEqual (n.Id.Span), "#1");
-            Assert.AreEqual (IPAddress.Parse ("1.21.131.3"), n.EndPoint.Address, "#2");
+            Assert.AreEqual (IPAddress.Parse ("1.21.131.3"), new IPAddress (n.EndPoint.Address), "#2");
             Assert.AreEqual (511, n.EndPoint.Port, "#3");
         }
 
         [Test]
         public void CompactNode ()
         {
-            Node n = new Node (NodeId.Create (), new IPEndPoint (IPAddress.Parse ("1.21.121.3"), 511));
+            Node n = new Node (NodeId.Create (), new CompactEndPoint (IPAddress.Parse ("1.21.121.3"), 511));
             BEncodedString port = n.CompactNode ();
             Assert.IsTrue (n.Id.Span.SequenceEqual (port.Span.Slice (0, 20)), "#A");
             Assert.AreEqual (1, port.Span[20], "#1");

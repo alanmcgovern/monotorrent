@@ -30,6 +30,7 @@
 using System;
 
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Dht.Messages.Efficient;
 
 namespace MonoTorrent.Dht.Tasks
 {
@@ -58,7 +59,9 @@ namespace MonoTorrent.Dht.Tasks
                 return;
             } else {
                 Node oldest = bucket.Nodes[0];
-                SendQueryEventArgs args = await engine.SendQueryAsync (new Ping (engine.LocalId), oldest);
+                var transactionId = TransactionId.NextId ();
+                var ping = KrpcMessageEncoder.EncodePing (transactionId, engine.LocalId);
+                SendQueryEventArgs args = await engine.SendQueryAsync (ping, oldest);
 
                 if (args.TimedOut) {
                     // If the node didn't respond and it's no longer in our bucket,
