@@ -61,9 +61,8 @@ namespace MonoTorrent.Connections
                 throw new InvalidOperationException ("You must invoke StartAsync before sending or receiving a message with this listener.");
 
             if (!endpoint.TryWriteBytes (sendAddress!))
-                throw new InvalidOperationException ("Couldn't write company endpoint to socketaddress");
-            BinaryPrimitives.WriteUInt16BigEndian (sendAddress!.Buffer.Span.Slice (2), (ushort) endpoint.Port);
-            await Client.SendToAsync (buffer, SocketFlags.None, sendAddress).ConfigureAwait (false);
+                throw new InvalidOperationException ("Couldn't write compact endpoint to socketaddress");
+            await Client.SendToAsync (buffer, SocketFlags.None, sendAddress!).ConfigureAwait (false);
         }
 
         protected override void Start (CancellationToken token)
