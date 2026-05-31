@@ -42,8 +42,14 @@ namespace MonoTorrent
         public BigEndianBigInteger (ReadOnlySpan<byte> span)
             => Value = new BigInteger (span, true, true);
 
+        public int GetByteCount ()
+            => Value.GetByteCount (true);
+
         public byte[] ToByteArray ()
             => Value.ToByteArray (true, true);
+
+        public bool TryWriteBytes (Span<byte> destination, out int bytesWritten)
+            => Value.TryWriteBytes (destination, out bytesWritten, true, true);
 
         public BigEndianBigInteger (BigInteger value)
             => Value = value;
