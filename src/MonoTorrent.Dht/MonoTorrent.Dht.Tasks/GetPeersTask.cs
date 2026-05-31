@@ -91,10 +91,11 @@ namespace MonoTorrent.Dht.Tasks
                 if (!response.Response.Values.IsEmpty && FoundPeers.Count < MaxPeers) {
 
                     var peerArray = ParseValues (response.Response.Values);
-
-                    foreach (var peer in peerArray)
-                        FoundPeers.Add (peer);
-                    Engine.RaisePeersFound (InfoHash, peerArray);
+                    if (peerArray.Count > 0) {
+                        foreach (var peer in peerArray)
+                            FoundPeers.Add (peer);
+                        Engine.RaisePeersFound (InfoHash, peerArray);
+                    }
                 }
                 // The response contains nodes which should be closer to our target. If they are closer than nodes
                 // we've already checked, then let's query them!
