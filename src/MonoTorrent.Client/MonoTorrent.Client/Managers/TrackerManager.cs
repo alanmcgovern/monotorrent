@@ -171,8 +171,8 @@ namespace MonoTorrent.Trackers
             if (tracker is null) {
                 // Fast exit if no tracker tiers need an announce
                 bool needsAnnounce = false;
-                foreach (var tier in Tiers)
-                    needsAnnounce |= tier.CanSendAnnounce (clientEvent);
+                for (int i = 0; i < Tiers.Count; i++)
+                    needsAnnounce |= Tiers[i].CanSendAnnounce (clientEvent);
                 if (!needsAnnounce)
                     return;
             }
@@ -198,10 +198,10 @@ namespace MonoTorrent.Trackers
                 var args = RequestFactory.CreateAnnounce (clientEvent);
 
                 // Capture a list of Tiers in case the user adds/removes any mid-announce.
-                var pendingTiers = new Queue<TrackerTier> (Tiers);
-                var activeAnnounces = new List<Task> ();
+                var pendingTiers = Tiers;
+                var activeAnnounces = new List<Task> (Math.Min (MaxConcurrentAnnounces, Tiers.Count));
 
-                while (pendingTiers.Count > 0) {
+                for (int i = 0; i < pendingTiers.Count; i++) {
                     if (activeAnnounces.Count == MaxConcurrentAnnounces) {
                         var completed = await Task.WhenAny (activeAnnounces);
                         activeAnnounces.Remove (completed);
@@ -210,7 +210,7 @@ namespace MonoTorrent.Trackers
 
                     // The announce *might* fast-path and exit immediately if that
                     // tracker has been announced to recently.
-                    var task = pendingTiers.Dequeue ().AnnounceAsync (args, token);
+                    var task = pendingTiers[i].AnnounceAsync (args, token);
                     if (task.IsCompleted)
                         await task;
                     else
