@@ -313,46 +313,48 @@ namespace MonoTorrent.Connections.Peer
 
         public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> socketBuffer)
         {
-            SendResult = new TaskCompletionSource<object?> ();
+            if (RequestMessages.Count > 0)
+                throw new InvalidOperationException ("Trying to send more messages before completing the prior messages");
 
             var info = TorrentData.TorrentInfo;
-            List<BlockInfo> bundle = DecodeMessages (socketBuffer.Span);
+            SendResult = new TaskCompletionSource<object?> ();
 
             // If the messages in the send buffer are anything *other* than piece request messages,
             // just pretend the bytes were sent and everything was fine.
-            if (bundle.Count == 0 || info == null)
+            if (info is null || DecodeMessages (socketBuffer.Span, RequestMessages) == 0)
                 return socketBuffer.Length;
 
             // Otherwise, if there were 1 or more piece request messages, convert these to HTTP requests.
             // and only mark the bytes as successfully sent after all webrequests have run to completion
             // and the data has been received.
-            RequestMessages.AddRange (bundle);
-            ValidateWebRequests (info, RequestMessages.ToArray ());
+            ValidateWebRequests (info, RequestMessages);
             CreateWebRequestsForSequentialRange (RequestMessages[0], RequestMessages[RequestMessages.Count - 1]);
             ReceiveWaiter.Set ();
             await SendResult.Task;
             return socketBuffer.Length;
         }
 
-        static List<BlockInfo> DecodeMessages (ReadOnlySpan<byte> buffer)
+        static int DecodeMessages (ReadOnlySpan<byte> buffer, List<BlockInfo> messages)
         {
-            var messages = new List<BlockInfo> ();
+            int count = 0;
             for (int i = 0; i < buffer.Length;) {
                 var payload = PeerMessage.DecodeMessage (buffer.Slice (i), null);
-                if (payload.message is RequestMessage msg)
+                if (payload.message is RequestMessage msg) {
                     messages.Add (new BlockInfo (msg.PieceIndex, msg.StartOffset, msg.RequestLength));
+                    count++;
+                }
                 i += payload.message.ByteLength;
                 payload.releaser.Dispose ();
             }
-            return messages;
+            return count;
         }
 
-        static void ValidateWebRequests (ITorrentInfo torrentInfo, BlockInfo[] blocks)
+        static void ValidateWebRequests (ITorrentInfo torrentInfo, List<BlockInfo> blocks)
         {
-            if (blocks.Length > 0) {
+            if (blocks.Count > 0) {
                 BlockInfo startBlock = blocks[0];
                 BlockInfo currentBlock = startBlock;
-                for (int i = 1; i < blocks.Length; i++) {
+                for (int i = 1; i < blocks.Count; i++) {
                     BlockInfo previousBlock = blocks[i - 1];
                     currentBlock = blocks[i];
                     long endOffsetOfPreviousEndBlock = torrentInfo.PieceIndexToByteOffset (previousBlock.PieceIndex) + previousBlock.StartOffset + previousBlock.RequestLength;
