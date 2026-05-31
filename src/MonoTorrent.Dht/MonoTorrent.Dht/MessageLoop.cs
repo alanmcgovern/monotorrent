@@ -298,6 +298,7 @@ namespace MonoTorrent.Dht
 
                 if (rawResponse.MessageType == KrpcType.Error) {
                     HandleError (query, source, receive.Value);
+                    return;
                 }
 
                 // Requests and responses need to have the nodeid of the queried node.

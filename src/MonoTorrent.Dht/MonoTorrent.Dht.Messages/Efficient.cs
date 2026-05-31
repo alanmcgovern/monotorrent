@@ -305,7 +305,7 @@ namespace MonoTorrent.Dht.Messages.Efficient
     public static class KrpcMessageEncoder
     {
         // large enough fixed overhead for all static protocol bytes. Is it worth calculating this exactly?
-        const int BaseSize = 80;
+        const int BaseSize = 96;
 
         public static int Estimate (
             ReadOnlySpan<byte> transactionId,

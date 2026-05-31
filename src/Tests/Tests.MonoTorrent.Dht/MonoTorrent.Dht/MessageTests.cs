@@ -75,6 +75,15 @@ namespace MonoTorrent.Dht
         }
 
         [Test]
+        public void AnnouncePeerEncodeImpliedPort ()
+        {
+            Node n = new Node (NodeId.Create (), default);
+            n.Token = token;
+            var m = KrpcMessageEncoder.EncodeAnnouncePeer (transactionId, id.Span, infohash.Span, token.Span, 6881, true);
+            Compare (m, "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe");
+        }
+
+        [Test]
         public void AnnouncePeerResponseEncode ()
         {
             var m = KrpcMessageEncoder.EncodeAnnouncePeerResponse (transactionId, infohash.Span);
