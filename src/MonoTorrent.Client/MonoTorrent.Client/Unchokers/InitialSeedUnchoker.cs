@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -205,8 +206,7 @@ namespace MonoTorrent.Client
                 data.TotalPieces++;
                 data.CurrentPieces[index] = true;
                 advertisedPieces.Add (new SeededPiece (data.Peer, index, Manager.Torrent!.PieceLength / Constants.BlockSize));
-                (var message, var releaser) = PeerMessage.Rent<HaveMessage> ();
-                message.Initialize (index);
+                (var message, var releaser) = BtEncoder.WriteHave (index);
                 data.Peer.MessageQueue.Enqueue (message, releaser);
                 index++;
             }

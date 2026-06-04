@@ -657,7 +657,7 @@ namespace MonoTorrent.Client
             manager.UploadLimiters.Add (uploadLimiters);
             if (DhtEngine != null && manager.Torrent?.Nodes != null && DhtEngine.State != DhtState.Ready) {
                 try {
-                    DhtEngine.AddAsync (manager.Torrent.Nodes.OfType<BEncodedString> ().Select (t => t.AsMemory ()));
+                    _ = DhtEngine.AddAsync (manager.Torrent.Nodes.OfType<BEncodedString> ().Select (t => t.AsMemory ()));
                 } catch {
                     // FIXME: Should log this somewhere, though it's not critical
                 }

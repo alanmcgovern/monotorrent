@@ -31,19 +31,18 @@ using System;
 using System.Threading;
 
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.Libtorrent;
 
 namespace MonoTorrent.Client.Modes
 {
     interface IMode : IDisposable
     {
         bool CanAcceptConnections { get; }
-        bool CanHandleMessages { get; }
         bool CanHashCheck { get; }
         TorrentState State { get; }
         CancellationToken Token { get; }
 
         void HandleFilePriorityChanged (ITorrentManagerFile file, Priority oldPriority);
-        void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser);
         void HandlePeerConnected (PeerId id);
         void HandlePeerDisconnected (PeerId id);
         bool ShouldConnect (Peer peer);

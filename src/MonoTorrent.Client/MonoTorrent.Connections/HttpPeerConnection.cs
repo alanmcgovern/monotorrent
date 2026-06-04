@@ -38,6 +38,7 @@ using System.Threading.Tasks;
 using MonoTorrent.Logging;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages;
 
 using ReusableTasks;
 
@@ -63,8 +64,8 @@ namespace MonoTorrent.Connections.Peer
             public HttpRequestData (BlockInfo blockInfo)
             {
                 BlockInfo = blockInfo;
-                var m = new PieceMessage (BlockInfo.PieceIndex, BlockInfo.StartOffset, BlockInfo.RequestLength);
-                TotalToReceive = m.ByteLength;
+                // FIXME StructMessages: don't hardcode message sizes?
+                TotalToReceive = 13 + BlockInfo.RequestLength;
             }
         }
         class ZeroStream : Stream
@@ -209,7 +210,7 @@ namespace MonoTorrent.Connections.Peer
 
                 // We have *only* written the messageLength to the stream
                 // Now we need to write the rest of the PieceMessage header
-                Message.Write (socketBuffer.Span.Slice (written, 1), PieceMessage.MessageId);
+                Message.Write (socketBuffer.Span.Slice (written, 1), (byte) MessageType.Piece);
                 written++;
 
                 Message.Write (socketBuffer.Span.Slice (written, 4), CurrentRequest.BlockInfo.PieceIndex);
@@ -337,12 +338,12 @@ namespace MonoTorrent.Connections.Peer
         static List<BlockInfo> DecodeMessages (ReadOnlySpan<byte> buffer)
         {
             var messages = new List<BlockInfo> ();
-            for (int i = 0; i < buffer.Length;) {
-                var payload = PeerMessage.DecodeMessage (buffer.Slice (i), null);
-                if (payload.message is RequestMessage msg)
+            while(buffer.Length > 0) {
+                if (MessageDispatcher.GetType(buffer) == MessageType.Request){
+                    var msg = new RequestMessage (buffer);
                     messages.Add (new BlockInfo (msg.PieceIndex, msg.StartOffset, msg.RequestLength));
-                i += payload.message.ByteLength;
-                payload.releaser.Dispose ();
+                }
+                buffer = MessageDispatcher.NextMessage (buffer);
             }
             return messages;
         }

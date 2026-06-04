@@ -1,4 +1,6 @@
-﻿namespace MonoTorrent
+﻿using System;
+
+namespace MonoTorrent
 {
     public class Constants
     {
@@ -26,5 +28,6 @@
         /// Protocol string for version 1.0 of Bittorrent Protocol
         /// </summary>
         public const string ProtocolStringV100 = "BitTorrent protocol";
+        public static ReadOnlySpan<byte> ProtocolStringV100UTF8 => "BitTorrent protocol"u8;
     }
 }

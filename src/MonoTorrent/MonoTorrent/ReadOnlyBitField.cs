@@ -69,8 +69,6 @@ namespace MonoTorrent
 
         public double PercentComplete => Data.PercentComplete;
 
-        internal ReadOnlySpan<ulong> Span =>  Data.Span;
-
         public int TrueCount => Data.TrueCount;
 
         public bool this[int index] => Data.Get(index);

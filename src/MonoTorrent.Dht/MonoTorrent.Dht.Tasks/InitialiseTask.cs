@@ -109,7 +109,8 @@ namespace MonoTorrent.Dht.Tasks
                 try {
                     var addresses = await completed;
                     foreach (var v in addresses)
-                        results.Add (new Node (NodeId.Create (), new CompactEndPoint (v, 6881)));
+                        if (v.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                            results.Add (new Node (NodeId.Create (), new CompactEndPoint (v, 6881)));
                 } catch {
 
                 }

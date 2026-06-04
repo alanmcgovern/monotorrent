@@ -28,18 +28,21 @@
 
 
 using System;
+using System.Text;
 
 namespace MonoTorrent
 {
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     internal static class GitInfoHelper
     {
+
         internal static string ClientIdentifier { get; } = "MO";
 
         /// <summary>
         /// The current version of the client in the form "MO1234", which represents a version triplet of '1.2.34'.
         /// </summary>
         internal static string ClientVersion { get; private set; }
+        internal static ReadOnlyMemory<byte> ClientVersionMemory { get; private set; }
 
         internal static string DhtClientVersion { get; private set; }
 
@@ -76,6 +79,7 @@ namespace MonoTorrent
             // 'MO' for MonoTorrent then four digit version number
             var versionString = $"{version.Major}{version.Minor}{version.Build:00}";
             ClientVersion = $"{ClientIdentifier}{versionString}";
+            ClientVersionMemory = Encoding.UTF8.GetBytes (ClientVersion);
 
             // The DHT spec calls for a 2 char version identifier... urgh. I'm just going to
             // generate a 4 character version identifier anyway as, hopefully, anyone using

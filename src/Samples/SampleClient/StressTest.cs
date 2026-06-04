@@ -133,7 +133,7 @@ namespace ClientSample
                 throw new NotImplementedException ();
             }
 
-            public ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer, bool preferSkipCache)
+            public ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, ReadOnlyMemory<byte> buffer, bool preferSkipCache)
             {
                 throw new NotImplementedException ();
             }

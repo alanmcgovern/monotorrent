@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Threading;
 
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -138,7 +140,9 @@ namespace MonoTorrent.Client
 
             peer.AmChoking = true;
             Unchokeable.UploadingTo--;
-            peer.MessageQueue.EnqueueAt (0, ChokeMessage.Instance, default);
+
+            (var msg, var releaser) = BtEncoder.WriteChoke ();
+            peer.MessageQueue.EnqueueAt (0, msg, releaser);
             RejectPendingRequests (peer);
             peer.LastUnchoked = new ValueStopwatch ();
         }
@@ -323,7 +327,8 @@ namespace MonoTorrent.Client
 
             peer.AmChoking = false;
             Unchokeable.UploadingTo++;
-            peer.MessageQueue.EnqueueAt (0, UnchokeMessage.Instance, default);
+            (var msg, var releaser) = BtEncoder.WriteUnchoke ();
+            peer.MessageQueue.EnqueueAt (0, msg, releaser);
             peer.LastUnchoked.Restart ();
             peer.FirstReviewPeriod = true;
         }

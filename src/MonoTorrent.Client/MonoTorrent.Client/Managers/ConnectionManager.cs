@@ -28,18 +28,22 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Modes;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Logging;
+using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
 
 using ReusableTasks;
@@ -245,24 +249,24 @@ namespace MonoTorrent.Client
             IEncryption decryptor;
             IEncryption encryptor;
 
-            HandshakeMessage handshake;
+            using var releaser = MemoryPool.Default.Rent (HandshakeMessage.HandshakeLength, out var handshakeBuffer);
             try {
                 // If this is a hybrid torrent and a connection is being made with the v1 infohash, then
                 // set the bit which tells the peer the connection can be upgraded to a bittorrent v2 (BEP52) connection.
                 var canUpgradeToV2 = manager.InfoHashes.IsHybrid;
 
                 // Create a handshake message to send to the peer
-                handshake = new HandshakeMessage (manager.InfoHashes.V1OrV2.Truncate (), LocalPeerId, Constants.ProtocolStringV100, enableFastPeer: true, enableExtended: true, supportsUpgradeToV2: canUpgradeToV2);
-                logger.InfoFormatted (connection, "Sending handshake message with peer id '{0}' and infohash: {1}", LocalPeerId, handshake.InfoHash.ToHex());
+                BtEncoder.WriteHandshake (handshakeBuffer.Span, manager.InfoHashes.V1OrV2.Span.Slice (0, 20), LocalPeerId.Span, enableFastPeer: true, enableExtended: true, supportUpgradeToV2: canUpgradeToV2);
+                logger.InfoFormatted (connection, "Sending handshake message with peer id '{0}' and infohash: {1}", LocalPeerId, manager.InfoHashes.V1OrV2);
 
-                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (connection, allowedEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshake, Factories, Settings.ConnectionTimeout);
+                EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (connection, allowedEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshakeBuffer, Factories, Settings.ConnectionTimeout);
                 decryptor = result.Decryptor;
                 encryptor = result.Encryptor;
 
                 // If plaintext encryption is used, we need to *receive* the remote handshake before we can confirm
                 // that negotiation has completed successfully.
-                handshake = await PeerIO.ReceiveHandshakeAsync (connection, decryptor);
-                if (handshake.ProtocolString != Constants.ProtocolStringV100)
+                await PeerIO.ReceiveHandshakeAsync (connection, decryptor, handshakeBuffer);
+                if (!new HandshakeMessage (handshakeBuffer).ProtocolString.SequenceEqual (Constants.ProtocolStringV100UTF8))
                     logger.Info (connection, "Received handshake but protocol was unsupported");
             } catch (Exception) {
                 logger.Info (connection, "Could not receive a handshake from the peer using: " + string.Join (",", allowedEncryption.Select (t => t.ToString ())));
@@ -275,10 +279,10 @@ namespace MonoTorrent.Client
                 // and if the peer responds with the V2 infohash, treat the connection as a V2 connection. The
                 // biggest (only?) difference is that it means we can request the merkle tree layer hashes from
                 // peers who support v2.
-                id = CreatePeerIdFromHandshake (handshake, peer, connection, manager, encryptor: encryptor, decryptor: decryptor);
-                logger.Info (id.Connection, string.Format ("Received handshake message with peer id '{0}' for hash: {1}. Upgradeable: {2}", handshake.PeerId, handshake.InfoHash.ToHex(), handshake.SupportsUpgradeToV2));
+                id = CreatePeerIdFromHandshake (new HandshakeMessage (handshakeBuffer), peer, connection, manager, encryptor: encryptor, decryptor: decryptor);
+                logger.InfoFormatted (id.Connection, "Received handshake message with peer id '{0}' for hash: {1}. Upgradeable: {2}", new HandshakeMessage (handshakeBuffer).PeerId, new HandshakeMessage (handshakeBuffer).InfoHash, new HandshakeMessage (handshakeBuffer).SupportsUpgradeToV2);
 
-                if (LocalPeerId.Equals (handshake.PeerId))
+                if (LocalPeerId.Span.SequenceEqual (new HandshakeMessage (handshakeBuffer).PeerId))
                     return ConnectionFailureReason.ConnectedToSelf;
 
                 // CreatePeerIdFromHandshake files in the peerid, which is important context for whether or not
@@ -315,8 +319,8 @@ namespace MonoTorrent.Client
 
         internal static PeerId CreatePeerIdFromHandshake (HandshakeMessage handshake, Peer peer, IPeerConnection connection, TorrentManager manager, IEncryption encryptor, IEncryption decryptor)
         {
-            if (!handshake.ProtocolString.Equals (Constants.ProtocolStringV100)) {
-                logger.InfoFormatted (connection, "Invalid protocol in handshake: {0}", handshake.ProtocolString);
+            if (!handshake.ProtocolString.SequenceEqual (Constants.ProtocolStringV100UTF8)) {
+                logger.InfoFormatted (connection, "Invalid protocol in handshake: {0}", System.Text.Encoding.UTF8.GetString (handshake.ProtocolString));
                 throw new ProtocolException ("Invalid protocol string");
             }
 
@@ -329,32 +333,32 @@ namespace MonoTorrent.Client
             // If we got the peer as a "compact" peer, then the peerid will be empty. In this case
             // we just copy the one that is in the handshake.
             if (BEncodedString.IsNullOrEmpty (peer.Info.PeerId))
-                peer.UpdatePeerId (handshake.PeerId);
+                peer.UpdatePeerId (new BEncodedString (handshake.PeerId));
 
             // If this is a hybrid torrent, and the other peer announced with the v1 hash *and* set the bit which indicates
             // they can upgrade to a V2 connection, respond with the V2 hash to upgrade the connection to V2 mode.
             var infoHash = handshake.SupportsUpgradeToV2 && manager.InfoHashes.IsHybrid ? manager.InfoHashes.V2! : manager.InfoHashes.Expand (handshake.InfoHash);
 
             // Create the peerid now that everything is established.
-            var id = new PeerId (peer, connection, new BitField (manager.Bitfield.Length), infoHash, encryptor: encryptor, decryptor: decryptor, new Software (handshake.PeerId));
+            var id = new PeerId (peer, connection, new BitField (manager.Bitfield.Length), infoHash, encryptor: encryptor, decryptor: decryptor, new Software (new BEncodedString (handshake.PeerId)));
 
             // If the peer id's don't match, dump the connection. This is due to peers faking usually
-            if (!id.Peer.Info.PeerId.Equals (handshake.PeerId)) {
+            if (!id.Peer.Info.PeerId.Span.SequenceEqual (handshake.PeerId)) {
                 if (manager.Settings.RequirePeerIdToMatch) {
                     // Several prominent clients randomise peer ids (at the least, everything based on libtorrent)
                     // so closing connections when the peer id does not match risks blocking compatibility with many
                     // clients. Additionally, MonoTorrent has long been configured to default to compact tracker responses
                     // so the odds of having the peer ID are slim.
-                    logger.InfoFormatted (id.Connection, "HandShake.Handle - Invalid peerid. Expected '{0}' but received '{1}'", id.Peer.Info.PeerId, handshake.PeerId);
+                    logger.InfoFormatted (id.Connection, "HandShake.Handle - Invalid peerid. Expected '{0}' but received '{1}'", id.Peer.Info.PeerId, Encoding.UTF8.GetString (handshake.PeerId));
                     throw new TorrentException ("Supplied PeerID didn't match the one the tracker gave us");
                 } else {
                     // We don't care about the mismatch for public torrents. uTorrent randomizes its PeerId, as do other clients.
-                    id.Peer.UpdatePeerId (handshake.PeerId);
+                    id.Peer.UpdatePeerId (new BEncodedString (handshake.PeerId));
                 }
             }
             // Copy over the capability bits
-            id.SupportsFastPeer = handshake.SupportsFastPeer;
-            id.SupportsLTMessages = handshake.SupportsExtendedMessaging;
+            id.SupportsFastPeer = handshake.EnableFastPeer;
+            id.SupportsLTMessages = handshake.EnableExtended;
 
             // reset the timers so the connection isn't closed early due to inactivity
             id.LastMessageReceived.Restart ();
@@ -374,63 +378,146 @@ namespace MonoTorrent.Client
         {
             await MainLoop.SwitchToThreadpool ();
 
-            Memory<byte> currentBuffer = default;
-
-            Memory<byte> smallBuffer = default;
-            ByteBufferPool.Releaser smallReleaser = default;
-
-            Memory<byte> largeBuffer = default;
-            ByteBufferPool.Releaser largeReleaser = default;
             try {
+                using var headerReleaser = MemoryPool.Default.Rent (4, out var headerBuffer);
                 while (true) {
-                    if (id.AmRequestingPiecesCount == 0) {
-                        if (!largeBuffer.IsEmpty) {
-                            largeReleaser.Dispose ();
-                            largeReleaser = default;
-                            largeBuffer = currentBuffer = default;
-                        }
-                        if (smallBuffer.IsEmpty) {
-                            smallReleaser = NetworkIO.BufferPool.Rent (ByteBufferPool.SmallMessageBufferSize, out smallBuffer);
-                            currentBuffer = smallBuffer;
-                        }
-                    } else {
-                        if (!smallBuffer.IsEmpty) {
-                            smallReleaser.Dispose ();
-                            smallReleaser = default;
-                            smallBuffer = currentBuffer = default;
-                        }
-                        if (largeBuffer.IsEmpty) {
-                            largeReleaser = NetworkIO.BufferPool.Rent (ByteBufferPool.LargeMessageBufferSize, out largeBuffer);
-                            currentBuffer = largeBuffer;
-                        }
-                    }
-
-                    (PeerMessage message, PeerMessage.Releaser releaser) = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager, currentBuffer).ConfigureAwait (false);
-                    HandleReceivedMessage (id, torrentManager, message, releaser);
+                    (ReadOnlyMemory<byte> message, ByteBufferPool.Releaser messageReleaser) = await PeerIO.ReceiveMessageAsync (connection, decryptor, downloadLimiter, monitor, torrentManager.Monitor, torrentManager, headerBuffer).ConfigureAwait (false);
+                    HandleReceivedMessage (id, torrentManager, message, messageReleaser);
                 }
             } catch (Exception) {
                 await ClientEngine.MainLoop;
                 CleanupSocket (torrentManager, id);
-            } finally {
-                smallReleaser.Dispose ();
-                largeReleaser.Dispose ();
             }
         }
 
-        static async void HandleReceivedMessage (PeerId id, TorrentManager torrentManager, PeerMessage message, PeerMessage.Releaser releaser = default)
+        static async void HandleReceivedMessage (PeerId id, TorrentManager torrentManager, ReadOnlyMemory<byte> message, ByteBufferPool.Releaser releaser)
         {
             await ClientEngine.MainLoop;
 
             if (!id.Disposed) {
-                id.LastMessageReceived.Restart ();
                 try {
-                    torrentManager.Mode.HandleMessage (id, message, releaser);
+                    if (torrentManager.Mode is IMessageHandler handler) {
+                        Dispatch (handler, id, torrentManager, message);
+                        id.LastMessageReceived.Restart ();
+                        torrentManager.Engine!.ConnectionManager.TryProcessQueue (torrentManager, id);
+                    } else {
+                        torrentManager.Engine!.ConnectionManager.CleanupSocket (torrentManager, id);
+                    }
                 } catch (Exception ex) {
                     logger.Exception (ex, "Unexpected error handling a message from a peer");
                     torrentManager.Engine!.ConnectionManager.CleanupSocket (torrentManager, id);
+                } finally {
+                    releaser.Dispose ();
                 }
-            } else {
-                releaser.Dispose ();
+            }
+
+            static void Dispatch (IMessageHandler handler, PeerId peer, TorrentManager manager, ReadOnlyMemory<byte> message)
+            {
+                var span = message.Span;
+                var length = BinaryPrimitives.ReadInt32BigEndian (span);
+
+                // if length is zero this was a keepalive, and all we need to do is reset the last message received timer
+                if (length == 0) {
+                    handler.HandleMessage (peer, new KeepAliveMessage ());
+                    return;
+                }
+
+                var type = MessageDispatcher.GetType (span);
+                if (type == MessageType.RejectRequest) {
+                    // Reject messages are supported by BEP52 and BEP6.
+                    if (manager.InfoHashes.V2 is null && !peer.SupportsFastPeer)
+                        throw new MessageException ("Peer shouldn't support fast peer messages");
+                } else if (type.IsFastExtension () && !peer.SupportsFastPeer) {
+                    throw new MessageException ("Peer shouldn't support fast peer messages");
+                } else if (type == MessageType.Extended && !peer.SupportsLTMessages && MessageDispatcher.GetExtendedMessageType (span) != ExtendedMessageType.Handshake) {
+                    throw new MessageException ("Peer shouldn't support extension messages");
+                }
+
+                // Ensure the buffer is trimmed to match the message length
+                span = span.Slice (0, 4 + length);
+
+                // BitTorrent v1 (bep3)
+                switch (type) {
+                    case MessageType.Choke:
+                        handler.HandleMessage (peer, new ChokeMessage ());
+                        break;
+                    case MessageType.Unchoke:
+                        handler.HandleMessage (peer, new UnchokeMessage ());
+                        break;
+                    case MessageType.Interested:
+                        handler.HandleMessage (peer, new InterestedMessage ());
+                        break;
+                    case MessageType.NotInterested:
+                        handler.HandleMessage (peer, new NotInterestedMessage ());
+                        break;
+                    case MessageType.Have:
+                        handler.HandleMessage (peer, new HaveMessage (message));
+                        break;
+                    case MessageType.Bitfield:
+                        handler.HandleMessage (peer, new BitfieldMessage (message));
+                        break;
+                    case MessageType.Request:
+                        handler.HandleMessage (peer, new RequestMessage (message));
+                        break;
+                    case MessageType.Piece:
+                        handler.HandleMessage (peer, new PieceMessage (message));
+                        break;
+                    case MessageType.Cancel:
+                        handler.HandleMessage (peer, new CancelMessage (message));
+                        break;
+
+                    // DHT (bep5)
+                    case MessageType.Port:
+                        handler.HandleMessage (peer, new PortMessage (message));
+                        break;
+
+                    // Fast Extensions (bep6)
+                    case MessageType.Suggest:
+                        handler.HandleMessage (peer, new SuggestMessage (message));
+                        break;
+                    case MessageType.HaveAll:
+                        handler.HandleMessage (peer, new HaveAllMessage ());
+                        break;
+                    case MessageType.HaveNone:
+                        handler.HandleMessage (peer, new HaveNoneMessage ());
+                        break;
+                    case MessageType.RejectRequest:
+                        handler.HandleMessage (peer, new RejectRequestMessage (message));
+                        break;
+                    case MessageType.AllowedFast:
+                        handler.HandleMessage (peer, new AllowedFastMessage (message));
+                        break;
+
+                    // BitTorrent v2 (bep52)
+                    case MessageType.HashRequest:
+                        handler.HandleMessage (peer, new HashRequestMessage (message));
+                        break;
+                    case MessageType.Hashes:
+                        handler.HandleMessage (peer, new HashesMessage (message));
+                        break;
+                    case MessageType.HashReject:
+                        handler.HandleMessage (peer, new HashRejectMessage (message));
+                        break;
+
+                    // LibTorrent extension protocol (bep 10)
+                    case MessageType.Extended:
+                        switch (MessageDispatcher.GetExtendedMessageType (message)) {
+                            case ExtendedMessageType.Handshake:
+                                handler.HandleMessage (peer, new Extended.HandshakeMessage (message));
+                                break;
+                            case ExtendedMessageType.Metadata:
+                                handler.HandleMessage (peer, new Extended.MetadataMessage (message));
+                                break;
+                            case ExtendedMessageType.PeerExchange:
+                                handler.HandleMessage (peer, new Extended.PeerExchangeMessage (message));
+                                break;
+                            default:
+                                throw new NotSupportedException ("Extended message not supported");
+                        }
+                        break;
+                    default:
+                        throw new NotSupportedException ("Message not support");
+                }
             }
         }
 
@@ -524,10 +611,14 @@ namespace MonoTorrent.Client
 
 
                 // Send our handshake first, then decide if we've connected to ourselves or not.
-                var handshake = new HandshakeMessage (id.ExpectedInfoHash.Truncate (), LocalPeerId, Constants.ProtocolStringV100);
-                logger.Info (id.Connection, string.Format ("Responding with infohash: {0}. Upgradeable: {1}", handshake.InfoHash.ToHex(), handshake.SupportsUpgradeToV2));
+                using (var releaser = MemoryPool.Default.Rent (68, out var buffer)) {
+                    bool canUpgradeToV2 = manager.InfoHashes.IsHybrid && id.ExpectedInfoHash == manager.InfoHashes.V1;
+                    BtEncoder.WriteHandshake (buffer.Span, id.ExpectedInfoHash.Span.Slice (0, 20), LocalPeerId.Span, true, true, canUpgradeToV2);
 
-                await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, handshake, manager.UploadLimiters, id.Monitor, manager.Monitor);
+                    logger.InfoFormatted (id.Connection, "Responding with infohash: {0}. Upgradeable: {1}", id.ExpectedInfoHash.Span, canUpgradeToV2);
+
+                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, buffer, manager.UploadLimiters, id.Monitor, manager.Monitor);
+                }
 
                 if (LocalPeerId.Equals (id.PeerID)) {
                     logger.Info ("Connected to self - disconnecting");
@@ -569,29 +660,27 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer whose message queue you want to start processing</param>
         internal async void TryProcessQueue (TorrentManager manager, PeerId id)
         {
+            static (BlockInfo, int) PrepareRead(Memory<byte> msg)
+            {
+                var pm = new PieceMessage (msg);
+                return (new BlockInfo (pm.PieceIndex, pm.StartOffset, pm.RequestLength), pm.DataOffset);
+            }
+
             if (!id.MessageQueue.BeginProcessing ())
                 return;
 
             await MainLoop.SwitchToThreadpool ();
 
-            ByteBufferPool.Releaser socketMemoryReleaser = default;
-            Memory<byte> socketMemory = default;
-
             try {
-                while (id.MessageQueue.TryDequeue (out PeerMessage? msg, out PeerMessage.Releaser msgReleaser)) {
+                while (id.MessageQueue.TryDequeue (out var msg, out var msgReleaser)) {
                     using var autorelease = msgReleaser;
 
-                    if (socketMemory.IsEmpty || socketMemory.Length < msg.ByteLength) {
-                        socketMemoryReleaser.Dispose ();
-                        socketMemoryReleaser = NetworkIO.BufferPool.Rent (msg.ByteLength, out socketMemory);
-                    }
-
-                    var buffer = socketMemory.Slice (0, msg.ByteLength);
-                    if (msg is PieceMessage pm) {
-                        pm.SetData ((default, buffer.Slice (buffer.Length - pm.RequestLength)));
+                    var type = MessageDispatcher.GetType (msg);
+                    if (type == MessageType.Piece) {
                         try {
-                            var request = new BlockInfo (pm.PieceIndex, pm.StartOffset, pm.RequestLength);
-                            await DiskManager.ReadAsync (manager, request, pm.Data).ConfigureAwait (false);
+                            // Populate the data now - write directly to the send buffer.
+                            (var blockInfo, var dataOffset) = PrepareRead (msg);
+                            await DiskManager.ReadAsync (manager, blockInfo, msg.Slice(dataOffset)).ConfigureAwait (false);
                         } catch (Exception ex) {
                             await ClientEngine.MainLoop;
                             manager.TrySetError (Reason.ReadFailure, ex);
@@ -600,8 +689,8 @@ namespace MonoTorrent.Client
                         Interlocked.Increment (ref id.piecesSent);
                     }
 
-                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor, buffer).ConfigureAwait (false);
-                    if (msg is PieceMessage)
+                    await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, msg, manager.UploadLimiters, id.Monitor, manager.Monitor).ConfigureAwait (false);
+                    if (type == MessageType.Piece)
                         Interlocked.Decrement (ref id.isRequestingPiecesCount);
 
                     id.LastMessageSent.Restart ();
@@ -609,8 +698,6 @@ namespace MonoTorrent.Client
             } catch {
                 await ClientEngine.MainLoop;
                 CleanupSocket (manager, id);
-            } finally {
-                socketMemoryReleaser.Dispose ();
             }
         }
 

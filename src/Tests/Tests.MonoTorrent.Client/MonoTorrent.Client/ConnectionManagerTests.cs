@@ -10,6 +10,7 @@ using MonoTorrent.Client.Modes;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Peer;
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -153,8 +154,7 @@ namespace MonoTorrent.Client
 
             // Handshake should be sent.
             var data = await fake.SendAsyncInvokedTask.Task.WithTimeout ();
-            var message = new HandshakeMessage (data.Span);
-            Assert.AreEqual (message.ProtocolString, Constants.ProtocolStringV100);
+            Assert.IsTrue (new HandshakeMessage (data).ProtocolString.SequenceEqual (Constants.ProtocolStringV100UTF8));
 
             connectionManager.CancelPendingConnects (manager);
             await fake.DisposeAsyncInvokedTask.Task.WithTimeout ();

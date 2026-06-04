@@ -39,9 +39,9 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Logging;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
 using MonoTorrent.Messages.Peer.Libtorrent;
 using MonoTorrent.PiecePicking;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -94,8 +94,8 @@ namespace MonoTorrent.Client.Modes
             void IMessageEnqueuer.EnqueueRequest (IRequester wrappedPeer, PieceSegment block)
             {
                 var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
-                var message = HashRequestMessage.CreateFromPieceLayer (File.PiecesRoot, File.PieceCount, actualPieceLength, block.PieceIndex * PieceLength, PieceLength);
-                peer.MessageQueue.Enqueue (message);
+                (var message, var releaser) = BtEncoder.WritePieceHashesFromPieceLayer (File.PiecesRoot, File.PieceCount, actualPieceLength, block.PieceIndex * PieceLength, PieceLength);
+                peer.MessageQueue.Enqueue (message, releaser);
             }
 
             void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
@@ -192,12 +192,12 @@ namespace MonoTorrent.Client.Modes
                 picker.Value.Item1.CancelRequests (picker.Value.Item2.Wrap (id), 0, picker.Value.Item2.PieceCount);
         }
 
-        protected override void HandleHashRejectMessage (PeerId id, HashRejectMessage hashRejectMessage)
+        public override void HandleMessage (PeerId id, HashRejectMessage hashRejectMessage)
         {
             // If someone rejects us, let's remove them from the list for now...
-            base.HandleHashRejectMessage (id, hashRejectMessage);
+            base.HandleMessage (id, hashRejectMessage);
 
-            if (!pickers.TryGetValue (hashRejectMessage.PiecesRoot, out var picker))
+            if (!pickers.TryGetValue (new MerkleRoot (hashRejectMessage.PiecesRoot), out var picker))
                 return;
             if (!picker.Item1.ValidatePiece (picker.Item2.Wrap (id), new PieceSegment (hashRejectMessage.Index / picker.Item2.PieceLength, 0), out _, new HashSet<IRequester> ()))
                 return;
@@ -205,11 +205,12 @@ namespace MonoTorrent.Client.Modes
             IgnoredPeers.Add (id);
         }
 
-        protected override void HandleHashesMessage (PeerId id, HashesMessage hashesMessage)
+        public override void HandleMessage (PeerId id, HashesMessage hashesMessage)
         {
-            base.HandleHashesMessage (id, hashesMessage);
+            base.HandleMessage (id, hashesMessage);
 
-            if (!pickers.TryGetValue (hashesMessage.PiecesRoot, out var picker))
+            var merkleRoot = new MerkleRoot (hashesMessage.PiecesRoot);
+            if (!pickers.TryGetValue (merkleRoot, out var picker))
                 return;
             if (!picker.Item1.ValidatePiece (picker.Item2.Wrap (id), new PieceSegment (hashesMessage.Index / picker.Item2.PieceLength, 0), out _, new HashSet<IRequester> ())) {
                 ConnectionManager.CleanupSocket (Manager, id);
@@ -224,7 +225,7 @@ namespace MonoTorrent.Client.Modes
                 id.LastBlockReceived.Restart ();
             }
 
-            var success = infoHashes[hashesMessage.PiecesRoot].TryAppend (hashesMessage.BaseLayer, hashesMessage.Index, hashesMessage.Length, hashesMessage.Hashes.Span);
+            var success = infoHashes[merkleRoot].TryAppend (hashesMessage.BaseLayer, hashesMessage.Index, hashesMessage.Length, hashesMessage.Hashes);
             if (success)
                 picker.Item2.ValidatedPieces[hashesMessage.Index / picker.Item2.PieceLength] = true;
             else
@@ -233,7 +234,7 @@ namespace MonoTorrent.Client.Modes
             if (picker.Item2.ValidatedPieces.AllTrue) {
                 using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
 
-                if (!infoHashes[hashesMessage.PiecesRoot].TryVerify (out ReadOnlyMerkleTree? verifiedPieceHashes))
+                if (!infoHashes[merkleRoot].TryVerify (out ReadOnlyMerkleTree? verifiedPieceHashes))
                     picker.Item2.ValidatedPieces.SetAll (false);
             }
 

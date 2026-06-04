@@ -49,15 +49,5 @@ namespace MonoTorrent
 #endif
             return releaser;
         }
-
-        public new Releaser Rent (int capacity, [NotNullWhen(true)] out ArraySegment<byte> segment)
-        {
-            var releaser = base.Rent (capacity, out segment);
-            segment = new ArraySegment<byte> (segment.Array!, segment.Offset, capacity);
-#if DEBUG
-            segment.AsSpan ().Fill (255);
-#endif
-            return releaser;
-        }
     }
 }

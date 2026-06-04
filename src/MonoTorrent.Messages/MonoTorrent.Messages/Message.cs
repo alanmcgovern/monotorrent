@@ -36,7 +36,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Messages
 {
-    public abstract class Message : IMessage
+    public abstract class Message
     {
         public abstract int ByteLength { get; }
 
@@ -51,14 +51,7 @@ namespace MonoTorrent.Messages
 
         public abstract int Encode (Span<byte> buffer);
 
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        protected T ReadBencodedValue<T> (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
-            where T : BEncodedValue
-        {
-            var value = BEncodedValue.Decode (buffer, strictDecoding);
-            buffer = buffer.Slice (value.LengthInBytes ());
-            return (T) value;
-        }
+
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static byte ReadByte (ref ReadOnlySpan<byte> buffer)
         {
@@ -66,6 +59,7 @@ namespace MonoTorrent.Messages
             buffer = buffer.Slice (1);
             return result;
         }
+
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static ReadOnlyMemory<byte> ReadBytes (ref ReadOnlySpan<byte> buffer, int length)
         {

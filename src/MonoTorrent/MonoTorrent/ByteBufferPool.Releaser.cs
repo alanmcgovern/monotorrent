@@ -41,7 +41,7 @@ namespace MonoTorrent
             readonly ByteBuffer Buffer;
             readonly ByteBufferPool Pool;
 
-            public Memory<byte> Memory => Buffer.Memory;
+            Memory<byte> IMemoryOwner<byte>.Memory => Buffer.Memory;
 
             internal Releaser (ByteBufferPool pool, ByteBuffer buffer)
             {
@@ -59,7 +59,9 @@ namespace MonoTorrent
                     throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
 
                 Buffer.Counter++;
-
+#if DEBUG
+                Buffer.Memory.Span.Fill (255);
+#endif
                 var size = Buffer.Segment.Count;
                 if (size == ByteBufferPool.SmallMessageBufferSize) {
                     using (Pool.SmallMessageBuffers.Enter (out var buffers))

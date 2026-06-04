@@ -45,7 +45,7 @@ namespace MonoTorrent
 
         public ReadOnlySpan<byte> Span => Hash.Span;
 
-        public MerkleRoot (Span<byte> hash)
+        public MerkleRoot (ReadOnlySpan<byte> hash)
             : this (new ReadOnlyMemory<byte> (hash.ToArray ()))
         {
 

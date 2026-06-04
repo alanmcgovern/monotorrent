@@ -120,6 +120,6 @@ namespace MonoTorrent.PieceWriter
         /// <param name="buffer"></param>
         /// <param name="preferSkipCache"></param>
         /// <returns></returns>
-        ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer, bool preferSkipCache);
+        ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, ReadOnlyMemory<byte> buffer, bool preferSkipCache);
     }
 }

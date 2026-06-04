@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -40,8 +41,8 @@ using System.Threading.Tasks;
 using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Logging;
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
 using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -96,9 +97,8 @@ namespace MonoTorrent.Client.Modes
         {
             await Setup (true);
 
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, null, 5555);
-            exHand.Supports.Add (LTMetadata.Support);
-            Assert.DoesNotThrow (() => rig.Manager.Mode.HandleMessage (PeerId.CreateNull (1, rig.Manager.InfoHashes.V1OrV2), exHand, default));
+            (var exHand, var releaser) = BtEncoder.Extended.WriteHandshake(GitInfoHelper.ClientVersionMemory, false, null, 5555);
+            Assert.DoesNotThrow (() => ((IMessageHandler) rig.Manager.Mode).HandleMessage (PeerId.CreateNull (1, rig.Manager.InfoHashes.V1OrV2), new Extended.HandshakeMessage (exHand)));
         }
 
         [Test]
@@ -109,30 +109,38 @@ namespace MonoTorrent.Client.Modes
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            var sendHandshake = new HandshakeMessage (rig.Manager.Torrent.InfoHashes.V1OrV2, new string ('g', 20), Constants.ProtocolStringV100, true, true);
+            (var sendHandshake, var releaser) = BtEncoder.WriteHandshake (rig.Manager.Torrent.InfoHashes.V1OrV2.Span.Slice (0, 20), Enumerable.Repeat((byte)'g', 20).ToArray (), true, true, false);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.TorrentDict.LengthInBytes (), 5555);
-            exHand.Supports.Add (LTMetadata.Support);
+
+            (var exHand, releaser) = BtEncoder.Extended.WriteHandshake(GitInfoHelper.ClientVersionMemory, false, rig.TorrentDict.LengthInBytes (), 5555);
+
             await PeerIO.SendMessageAsync (connection, encryptor, exHand);
 
             // 2) Send all our metadata requests
             int length = (rig.TorrentDict.LengthInBytes () + 16383) / 16384;
-            for (int i = 0; i < length; i++)
-                await PeerIO.SendMessageAsync (connection, encryptor, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Request, i, null));
+            for (int i = 0; i < length; i++) {
+                (var msg, releaser) = BtEncoder.Extended.WriteMetadata (new ExtensionSupports (new[] { BtEncoder.Extended.MetadataExchangeSupport }), Extended.MetadataMessage.MetadataMessageType.Request, i, default);
+                await PeerIO.SendMessageAsync (connection, encryptor, msg);
+            }
             // 3) Receive all the metadata chunks
-            PeerMessage m;
             var stream = new MemoryStream ();
-            while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
-                if (m is LTMetadata metadata) {
-                    if (metadata.MetadataMessageType == LTMetadata.MessageType.Data) {
-                        stream.Write (metadata.MetadataPiece.Span);
-                        length--;
+            ReadOnlyMemory<byte> m;
+            while (length > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)).Length > 0) {
+                Test ();
+                void Test ()
+                {
+                    if (MessageDispatcher.GetType (m) == MessageType.Extended && MessageDispatcher.GetExtendedMessageType(m) == ExtendedMessageType.Metadata) {
+                        var metadata = new Extended.MetadataMessage (m);
+                        if (metadata.MessageType == Extended.MetadataMessage.MetadataMessageType.Data) {
+                            stream.Write (metadata.MetadataData.Span);
+                            length--;
+                        }
                     }
                 }
-            }
+                }
 
-            // 4) Verify the hash is the same.
-            stream.Position = 0;
+                // 4) Verify the hash is the same.
+                stream.Position = 0;
             Assert.AreEqual (rig.Torrent.InfoHashes.V1OrV2, new InfoHash (SHA1.Create ().ComputeHash (stream)), "#1");
         }
 
@@ -140,7 +148,8 @@ namespace MonoTorrent.Client.Modes
         public async Task AfterHandshake_SendBitfieldMessage ()
         {
             await Setup (true);
-            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.PieceCount));
+            ReadOnlyBitField bf = new BitField (rig.Torrent.PieceCount);
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteBitfield (bf).msg);
         }
 
         [Test]
@@ -159,7 +168,8 @@ namespace MonoTorrent.Client.Modes
                 else
                     tcs.SetResult (rig.Manager.Files);
             };
-            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.PieceCount), metadataOnly: true);
+            ReadOnlyBitField bf = new BitField (rig.Torrent.PieceCount);
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteBitfield (bf).msg, metadataOnly: true);
             Assert.IsNotNull (await tcs.Task);
         }
 
@@ -184,7 +194,8 @@ namespace MonoTorrent.Client.Modes
 
             WaitAsync ();
 
-            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.PieceCount), metadataOnly: true);
+            ReadOnlyBitField bf = new BitField (rig.Torrent.PieceCount);
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteBitfield (bf).msg, metadataOnly: true);
             Assert.IsNotNull (await tcs.Task);
         }
 
@@ -199,7 +210,8 @@ namespace MonoTorrent.Client.Modes
             await Setup (true, metadataOnly: true);
 
             rig.Manager.MetadataReceived += (o, e) => tcs.TrySetResult (e);
-            await SendMetadataCore (rig.MetadataPath, new BitfieldMessage (rig.Torrent.PieceCount), metadataOnly: true);
+            ReadOnlyBitField bf = new BitField (rig.Torrent.PieceCount);
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteBitfield (bf).msg, metadataOnly: true);
             Assert.IsTrue ((await tcs.Task).Length > 0);
         }
 
@@ -207,21 +219,21 @@ namespace MonoTorrent.Client.Modes
         public async Task AfterHandshake_SendHaveAllMessage ()
         {
             await Setup (true);
-            await SendMetadataCore (rig.MetadataPath, new HaveAllMessage ());
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteHaveAll ().Item1);
         }
 
         [Test]
         public async Task AfterHandshake_SendHaveNoneMessage ()
         {
             await Setup (true);
-            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteHaveNone ().Item1);
         }
 
         [Test]
         public async Task SendMetadata_ToFile ()
         {
             await Setup (true);
-            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteHaveNone ().Item1);
         }
 
         [Test]
@@ -229,7 +241,7 @@ namespace MonoTorrent.Client.Modes
         {
             File.Create (rig.MetadataPath).Close ();
             await Setup (true);
-            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteHaveNone ().Item1);
         }
 
         [Test]
@@ -239,21 +251,21 @@ namespace MonoTorrent.Client.Modes
             Directory.CreateDirectory (Path.GetDirectoryName (rig.MetadataPath));
             File.WriteAllBytes (rig.MetadataPath, rig.TorrentDict.Encode ());
 
-            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteHaveNone ().Item1);
         }
 
         [Test]
         public async Task SendMetadata_ToFolder ()
         {
             await Setup (true);
-            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteHaveNone ().Item1);
         }
 
         [Test]
         public async Task SingleFileSavePath ()
         {
             await Setup (true, multiFile: false);
-            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteHaveNone ().Item1);
 
             Assert.AreEqual (@"test.files", rig.Manager.Torrent.Name);
             Assert.AreEqual (Environment.CurrentDirectory, rig.Manager.SavePath);
@@ -268,7 +280,7 @@ namespace MonoTorrent.Client.Modes
         public async Task MultiFileSavePath ()
         {
             await Setup (true, multiFile: true);
-            await SendMetadataCore (rig.MetadataPath, new HaveNoneMessage ());
+            await SendMetadataCore (rig.MetadataPath, BtEncoder.WriteHaveNone ().Item1);
 
             Assert.AreEqual (@"test.files", rig.Manager.Torrent.Name);
             Assert.AreEqual (Environment.CurrentDirectory, rig.Manager.SavePath);
@@ -286,7 +298,7 @@ namespace MonoTorrent.Client.Modes
             Assert.AreEqual (Path.Combine (Environment.CurrentDirectory, "test.files", "File4"), torrentFiles[3].FullPath);
         }
 
-        internal async Task SendMetadataCore (string expectedPath, PeerMessage sendAfterHandshakeMessage, bool metadataOnly = false)
+        internal async Task SendMetadataCore (string expectedPath, Memory<byte> sendAfterHandshakeMessage, bool metadataOnly = false)
         {
             CustomConnection connection = pair.Incoming;
             var metadataTcs = new TaskCompletionSource<ReadOnlyMemory<byte>> ();
@@ -294,10 +306,9 @@ namespace MonoTorrent.Client.Modes
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            var sendHandshake = new HandshakeMessage (rig.Manager.InfoHashes.V1OrV2, new string ('g', 20), Constants.ProtocolStringV100, true, true);
+            (var sendHandshake, _) = BtEncoder.WriteHandshake (rig.Manager.InfoHashes.V1OrV2.Truncate ().Span, Enumerable.Repeat ((byte) 'g', 20).ToArray (), true, true, false);
             await PeerIO.SendMessageAsync (connection, encryptor, sendHandshake);
-            ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage (false, rig.Torrent.InfoMetadata.Length, 5555);
-            exHand.Supports.Add (LTMetadata.Support);
+            (var exHand, _) = BtEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, rig.Torrent.InfoMetadata.Length, 5555);
             await PeerIO.SendMessageAsync (connection, encryptor, exHand);
 
             await PeerIO.SendMessageAsync (connection, encryptor, sendAfterHandshakeMessage);
@@ -306,31 +317,36 @@ namespace MonoTorrent.Client.Modes
             // 2) Receive the metadata requests from the other peer and fulfill them
             ReadOnlyMemory<byte> buffer = rig.Torrent.InfoMetadata;
             var unrequestedPieces = new HashSet<int> (Enumerable.Range (0, (buffer.Length + 16383) / 16384));
-            PeerMessage m;
-            while (unrequestedPieces.Count > 0 && (m = await PeerIO.ReceiveMessageAsync (connection, decryptor)) != null) {
-                if (m is ExtendedHandshakeMessage ex) {
-                    Assert.IsNull (ex.MetadataSize);
-                    Assert.AreEqual (Constants.DefaultMaxPendingRequests, ex.MaxRequests);
-                } else if (m is HaveNoneMessage) {
+            ReadOnlyMemory<byte> msgBuffer;
+            while (unrequestedPieces.Count > 0 && (msgBuffer = await PeerIO.ReceiveMessageAsync (connection, decryptor)).Length > 0) {
+
+                if (MessageDispatcher.GetType (msgBuffer) == MessageType.Extended && MessageDispatcher.GetExtendedMessageType (msgBuffer) == ExtendedMessageType.Handshake) {
+                    Assert.IsNull (new Extended.HandshakeMessage (msgBuffer).MetadataBytes);
+                    Assert.AreEqual (Constants.DefaultMaxPendingRequests, new Extended.HandshakeMessage (msgBuffer).MaxRequests);
+                } else if (MessageDispatcher.GetType(msgBuffer) == MessageType.HaveNone) {
                     receivedHaveNone = true;
-                } else if (m is LTMetadata metadata) {
-                    if (metadata.MetadataMessageType == LTMetadata.MessageType.Request) {
-                        metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, metadata.Piece, buffer);
+                } else if (MessageDispatcher.GetType (msgBuffer) == MessageType.Extended && MessageDispatcher.GetExtendedMessageType(msgBuffer) == ExtendedMessageType.Metadata) {
+
+                    if (new Extended.MetadataMessage(msgBuffer).MessageType == Extended.MetadataMessage.MetadataMessageType.Request) {
+
+                        (Memory<byte> metadata, var releaser) = BtEncoder.Extended.WriteMetadata(new ExtensionSupports (new[] { BtEncoder.Extended.MetadataExchangeSupport }), Extended.MetadataMessage.MetadataMessageType.Data, new Extended.MetadataMessage (msgBuffer).Piece, buffer.Span);
                         await PeerIO.SendMessageAsync (connection, encryptor, metadata);
-                        unrequestedPieces.Remove (metadata.Piece);
+                        unrequestedPieces.Remove (new Extended.MetadataMessage (msgBuffer).Piece);
 
                         // Hack this in because testing is... awkward... for most of this library.
                         // The purpose here is to ensure that duplicate pieces don't reset our data or cause the event
                         // to be emitted multiple times.
                         if (unrequestedPieces.Count > 0) {
-                            metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, 0, buffer);
+                            (metadata, releaser) = BtEncoder.Extended.WriteMetadata (new ExtensionSupports (new[] { BtEncoder.Extended.MetadataExchangeSupport }), Extended.MetadataMessage.MetadataMessageType.Data, 0, buffer.Span);
                             await PeerIO.SendMessageAsync (connection, encryptor, metadata);
                         }
 
                         // And let's receive many handshake messages from other peers. Ensure we process this on the correct
                         // thread. It needs to be on the main loop as it's run in the context of the ClientEngine loop.
-                        if (rig.Manager.Mode is MetadataMode mode)
-                            ClientEngine.MainLoop.Post (state => mode.HandleMessage (PeerId.CreateNull (12389, rig.Manager.InfoHashes.V1OrV2), exHand, default), null);
+                        if (rig.Manager.Mode is MetadataMode mode) {
+                            (exHand, var _) = BtEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, rig.Torrent.InfoMetadata.Length, 5555);
+                            ClientEngine.MainLoop.Post (state => mode.HandleMessage (PeerId.CreateNull (12389, rig.Manager.InfoHashes.V1OrV2), new Extended.HandshakeMessage(exHand)), null);
+                        }
                     }
                 }
             }

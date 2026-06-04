@@ -217,6 +217,7 @@ namespace MonoTorrent.IntegrationTests
 
         public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, bool explitlyHashCheck, int nonEmptyFileCount = 2, bool useWebSeedDownload = false, long fileSize = 5, IPieceWriter writer = null, bool magnetLinkLeecher = false, Direction? seederConnectionDirection = null)
         {
+            LoggerFactory.Register (new TextWriterLogger (TestContext.Out));
             var emptyFile = new FileInfo (Path.Combine (_seederDir.FullName, "Empty.file"));
             if (createEmptyFile)
                 File.WriteAllText (emptyFile.FullName, "");

@@ -98,6 +98,15 @@ namespace MonoTorrent.BEncoding
         /// Create a new BEncodedString using UTF8 encoding
         /// </summary>
         /// <param name="value"></param>
+        public BEncodedString (ReadOnlySpan<byte> value)
+        {
+            TextBytes = value.Length == 0 ? ReadOnlyMemory<byte>.Empty : value.ToArray ();
+        }
+
+        /// <summary>
+        /// Create a new BEncodedString using UTF8 encoding
+        /// </summary>
+        /// <param name="value"></param>
         public BEncodedString (char[] value)
         {
             if (value is null)

@@ -17,22 +17,79 @@ namespace MonoTorrent
     {
         const int InlineArraySize = 19;
 
-        static CompactEndPoint()
+        static int IPv4PortOffset;
+        static int IPv4AddressOffset;
+
+        static int IPv6PortOffset;
+        static int IPv6AddressOffset;
+
+        static CompactEndPoint ()
         {
-            var socketAddress = new IPEndPoint (IPAddress.Parse ("127.0.1.2"), 16).Serialize ();
-            var c = new CompactEndPoint (socketAddress);
+            TestIPv4 ();
+            TestIPv6 ();
 
-            Span<byte> dest = stackalloc byte[18];
-            Span<byte> expected = stackalloc byte[] { 127, 0, 1, 2, 0, 16 };
-            if (!c.TryWriteBytes (dest, out int written) || written != expected.Length || !expected.SequenceEqual (dest.Slice (0, 6)))
-                throw new PlatformNotSupportedException ("SocketAddress stores ipv4 data in an unsupported format");
+            static void TestIPv4 ()
+            {
+                short port = 5678;
+                var portBytes = BitConverter.GetBytes (IPAddress.HostToNetworkOrder (port));
+                var expectedEndPoint = new IPEndPoint (IPAddress.Parse ("127.0.1.2"), port);
+                ReadOnlySpan<byte> expectedCompact = stackalloc byte[] { 127, 0, 1, 2, portBytes[0], portBytes [1] };
+                var expectedSocketAddress = expectedEndPoint.Serialize ();
 
-            socketAddress = new IPEndPoint (IPAddress.Parse ("0102:0304:0506:0708:090A:0B0C:0D0E:0F10"), 17).Serialize ();
-            c = new CompactEndPoint (socketAddress);
+                var compactEndPoint = CompactEndPoint.FromCompact (expectedCompact, AddressFamily.InterNetwork);
+                if (compactEndPoint.Port != 5678)
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv4 data in an unsupported format");
 
-            Span<byte> expectedv6 = stackalloc byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 0, 17 };
-            if (!c.TryWriteBytes (dest, out written) || written!= expectedv6.Length || !expectedv6.SequenceEqual (dest))
-                throw new PlatformNotSupportedException ("SocketAddress stores ipv6 data in an unsupported format");
+                Span<byte> actualCompact = stackalloc byte[6];
+                if (!compactEndPoint.TryWriteBytes (actualCompact, out int written) || written != expectedCompact.Length || !expectedCompact.SequenceEqual (actualCompact))
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv4 data in an unsupported format");
+
+                IPv4AddressOffset = MemoryExtensions.IndexOf (expectedSocketAddress.Buffer.Span, expectedCompact.Slice (0, 4));
+                if (IPv4AddressOffset == -1)
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv4 data in an unsupported format");
+
+                IPv4PortOffset = MemoryExtensions.IndexOf (expectedSocketAddress.Buffer.Span, expectedCompact.Slice (4, 2));
+                if (IPv4PortOffset == -1)
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv4 data in an unsupported format");
+
+                var actualSocketAddress = new SocketAddress (AddressFamily.InterNetwork);
+                if (!compactEndPoint.TryWriteBytes (actualSocketAddress))
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv4 data in an unsupported format");
+                if (!actualSocketAddress.Equals (expectedSocketAddress))
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv4 data in an unsupported format");
+            }
+
+            static void TestIPv6 ()
+            {
+                short port = 5678;
+                var portBytes = BitConverter.GetBytes (IPAddress.HostToNetworkOrder (port));
+
+                var expectedEndPoint = new IPEndPoint (IPAddress.Parse ("0102:0304:0506:0708:090A:0B0C:0D0E:0F10"), port);
+                ReadOnlySpan<byte> expectedCompact = stackalloc byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, portBytes[0], portBytes[1] };
+                var expectedSocketAddress = expectedEndPoint.Serialize ();
+
+                var compactEndpoint = CompactEndPoint.FromCompact (expectedCompact, AddressFamily.InterNetworkV6);
+                if (compactEndpoint.Port != port)
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv6 data in an unsupported format");
+
+                Span<byte> actualCompact = stackalloc byte[18];
+                if (!compactEndpoint.TryWriteBytes (actualCompact, out var written) || written != expectedCompact.Length || !expectedCompact.SequenceEqual (actualCompact))
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv6 data in an unsupported format");
+
+                IPv6AddressOffset = MemoryExtensions.IndexOf (expectedSocketAddress.Buffer.Span, expectedCompact.Slice (0, 16));
+                if (IPv6AddressOffset == -1)
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv6 data in an unsupported format");
+
+                IPv6PortOffset = MemoryExtensions.IndexOf (expectedSocketAddress.Buffer.Span, expectedCompact.Slice (16, 2));
+                if (IPv6PortOffset == -1)
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv6 data in an unsupported format");
+
+                var actualSocketAddress = new SocketAddress (AddressFamily.InterNetworkV6);
+                if (!compactEndpoint.TryWriteBytes (actualSocketAddress))
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv6 data in an unsupported format");
+                if (!actualSocketAddress.Equals (expectedSocketAddress))
+                    throw new PlatformNotSupportedException ("SocketAddress stores ipv6 data in an unsupported format");
+            }
         }
 
         // Large enough for 16 byte ipv6 address + 2 byte port + 1 byte discriminator
@@ -81,17 +138,18 @@ namespace MonoTorrent
             Span<byte> tmp = _data;
             switch (address.Family) {
                 case System.Net.Sockets.AddressFamily.InterNetwork:
-                    address.Buffer.Span.Slice (4, 4).CopyTo (tmp.Slice (0, 4));
+                    address.Buffer.Span.Slice (IPv4AddressOffset, 4).CopyTo (tmp.Slice (0, 4));
+                    address.Buffer.Span.Slice (IPv4PortOffset, 2).CopyTo (tmp.Slice (16, 2));
                     tmp[18] = 0;
                     break;
                 case System.Net.Sockets.AddressFamily.InterNetworkV6:
-                    address.Buffer.Span.Slice (8, 16).CopyTo (tmp.Slice (0, 16));
+                    address.Buffer.Span.Slice (IPv6AddressOffset, 16).CopyTo (tmp.Slice (0, 16));
+                    address.Buffer.Span.Slice (IPv6PortOffset, 2).CopyTo (tmp.Slice (16, 2));
                     tmp[18] = 1;
                     break;
                 default:
                     throw new NotSupportedException ();
             }
-            address.Buffer.Span.Slice (2, 2).CopyTo (tmp.Slice (16, 2));
         }
 
         public CompactEndPoint (IPAddress address, int port)
@@ -145,8 +203,19 @@ namespace MonoTorrent
         {
             if (Family != destination.Family)
                 return false;
-            Address.CopyTo (destination.Buffer.Span.Slice (4));
-            BinaryPrimitives.WriteUInt16BigEndian (destination.Buffer.Span.Slice (2), (ushort) Port);
+            switch (Family) {
+                case AddressFamily.InterNetwork:
+                    Address.CopyTo (destination.Buffer.Span.Slice (IPv4AddressOffset));
+                    Span.Slice (16, 2).CopyTo (destination.Buffer.Span.Slice (IPv4PortOffset));
+                    break;
+                case AddressFamily.InterNetworkV6:
+                    Address.CopyTo (destination.Buffer.Span.Slice (Family == AddressFamily.InterNetwork ? IPv4AddressOffset : IPv6AddressOffset));
+                    Span.Slice (16, 2).CopyTo (destination.Buffer.Span.Slice (IPv6PortOffset));
+                    break;
+                default:
+                    throw new NotSupportedException ("Only AddressFamily.InterNetwork and AddressFamily.InterNetworkv6 are supported");
+            }
+            
             return true;
         }
 

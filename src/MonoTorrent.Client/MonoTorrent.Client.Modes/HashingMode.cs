@@ -34,13 +34,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client.Modes
 {
     class HashingMode : IMode
     {
         public bool CanAcceptConnections => false;
-        public bool CanHandleMessages => false;
         public bool CanHashCheck => false;
         public TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
         public CancellationToken Token => Cancellation.Token;
@@ -154,9 +155,6 @@ namespace MonoTorrent.Client.Modes
 
         public void Dispose ()
             => Cancellation.Cancel ();
-
-        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
-            => new NotSupportedException ();
 
         public void HandlePeerConnected (PeerId id)
             => throw new NotSupportedException ();

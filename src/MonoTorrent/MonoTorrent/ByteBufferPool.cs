@@ -69,13 +69,6 @@ namespace MonoTorrent
             return result;
         }
 
-        protected Releaser Rent (int capacity, out ArraySegment<byte> segment)
-        {
-            var result = Rent (capacity, out ByteBuffer buf);
-            segment = buf.Segment;
-            return result;
-        }
-
         Releaser Rent (int capacity, out ByteBuffer buffer)
         {
             if (capacity <= SmallMessageBufferSize) {

@@ -31,8 +31,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
+using MonoTorrent.Messages;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
 
         public bool ProcessingQueue { get; private set; } = true;
         public int QueueLength => SendQueue.Count;
-        List<(PeerMessage message, PeerMessage.Releaser releaser)> SendQueue { get; } = new List<(PeerMessage message, PeerMessage.Releaser releaser)> ();
+        List<(Memory<byte> message, MemoryPool.Releaser releaser)> SendQueue { get; } = new List<(Memory<byte> message, MemoryPool.Releaser releaser)> ();
 
         internal bool BeginProcessing (bool force = false)
         {
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal bool TryDequeue ([NotNullWhen (true)] out PeerMessage? message, out PeerMessage.Releaser releaser)
+        internal bool TryDequeue ([NotNullWhen (true)] out Memory<byte> message, out ByteBufferPool.Releaser releaser)
         {
             if (Disposed)
                 throw new ObjectDisposedException (nameof (MessageQueue));
@@ -79,28 +79,32 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void Enqueue (PeerMessage message)
-            => Enqueue (message, default);
+        internal void Enqueue ((Memory<byte> message, ByteBufferPool.Releaser releaser) value)
+            => Enqueue (value.message, value.releaser);
 
-        internal void Enqueue (PeerMessage message, PeerMessage.Releaser releaser)
+        internal void Enqueue (Memory<byte> message, ByteBufferPool.Releaser releaser)
         {
             lock (SendQueue)
                 EnqueueAt (SendQueue.Count, message, releaser);
         }
 
-        internal void EnqueueAt (int index, PeerMessage message, PeerMessage.Releaser releaser)
+        internal void EnqueueAt (int index, Memory<byte> message, ByteBufferPool.Releaser releaser)
         {
+            var checker = message;
+            while (checker.Length > 0) {
+                checker = MessageDispatcher.NextMessage (checker);
+            }
+            if (message.Length == 0)
+                throw new InvalidOperationException ();
+
+            if (checker.Length != 0)
+                throw new InvalidCastException ();
             if (Disposed)
                 throw new ObjectDisposedException (nameof (MessageQueue));
-
+            if (message.Length == 0)
+                throw new NotSupportedException ();
             lock (SendQueue) {
                 if (SendQueue.Count == 0 || index >= SendQueue.Count) {
-                    if (SendQueue.Count > 0 && (SendQueue[SendQueue.Count - 1].message is RequestBundle previous) && message is RequestBundle newBundle) {
-                        if (previous.TryAppend (newBundle)) {
-                            releaser.Dispose ();
-                            return;
-                        }
-                    }
                     SendQueue.Add ((message, releaser));
                 } else {
                     SendQueue.Insert (index, (message, releaser));
@@ -116,7 +120,7 @@ namespace MonoTorrent.Client
             lock (SendQueue) {
                 int rejectedCount = 0;
                 for (int i = 0; i < SendQueue.Count; i++) {
-                    if (!(SendQueue[i].message is PieceMessage msg))
+                    if (MessageDispatcher.GetType (SendQueue[i].message) != MessageType.Piece)
                         continue;
 
                     // If the peer doesn't support fast peer, then we will never requeue the message
@@ -130,15 +134,15 @@ namespace MonoTorrent.Client
 
                     // If the peer supports fast peer, queue the message if it is an AllowedFast piece
                     // Otherwise send a reject message for the piece
+                    var msg = new PieceMessage (SendQueue[i].message);
                     if (amAllowedFastPieces.IndexOf (msg.PieceIndex) != -1)
                         continue;
                     else {
                         rejectedCount++;
                         SendQueue[i].releaser.Dispose ();
 
-                        (var rejectMessage, var releaser) = PeerMessage.Rent<RejectRequestMessage> ();
-                        rejectMessage.Initialize (msg);
-                        SendQueue[i] = (rejectMessage, releaser);
+                        (var buffer, var releaser) = BtEncoder.WriteRejectRequest (msg.PieceIndex, msg.StartOffset, msg.RequestLength);
+                        SendQueue[i] = (buffer, releaser);
                     }
                 }
                 return rejectedCount;
@@ -152,9 +156,10 @@ namespace MonoTorrent.Client
 
             lock (SendQueue) {
                 for (int i = 0; i < SendQueue.Count; i++) {
-                    if (!(SendQueue[i].message is PieceMessage msg))
+                    if (MessageDispatcher.GetType (SendQueue[i].message) != MessageType.Piece)
                         continue;
 
+                    var msg = new PieceMessage (SendQueue[i].message);
                     if (msg.PieceIndex == pieceIndex && msg.StartOffset == startOffset && msg.RequestLength == requestLength) {
                         SendQueue[i].releaser.Dispose ();
                         SendQueue.RemoveAt (i);
@@ -188,6 +193,20 @@ namespace MonoTorrent.Client
                     SendQueue[i].releaser.Dispose ();
                 SendQueue.Clear ();
             }
+        }
+
+        public override string ToString ()
+        {
+            string s = "";
+            foreach (var msg in SendQueue) {
+                var type = MessageDispatcher.GetType (msg.message);
+                s += type.ToString ();
+                if (type == MessageType.Extended) {
+                    s += $" ({MessageDispatcher.GetExtendedMessageType (msg.message)})";
+                }
+                s += ", ";
+            }
+            return s.Substring (0, s.Length - 2);
         }
     }
 }

@@ -32,13 +32,14 @@ using System.Collections.Generic;
 using System.Threading;
 
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client.Modes
 {
     class ErrorMode : IMode
     {
         public bool CanAcceptConnections => false;
-        public bool CanHandleMessages => false;
         public bool CanHashCheck => true;
         public TorrentState State => TorrentState.Error;
         public CancellationToken Token => Cancellation.Token;
@@ -58,9 +59,6 @@ namespace MonoTorrent.Client.Modes
         {
             // Nothing
         }
-
-        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
-            => throw new NotSupportedException ();
 
         public void HandlePeerConnected (PeerId id)
             => throw new NotSupportedException ();
