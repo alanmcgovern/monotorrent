@@ -155,6 +155,9 @@ namespace MonoTorrent.Messages.Peer
             if (messageLength > buffer.Length)
                 throw new ArgumentException ("Incomplete message detected");
 
+            if (messageLength == 0)
+                return (KeepAliveMessage.Instance, default);
+
             if (buffer[0] == ExtensionMessage.MessageId)
                 return ExtensionMessage.DecodeExtensionMessage (buffer.Slice (1), manager);
 

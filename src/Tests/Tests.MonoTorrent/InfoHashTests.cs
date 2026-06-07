@@ -52,6 +52,8 @@ namespace MonoTorrent
             Assert.AreEqual (40, hex.Length, "#1");
             InfoHash other = InfoHash.FromHex (hex);
             Assert.AreEqual (hash, other, "#2");
+
+            Assert.AreEqual (hash, InfoHash.FromHex (System.Text.Encoding.UTF8.GetBytes (hex)));
         }
 
         [Test]
@@ -91,7 +93,13 @@ namespace MonoTorrent
         public void NullHex ()
         {
             Assert.Throws<ArgumentNullException> (() => {
-                InfoHash.FromHex (null);
+                InfoHash.FromHex ((string)null);
+            });
+            Assert.Throws<ArgumentException> (() => {
+                InfoHash.FromHex ("");
+            });
+            Assert.Throws<ArgumentException> (() => {
+                InfoHash.FromHex (ReadOnlySpan<byte>.Empty);
             });
         }
 

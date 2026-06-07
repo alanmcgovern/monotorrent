@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,9 @@ namespace ClientSample
 {
     class StandardDownloader
     {
+        // When set to true no per-torrent stats will be displayed.
+        bool QuieterOutput = true;
+
         ClientEngine Engine { get; }
         Top10Listener Listener { get; }			// This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
@@ -29,19 +33,29 @@ namespace ClientSample
             var downloadsPath = Path.Combine (Environment.CurrentDirectory, "Downloads");
 
             // .torrent files will be loaded from this directory (if any exist)
-            var torrentsPath = Path.Combine (Environment.CurrentDirectory, "Torrents");
+            var torrentsPath = Environment.CurrentDirectory;
+            while (!File.Exists (Path.Combine (torrentsPath, "build.proj")))
+                torrentsPath = Path.GetDirectoryName (torrentsPath);
+
+            // I have a separate directory with (potentially) 1000s of torrents in it which i put side-by-side with the monotorrent git checkout
+            // so i don't `git clean -xffd` the data.
+            //
+            // If that 'TorrentResearch' directory doesn't exist then torrents are loaded from a subdirectory beside the executable.
+            if (Directory.Exists (Path.Combine (torrentsPath, "..", "TorrentResearch"))) {
+                torrentsPath = Path.GetFullPath (Path.Combine (torrentsPath, "..", "TorrentResearch"));
+            } else {
+                torrentsPath = Path.Combine (Environment.CurrentDirectory, "Torrents");
+                // If the torrentsPath does not exist, we want to create it
+                if (!Directory.Exists (torrentsPath))
+                    Directory.CreateDirectory (torrentsPath);
+            }
 
 #if DEBUG
             LoggerFactory.Register (new TextWriterLogger (Console.Out));
 #endif
 
-            // If the torrentsPath does not exist, we want to create it
-            if (!Directory.Exists (torrentsPath))
-                Directory.CreateDirectory (torrentsPath);
-
-
             int counter = 0;
-            await Parallel.ForEachAsync (Directory.GetFiles (torrentsPath, "*.torrent"),
+            await Parallel.ForEachAsync (Directory.GetFiles (torrentsPath, "*.torrent").Take(1),
                 new ParallelOptions { MaxDegreeOfParallelism = 100 },
                 async (file, cancellationToken) => {
                     // EngineSettings.AutoSaveLoadFastResume is enabled, so any cached fast resume
@@ -74,35 +88,36 @@ namespace ClientSample
             // For each torrent manager we loaded and stored in our list, hook into the events
             // in the torrent manager and start the engine.
             foreach (TorrentManager manager in Engine.Torrents) {
-                manager.PeersFound += (o, e) => {
-                    Listener.WriteLine (string.Format ($"{e.GetType ().Name}: {e.NewPeers} peers for {e.TorrentManager.Name}"));
-                };
-                manager.PeerConnected += (o, e) => {
-                    lock (Listener)
-                        Listener.WriteLine ($"Connection succeeded: {e.Peer.Uri}");
-                };
-                manager.ConnectionAttemptFailed += (o, e) => {
-                    lock (Listener)
-                        Listener.WriteLine (
-                            $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason}");
-                };
-                // Every time a piece is hashed, this is fired.
-                manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
-                    lock (Listener)
-                        Listener.WriteLine ($"Piece Hashed: {e.PieceIndex} - {(e.HashPassed ? "Pass" : "Fail")}");
-                };
+                if (!QuieterOutput) {
+                    manager.PeersFound += (o, e) => {
+                        Listener.WriteLine (string.Format ($"{e.GetType ().Name}: {e.NewPeers} peers for {e.TorrentManager.Name}"));
+                    };
+                    manager.PeerConnected += (o, e) => {
+                        lock (Listener)
+                            Listener.WriteLine ($"Connection succeeded: {e.Peer.Uri}");
+                    };
+                    manager.ConnectionAttemptFailed += (o, e) => {
+                        lock (Listener)
+                            Listener.WriteLine (
+                                $"Connection failed: {e.Peer.ConnectionUri} - {e.Reason}");
+                    };
+                    // Every time a piece is hashed, this is fired.
+                    manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
+                        lock (Listener)
+                            Listener.WriteLine ($"Piece Hashed: {e.PieceIndex} - {(e.HashPassed ? "Pass" : "Fail")}");
+                    };
 
-                // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
-                manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
-                    lock (Listener)
-                        Listener.WriteLine ($"OldState: {e.OldState} NewState: {e.NewState}");
-                };
+                    // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
+                    manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
+                        lock (Listener)
+                            Listener.WriteLine ($"OldState: {e.OldState} NewState: {e.NewState}");
+                    };
 
-                // Every time the tracker's state changes, this is fired
-                manager.TrackerManager.AnnounceComplete += (sender, e) => {
-                    Listener.WriteLine ($"{e.Successful}: {e.Tracker}");
-                };
-
+                    // Every time the tracker's state changes, this is fired
+                    manager.TrackerManager.AnnounceComplete += (sender, e) => {
+                        Listener.WriteLine ($"{e.Successful}: {e.Tracker}");
+                    };
+                }
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding.
                 // As EngineSettings.AutoSaveLoadDhtCache is enabled, any cached data will be loaded into the
                 // Dht engine when the first torrent is started, enabling it to bootstrap more rapidly.
@@ -131,34 +146,36 @@ namespace ClientSample
                 foreach (var mapping in Engine.PortMappings.Pending)
                     AppendFormat (sb, $"Pending mapping:      {mapping.PublicPort}:{mapping.PrivatePort} ({mapping.Protocol})");
 
-                foreach (TorrentManager manager in Engine.Torrents) {
-                    AppendSeparator (sb);
-                    AppendFormat (sb, $"State:              {manager.State}");
-                    AppendFormat (sb, $"Name:               {(manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name)}");
-                    AppendFormat (sb, $"Progress:           {manager.Progress:0.00}");
-                    AppendFormat (sb, $"Transferred:        {manager.Monitor.DataBytesReceived / 1024.0 / 1024.0:0.00} MB ↓ / {manager.Monitor.DataBytesSent / 1024.0 / 1024.0:0.00} MB ↑");
-                    AppendFormat (sb, $"Tracker Status");
-                    foreach (var tier in manager.TrackerManager.Tiers)
-                        AppendFormat (sb, $"\t{tier.ActiveTracker} : Announce Succeeded: {tier.LastAnnounceSucceeded}. Scrape Succeeded: {tier.LastScrapeSucceeded}.");
+                if (!QuieterOutput) {
+                    foreach (TorrentManager manager in Engine.Torrents) {
+                        AppendSeparator (sb);
+                        AppendFormat (sb, $"State:              {manager.State}");
+                        AppendFormat (sb, $"Name:               {(manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name)}");
+                        AppendFormat (sb, $"Progress:           {manager.Progress:0.00}");
+                        AppendFormat (sb, $"Transferred:        {manager.Monitor.DataBytesReceived / 1024.0 / 1024.0:0.00} MB ↓ / {manager.Monitor.DataBytesSent / 1024.0 / 1024.0:0.00} MB ↑");
+                        AppendFormat (sb, $"Tracker Status");
+                        foreach (var tier in manager.TrackerManager.Tiers)
+                            AppendFormat (sb, $"\t{tier.ActiveTracker} : Announce Succeeded: {tier.LastAnnounceSucceeded}. Scrape Succeeded: {tier.LastScrapeSucceeded}.");
 
-                    if (manager.PieceManager != null)
-                        AppendFormat (sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync ());
+                        if (manager.PieceManager != null)
+                            AppendFormat (sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync ());
 
-                    var peers = await manager.GetPeersAsync ();
-                    AppendFormat (sb, "Outgoing:");
-                    foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Outgoing)) {
-                        AppendFormat (sb, $"\t{p.AmRequestingPiecesCount} - {(p.Monitor.DownloadRate / 1024.0):0.00}/{(p.Monitor.UploadRate / 1024.0):0.00}kB/sec - {p.Uri} - {p.EncryptionType}");
+                        var peers = await manager.GetPeersAsync ();
+                        AppendFormat (sb, "Outgoing:");
+                        foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Outgoing)) {
+                            AppendFormat (sb, $"\t{p.AmRequestingPiecesCount} - {(p.Monitor.DownloadRate / 1024.0):0.00}/{(p.Monitor.UploadRate / 1024.0):0.00}kB/sec - {p.Uri} - {p.EncryptionType}");
+                        }
+                        AppendFormat (sb, "");
+                        AppendFormat (sb, "Incoming:");
+                        foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Incoming)) {
+                            AppendFormat (sb, $"\t{p.AmRequestingPiecesCount} - {(p.Monitor.DownloadRate / 1024.0):0.00}/{(p.Monitor.UploadRate / 1024.0):0.00}kB/sec - {p.Uri} - {p.EncryptionType}");
+                        }
+
+                        AppendFormat (sb, "", null);
+                        if (manager.Torrent != null)
+                            foreach (var file in manager.Files)
+                                AppendFormat (sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
                     }
-                    AppendFormat (sb, "");
-                    AppendFormat (sb, "Incoming:");
-                    foreach (PeerId p in peers.Where (t => t.ConnectionDirection == Direction.Incoming)) {
-                        AppendFormat (sb, $"\t{p.AmRequestingPiecesCount} - {(p.Monitor.DownloadRate / 1024.0):0.00}/{(p.Monitor.UploadRate / 1024.0):0.00}kB/sec - {p.Uri} - {p.EncryptionType}");
-                    }
-
-                    AppendFormat (sb, "", null);
-                    if (manager.Torrent != null)
-                        foreach (var file in manager.Files)
-                            AppendFormat (sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
                 }
                 Console.Clear ();
                 Console.WriteLine (sb.ToString ());
@@ -166,12 +183,6 @@ namespace ClientSample
 
                 await Task.Delay (5000, token);
             }
-        }
-
-        void Manager_PeersFound (object sender, PeersAddedEventArgs e)
-        {
-            lock (Listener)
-                Listener.WriteLine ($"Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");//throw new Exception("The method or operation is not implemented.");
         }
 
         void AppendSeparator (StringBuilder sb)

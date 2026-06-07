@@ -121,7 +121,7 @@ namespace MonoTorrent
         }
 
         public string UrlEncode ()
-            => HttpUtility.UrlEncode (Hash.Span.ToArray ()).Replace("+", "%20");
+            => HttpUtility.UrlEncode (Hash.Span.ToArray ()).Replace ("+", "%20");
 
         public static bool operator == (InfoHash? left, InfoHash? right)
         {
@@ -162,6 +162,16 @@ namespace MonoTorrent
             }
 
             return new InfoHash (hash);
+        }
+
+        public static InfoHash FromHex (ReadOnlySpan<byte> infoHash)
+        {
+            if (infoHash.Length != 40 && infoHash.Length != 64)
+                throw new ArgumentException ("V1 InfoHashes must be 40 characters long, V2 infohashes must be 64 characters long.", nameof (infoHash));
+
+            byte[] hash = new byte[20];
+            FromHex (infoHash, hash);
+            return InfoHash.FromMemory (hash);
         }
 
         public static InfoHash FromHex (string infoHash)
@@ -212,8 +222,22 @@ namespace MonoTorrent
         {
             var result = new byte[hexString.Length / 2];
             for (int i = 0; i < result.Length; i++)
-                result[i] = byte.Parse (hexString.Substring (i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+                result[i] = (byte) ((FromHexChar ((byte) hexString[i * 2]) << 4) | FromHexChar ((byte) hexString[i * 2 + 1]));
             return result;
         }
+
+
+        static void FromHex (ReadOnlySpan<byte> hexString, Span<byte> destination)
+        {
+            for (int i = 0; i < destination.Length; i++)
+                destination[i] = (byte) ((FromHexChar (hexString[i * 2]) << 4) | FromHexChar (hexString[i * 2 + 1]));
+        }
+
+        static int FromHexChar (byte c) => c switch {
+            >= (byte) '0' and <= (byte) '9' => c - '0',
+            >= (byte) 'a' and <= (byte) 'f' => c - 'a' + 10,
+            >= (byte) 'A' and <= (byte) 'F' => c - 'A' + 10,
+            _ => throw new FormatException ($"Invalid hex character: {(char) c}")
+        };
     }
 }
