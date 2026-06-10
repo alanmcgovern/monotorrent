@@ -15,7 +15,6 @@ namespace ClientSample
     {
         static void Main (string[] args)
         {
-            new CompactEndPoint ();
             CancellationTokenSource cancellation = new CancellationTokenSource ();
 
             var task = MainAsync (args, cancellation.Token);
