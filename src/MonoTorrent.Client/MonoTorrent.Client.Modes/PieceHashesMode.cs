@@ -94,7 +94,7 @@ namespace MonoTorrent.Client.Modes
             void IMessageEnqueuer.EnqueueRequest (IRequester wrappedPeer, PieceSegment block)
             {
                 var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
-                peer.MessageQueue.Enqueue (BtEncoder.WritePieceHashesFromPieceLayer (File.PiecesRoot, File.PieceCount, actualPieceLength, block.PieceIndex * PieceLength, PieceLength));
+                peer.MessageQueue.Enqueue (MessageEncoder.WritePieceHashesFromPieceLayer (File.PiecesRoot, File.PieceCount, actualPieceLength, block.PieceIndex * PieceLength, PieceLength));
             }
 
             void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)

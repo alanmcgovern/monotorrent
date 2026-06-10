@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Modes
             Test ();
             void Test ()
             {
-                (var handshakeMsg, var handshakeMsgReleaser) = BtEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
+                (var handshakeMsg, var handshakeMsgReleaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
                 metadataMode.HandleMessage (peer, new Extended.HandshakeMessage (handshakeMsg));
                 while (manager.Torrent is null) {
                     metadataMode.Tick (0);
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.Modes
                         if (MessageDispatcher.GetType (msg) == MessageType.Extended && MessageDispatcher.GetExtendedMessageType (msg) == ExtendedMessageType.Metadata) {
                             var metadata = new Extended.MetadataMessage (msg);
                             if (metadata.MessageType == Extended.MetadataMessage.MetadataMessageType.Request) {
-                                (var response, var releaser) = BtEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, metadata.Piece, torrent.InfoMetadata.Span);
+                                (var response, var releaser) = MessageEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, metadata.Piece, torrent.InfoMetadata.Span);
                                 metadataMode.HandleMessage (peer, new Extended.MetadataMessage(response));
                             }
 
@@ -95,7 +95,7 @@ namespace MonoTorrent.Client.Modes
             manager.Mode = new MetadataMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, "blarp", true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
 
-            (var handshakeMsg, var releaser) = BtEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
+            (var handshakeMsg, var releaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
             ((IMessageHandler) manager.Mode).HandleMessage (peer, new Extended.HandshakeMessage (handshakeMsg));
             Assert.AreNotEqual (0, peer.AmRequestingPiecesCount);
 
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client.Modes
 
             peer = manager.AddConnectedPeer (supportsLTMetdata: true);
 
-            (handshakeMsg, releaser) = BtEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
+            (handshakeMsg, releaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
             ((IMessageHandler) manager.Mode).HandleMessage (peer, new Extended.HandshakeMessage (handshakeMsg));
 
             Test ();
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client.Modes
 
                         var metadata = new Extended.MetadataMessage (msg);
                         if (metadata.MessageType == Extended.MetadataMessage.MetadataMessageType.Request) {
-                            (var response, var releaser) = BtEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, metadata.Piece, torrent.InfoMetadata.Span);
+                            (var response, var releaser) = MessageEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, metadata.Piece, torrent.InfoMetadata.Span);
                             ((IMessageHandler) manager.Mode).HandleMessage (peer, new Extended.MetadataMessage (response));
                         }
                     }

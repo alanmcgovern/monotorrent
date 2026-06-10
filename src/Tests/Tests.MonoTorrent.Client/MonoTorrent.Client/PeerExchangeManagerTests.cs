@@ -26,7 +26,7 @@ namespace MonoTorrent.Client
         public async Task TestPeerExchangeManager ()
         {
             var peer = CreatePeer ();
-            peer.ExtensionSupports.Add (BtEncoder.Extended.PeerExchangeSupport);
+            peer.ExtensionSupports.Add (MessageEncoder.Extended.PeerExchangeSupport);
             var pex = new PeerExchangeManager (new PeerExchangeSource (), peer);
 
             await ClientEngine.MainLoop;

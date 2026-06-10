@@ -256,7 +256,7 @@ namespace MonoTorrent.Client
                 var canUpgradeToV2 = manager.InfoHashes.IsHybrid;
 
                 // Create a handshake message to send to the peer
-                BtEncoder.WriteHandshake (handshakeBuffer.Span, manager.InfoHashes.V1OrV2.Span.Slice (0, 20), LocalPeerId.Span, enableFastPeer: true, enableExtended: true, supportUpgradeToV2: canUpgradeToV2);
+                MessageEncoder.WriteHandshake (handshakeBuffer.Span, manager.InfoHashes.V1OrV2.Span.Slice (0, 20), LocalPeerId.Span, enableFastPeer: true, enableExtended: true, supportUpgradeToV2: canUpgradeToV2);
                 logger.InfoFormatted (connection, "Sending handshake message with peer id '{0}' and infohash: {1}", LocalPeerId, manager.InfoHashes.V1OrV2);
 
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (connection, allowedEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshakeBuffer, Factories, Settings.ConnectionTimeout);
@@ -615,7 +615,7 @@ namespace MonoTorrent.Client
                 // Send our handshake first, then decide if we've connected to ourselves or not.
                 using (var releaser = MemoryPool.Default.Rent (68, out var buffer)) {
                     bool canUpgradeToV2 = manager.InfoHashes.IsHybrid && id.ExpectedInfoHash == manager.InfoHashes.V1;
-                    BtEncoder.WriteHandshake (buffer.Span, id.ExpectedInfoHash.Span.Slice (0, 20), LocalPeerId.Span, true, true, canUpgradeToV2);
+                    MessageEncoder.WriteHandshake (buffer.Span, id.ExpectedInfoHash.Span.Slice (0, 20), LocalPeerId.Span, true, true, canUpgradeToV2);
 
                     logger.InfoFormatted (id.Connection, "Responding with infohash: {0}. Upgradeable: {1}", id.ExpectedInfoHash.Span, canUpgradeToV2);
 

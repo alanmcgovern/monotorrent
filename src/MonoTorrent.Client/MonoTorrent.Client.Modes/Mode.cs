@@ -130,11 +130,11 @@ namespace MonoTorrent.Client.Modes
 
             // FIXME: StructMessages - we still should be able to precompute the size of the message. Don't hardcode it.
             if (successful) {
-                (var msgBuffer, var msgBufferReleaser) = BtEncoder.WriteHashes(piecesRoot.Span, hashRequest.BaseLayer,hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, buffer.Span);
+                (var msgBuffer, var msgBufferReleaser) = MessageEncoder.WriteHashes(piecesRoot.Span, hashRequest.BaseLayer,hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, buffer.Span);
                 id.MessageQueue.Enqueue (msgBuffer, msgBufferReleaser);
                 bufferReleaser.Dispose ();
             } else {
-                (var msgBuffer, var msgBufferReleaser) = BtEncoder.WriteHashReject(piecesRoot.Span, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers);
+                (var msgBuffer, var msgBufferReleaser) = MessageEncoder.WriteHashReject(piecesRoot.Span, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers);
                 id.MessageQueue.Enqueue (msgBuffer, msgBufferReleaser);
             }
         }
@@ -190,8 +190,8 @@ namespace MonoTorrent.Client.Modes
         {
             if (message.MessageType == Extended.MetadataMessage.MetadataMessageType.Request) {
                 id.MessageQueue.Enqueue (Manager.HasMetadata
-                    ? BtEncoder.Extended.WriteMetadata (id.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, message.Piece, Manager.Torrent!.InfoMetadata.Span)
-                    : BtEncoder.Extended.WriteMetadata (id.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Reject, message.Piece, default)
+                    ? MessageEncoder.Extended.WriteMetadata (id.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, message.Piece, Manager.Torrent!.InfoMetadata.Span)
+                    : MessageEncoder.Extended.WriteMetadata (id.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Reject, message.Piece, default)
                 );
             }
         }
@@ -289,7 +289,7 @@ namespace MonoTorrent.Client.Modes
             }
             id.ExtensionSupports = supports;
 
-            if (id.ExtensionSupports.Supports (BtEncoder.Extended.PeerExchangeSupport.Name)) {
+            if (id.ExtensionSupports.Supports (MessageEncoder.Extended.PeerExchangeSupport.Name)) {
                 if (Manager.HasMetadata && !Manager.Torrent!.IsPrivate)
                     id.PeerExchangeManager = new PeerExchangeManager (Manager, id);
             }
@@ -409,7 +409,7 @@ namespace MonoTorrent.Client.Modes
             // If we're not choking the peer, enqueue the message right away
             if (!id.AmChoking) {
                 Interlocked.Increment (ref id.isRequestingPiecesCount);
-                id.MessageQueue.Enqueue (BtEncoder.WriteSparsePiece (message.PieceIndex, message.StartOffset, message.RequestLength));
+                id.MessageQueue.Enqueue (MessageEncoder.WriteSparsePiece (message.PieceIndex, message.StartOffset, message.RequestLength));
             }
 
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
@@ -417,9 +417,9 @@ namespace MonoTorrent.Client.Modes
             else if (id.SupportsFastPeer) {
                 if (id.AmAllowedFastPieces.Span.IndexOf (message.PieceIndex) != -1) {
                     Interlocked.Increment (ref id.isRequestingPiecesCount);
-                    id.MessageQueue.Enqueue (BtEncoder.WriteSparsePiece (message.PieceIndex, message.StartOffset, message.RequestLength));
+                    id.MessageQueue.Enqueue (MessageEncoder.WriteSparsePiece (message.PieceIndex, message.StartOffset, message.RequestLength));
                 } else {
-                    id.MessageQueue.Enqueue (BtEncoder.WriteRejectRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
+                    id.MessageQueue.Enqueue (MessageEncoder.WriteRejectRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
                 }
             }
         }
@@ -469,7 +469,7 @@ namespace MonoTorrent.Client.Modes
         protected void AppendExtendedHandshake (PeerId id)
         {
             if (id.SupportsLTMessages)
-                id.MessageQueue.Enqueue (BtEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, Manager.Torrent?.IsPrivate ?? false, Manager.Torrent != null ? Manager.Torrent.InfoMetadata.Length : (int?) null, Manager.Engine!.GetOverrideOrActualListenPort (id.Connection.Uri.Scheme)));
+                id.MessageQueue.Enqueue (MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, Manager.Torrent?.IsPrivate ?? false, Manager.Torrent != null ? Manager.Torrent.InfoMetadata.Length : (int?) null, Manager.Engine!.GetOverrideOrActualListenPort (id.Connection.Uri.Scheme)));
         }
 
         protected int AppendFastPieces (PeerId id)
@@ -480,7 +480,7 @@ namespace MonoTorrent.Client.Modes
                 var releaser = MemoryPool.Default.Rent (AllowedFastMessage.EncodedLength * id.AmAllowedFastPieces.Length, out var buffer);
                 var b = buffer.Span;
                 foreach (var fastPiece in id.AmAllowedFastPieces.Span)
-                    b = b.Slice (BtEncoder.WriteAllowedFast (b, fastPiece));
+                    b = b.Slice (MessageEncoder.WriteAllowedFast (b, fastPiece));
                 id.MessageQueue.Enqueue (buffer, releaser);
             }
             return 0;
@@ -490,15 +490,15 @@ namespace MonoTorrent.Client.Modes
         {
             if (id.SupportsFastPeer) {
                 if (Manager.Bitfield.AllFalse)
-                    id.MessageQueue.Enqueue (BtEncoder.WriteHaveNone ());
+                    id.MessageQueue.Enqueue (MessageEncoder.WriteHaveNone ());
 
                 else if (Manager.Bitfield.AllTrue)
-                    id.MessageQueue.Enqueue (BtEncoder.WriteHaveAll ());
+                    id.MessageQueue.Enqueue (MessageEncoder.WriteHaveAll ());
 
                 else
-                    id.MessageQueue.Enqueue (BtEncoder.WriteBitfield (Manager.Bitfield));
+                    id.MessageQueue.Enqueue (MessageEncoder.WriteBitfield (Manager.Bitfield));
             } else {
-                id.MessageQueue.Enqueue (BtEncoder.WriteBitfield (Manager.Bitfield));
+                id.MessageQueue.Enqueue (MessageEncoder.WriteBitfield (Manager.Bitfield));
             }
         }
 
@@ -533,7 +533,7 @@ namespace MonoTorrent.Client.Modes
                 // Send keepalives if needed.
                 if (id.LastMessageSent.Elapsed > ninetySeconds) {
                     id.LastMessageSent.Restart ();
-                    id.MessageQueue.Enqueue (BtEncoder.WriteKeepAlive ());
+                    id.MessageQueue.Enqueue (MessageEncoder.WriteKeepAlive ());
                 }
 
                 // Process any pending queues.
@@ -669,13 +669,13 @@ namespace MonoTorrent.Client.Modes
         {
             if (interesting && !id.AmInterested) {
                 id.AmInterested = true;
-                id.MessageQueue.Enqueue (BtEncoder.WriteInterested ());
+                id.MessageQueue.Enqueue (MessageEncoder.WriteInterested ());
 
                 // He's interesting, so attempt to queue up any FastPieces (if that's possible)
                 Manager.PieceManager.AddPieceRequests (id);
             } else if (!interesting && id.AmInterested) {
                 id.AmInterested = false;
-                id.MessageQueue.Enqueue (BtEncoder.WriteNotInterested ());
+                id.MessageQueue.Enqueue (MessageEncoder.WriteNotInterested ());
             }
         }
 
@@ -729,7 +729,7 @@ namespace MonoTorrent.Client.Modes
                 var b = buffer;
                 foreach (int pieceIndex in Manager.finishedPieces)
                     if (!Settings.AllowHaveSuppression || !peer.BitField[pieceIndex])
-                        b = b.Slice (BtEncoder.WriteHave (b.Span, pieceIndex));
+                        b = b.Slice (MessageEncoder.WriteHave (b.Span, pieceIndex));
 
                 buffer = buffer.Slice (0, buffer.Length - b.Length);
                 if (buffer.Length > 0)

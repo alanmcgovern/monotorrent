@@ -20,7 +20,7 @@ namespace MonoTorrent.Client
             var queue = new MessageQueue ();
             queue.SetReady ();
 
-            (var msg, var msgReleaser) = BtEncoder.WriteSparsePiece (0, 0, Constants.BlockSize);
+            (var msg, var msgReleaser) = MessageEncoder.WriteSparsePiece (0, 0, Constants.BlockSize);
 
             queue.Enqueue (msg, msgReleaser);
             queue.RejectRequests (true, new int[] { 0 });
@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
             var queue = new MessageQueue ();
             queue.SetReady ();
 
-            (var msg, var msgReleaser) = BtEncoder.WriteSparsePiece (0, 0, Constants.BlockSize);
+            (var msg, var msgReleaser) = MessageEncoder.WriteSparsePiece (0, 0, Constants.BlockSize);
             queue.Enqueue (msg, msgReleaser);
 
             queue.RejectRequests (true, new int[] { 1 });

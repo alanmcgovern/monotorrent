@@ -1278,7 +1278,7 @@ namespace MonoTorrent.Client
             var b = buffer;
             foreach (ref var segment in segments){
                 var block = segment.ToBlockInfo (this);
-                b = b.Slice (BtEncoder.WriteRequest (b.Span, block.PieceIndex, block.StartOffset, block.RequestLength));
+                b = b.Slice (MessageEncoder.WriteRequest (b.Span, block.PieceIndex, block.StartOffset, block.RequestLength));
             }
             ((PeerId) peer).MessageQueue.Enqueue (buffer, releaser);
         }
@@ -1286,7 +1286,7 @@ namespace MonoTorrent.Client
         void IMessageEnqueuer.EnqueueCancellation (IRequester peer, PieceSegment segment)
         {
             var blockInfo = segment.ToBlockInfo (this);
-            ((PeerId) peer).MessageQueue.Enqueue (BtEncoder.WriteCancel (blockInfo.PieceIndex, blockInfo.StartOffset, blockInfo.RequestLength));
+            ((PeerId) peer).MessageQueue.Enqueue (MessageEncoder.WriteCancel (blockInfo.PieceIndex, blockInfo.StartOffset, blockInfo.RequestLength));
         }
 
         void IMessageEnqueuer.EnqueueCancellations (IRequester peer, Span<PieceSegment> segments)

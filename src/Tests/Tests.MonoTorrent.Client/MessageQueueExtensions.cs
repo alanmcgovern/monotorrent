@@ -19,7 +19,7 @@ namespace MonoTorrent.Client
             if (supportsLTMetdata) {
                 peer.SupportsFastPeer = true;
                 peer.SupportsLTMessages = true;
-                peer.ExtensionSupports.Add (BtEncoder.Extended.MetadataExchangeSupport);
+                peer.ExtensionSupports.Add (MessageEncoder.Extended.MetadataExchangeSupport);
             }
             return peer;
         }

@@ -26,7 +26,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
             byte[] peer6 = IPAddress.Parse ("::1234:5678").GetAddressBytes ();
             byte[] peer6DotF = { 1 | 2 }; // 1 == encryption, 2 == seeder
 
-            (var message, var releaser) = BtEncoder.Extended.WritePeerExchange(BtEncoder.Extended.SupportedMessages, peer, peerDotF, default, peer6, peer6DotF, default);
+            (var message, var releaser) = MessageEncoder.Extended.WritePeerExchange(MessageEncoder.Extended.SupportedMessages, peer, peerDotF, default, peer6, peer6DotF, default);
 
             var m = new Extended.PeerExchangeMessage(message);
             Assert.IsTrue (peer.AsSpan ().SequenceEqual (m.Added), "#1");
@@ -39,7 +39,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         [Test]
         public void PeerExchangeMessageDecode_Empty ()
         {
-            (var data, var releaser) = BtEncoder.Extended.WritePeerExchange (BtEncoder.Extended.SupportedMessages, default, default, default, default, default, default);
+            (var data, var releaser) = MessageEncoder.Extended.WritePeerExchange (MessageEncoder.Extended.SupportedMessages, default, default, default, default, default, default);
             var message = new Extended.PeerExchangeMessage (data);
             Assert.IsTrue (message.Added.IsEmpty, "#1");
             Assert.IsTrue (message.AddedDotF.IsEmpty, "#2");

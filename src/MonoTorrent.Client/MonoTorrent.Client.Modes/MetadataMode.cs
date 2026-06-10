@@ -98,7 +98,7 @@ namespace MonoTorrent.Client.Modes
             void IMessageEnqueuer.EnqueueRequest (IRequester wrappedPeer, PieceSegment block)
             {
                 var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
-                var (message, releaser) = BtEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Request, block.BlockIndex, default);
+                var (message, releaser) = MessageEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Request, block.BlockIndex, default);
                 peer.MessageQueue.Enqueue (message, releaser);
             }
 
@@ -155,7 +155,7 @@ namespace MonoTorrent.Client.Modes
             PreLogicTick (counter);
 
             foreach (PeerId id in Manager.Peers.ConnectedPeers)
-                if (id.SupportsLTMessages && id.ExtensionSupports.Supports (BtEncoder.Extended.MetadataExchangeSupport.Name))
+                if (id.SupportsLTMessages && id.ExtensionSupports.Supports (MessageEncoder.Extended.MetadataExchangeSupport.Name))
                     RequestNextNeededPiece (id);
         }
 
@@ -294,7 +294,7 @@ namespace MonoTorrent.Client.Modes
         protected override void AppendBitfieldMessage (PeerId id)
         {
             if (id.SupportsFastPeer) {
-                id.MessageQueue.Enqueue (BtEncoder.WriteHaveNone ());
+                id.MessageQueue.Enqueue (MessageEncoder.WriteHaveNone ());
             }
             // If the fast peer extensions are not supported we must not send a
             // bitfield message because we don't know how many pieces the torrent
@@ -324,7 +324,7 @@ namespace MonoTorrent.Client.Modes
         {
             base.HandleMessage (id, message);
 
-            if (id.ExtensionSupports.Supports (BtEncoder.Extended.MetadataExchangeSupport.Name)) {
+            if (id.ExtensionSupports.Supports (MessageEncoder.Extended.MetadataExchangeSupport.Name)) {
                 var metadataSize = message.MetadataBytes.GetValueOrDefault (0);
                 if (Stream == null && metadataSize > 0) {
                     Stream = new byte[metadataSize];

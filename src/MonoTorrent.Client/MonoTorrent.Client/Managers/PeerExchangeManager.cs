@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
                 (added6, added6DotF, dropped6, memoryReleaser) = Populate (18, MAX_PEERS, addedPeers, droppedPeers);
             }
 
-            PeerId.MessageQueue.Enqueue (BtEncoder.Extended.WritePeerExchange (PeerId.ExtensionSupports, added.Span, addedDotF.Span, dropped.Span, added6.Span, added6DotF.Span, dropped6.Span));
+            PeerId.MessageQueue.Enqueue (MessageEncoder.Extended.WritePeerExchange (PeerId.ExtensionSupports, added.Span, addedDotF.Span, dropped.Span, added6.Span, added6DotF.Span, dropped6.Span));
             memoryReleaser.Dispose ();
         }
 

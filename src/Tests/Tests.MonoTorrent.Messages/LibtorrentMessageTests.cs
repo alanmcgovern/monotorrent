@@ -43,10 +43,10 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         [Test]
         public void HandshakeSupportsTest ()
         {
-            (var encoded, var releaser) = BtEncoder.Extended.WriteHandshake(GitInfoHelper.ClientVersionMemory, false, 1234, 5555);
+            (var encoded, var releaser) = MessageEncoder.Extended.WriteHandshake(GitInfoHelper.ClientVersionMemory, false, 1234, 5555);
 
             var m = new Extended.HandshakeMessage (encoded);
-            var supports = BtEncoder.Extended.SupportedMessages.ToList ();
+            var supports = MessageEncoder.Extended.SupportedMessages.ToList ();
             BEncodeReader reader = new BEncodeReader (m.Mappings.Span);
             reader.ExpectDictionaryBegin ();
             while(reader.TryReadKey (out var key)) {
@@ -62,11 +62,11 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         [Test]
         public void HandshakeSupportsTest_Private ()
         {
-            (var encoded, var releaser) = BtEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, true, 123, 5555);
+            (var encoded, var releaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, true, 123, 5555);
 
             var m = new Extended.HandshakeMessage (encoded);
-            var supports = BtEncoder.Extended.SupportedMessages.ToList ();
-            supports.Remove (BtEncoder.Extended.PeerExchangeSupport);
+            var supports = MessageEncoder.Extended.SupportedMessages.ToList ();
+            supports.Remove (MessageEncoder.Extended.PeerExchangeSupport);
 
             BEncodeReader reader = new BEncodeReader (m.Mappings.Span);
             reader.ExpectDictionaryBegin ();

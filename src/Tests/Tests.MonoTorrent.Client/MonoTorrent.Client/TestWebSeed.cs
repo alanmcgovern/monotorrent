@@ -45,7 +45,6 @@ using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.PiecePicking;
-using MonoTorrent.Messages;
 
 using NUnit.Framework;
 

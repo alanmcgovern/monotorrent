@@ -133,7 +133,7 @@ namespace MonoTorrent.Client
                     else {
                         rejectedCount++;
                         SendQueue[i].releaser.Dispose ();
-                        SendQueue[i] = (BtEncoder.WriteRejectRequest (msg.PieceIndex, msg.StartOffset, msg.RequestLength));
+                        SendQueue[i] = (MessageEncoder.WriteRejectRequest (msg.PieceIndex, msg.StartOffset, msg.RequestLength));
                     }
                 }
                 return rejectedCount;

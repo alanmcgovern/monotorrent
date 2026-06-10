@@ -68,7 +68,7 @@ namespace MonoTorrent.Messages.Peer
                                        true, true, false, false, true, false, false, true, true, false };
 
             Assert.AreEqual (data.Length, (int) Math.Ceiling ((double) torrentData.TorrentInfo.Size / torrentData.TorrentInfo.PieceLength), "#0");
-            (ReadOnlyMemory<byte> encoded, var releaser) = BtEncoder.WriteBitfield(new ReadOnlyBitField (data));
+            (ReadOnlyMemory<byte> encoded, var releaser) = MessageEncoder.WriteBitfield(new ReadOnlyBitField (data));
 
             BitfieldMessage m = new BitfieldMessage(encoded);
             var bitfield = new BitField (m.BitField, torrentData.TorrentInfo.PieceCount ());
@@ -99,14 +99,14 @@ namespace MonoTorrent.Messages.Peer
         [Test]
         public void CancelEncoding ()
         {
-            int length = BtEncoder.WriteCancel (buffer.AsSpan (offset), 15, 1024, 16384);
+            int length = MessageEncoder.WriteCancel (buffer.AsSpan (offset), 15, 1024, 16384);
             Assert.AreEqual ("00-00-00-0D-08-00-00-00-0F-00-00-04-00-00-00-40-00", BitConverter.ToString (buffer, offset, length));
         }
 
         [Test]
         public void ChokeEncoding ()
         {
-            int length = BtEncoder.WriteChoke(buffer.AsSpan(offset));
+            int length = MessageEncoder.WriteChoke(buffer.AsSpan(offset));
             Assert.AreEqual ("00-00-00-01-00", BitConverter.ToString (buffer, offset, length));
         }
 
@@ -114,7 +114,7 @@ namespace MonoTorrent.Messages.Peer
         public void HandshakeEncoding ()
         {
             byte[] infohash = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
-            int length = BtEncoder.WriteHandshake (buffer.AsSpan (offset), infohash.AsSpan (), "12312312345645645678"u8, false, false, false);
+            int length = MessageEncoder.WriteHandshake (buffer.AsSpan (offset), infohash.AsSpan (), "12312312345645645678"u8, false, false, false);
 
             byte[] peerId = Encoding.ASCII.GetBytes ("12312312345645645678");
             byte[] protocolVersion = Encoding.ASCII.GetBytes (Constants.ProtocolStringV100);
@@ -125,28 +125,28 @@ namespace MonoTorrent.Messages.Peer
             Assert.IsTrue (peerId.AsSpan ().SequenceEqual (buffer.AsSpan (offset + 48, 20)), "5");
             Assert.AreEqual (length, HandshakeMessage.HandshakeLength, "6");
 
-            length = BtEncoder.WriteHandshake (buffer.AsSpan (offset), infohash, "12312312345645645678"u8, true, false, false);
+            length = MessageEncoder.WriteHandshake (buffer.AsSpan (offset), infohash, "12312312345645645678"u8, true, false, false);
             Assert.AreEqual (BitConverter.ToString (buffer, offset, length), "13-42-69-74-54-6F-72-72-65-6E-74-20-70-72-6F-74-6F-63-6F-6C-00-00-00-00-00-00-00-04-01-02-03-04-05-06-07-08-09-0A-0B-0C-0D-0E-0F-00-0C-0F-0C-34-31-32-33-31-32-33-31-32-33-34-35-36-34-35-36-34-35-36-37-38", "#7");
         }
 
         [Test]
         public void HaveEncoding ()
         {
-            int length = BtEncoder.WriteHave (buffer.AsSpan (offset), 150);
+            int length = MessageEncoder.WriteHave (buffer.AsSpan (offset), 150);
             Assert.AreEqual ("00-00-00-05-04-00-00-00-96", BitConverter.ToString (buffer, offset, length));
         }
         
         [Test]
         public void InterestedEncoding ()
         {
-            int length = BtEncoder.WriteInterested (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteInterested (buffer.AsSpan (offset));
             Assert.AreEqual ("00-00-00-01-02", BitConverter.ToString (buffer, offset, length));
         }
 
         [Test]
         public void KeepAliveEncoding ()
         {
-            BtEncoder.WriteKeepAlive (buffer.AsSpan (offset));
+            MessageEncoder.WriteKeepAlive (buffer.AsSpan (offset));
             Assert.IsTrue (buffer[offset] == 0
                             && buffer[offset + 1] == 0
                             && buffer[offset + 2] == 0
@@ -156,7 +156,7 @@ namespace MonoTorrent.Messages.Peer
         [Test]
         public void NotInterestedEncoding ()
         {
-            int length = BtEncoder.WriteNotInterested(buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteNotInterested(buffer.AsSpan (offset));
             Assert.AreEqual ("00-00-00-01-03", BitConverter.ToString (buffer, offset, length));
         }
        
@@ -166,8 +166,8 @@ namespace MonoTorrent.Messages.Peer
             Span<byte> data = new byte[Constants.BlockSize];
             data.Fill (byte.MaxValue);
 
-            (var buffer, var releaser) = BtEncoder.WriteSparsePiece (15, 10, data.Length);
-            BtEncoder.AppendPieceData (buffer, data);
+            (var buffer, var releaser) = MessageEncoder.WriteSparsePiece (15, 10, data.Length);
+            MessageEncoder.AppendPieceData (buffer, data);
 
             var decoded = new PieceMessage (buffer);
             Assert.AreEqual (15, decoded.PieceIndex);
@@ -183,14 +183,14 @@ namespace MonoTorrent.Messages.Peer
         [Test]
         public void PortEncoding ()
         {
-            int length = BtEncoder.WritePort (buffer.AsSpan (offset), 2500);
+            int length = MessageEncoder.WritePort (buffer.AsSpan (offset), 2500);
             Assert.AreEqual ("00-00-00-03-09-09-C4", BitConverter.ToString (buffer, offset, length));
         }
 
         [Test]
         public void RequestEncoding ()
         {
-            int length = BtEncoder.WriteRequest (buffer.AsSpan (offset), 5, 1024, 16384);
+            int length = MessageEncoder.WriteRequest (buffer.AsSpan (offset), 5, 1024, 16384);
             Assert.AreEqual ("00-00-00-0D-06-00-00-00-05-00-00-04-00-00-00-40-00", BitConverter.ToString (buffer, offset, length));
         }
 
@@ -198,7 +198,7 @@ namespace MonoTorrent.Messages.Peer
         [Test]
         public void UnchokeEncoding ()
         {
-            int length = BtEncoder.WriteUnchoke(buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteUnchoke(buffer.AsSpan (offset));
             Assert.AreEqual ("00-00-00-01-01", BitConverter.ToString (buffer, offset, length));
         }
     }

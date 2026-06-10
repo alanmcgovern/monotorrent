@@ -34,7 +34,6 @@ using System.Threading.Tasks;
 using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -66,7 +65,7 @@ namespace MonoTorrent.Client
             );
 
             var bf = new BitField (torrentData.PieceCount).Set (1, true);
-            (var message, var releaser) = BtEncoder.WriteBitfield(bf);
+            (var message, var releaser) = MessageEncoder.WriteBitfield(bf);
 
             await NetworkIO.SendAsync (pair.Outgoing, message);
             var receivedMessage = await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance, null, null, null, torrentData);
@@ -105,12 +104,12 @@ namespace MonoTorrent.Client
         {
             using var releaser = MemoryPool.Default.Rent (4, out Memory<byte> buffer);
 
-            BtEncoder.WriteKeepAlive (buffer.Span);
+            MessageEncoder.WriteKeepAlive (buffer.Span);
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
             var received = await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
             Assert.IsTrue (received.Length == 4 && BinaryPrimitives.ReadUInt32BigEndian (received.Span) == 0);
 
-            BtEncoder.WriteKeepAlive (buffer.Span);
+            MessageEncoder.WriteKeepAlive (buffer.Span);
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
             received = await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
             Assert.IsTrue (received.Length == 4 && BinaryPrimitives.ReadUInt32BigEndian (received.Span) == 0);
@@ -120,7 +119,7 @@ namespace MonoTorrent.Client
         public void IgnoreNullMonitors ()
         {
             var blockSize = Constants.BlockSize - 1234;
-            (var msg, var releaser) = BtEncoder.WriteSparsePiece (0, 0, blockSize);
+            (var msg, var releaser) = MessageEncoder.WriteSparsePiece (0, 0, blockSize);
             // FIXME StructMessages: is the data prefilled?
 
             Assert.DoesNotThrowAsync (() => {
@@ -135,7 +134,7 @@ namespace MonoTorrent.Client
         public async Task CountPieceMessageBlockLengthAsData ()
         {
             var blockSize = Constants.BlockSize - 1234;
-            (var msg, var releaser) = BtEncoder.WriteSparsePiece(0, 0, blockSize);
+            (var msg, var releaser) = MessageEncoder.WriteSparsePiece(0, 0, blockSize);
             // FIXME StructMessages: is the data prefilled?
 
             var headerBuffer = new byte[4];

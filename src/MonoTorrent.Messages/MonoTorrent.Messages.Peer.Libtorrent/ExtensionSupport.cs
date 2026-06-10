@@ -52,7 +52,7 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         {
             MessageId = messageId;
 
-            foreach (var v in BtEncoder.Extended.SupportedMessages) {
+            foreach (var v in MessageEncoder.Extended.SupportedMessages) {
                 if (v.NameUtf8.SequenceEqual (name)) {
                     Name = v.Name;
                     nameUtf8 = v.nameUtf8;

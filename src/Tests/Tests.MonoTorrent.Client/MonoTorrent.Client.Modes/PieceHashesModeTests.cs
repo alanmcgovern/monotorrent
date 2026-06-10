@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.Modes
             (var engine, var manager, var layers) = await CreateTorrent (V2OnlyTorrentPath);
             var pieceHashesMode = new PieceHashesMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
-            (var handshake, var releaser) = BtEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, manager.Torrent.InfoMetadata.Length, 12345);
+            (var handshake, var releaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, manager.Torrent.InfoMetadata.Length, 12345);
             pieceHashesMode.HandleMessage (peer, new Extended.HandshakeMessage(handshake));
             while (!manager.PendingV2PieceHashes.AllFalse && manager.PieceHashes.Count == 0 && !manager.PieceHashes.HasV2Hashes) {
                 pieceHashesMode.Tick (0);
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client.Modes
             Memory<byte> totalBuffer = new byte[(hashRequest.Length + hashRequest.ProofLayers) * 32];
             Assert.IsTrue (layers.TryGetV2Hashes (new MerkleRoot (hashRequest.PiecesRoot), hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Span, out int bytesWritten));
 
-            (var msg, var releaser) = BtEncoder.WriteHashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Slice (0, bytesWritten).Span);
+            (var msg, var releaser) = MessageEncoder.WriteHashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Slice (0, bytesWritten).Span);
             return new HashesMessage (msg);
         }
     }
