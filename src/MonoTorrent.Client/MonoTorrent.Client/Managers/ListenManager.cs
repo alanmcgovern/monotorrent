@@ -110,8 +110,10 @@ namespace MonoTorrent.Client
 
                 var supportedEncryptions = Engine.Settings.AllowedEncryption;
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckIncomingConnectionAsync (e.Connection, supportedEncryptions, SKeys, Engine.Factories, Engine.Settings.ConnectionTimeout);
-                if (!await HandleHandshake (peerInfo, e.Connection, new HandshakeMessage (result.Handshake), result.Decryptor, result.Encryptor))
-                    e.Connection.Dispose ();
+                using (result.Releaser) {
+                    if (!await HandleHandshake (peerInfo, e.Connection, new HandshakeMessage (result.Handshake), result.Decryptor, result.Encryptor))
+                        e.Connection.Dispose ();
+                }
             } catch (Exception ex) {
                 logger.Exception (e.Connection, ex, "Unexpected failure handling incoming connection");
                 e.Connection.Dispose ();

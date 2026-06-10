@@ -73,7 +73,7 @@ namespace MonoTorrent
 
             var pieceHashesV2 = new PieceHashesV2 (Constants.BlockSize * 4, files, new BEncodedDictionary ());
             var hash = pieceHashesV2.GetHash (0);
-            Assert.IsTrue (files[1].PiecesRoot.AsMemory ().Span.SequenceEqual (hash.V2Hash.Span));
+            Assert.IsTrue (files[1].PiecesRoot.Span.SequenceEqual (hash.V2Hash.Span));
             Assert.IsTrue (hash.V1Hash.IsEmpty);
         }
 

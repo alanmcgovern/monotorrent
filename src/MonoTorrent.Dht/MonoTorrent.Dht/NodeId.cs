@@ -39,13 +39,13 @@ namespace MonoTorrent.Dht
 {
     readonly struct NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
-        [InlineArray (20)]
+        const int StorageLength = 20;
+        [InlineArray (StorageLength)]
         struct Storage
         {
             internal byte _element;
         }
         readonly Storage _data;
-
 
         internal static readonly NodeId Minimum = new NodeId ((ReadOnlySpan<byte>) new byte[20]);
         internal static readonly NodeId Maximum = new NodeId ((ReadOnlySpan<byte>) Enumerable.Repeat ((byte) 255, 20).ToArray ());
@@ -58,7 +58,7 @@ namespace MonoTorrent.Dht
         }
 
         public ReadOnlySpan<byte> Span
-            => MemoryMarshal.CreateReadOnlySpan (ref Unsafe.AsRef (in _data._element), 20);
+            => MemoryMarshal.CreateReadOnlySpan (in _data._element, StorageLength);
 
         internal NodeId (BigEndianBigInteger value)
         {

@@ -76,6 +76,8 @@ namespace MonoTorrent.Messages
 
     public readonly ref struct HaveMessage
     {
+        public static readonly int EncodedLength = 9;
+
         private readonly ReadOnlyMemory<byte> _memory;
         public HaveMessage (ReadOnlyMemory<byte> memory) => _memory = memory;
 
@@ -112,7 +114,11 @@ namespace MonoTorrent.Messages
 
     public readonly ref struct PieceMessage
     {
+        public static int EncodedLength (int requestLength)
+            => 13 + requestLength;
+
         private readonly ReadOnlyMemory<byte> _memory;
+
         public PieceMessage (ReadOnlyMemory<byte> memory) => _memory = memory;
 
         private ReadOnlySpan<byte> Span => _memory.Span;
@@ -127,7 +133,7 @@ namespace MonoTorrent.Messages
             => Span.Slice (DataOffset);
 
         public int DataOffset
-            => 13;
+            => EncodedLength (0);
 
         public int RequestLength =>
             Data.Length;
@@ -480,10 +486,10 @@ namespace MonoTorrent.Messages
         {
             internal static readonly ExtensionSupports SupportedMessages;
 
-            public static readonly ExtensionSupport HandshakeSupport = new ExtensionSupport ("LT_handshake"u8.ToArray (), "LT_handshake", (byte) ExtendedMessageType.Handshake);
-            public static readonly ExtensionSupport PeerExchangeSupport = new ExtensionSupport ("ut_pex"u8.ToArray (), "ut_pex", (byte) ExtendedMessageType.PeerExchange);
-            public static readonly ExtensionSupport MetadataExchangeSupport = new ExtensionSupport ("ut_metadata"u8.ToArray (), "ut_metadata", (byte) ExtendedMessageType.Metadata);
-            public static readonly ExtensionSupport ChatSupport = new ExtensionSupport ("LT_chat"u8.ToArray (), "LT_chat", (byte) ExtendedMessageType.Chat);
+            public static readonly ExtensionSupport HandshakeSupport = new ExtensionSupport ("LT_handshake", (byte) ExtendedMessageType.Handshake);
+            public static readonly ExtensionSupport PeerExchangeSupport = new ExtensionSupport ("ut_pex", (byte) ExtendedMessageType.PeerExchange);
+            public static readonly ExtensionSupport MetadataExchangeSupport = new ExtensionSupport ("ut_metadata", (byte) ExtendedMessageType.Metadata);
+            public static readonly ExtensionSupport ChatSupport = new ExtensionSupport ("LT_chat", (byte) ExtendedMessageType.Chat);
 
             static Extended ()
             {

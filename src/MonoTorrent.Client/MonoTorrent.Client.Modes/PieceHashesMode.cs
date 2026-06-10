@@ -94,8 +94,7 @@ namespace MonoTorrent.Client.Modes
             void IMessageEnqueuer.EnqueueRequest (IRequester wrappedPeer, PieceSegment block)
             {
                 var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
-                (var message, var releaser) = BtEncoder.WritePieceHashesFromPieceLayer (File.PiecesRoot, File.PieceCount, actualPieceLength, block.PieceIndex * PieceLength, PieceLength);
-                peer.MessageQueue.Enqueue (message, releaser);
+                peer.MessageQueue.Enqueue (BtEncoder.WritePieceHashesFromPieceLayer (File.PiecesRoot, File.PieceCount, actualPieceLength, block.PieceIndex * PieceLength, PieceLength));
             }
 
             void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
@@ -247,7 +246,7 @@ namespace MonoTorrent.Client.Modes
                 var path = Settings.GetV2HashesPath (Manager.InfoHashes);
                 var data = new BEncodedDictionary ();
                 foreach (var kvp in actualMerkleLayers)
-                    data[BEncodedString.FromMemory (kvp.Key.AsMemory ())] = BEncodedString.FromMemory (kvp.Value.GetHashes (kvp.Value.PieceLayerIndex));
+                    data[new BEncodedString (kvp.Key.Span)] = BEncodedString.FromMemory (kvp.Value.GetHashes (kvp.Value.PieceLayerIndex));
                 Directory.CreateDirectory (Path.GetDirectoryName (path)!);
                 File.WriteAllBytes (path, data.Encode ());
 

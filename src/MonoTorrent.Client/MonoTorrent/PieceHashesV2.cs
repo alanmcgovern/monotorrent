@@ -88,7 +88,7 @@ namespace MonoTorrent
                 // Otherwise, if the file is *exactly* one piece long 'PiecesRoot' is the hash!
                 if (Files[i].EndPieceIndex != Files[i].StartPieceIndex)
                     throw new InvalidOperationException ("The file has two or more pieces but is missing the required piece layers");
-                return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, Files[i].PiecesRoot.AsMemory ());
+                return new ReadOnlyPieceHash (ReadOnlyMemory<byte>.Empty, Files[i].PiecesRoot.Span.ToArray ());
             }
             throw new InvalidOperationException ("Requested a piece which does not exist");
         }

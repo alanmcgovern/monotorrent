@@ -41,9 +41,9 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         public ReadOnlySpan<byte> NameUtf8 => nameUtf8.Span;
         public string Name { get; }
 
-        public ExtensionSupport(ReadOnlyMemory<byte> nameUtf8, string name, byte messageId)
+        internal ExtensionSupport(string name, byte messageId)
         {
-            this.nameUtf8 = nameUtf8;
+            nameUtf8 = Encoding.UTF8.GetBytes (name);
             Name = name;
             MessageId = messageId;
         }

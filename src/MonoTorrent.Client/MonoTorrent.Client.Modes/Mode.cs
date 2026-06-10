@@ -139,16 +139,16 @@ namespace MonoTorrent.Client.Modes
             }
         }
 
-        public virtual void HandleMessage (PeerId id, KeepAliveMessage hashesMessage)
+        public virtual void HandleMessage (PeerId id, KeepAliveMessage message)
         {
-            id.LastMessageReceived.Restart ();
+            // Every message automatically resets the 'last message received' timer, so do nothing here.
         }
 
-        public virtual void HandleMessage (PeerId id, HashesMessage hashesMessage)
+        public virtual void HandleMessage (PeerId id, HashesMessage message)
         {
         }
 
-        public virtual void HandleMessage (PeerId id, HashRejectMessage hashRejectMessage)
+        public virtual void HandleMessage (PeerId id, HashRejectMessage message)
         {
         }
 
@@ -181,22 +181,18 @@ namespace MonoTorrent.Client.Modes
                 for (int i = 0; i < newPeers2.Count && i < message.Added6DotF.Length; i++)
                     newPeers2[i] = new PeerInfo (newPeers2[i].ConnectionUri, newPeers2[i].PeerId, (message.Added6DotF[i] & 0x2) == 0x2);
 
-                DoAdd ();
-                async void DoAdd ()
-                {
-                    int count = await Manager.AddPeersAsync (newPeers) + await Manager.AddPeersAsync (newPeers2);
-                    Manager.RaisePeersFound (new PeerExchangePeersAdded (Manager, count, newPeers.Count + newPeers2.Count, id));
-                }
+                int count = Manager.AddPeers (newPeers, prioritise: true, fromTracker: false) + Manager.AddPeers (newPeers2, prioritise: true, fromTracker: false);
+                Manager.RaisePeersFound (new PeerExchangePeersAdded (Manager, count, newPeers.Count + newPeers2.Count, id));
             }
         }
 
         public virtual void HandleMessage (PeerId id, Extended.MetadataMessage message)
         {
             if (message.MessageType == Extended.MetadataMessage.MetadataMessageType.Request) {
-                (var msg, var releaser) = Manager.HasMetadata
+                id.MessageQueue.Enqueue (Manager.HasMetadata
                     ? BtEncoder.Extended.WriteMetadata (id.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, message.Piece, Manager.Torrent!.InfoMetadata.Span)
-                    : BtEncoder.Extended.WriteMetadata (id.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Reject, message.Piece, default);
-                id.MessageQueue.Enqueue (msg, releaser);
+                    : BtEncoder.Extended.WriteMetadata (id.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Reject, message.Piece, default)
+                );
             }
         }
 
@@ -284,7 +280,6 @@ namespace MonoTorrent.Client.Modes
             else
                 logger.InfoFormatted (id.Connection, "Invalid value for libtorrent extension handshake 'MaxRequests' {0}", message.MaxRequests.GetValueOrDefault (int.MinValue));
 
-            // FIXME StructMessages: Intern these keys?
             var supports = new ExtensionSupports ();
             var reader = new BEncodeReader (message.Mappings.Span);
             reader.ExpectDictionaryBegin ();
@@ -312,7 +307,7 @@ namespace MonoTorrent.Client.Modes
                 => Clear ();
         }
 
-        public virtual void HandleMessage (PeerId id, PieceMessage message)
+        public void HandleMessage (PeerId id, PieceMessage message)
         {
             id.PiecesReceived++;
             var peersInvolved = PeersInvolvedCache.Dequeue ();
@@ -414,8 +409,7 @@ namespace MonoTorrent.Client.Modes
             // If we're not choking the peer, enqueue the message right away
             if (!id.AmChoking) {
                 Interlocked.Increment (ref id.isRequestingPiecesCount);
-                (var m, var releaser) = BtEncoder.WriteSparsePiece (message.PieceIndex, message.StartOffset, message.RequestLength);
-                id.MessageQueue.Enqueue (m, releaser);
+                id.MessageQueue.Enqueue (BtEncoder.WriteSparsePiece (message.PieceIndex, message.StartOffset, message.RequestLength));
             }
 
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
@@ -423,11 +417,9 @@ namespace MonoTorrent.Client.Modes
             else if (id.SupportsFastPeer) {
                 if (id.AmAllowedFastPieces.Span.IndexOf (message.PieceIndex) != -1) {
                     Interlocked.Increment (ref id.isRequestingPiecesCount);
-                    (var m, var releaser) = BtEncoder.WriteSparsePiece (message.PieceIndex, message.StartOffset, message.RequestLength);
-                    id.MessageQueue.Enqueue (m, releaser);
+                    id.MessageQueue.Enqueue (BtEncoder.WriteSparsePiece (message.PieceIndex, message.StartOffset, message.RequestLength));
                 } else {
-                    (var m, var releaser) = BtEncoder.WriteRejectRequest (message.PieceIndex, message.StartOffset, message.RequestLength);
-                    id.MessageQueue.Enqueue (m, releaser);
+                    id.MessageQueue.Enqueue (BtEncoder.WriteRejectRequest (message.PieceIndex, message.StartOffset, message.RequestLength));
                 }
             }
         }
@@ -484,7 +476,7 @@ namespace MonoTorrent.Client.Modes
         {
             // Now we will enqueue a FastPiece message for each piece we will allow the peer to download
             // even if they are choked
-            if (id.SupportsFastPeer) {
+            if (id.SupportsFastPeer && id.AmAllowedFastPieces.Length > 0) {
                 var releaser = MemoryPool.Default.Rent (AllowedFastMessage.EncodedLength * id.AmAllowedFastPieces.Length, out var buffer);
                 var b = buffer.Span;
                 foreach (var fastPiece in id.AmAllowedFastPieces.Span)
@@ -541,8 +533,7 @@ namespace MonoTorrent.Client.Modes
                 // Send keepalives if needed.
                 if (id.LastMessageSent.Elapsed > ninetySeconds) {
                     id.LastMessageSent.Restart ();
-                    (var msg, var releaser) = BtEncoder.WriteKeepAlive ();
-                    id.MessageQueue.Enqueue (msg, releaser);
+                    id.MessageQueue.Enqueue (BtEncoder.WriteKeepAlive ());
                 }
 
                 // Process any pending queues.
@@ -678,15 +669,13 @@ namespace MonoTorrent.Client.Modes
         {
             if (interesting && !id.AmInterested) {
                 id.AmInterested = true;
-                (var msg, var releaser) = BtEncoder.WriteInterested ();
-                id.MessageQueue.Enqueue (msg, releaser);
+                id.MessageQueue.Enqueue (BtEncoder.WriteInterested ());
 
                 // He's interesting, so attempt to queue up any FastPieces (if that's possible)
                 Manager.PieceManager.AddPieceRequests (id);
             } else if (!interesting && id.AmInterested) {
                 id.AmInterested = false;
-                (var msg, var releaser) = BtEncoder.WriteNotInterested ();
-                id.MessageQueue.Enqueue (msg, releaser);
+                id.MessageQueue.Enqueue (BtEncoder.WriteNotInterested ());
             }
         }
 
@@ -736,8 +725,7 @@ namespace MonoTorrent.Client.Modes
             lastSendHaveMessage = ValueStopwatch.StartNew ();
 
             foreach (PeerId peer in Manager.Peers.ConnectedPeers) {
-                // FIXME StructMessages: don't hardcode size of 9 bytes
-                var releaser = MemoryPool.Default.Rent (9 * Manager.finishedPieces.Count, out var buffer);
+                var releaser = MemoryPool.Default.Rent (HaveMessage.EncodedLength * Manager.finishedPieces.Count, out var buffer);
                 var b = buffer;
                 foreach (int pieceIndex in Manager.finishedPieces)
                     if (!Settings.AllowHaveSuppression || !peer.BitField[pieceIndex])

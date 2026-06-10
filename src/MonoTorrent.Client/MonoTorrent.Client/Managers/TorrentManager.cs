@@ -1286,8 +1286,7 @@ namespace MonoTorrent.Client
         void IMessageEnqueuer.EnqueueCancellation (IRequester peer, PieceSegment segment)
         {
             var blockInfo = segment.ToBlockInfo (this);
-            (var msg, var releaser) = BtEncoder.WriteCancel(blockInfo.PieceIndex, blockInfo.StartOffset, blockInfo.RequestLength);
-            ((PeerId) peer).MessageQueue.Enqueue (msg, releaser);
+            ((PeerId) peer).MessageQueue.Enqueue (BtEncoder.WriteCancel (blockInfo.PieceIndex, blockInfo.StartOffset, blockInfo.RequestLength));
         }
 
         void IMessageEnqueuer.EnqueueCancellations (IRequester peer, Span<PieceSegment> segments)

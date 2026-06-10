@@ -25,10 +25,6 @@ namespace MonoTorrent
 
             Assert.IsTrue (allOnes () == allOnes ());
             Assert.IsFalse (allOnes () != allOnes ());
-
-            Assert.IsFalse (allZeros () == MerkleRoot.Empty);
-            Assert.IsFalse (allOnes () == MerkleRoot.Empty);
-            Assert.IsTrue (MerkleRoot.Empty == MerkleRoot.Empty);
         }
     }
 }

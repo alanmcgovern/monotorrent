@@ -64,8 +64,7 @@ namespace MonoTorrent.Connections.Peer
             public HttpRequestData (BlockInfo blockInfo)
             {
                 BlockInfo = blockInfo;
-                // FIXME StructMessages: don't hardcode message sizes?
-                TotalToReceive = 13 + BlockInfo.RequestLength;
+                TotalToReceive = PieceMessage.EncodedLength (BlockInfo.RequestLength);
             }
         }
         class ZeroStream : Stream

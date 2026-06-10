@@ -90,19 +90,12 @@ namespace MonoTorrent.Client
 
         internal void EnqueueAt (int index, Memory<byte> message, ByteBufferPool.Releaser releaser)
         {
-            var checker = message;
-            while (checker.Length > 0) {
-                checker = MessageDispatcher.NextMessage (checker);
-            }
+            if (Disposed)
+                throw new ObjectDisposedException (nameof (MessageQueue));
+            // the engine should never enqueue an empty message.
             if (message.Length == 0)
                 throw new InvalidOperationException ();
 
-            if (checker.Length != 0)
-                throw new InvalidCastException ();
-            if (Disposed)
-                throw new ObjectDisposedException (nameof (MessageQueue));
-            if (message.Length == 0)
-                throw new NotSupportedException ();
             lock (SendQueue) {
                 if (SendQueue.Count == 0 || index >= SendQueue.Count) {
                     SendQueue.Add ((message, releaser));
@@ -140,9 +133,7 @@ namespace MonoTorrent.Client
                     else {
                         rejectedCount++;
                         SendQueue[i].releaser.Dispose ();
-
-                        (var buffer, var releaser) = BtEncoder.WriteRejectRequest (msg.PieceIndex, msg.StartOffset, msg.RequestLength);
-                        SendQueue[i] = (buffer, releaser);
+                        SendQueue[i] = (BtEncoder.WriteRejectRequest (msg.PieceIndex, msg.StartOffset, msg.RequestLength));
                     }
                 }
                 return rejectedCount;

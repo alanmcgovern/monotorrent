@@ -49,10 +49,7 @@ namespace MonoTorrent.Client.Modes
 
         protected override void AppendBitfieldMessage (PeerId id)
         {
-            (var msg, var releaser) = id.SupportsFastPeer
-                ? BtEncoder.WriteHaveNone ()
-                : BtEncoder.WriteBitfield (zero);
-            id.MessageQueue.Enqueue (msg, releaser);
+            id.MessageQueue.Enqueue (id.SupportsFastPeer ? BtEncoder.WriteHaveNone () : BtEncoder.WriteBitfield (zero));
         }
 
         public override void HandleMessage (PeerId id, HaveMessage message)

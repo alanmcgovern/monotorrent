@@ -728,7 +728,7 @@ namespace MonoTorrent
                 } else {
                     totalPieces++;
                     var offsetInTorrent = (files.LastOrDefault ()?.OffsetInTorrent ?? 0) + (files.LastOrDefault ()?.Length ?? 0) + (files.LastOrDefault ()?.Padding ?? 0);
-                    var piecesRoot = data.TryGetValue (Cache.PiecesRoot, out var value) ? MerkleRoot.FromMemory (((BEncodedString) value).AsMemory ()) : MerkleRoot.Empty;
+                    var piecesRoot = data.TryGetValue (Cache.PiecesRoot, out var value) ? MerkleRoot.FromMemory (((BEncodedString) value).AsMemory ()) : new MerkleRoot ();
 
                     // A v2 only torrent *never* has padding. However, a hybrid v1/v2 torrent
                     // will *always* have padding as the v1 metadata will have padding files.

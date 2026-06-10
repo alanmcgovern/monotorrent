@@ -108,7 +108,7 @@ namespace MonoTorrent
         public TorrentFileAttributes Attributes { get; }
 
         internal TorrentFile (string path, long length, int startIndex, int endIndex, long offsetInTorrent, TorrentFileAttributes attributes, long padding)
-            : this (path, length, startIndex, endIndex, offsetInTorrent, MerkleRoot.Empty, attributes, padding)
+            : this (path, length, startIndex, endIndex, offsetInTorrent, new MerkleRoot (), attributes, padding)
         {
         }
 

@@ -116,23 +116,23 @@ namespace MonoTorrent.Client
         public void ReplicateMerkleTree_OptimalChunks_27551708 ()
         {
             const int PieceLength = 4 * 1024 * 1024;
-            var msg = BtEncoder.WritePieceHashesFromPieceLayer (MerkleRoot.Empty, 7, PieceLength, 0, null);
-            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (MerkleRoot.Empty.Span, 8, 0, 8, 2).message.Span));
+            var msg = BtEncoder.WritePieceHashesFromPieceLayer (new MerkleRoot (), 7, PieceLength, 0, null);
+            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (new MerkleRoot ().Span, 8, 0, 8, 2).message.Span));
 
-            msg = BtEncoder.WritePieceHashesFromPieceLayer (MerkleRoot.Empty, 22, PieceLength, 0, null);
-            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (MerkleRoot.Empty.Span, 8, 0, 32, 4).message.Span));
+            msg = BtEncoder.WritePieceHashesFromPieceLayer (new MerkleRoot (), 22, PieceLength, 0, null);
+            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (new MerkleRoot ().Span, 8, 0, 32, 4).message.Span));
 
-            msg = BtEncoder.WritePieceHashesFromPieceLayer (MerkleRoot.Empty, 2, PieceLength, 0, null);
-            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (MerkleRoot.Empty.Span, 8, 0, 2, 0).message.Span));
+            msg = BtEncoder.WritePieceHashesFromPieceLayer (new MerkleRoot (), 2, PieceLength, 0, null);
+            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (new MerkleRoot ().Span, 8, 0, 2, 0).message.Span));
 
-            msg = BtEncoder.WritePieceHashesFromPieceLayer (MerkleRoot.Empty, 34, PieceLength, 0, null);
-            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (MerkleRoot.Empty.Span, 8, 0, 64, 5).message.Span));
+            msg = BtEncoder.WritePieceHashesFromPieceLayer (new MerkleRoot (), 34, PieceLength, 0, null);
+            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (new MerkleRoot ().Span, 8, 0, 64, 5).message.Span));
 
-            msg = BtEncoder.WritePieceHashesFromPieceLayer (MerkleRoot.Empty, 63, PieceLength, 0, null);
-            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (MerkleRoot.Empty.Span, 8, 0, 64, 5).message.Span));
+            msg = BtEncoder.WritePieceHashesFromPieceLayer (new MerkleRoot (), 63, PieceLength, 0, null);
+            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (new MerkleRoot ().Span, 8, 0, 64, 5).message.Span));
 
-            msg = BtEncoder.WritePieceHashesFromPieceLayer (MerkleRoot.Empty, 82, PieceLength, 0, null);
-            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (MerkleRoot.Empty.Span, 8, 0, 128, 6).message.Span));
+            msg = BtEncoder.WritePieceHashesFromPieceLayer (new MerkleRoot (), 82, PieceLength, 0, null);
+            Assert.IsTrue (msg.message.Span.SequenceEqual (BtEncoder.WriteHashRequest (new MerkleRoot ().Span, 8, 0, 128, 6).message.Span));
         }
 
 

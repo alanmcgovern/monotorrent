@@ -158,6 +158,12 @@ namespace MonoTorrent.Logging
                 Writer.Error (string.Format (format, p1));
         }
 
+        internal void ErrorFormatted (string format, int p1)
+        {
+            if (Writer != null)
+                Writer.Error (string.Format (format, p1));
+        }
+
         internal void Exception (Exception ex, string message)
         {
             if (Writer != null)

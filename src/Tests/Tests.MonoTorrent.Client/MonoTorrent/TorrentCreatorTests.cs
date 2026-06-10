@@ -281,7 +281,7 @@ namespace MonoTorrent.Common
             var expected = Torrent.Load (Path.Combine (Path.GetDirectoryName (typeof (TorrentCreatorTests).Assembly.Location), $"test_torrent_64.torrent"));
 
             // The first file is empty.
-            Assert.IsTrue (actual.Files.First ().PiecesRoot.IsEmpty);
+            Assert.IsTrue (new MerkleRoot ().Span.SequenceEqual (actual.Files.First ().PiecesRoot.Span));
             Assert.AreEqual (0, actual.Files.First ().Length);
             Assert.AreEqual (0, actual.Files.First ().Padding);
             Assert.AreEqual (0, actual.Files.First ().OffsetInTorrent);

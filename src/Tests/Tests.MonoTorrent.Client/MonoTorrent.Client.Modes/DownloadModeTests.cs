@@ -128,10 +128,10 @@ namespace MonoTorrent.Client.Modes
 
                 var addedArgs = await peersTask.Task.WithTimeout ();
                 Assert.AreEqual (2, addedArgs.NewPeers, "#1");
-                Assert.IsFalse (Manager.Peers.AvailablePeers[0].IsSeeder, "#2");
-                Assert.IsTrue (Manager.Peers.AvailablePeers[1].IsSeeder, "#3");
-                StringAssert.Contains ("192.168.0.1:100", Manager.Peers.AvailablePeers[0].Info.ConnectionUri.OriginalString);
-                StringAssert.Contains ("192.168.0.2:101", Manager.Peers.AvailablePeers[1].Info.ConnectionUri.OriginalString);
+                Assert.IsFalse (Manager.Peers.AvailablePeers[1].IsSeeder, "#2");
+                Assert.IsTrue (Manager.Peers.AvailablePeers[0].IsSeeder, "#3");
+                StringAssert.Contains ("192.168.0.1:100", Manager.Peers.AvailablePeers[1].Info.ConnectionUri.OriginalString);
+                StringAssert.Contains ("192.168.0.2:101", Manager.Peers.AvailablePeers[0].Info.ConnectionUri.OriginalString);
             }
         }
 
@@ -166,11 +166,11 @@ namespace MonoTorrent.Client.Modes
 
                 var addedArgs = await peersTask.Task.WithTimeout ();
                 Assert.AreEqual (2, addedArgs.NewPeers, "#1");
-                Assert.IsFalse (Manager.Peers.AvailablePeers[0].IsSeeder, "#2");
-                Assert.IsTrue (Manager.Peers.AvailablePeers[1].IsSeeder, "#3");
+                Assert.IsFalse (Manager.Peers.AvailablePeers[1].IsSeeder, "#2");
+                Assert.IsTrue (Manager.Peers.AvailablePeers[0].IsSeeder, "#3");
 
-                StringAssert.Contains ("[::16.0.16.0]:100", Manager.Peers.AvailablePeers[0].Info.ConnectionUri.OriginalString);
-                StringAssert.Contains ("[::32.0.32.0]:101", Manager.Peers.AvailablePeers[1].Info.ConnectionUri.OriginalString);
+                StringAssert.Contains ("[::16.0.16.0]:100", Manager.Peers.AvailablePeers[1].Info.ConnectionUri.OriginalString);
+                StringAssert.Contains ("[::32.0.32.0]:101", Manager.Peers.AvailablePeers[0].Info.ConnectionUri.OriginalString);
 
             }
         }
