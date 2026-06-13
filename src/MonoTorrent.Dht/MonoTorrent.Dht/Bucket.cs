@@ -55,12 +55,12 @@ namespace MonoTorrent.Dht
         internal Node? Replacement { get; set; }
 
         public Bucket ()
-            : this (NodeId.Minimum, NodeId.Maximum)
+            : this (NodeId.Minimum, NodeId.Maximum, MaxCapacity)
         {
 
         }
 
-        public Bucket (NodeId min, NodeId max)
+        public Bucket (NodeId min, NodeId max, int preferredCapacity)
         {
             Min = min;
             Max = max;
@@ -68,7 +68,7 @@ namespace MonoTorrent.Dht
             CanSplit = (Max - Min) > MaxCapacity;
             LastChangedDelta = TimeSpan.FromDays (1);
             LastChangedTimer = new ValueStopwatch ();
-            Nodes = new List<Node> (MaxCapacity);
+            Nodes = new List<Node> (Math.Max (preferredCapacity, MaxCapacity));
         }
 
         public bool Add (Node node)

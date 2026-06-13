@@ -38,7 +38,6 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Dht.Messages.Efficient;
 using MonoTorrent.Dht.Tasks;
 
 using ReusableTasks;
@@ -266,7 +265,7 @@ namespace MonoTorrent.Dht
             await MainLoop;
 
             var e = default (SendQueryEventArgs);
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 3; i++) {
                 e = await MessageLoop.SendAsync (query, node);
 
                 // If the message timed out and we we haven't already hit the maximum retries

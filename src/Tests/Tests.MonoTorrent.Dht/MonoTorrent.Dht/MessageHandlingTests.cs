@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Dht.Messages.Efficient;
 
 using NUnit.Framework;
 
@@ -155,7 +154,7 @@ namespace MonoTorrent.Dht
             // Send a ping which will time out
             engine.SendQueryAsync (timedOutPing, node).WithTimeout ().Wait ();
 
-            Assert.AreEqual (4, node.FailedCount, "#1");
+            Assert.AreEqual (3, node.FailedCount, "#1");
             Assert.AreEqual (NodeState.Bad, node.State, "#2");
             Assert.IsTrue (node.LastSeen >= TimeSpan.FromHours (1), "#3");
             Assert.IsTrue (pingSuccessful, "#4");

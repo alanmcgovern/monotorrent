@@ -34,7 +34,6 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Dht.Messages.Efficient;
 using MonoTorrent.Dht.Tasks;
 
 using NUnit.Framework;
@@ -87,7 +86,7 @@ namespace MonoTorrent.Dht
             };
 
             Assert.IsTrue ((await engine.SendQueryAsync (ping, node).WithTimeout (3000)).TimedOut, "#1");
-            Assert.AreEqual (4, counter, "#2");
+            Assert.AreEqual (3, counter, "#2");
         }
 
         [Test]

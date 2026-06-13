@@ -40,7 +40,6 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Dht.Messages.Efficient;
 using MonoTorrent.Logging;
 
 using ReusableTasks;
@@ -126,7 +125,7 @@ namespace MonoTorrent.Dht
             Listener = new NullDhtListener ();
             ReceiveQueue = new Queue<KeyValuePair<CompactEndPoint, ReadOnlyMemory<byte>>> ();
             SendQueue = new Queue<SendDetails> ();
-            Timeout = TimeSpan.FromSeconds (10);
+            Timeout = TimeSpan.FromSeconds (2);
             WaitingResponse = new Dictionary<(TransactionId, CompactEndPoint), SendDetails> ();
             WaitingResponseTimedOut = new List<SendDetails> ();
 
@@ -174,7 +173,7 @@ namespace MonoTorrent.Dht
 
                 var m = KrpcMessage.Parse (buffer);
                 if (m.MessageType == KrpcType.Response || m.MessageType == KrpcType.Error) {
-                    // If we can' unregister the corresponding query then this response message should be ignored.
+                    // If we can't unregister the corresponding query then this response message should be ignored.
                     if (!DhtMessageFactory.UnregisterSend (m.TransactionId, endpoint))
                         return;
                 }
@@ -198,7 +197,7 @@ namespace MonoTorrent.Dht
 
         async Task SendMessages ()
         {
-            for (int i = 0; i < 50 && SendQueue.Count > 0; i++) {
+            for (int i = 0; i < 150 && SendQueue.Count > 0; i++) {
                 SendDetails details = SendQueue.Dequeue ();
 
                 details.SentAt = ValueStopwatch.StartNew ();

@@ -105,6 +105,9 @@ namespace MonoTorrent
         public static bool operator != (BigEndianBigInteger left, BigEndianBigInteger right)
             => left.Value != right.Value;
 
+        public static BigEndianBigInteger operator % (BigEndianBigInteger left, BigEndianBigInteger modulus)
+            => new BigEndianBigInteger (left.Value % modulus.Value);
+
         public int CompareTo (BigEndianBigInteger other)
             => Value.CompareTo (other.Value);
 

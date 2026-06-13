@@ -102,6 +102,18 @@ namespace MonoTorrent.Dht
         internal static NodeId Median (NodeId min, NodeId max)
             => new NodeId ((new BigEndianBigInteger (min.Span) + new BigEndianBigInteger (max.Span)) / 2);
 
+        internal static NodeId RandomBetween (NodeId min, NodeId max)
+        {
+            var minVal = new BigEndianBigInteger (min.Span);
+            var maxVal = new BigEndianBigInteger (max.Span);
+            var range = maxVal - minVal;
+
+            Span<byte> rand = stackalloc byte[20];
+            Random.Shared.NextBytes (rand);
+            var offset = new BigEndianBigInteger (rand) % range;
+            return new NodeId (minVal + offset);
+        }
+
         public static NodeId operator ^ (NodeId left, NodeId right)
         {
             var storage = new Storage ();

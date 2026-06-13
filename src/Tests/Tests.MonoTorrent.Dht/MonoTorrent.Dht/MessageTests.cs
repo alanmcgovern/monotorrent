@@ -36,7 +36,6 @@ using System.Text.Unicode;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Dht.Messages.Efficient;
 
 using NUnit.Framework;
 

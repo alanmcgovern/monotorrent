@@ -36,7 +36,6 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Dht.Messages.Efficient;
 
 namespace MonoTorrent.Dht.Tasks
 {
@@ -80,12 +79,12 @@ namespace MonoTorrent.Dht.Tasks
             // If we were given a list of nodes to load at the start, use them
             try {
                 if (initialNodes.Count > 0) {
-                    await SendFindNode (initialNodes);
+                    await PopulateFirstNodes (initialNodes);
                 } else {
                     try {
                         if (BootstrapNodes is null)
-                            BootstrapNodes = await GenerateBootstrapNodes ();
-                        await SendFindNode (BootstrapNodes);
+                            BootstrapNodes = await GenerateBootstrapNodes (BootstrapRouters);
+                        await PopulateFirstNodes (BootstrapNodes);
                     } catch {
                         initializationComplete.TrySetResult (null);
                         return;
@@ -96,12 +95,11 @@ namespace MonoTorrent.Dht.Tasks
             }
         }
 
-        async Task<Node[]> GenerateBootstrapNodes ()
+        static async Task<Node[]> GenerateBootstrapNodes (string[] bootstrapRouters)
         {
-            // Handle when one, or more, of the bootstrap nodes are offline
             var results = new List<Node> ();
 
-            var tasks = BootstrapRouters.Select (Dns.GetHostAddressesAsync).ToList ();
+            var tasks = bootstrapRouters.Select (t => Dns.GetHostAddressesAsync (t, System.Net.Sockets.AddressFamily.InterNetwork)).ToList ();
             while (tasks.Count > 0) {
                 var completed = await Task.WhenAny (tasks);
                 tasks.Remove (completed);
@@ -109,8 +107,7 @@ namespace MonoTorrent.Dht.Tasks
                 try {
                     var addresses = await completed;
                     foreach (var v in addresses)
-                        if (v.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                            results.Add (new Node (NodeId.Create (), new CompactEndPoint (v, 6881)));
+                        results.Add (new Node (NodeId.Create (), new CompactEndPoint (v, 6881)));
                 } catch {
 
                 }
@@ -119,21 +116,77 @@ namespace MonoTorrent.Dht.Tasks
             return results.ToArray ();
         }
 
-        async Task SendFindNode (IEnumerable<Node> newNodes)
+        async Task PopulateFirstNodes (IEnumerable<Node> newNodes)
         {
-            var activeRequests = new List<Task<SendQueryEventArgs>> ();
-            var nodes = new ClosestNodesCollection (engine.RoutingTable.LocalNodeId);
+            // Bootstrapping approach:
+            // 1) Query the bootstrap nodes/routers for nodes close to the local ID.
+            // 2) Ping each of these to see if they're alive. If they respond they'll be inserted into the routing table.
+            //    Up to 32 nodes will be stored in the first bucket. If the bucket splits then each will be allowed store 16. Further splits will use the standard 8 node limit.
+            // 3) Pre-split the routing table so it has at least 20 buckets to ensure there is reasonable diversity across the id space. The up-to-32 initial nodes will distribute appropriately.
+            // 4) Querying each bucket for a random node in each buckets range. Stop once the bucket has > 4 nodes.
+            var activeFindNodes = new List<Task<SendQueryEventArgs>> ();
+            var activePings = new List<Task<SendQueryEventArgs>> ();
 
+            // Query for the first set of nodes close to our local id. Query *all* of them.
             foreach (Node node in newNodes) {
                 var transactionId = TransactionId.NextId ();
                 var request = KrpcMessageEncoder.EncodeFindNode (transactionId, engine.LocalId, engine.LocalId);
-                activeRequests.Add (engine.SendQueryAsync (request, node).AsTask ());
-                nodes.Add (node);
+                activeFindNodes.Add (engine.SendQueryAsync (request, node).AsTask ());
             }
 
-            while (activeRequests.Count > 0) {
-                var completed = await Task.WhenAny (activeRequests);
-                activeRequests.Remove (completed);
+            // For each initial node or bootstrap router which responds, ping each of the provided nodes to see if they're alive.
+            while (activeFindNodes.Count > 0) {
+                var completed = await Task.WhenAny (activeFindNodes);
+                activeFindNodes.Remove (completed);
+
+                SendQueryEventArgs args = await completed;
+                if (!args.Response.IsEmpty) {
+                    // Ping each node we get back to ensure it's alive/reachable. If it responds
+                    // it'll be in the table.
+                    var response = KrpcMessage.Parse (args.Response);
+                    foreach (Node node in Node.FromCompactNodes (response.Response.Nodes)) {
+                        var id = TransactionId.NextId ();
+                        var request = KrpcMessageEncoder.EncodePing (id, engine.LocalId);
+                        activePings.Add (engine.SendQueryAsync (request, node).AsTask ());
+                    }
+                }
+            }
+
+            // Wait for all the pings to finish (a response is received or it times out). Should take < 10 seconds.
+            await Task.WhenAll (activePings);
+
+            // If the routing table doesn't have at least 4 active nodes at this point and we launched using a cached list of dht nodes,
+            // retry bootstrapping using the DHT routers.
+            if (initialNodes.Count > 0 && engine.RoutingTable.NeedsBootstrap && BootstrapRouters.Length > 0) {
+                await new InitialiseTask (engine).ExecuteAsync ();
+            } else {
+                // Otherwise presplit the routing table and populate each bucket.
+                engine.RoutingTable.PreSplitBuckets (20);
+
+                // For each bucket search for a random id
+                List<Task> prefillTasks = new List<Task> ();
+                foreach (var bucket in engine.RoutingTable.Buckets) {
+                    prefillTasks.Add (Prefill (NodeId.RandomBetween (bucket.Min, bucket.Max)));
+                }
+                await Task.WhenAll (prefillTasks);
+            }
+        }
+
+        async Task Prefill (NodeId target)
+        {
+            var closestNodes = new ClosestNodesCollection (target);
+            var activeFindNodes = new List<Task<SendQueryEventArgs>> ();
+
+            // Query for the first set of nodes close to our local id.
+            foreach (Node node in engine.RoutingTable.GetClosest (target)) {
+                var transactionId = TransactionId.NextId ();
+                var request = KrpcMessageEncoder.EncodeFindNode (transactionId, engine.LocalId, target.Span);
+                activeFindNodes.Add (engine.SendQueryAsync (request, node).AsTask ());
+            }
+
+            while (activeFindNodes.Count > 0) {
+                var completed = await Task.WhenAny (activeFindNodes);
+                activeFindNodes.Remove (completed);
 
                 SendQueryEventArgs args = await completed;
                 if (!args.Response.IsEmpty) {
@@ -142,17 +195,14 @@ namespace MonoTorrent.Dht.Tasks
 
                     var response = KrpcMessage.Parse (args.Response);
                     foreach (Node node in Node.FromCompactNodes (response.Response.Nodes)) {
-                        if (nodes.Add (node)) {
+                        if (closestNodes.Add (node)) {
                             var id = TransactionId.NextId ();
-                            var request = KrpcMessageEncoder.EncodeFindNode (id, engine.LocalId, engine.LocalId);
-                            activeRequests.Add (engine.SendQueryAsync (request, node).AsTask ());
+                            var request = KrpcMessageEncoder.EncodeFindNode (id, engine.LocalId, target.Span);
+                            activeFindNodes.Add (engine.SendQueryAsync (request, node).AsTask ());
                         }
                     }
                 }
             }
-
-            if (initialNodes.Count > 0 && engine.RoutingTable.NeedsBootstrap && BootstrapRouters.Length > 0)
-                await new InitialiseTask (engine).ExecuteAsync ();
         }
     }
 }

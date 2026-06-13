@@ -44,7 +44,7 @@ namespace MonoTorrent.Dht
 {
     class Node : IEquatable<Node>
     {
-        public static readonly int MaxFailures = 4;
+        public static readonly int MaxFailures = 2;
         public CompactEndPoint EndPoint { get; }
         public int FailedCount { get; set; }
         public NodeId Id { get; }

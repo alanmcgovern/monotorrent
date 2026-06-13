@@ -39,7 +39,7 @@ namespace MonoTorrent.Dht
 
         public NodeId LocalNodeId { get; }
 
-        public bool NeedsBootstrap => CountNodes () < 10;
+        public bool NeedsBootstrap => CountNodes () < 4;
 
         public RoutingTable ()
             : this (NodeId.Create ())
@@ -51,14 +51,14 @@ namespace MonoTorrent.Dht
         {
             Buckets = new List<Bucket> ();
             LocalNodeId = localNodeId;
-            Add (new Bucket ());
+            Add (new Bucket (NodeId.Minimum, NodeId.Maximum, 32));
         }
 
         public bool Add (Node node)
         {
             return Add (node, true);
         }
-
+        int counter = 0;
         bool Add (Node node, bool raiseNodeAdded)
         {
             if (node == null)
@@ -107,8 +107,8 @@ namespace MonoTorrent.Dht
                 return false;//to avoid infinite loop when add same node
 
             var median = NodeId.Median (bucket.Min, bucket.Max);
-            var left = new Bucket (bucket.Min, median);
-            var right = new Bucket (median, bucket.Max);
+            var left = new Bucket (bucket.Min, median, Math.Max (Bucket.MaxCapacity, bucket.Nodes.Capacity / 2));
+            var right = new Bucket (median, bucket.Max, Math.Max (Bucket.MaxCapacity, bucket.Nodes.Capacity / 2));
 
             Remove (bucket);
             Add (left);
@@ -146,6 +146,14 @@ namespace MonoTorrent.Dht
             Buckets = new List<Bucket> {
                 new Bucket ()
             };
+        }
+
+        internal void PreSplitBuckets (int minBucketCount)
+        {
+            while (Buckets.Count < minBucketCount) {
+                var mine = Buckets.Find (b => b.CanContain (LocalNodeId))!;
+                Split (mine);
+            }
         }
     }
 }

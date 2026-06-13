@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Dht.Messages.Efficient
+namespace MonoTorrent.Dht.Messages
 {
     static class Krpc
     {

@@ -39,8 +39,8 @@ namespace MonoTorrent.Dht
         [Test]
         public void CompareTo ()
         {
-            var b1 = new Bucket (NodeId.Minimum, NodeId.Maximum);
-            var b2 = new Bucket (NodeId.Minimum, NodeId.Maximum);
+            var b1 = new Bucket (NodeId.Minimum, NodeId.Maximum, Bucket.MaxCapacity);
+            var b2 = new Bucket (NodeId.Minimum, NodeId.Maximum, Bucket.MaxCapacity);
             Assert.AreEqual (0, b1.CompareTo (b1), "#1");
             Assert.AreEqual (0, b1.CompareTo (b2), "#2");
         }
@@ -48,15 +48,15 @@ namespace MonoTorrent.Dht
         [Test]
         public void CompareTo_Null ()
         {
-            var b1 = new Bucket (NodeId.Minimum, NodeId.Maximum);
+            var b1 = new Bucket (NodeId.Minimum, NodeId.Maximum, Bucket.MaxCapacity);
             Assert.IsTrue (b1.CompareTo (null) > 0, "#1");
         }
 
         [Test]
         public void Equality ()
         {
-            var b1 = new Bucket (NodeId.Minimum, NodeId.Maximum);
-            var b2 = new Bucket (NodeId.Minimum, NodeId.Maximum);
+            var b1 = new Bucket (NodeId.Minimum, NodeId.Maximum, Bucket.MaxCapacity);
+            var b2 = new Bucket (NodeId.Minimum, NodeId.Maximum, Bucket.MaxCapacity);
             Assert.IsTrue (b1.Equals (b1), "#1");
             Assert.IsTrue (b1.Equals (b2), "#2");
         }
@@ -64,15 +64,15 @@ namespace MonoTorrent.Dht
         [Test]
         public void Equality_NotEqual ()
         {
-            var b1 = new Bucket (NodeId.Minimum, NodeId.Minimum);
-            var b2 = new Bucket (NodeId.Minimum, NodeId.Maximum);
+            var b1 = new Bucket (NodeId.Minimum, NodeId.Minimum, Bucket.MaxCapacity);
+            var b2 = new Bucket (NodeId.Minimum, NodeId.Maximum, Bucket.MaxCapacity);
             Assert.IsFalse (b1.Equals (b2), "#1");
         }
 
         [Test]
         public void Equality_Null ()
         {
-            var b1 = new Bucket (NodeId.Minimum, NodeId.Maximum);
+            var b1 = new Bucket (NodeId.Minimum, NodeId.Maximum, Bucket.MaxCapacity);
             Assert.IsFalse (b1.Equals (null), "#1");
         }
 

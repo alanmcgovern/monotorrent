@@ -33,7 +33,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Dht.Messages.Efficient;
+using MonoTorrent.Dht.Messages;
 using MonoTorrent.Messages;
 
 namespace MonoTorrent.Dht.Messages
