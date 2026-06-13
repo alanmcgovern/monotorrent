@@ -337,6 +337,8 @@ namespace MonoTorrent.Client
 
             DhtListener = (settings.DhtEndPoint == null ? null : Factories.CreateDhtListener (settings.DhtEndPoint)) ?? new NullDhtListener ();
             var engine = (settings.DhtEndPoint == null ? null : Factories.CreateDht ()) ?? new NullDhtEngine ();
+            engine.SetBootstrapRoutersAsync (settings.DhtBootstrapRouters).AsTask ().GetAwaiter ().GetResult ();
+
             DhtEngine = new DhtEngineWrapper (engine);
             DhtEngine.SetListenerAsync (DhtListener).AsTask ().GetAwaiter ().GetResult ();
 
@@ -926,6 +928,8 @@ namespace MonoTorrent.Client
                 await Task.WhenAll (Torrents.Select (t => DiskManager.FlushAsync (t)));
 
             ConnectionManager.Settings = newSettings;
+
+            await DhtEngine.SetBootstrapRoutersAsync (newSettings.DhtBootstrapRouters);
 
             if (oldSettings.UsePartialFiles != newSettings.UsePartialFiles) {
                 foreach (var manager in Torrents)

@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -125,9 +126,9 @@ namespace MonoTorrent.Client
         /// a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
         /// to keep this value within a range of 7-15 seconds unless absolutely necessary.
         /// </summary>
-        public IList<TimeSpan> ConnectionTimeouts { get; } = Debugger.IsAttached
+        public IList<TimeSpan> ConnectionTimeouts { get; } = Array.AsReadOnly (Debugger.IsAttached
             ? new[] { TimeSpan.FromSeconds (120) }
-            : new[] { TimeSpan.FromSeconds (3), TimeSpan.FromSeconds (6), TimeSpan.FromSeconds (10) };
+            : new[] { TimeSpan.FromSeconds (3), TimeSpan.FromSeconds (6), TimeSpan.FromSeconds (10) });
 
         /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
@@ -142,6 +143,18 @@ namespace MonoTorrent.Client
         /// Defaults to 5MB.
         /// </summary>
         public CachePolicy DiskCachePolicy { get; } = CachePolicy.WritesOnly;
+
+        /// <summary>
+        /// The bootstrap routers used to obtain the first set of nodes to access the BitTorrent DHT table.
+        /// </summary>
+        public IList<BootstrapRouter> DhtBootstrapRouters { get; } = Array.AsReadOnly (new[] {
+            new BootstrapRouter ("router.bittorrent.com", 6881),
+            new BootstrapRouter ("router.utorrent.com", 6881),
+            new BootstrapRouter ("dht.transmissionbt.com", 6881),
+            new BootstrapRouter ("dht.aelitis.com", 6881),
+            new BootstrapRouter ("router.bitcomet.com", 6881),
+            new BootstrapRouter ("dht.libtorrent.org", 25401)
+        });
 
         /// <summary>
         /// The UDP port used for DHT communications. Set the port to 0 to choose a random available port.
@@ -288,7 +301,7 @@ namespace MonoTorrent.Client
         internal EngineSettings (
             IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
             bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
-            IList<TimeSpan> connectionTimeouts, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode,
+            IList<TimeSpan> connectionTimeouts, IList<BootstrapRouter> dhtBootstrapRouters, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode,
             FileCreationOptions fileCreationMode, Dictionary<string, IPEndPoint> listenEndPoints,
             int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
             int maximumOpenFiles, int maximumUploadRate, IDictionary<string, IPEndPoint> reportedListenEndPoints, bool usePartialFiles,
@@ -305,6 +318,7 @@ namespace MonoTorrent.Client
             AutoSaveLoadDhtCache = autoSaveLoadDhtCache;
             AutoSaveLoadFastResume = autoSaveLoadFastResume;
             AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata;
+            DhtBootstrapRouters = Array.AsReadOnly (dhtBootstrapRouters.ToArray ());
             DhtEndPoint = dhtEndPoint;
             DiskCacheBytes = diskCacheBytes;
             DiskCachePolicy = diskCachePolicy;

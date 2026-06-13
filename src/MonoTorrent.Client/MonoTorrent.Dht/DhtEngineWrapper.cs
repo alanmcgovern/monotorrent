@@ -145,5 +145,8 @@ namespace MonoTorrent.Client
 
         internal ReusableTask<ReadOnlyMemory<byte>> SaveNodesAsync ()
             => Engine.SaveNodesAsync ();
+
+        internal ReusableTask SetBootstrapRoutersAsync (IList<BootstrapRouter> routers)
+            => Engine.SetBootstrapRoutersAsync (routers);
     }
 }

@@ -65,7 +65,7 @@ namespace MonoTorrent.Dht
             var errorSource = new TaskCompletionSource<object> ();
             listener.MessageSent += (o, e) => errorSource.Task.GetAwaiter ().GetResult ();
 
-            await engine.StartAsync (node.CompactNode ().Span.ToArray (), Array.Empty<string> ());
+            await engine.StartAsync (node.CompactNode ().Span.ToArray ());
             Assert.AreEqual (DhtState.Initialising, engine.State);
 
             // Then set an error and make sure the engine state moves to 'NotReady'

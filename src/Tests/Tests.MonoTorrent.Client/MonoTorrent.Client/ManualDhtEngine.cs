@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Dht;
@@ -46,6 +47,7 @@ namespace MonoTorrent.Client
         public ITransferMonitor Monitor { get; }
         public int NodeCount => 0;
         public DhtState State { get; private set; }
+        public ImmutableHashSet<BootstrapRouter> BootstrapRouters { get; } = ImmutableHashSet<BootstrapRouter>.Empty;
 
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         public event EventHandler StateChanged;
@@ -79,6 +81,11 @@ namespace MonoTorrent.Client
 
         public ReusableTask<ReadOnlyMemory<byte>> SaveNodesAsync ()
             => ReusableTask.FromResult (ReadOnlyMemory<byte>.Empty);
+
+        public ReusableTask SetBootstrapRoutersAsync (IEnumerable<BootstrapRouter> routers)
+        {
+            return default;
+        }
 
         public ReusableTask SetListenerAsync (IDhtListener listener)
         {

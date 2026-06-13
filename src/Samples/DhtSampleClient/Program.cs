@@ -64,8 +64,16 @@ namespace ClientSample
                 await Task.Delay (1000);
             }
 
-            var infoHashes = new[] { InfoHash.FromHex ("d160b8d8ea35a5b4e52837468fc8f03d55cef1f7") };
+            DumpStats (engine);
+            static async void DumpStats (DhtEngine engine)
+            {
+                while (true) {
+                    Console.WriteLine ("Nodes: " + engine.NodeCount);
+                    await Task.Delay (1500);
+                }
+            }
 
+            var infoHashes = new[] { InfoHash.FromHex ("d160b8d8ea35a5b4e52837468fc8f03d55cef1f7") };
 
             var tasks = new List<Task> ();
             var s = new SemaphoreSlim (50, 50);

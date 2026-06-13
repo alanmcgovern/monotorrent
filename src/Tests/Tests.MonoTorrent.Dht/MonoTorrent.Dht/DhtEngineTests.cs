@@ -13,6 +13,23 @@ namespace MonoTorrent.Dht
     public class DhtEngineTests
     {
         [Test]
+        public async Task BootstrapRouters ()
+        {
+            var engine = new DhtEngine ();
+            Assert.IsNotEmpty (engine.BootstrapRouters);
+
+            await engine.SetBootstrapRoutersAsync (Array.Empty<BootstrapRouter> ());
+
+            Assert.IsEmpty (engine.BootstrapRouters);
+            await engine.SetBootstrapRoutersAsync (new[] {
+                new BootstrapRouter ("test", 123),
+                new BootstrapRouter ("test", 123),
+                new BootstrapRouter ("test", 123)
+            });
+            Assert.AreEqual (1, engine.BootstrapRouters.Count);
+        }
+
+        [Test]
         public async Task AddRawNodesBeforeStarting ()
         {
             int count = 0;

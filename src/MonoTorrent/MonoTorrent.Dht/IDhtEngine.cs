@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Dht;
@@ -66,6 +67,7 @@ namespace MonoTorrent.Dht
         event EventHandler StateChanged;
 
         TimeSpan AnnounceInterval { get; }
+        ImmutableHashSet<BootstrapRouter> BootstrapRouters { get; }
         bool Disposed { get; }
         ITransferMonitor Monitor { get; }
         TimeSpan MinimumAnnounceInterval { get; }
@@ -76,6 +78,7 @@ namespace MonoTorrent.Dht
         ReusableTask AnnounceAsync (InfoHash infoHash, int port);
         ReusableTask GetPeersAsync (InfoHash infoHash);
         ReusableTask<ReadOnlyMemory<byte>> SaveNodesAsync ();
+        ReusableTask SetBootstrapRoutersAsync (IEnumerable<BootstrapRouter> routers);
         ReusableTask SetListenerAsync (IDhtListener listener);
         ReusableTask StartAsync ();
         ReusableTask StartAsync (ReadOnlyMemory<byte> initialNodes);

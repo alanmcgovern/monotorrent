@@ -32,6 +32,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -51,19 +52,19 @@ namespace MonoTorrent.Dht.Tasks
         readonly TaskCompletionSource<object?> initializationComplete;
 
         static Node[]? BootstrapNodes { get; set; }
-        string[] BootstrapRouters { get; set; }
+        BootstrapRouter[] BootstrapRouters { get; set; }
 
         public InitialiseTask (DhtEngine engine)
-            : this (engine, Enumerable.Empty<Node> (), DhtEngine.DefaultBootstrapRouters.ToArray ())
+            : this (engine, Enumerable.Empty<Node> ())
         {
 
         }
 
-        public InitialiseTask (DhtEngine engine, IEnumerable<Node> nodes, string[] bootstrapRouters)
+        public InitialiseTask (DhtEngine engine, IEnumerable<Node> nodes)
         {
             this.engine = engine;
             initialNodes = nodes.ToList ();
-            BootstrapRouters = bootstrapRouters;
+            BootstrapRouters = engine.BootstrapRouters.ToArray ();
             initializationComplete = new TaskCompletionSource<object?> ();
         }
 
@@ -98,19 +99,25 @@ namespace MonoTorrent.Dht.Tasks
             }
         }
 
-        static async Task<Node[]> GenerateBootstrapNodes (string[] bootstrapRouters)
+        static async Task<Node[]> GenerateBootstrapNodes (BootstrapRouter[] bootstrapRouters)
         {
-            var results = new List<Node> ();
+            static async Task<CompactEndPoint[]> ResolveRouter (BootstrapRouter router)
+            {
+                var addresses = await Dns.GetHostAddressesAsync (router.Host, AddressFamily.InterNetwork);
+                return addresses.Select (t => new CompactEndPoint (t, router.Port))
+                    .ToArray ();
+            }
 
-            var tasks = bootstrapRouters.Select (t => Dns.GetHostAddressesAsync (t, System.Net.Sockets.AddressFamily.InterNetwork)).ToList ();
+            var results = new List<Node> ();
+            var tasks = bootstrapRouters.Select (ResolveRouter).ToList ();
             while (tasks.Count > 0) {
                 var completed = await Task.WhenAny (tasks);
                 tasks.Remove (completed);
 
                 try {
-                    var addresses = await completed;
-                    foreach (var v in addresses)
-                        results.Add (new Node (NodeId.Create (), new CompactEndPoint (v, 6881)));
+                    var endpoints = await completed;
+                    foreach (var endpoint in endpoints)
+                        results.Add (new Node (NodeId.Create (), endpoint));
                 } catch {
 
                 }

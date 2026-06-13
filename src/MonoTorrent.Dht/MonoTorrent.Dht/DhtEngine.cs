@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -65,10 +66,13 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
-        internal static readonly IList<string> DefaultBootstrapRouters = Array.AsReadOnly (new[] {
-            "router.bittorrent.com",
-            "router.utorrent.com",
-            "dht.transmissionbt.com"
+        public static readonly ImmutableHashSet<BootstrapRouter> DefaultBootstrapRouters = ImmutableHashSet.Create (new[] {
+            new BootstrapRouter ("router.bittorrent.com", 6881),
+            new BootstrapRouter ("router.utorrent.com", 6881),
+            new BootstrapRouter ("dht.transmissionbt.com", 6881),
+            new BootstrapRouter ("dht.aelitis.com", 6881),
+            new BootstrapRouter ("router.bitcomet.com", 6881),
+            new BootstrapRouter ("dht.libtorrent.org", 25401)
         });
 
         static readonly TimeSpan DefaultAnnounceInternal = TimeSpan.FromMinutes (10);
@@ -87,6 +91,8 @@ namespace MonoTorrent.Dht
         public AddressFamily AddressFamily { get; private set; } = AddressFamily.InterNetwork;
 
         public TimeSpan AnnounceInterval => DefaultAnnounceInternal;
+
+        public ImmutableHashSet<BootstrapRouter> BootstrapRouters { get; private set; } = DefaultBootstrapRouters;
 
         public bool Disposed { get; private set; }
 
@@ -201,11 +207,11 @@ namespace MonoTorrent.Dht
             }
         }
 
-        async void InitializeAsync (IEnumerable<Node> nodes, string[] bootstrapRouters)
+        async void InitializeAsync (IEnumerable<Node> nodes)
         {
             await MainLoop;
 
-            var initTask = new InitialiseTask (this, nodes, bootstrapRouters);
+            var initTask = new InitialiseTask (this, nodes);
             await initTask.ExecuteAsync ();
             if (RoutingTable.NeedsBootstrap)
                 RaiseStateChanged (DhtState.NotReady);
@@ -282,19 +288,20 @@ namespace MonoTorrent.Dht
             return e;
         }
 
+        public async ReusableTask SetBootstrapRoutersAsync (IEnumerable<BootstrapRouter> routers)
+        {
+            await MainLoop;
+
+            BootstrapRouters = ImmutableHashSet.Create<BootstrapRouter> (routers.ToArray ());
+        }
+
         public ReusableTask StartAsync ()
             => StartAsync (ReadOnlyMemory<byte>.Empty);
 
         public ReusableTask StartAsync (ReadOnlyMemory<byte> initialNodes)
-            => StartAsync (Node.FromCompactNodes (BEncodedString.FromMemory (initialNodes)).Concat (PendingNodes), DefaultBootstrapRouters.ToArray ());
+            => StartAsync (Node.FromCompactNodes (initialNodes.Span).Concat (PendingNodes));
 
-        public ReusableTask StartAsync (params string[] bootstrapRouters)
-            => StartAsync (Array.Empty<Node> (), bootstrapRouters);
-
-        public ReusableTask StartAsync (ReadOnlyMemory<byte> initialNodes, params string[] bootstrapRouters)
-            => StartAsync (Node.FromCompactNodes (initialNodes.Span).Concat (PendingNodes), bootstrapRouters);
-
-        async ReusableTask StartAsync (IEnumerable<Node> nodes, string[] bootstrapRouters)
+        async ReusableTask StartAsync (IEnumerable<Node> nodes)
         {
             CheckDisposed ();
 
@@ -302,7 +309,7 @@ namespace MonoTorrent.Dht
             MessageLoop.Start ();
             if (RoutingTable.NeedsBootstrap) {
                 RaiseStateChanged (DhtState.Initialising);
-                InitializeAsync (nodes, bootstrapRouters);
+                InitializeAsync (nodes);
             } else {
                 RaiseStateChanged (DhtState.Ready);
             }

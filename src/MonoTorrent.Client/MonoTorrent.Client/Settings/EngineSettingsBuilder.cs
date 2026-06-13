@@ -137,6 +137,11 @@ namespace MonoTorrent.Client
         public List<TimeSpan> ConnectionTimeouts { get; set; }
 
         /// <summary>
+        /// The bootstrap routers used to obtain the first set of nodes to access the BitTorrent DHT table.
+        /// </summary>
+        public List<BootstrapRouter> DhtBootstrapRouters { get; set; }
+
+        /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
         /// Set to 0 to disable the cache.
         /// Defaults to 5MB.
@@ -336,6 +341,7 @@ namespace MonoTorrent.Client
             CacheDirectory = settings.CacheDirectory;
             ConnectionRetryDelays = new List<TimeSpan> (settings.ConnectionRetryDelays);
             ConnectionTimeouts = new List<TimeSpan> (settings.ConnectionTimeouts);
+            DhtBootstrapRouters = new List<BootstrapRouter> (settings.DhtBootstrapRouters);
             DhtEndPoint = settings.DhtEndPoint;
             DiskCacheBytes = settings.DiskCacheBytes;
             DiskCachePolicy = settings.DiskCachePolicy;
@@ -381,6 +387,9 @@ namespace MonoTorrent.Client
             if (ConnectionTimeouts.Count == 0)
                 throw new ArgumentException ("At least one connection timeout must be specified", nameof (ConnectionTimeouts));
 
+            if (DhtBootstrapRouters is null)
+                throw new ArgumentNullException (nameof (DhtBootstrapRouters));
+
             return new EngineSettings (
                 allowedEncryption: AllowedEncryption,
                 allowHaveSuppression: AllowHaveSuppression,
@@ -392,6 +401,7 @@ namespace MonoTorrent.Client
                 cacheDirectory: string.IsNullOrEmpty (CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (CacheDirectory),
                 connectionRetryDelays: ConnectionRetryDelays,
                 connectionTimeouts: ConnectionTimeouts,
+                dhtBootstrapRouters : DhtBootstrapRouters,
                 dhtEndPoint: DhtEndPoint,
                 diskCacheBytes: DiskCacheBytes,
                 diskCachePolicy: DiskCachePolicy,

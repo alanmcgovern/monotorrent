@@ -29,11 +29,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
+using MonoTorrent.Dht;
 using MonoTorrent.PieceWriter;
 
 namespace MonoTorrent.Client
@@ -77,7 +79,7 @@ namespace MonoTorrent.Client
                     property.SetValue (builder, new Uri (((BEncodedString) value).Text));
                 } else if (property.PropertyType == typeof (IPAddress)) {
                     property.SetValue (builder, IPAddress.Parse (((BEncodedString) value).Text));
-                } else if (property.PropertyType == typeof(FileCreationOptions)) {
+                } else if (property.PropertyType == typeof (FileCreationOptions)) {
                     property.SetValue (builder, Enum.Parse (typeof (FileCreationOptions), ((BEncodedString) value).Text));
                 } else if (property.PropertyType == typeof (IPEndPoint)) {
                     var list = (BEncodedList) value;
@@ -88,6 +90,14 @@ namespace MonoTorrent.Client
                         endPoint = new IPEndPoint (IPAddress.Parse (ipAddress.Text), (int) port.Number);
                     }
                     property.SetValue (builder, endPoint);
+                } else if (property.PropertyType == typeof (List<BootstrapRouter>)) {
+                    var list = (IList<BootstrapRouter>) property.GetValue (builder)!;
+                    list.Clear ();
+                    foreach (BEncodedList router in ((BEncodedList) value)) {
+                        var host = ((BEncodedString) router[0]).Text;
+                        var port = (int) ((BEncodedNumber) router[1]).Number;
+                        list.Add (new BootstrapRouter (host, port));
+                    }
                 } else if (property.PropertyType == typeof (List<EncryptionType>)) {
                     var list = (IList<EncryptionType>) property.GetValue (builder)!;
                     list.Clear ();
@@ -122,7 +132,8 @@ namespace MonoTorrent.Client
                     Uri value => new BEncodedString (value.OriginalString),
                     FileCreationOptions value => new BEncodedString (value.ToString ()),
                     null => null,
-                    Dictionary<string, IPEndPoint> value => FromIPAddressDictionary(value),
+                    Dictionary<string, IPEndPoint> value => FromIPAddressDictionary (value),
+                    List<BootstrapRouter> value => FromBootstrapRouters (value),
                     _ => throw new NotSupportedException ($"{property.Name} => type: ${property.PropertyType}"),
                 };
                 // Ensure default values aren't accidentally propagated.
@@ -133,6 +144,15 @@ namespace MonoTorrent.Client
             }
 
             return dict;
+        }
+
+        static BEncodedList FromBootstrapRouters (List<BootstrapRouter> value)
+        {
+            var result = new BEncodedList ();
+            foreach (var v in value) {
+                result.Add (new BEncodedList { (BEncodedString) v.Host, (BEncodedNumber) v.Port });
+            }
+            return result;
         }
 
         static BEncodedDictionary FromIPAddressDictionary (Dictionary<string, IPEndPoint> value)
