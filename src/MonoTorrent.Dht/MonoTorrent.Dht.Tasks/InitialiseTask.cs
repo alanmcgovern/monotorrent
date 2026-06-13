@@ -82,8 +82,11 @@ namespace MonoTorrent.Dht.Tasks
                     await PopulateFirstNodes (initialNodes);
                 } else {
                     try {
-                        if (BootstrapNodes is null)
+                        if (BootstrapNodes is null) {
                             BootstrapNodes = await GenerateBootstrapNodes (BootstrapRouters);
+                            foreach (var v in BootstrapNodes)
+                                engine.RoutingTable.AddIgnoredEndpoint (v.EndPoint);
+                        }
                         await PopulateFirstNodes (BootstrapNodes);
                     } catch {
                         initializationComplete.TrySetResult (null);

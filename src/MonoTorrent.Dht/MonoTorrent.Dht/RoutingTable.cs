@@ -41,6 +41,12 @@ namespace MonoTorrent.Dht
 
         public bool NeedsBootstrap => CountNodes () < 4;
 
+        /// <summary>
+        /// Used to ensure known bootstrap routers do not get added to the
+        /// routing table.
+        /// </summary>
+        HashSet<CompactEndPoint> NodesToIgnore { get; }
+
         public RoutingTable ()
             : this (NodeId.Create ())
         {
@@ -51,6 +57,7 @@ namespace MonoTorrent.Dht
         {
             Buckets = new List<Bucket> ();
             LocalNodeId = localNodeId;
+            NodesToIgnore = new HashSet<CompactEndPoint> ();
             Add (new Bucket (NodeId.Minimum, NodeId.Maximum, 32));
         }
 
@@ -58,11 +65,14 @@ namespace MonoTorrent.Dht
         {
             return Add (node, true);
         }
-        int counter = 0;
+
         bool Add (Node node, bool raiseNodeAdded)
         {
             if (node == null)
                 throw new ArgumentNullException (nameof (node));
+
+            if (NodesToIgnore.Contains (node.EndPoint))
+                return false;
 
             Bucket bucket = Buckets.Find (b => b.CanContain (node))!;
             if (bucket.Nodes.Contains (node))
@@ -82,6 +92,11 @@ namespace MonoTorrent.Dht
             newBuckets.Add (bucket);
             newBuckets.Sort ();
             Buckets = newBuckets;
+        }
+
+        public void AddIgnoredEndpoint (CompactEndPoint endpoint)
+        {
+            NodesToIgnore.Add (endpoint);
         }
 
         internal Node? FindNode (NodeId id)

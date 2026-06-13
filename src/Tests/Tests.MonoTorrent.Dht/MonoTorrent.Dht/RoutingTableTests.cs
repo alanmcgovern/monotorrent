@@ -68,6 +68,15 @@ namespace MonoTorrent.Dht
                 Assert.IsTrue (closest.Exists (node => nodes[i].Equals (closest[i].Id)));
         }
 
+        [Test]
+        public void DiscardBootstrapRouters ()
+        {
+            var ep = new CompactEndPoint (IPAddress.Parse ("12.23.34.45"), 1415);
+            table.AddIgnoredEndpoint (ep);
+            Assert.IsFalse (table.Add (new Node (NodeId.Create (), ep)));
+            Assert.AreEqual (0, table.CountNodes ());
+        }
+
         private void CheckBuckets ()
         {
             foreach (Bucket b in table.Buckets)
