@@ -90,16 +90,19 @@ namespace MonoTorrent.Connections
 
         async void ReceiveAsync (Socket client, CancellationToken token)
         {
-            Memory<byte> buffer = new byte[4096];
-            while (!token.IsCancellationRequested) {
+            Memory<byte> buffer = new byte[8 * 1024];
+            while (!token.IsCancellationRequested && receiveAddress is not null) {
                 try {
                     var bytesReceived = await client.ReceiveFromAsync (
                         buffer,
                         SocketFlags.None,
-                        receiveAddress!).ConfigureAwait (false);
+                        receiveAddress).ConfigureAwait (false);
+
+                    if (bytesReceived == 0)
+                        continue;
 
                     var msg = buffer.Slice (0, bytesReceived).ToArray ();
-                    var endPoint = new CompactEndPoint (receiveAddress!);
+                    var endPoint = new CompactEndPoint (receiveAddress);
                     if (!token.IsCancellationRequested)
                         MessageReceived?.Invoke (msg, endPoint);
                 } catch (SocketException ex) {
