@@ -74,7 +74,7 @@ namespace MonoTorrent.Dht
             if (NodesToIgnore.Contains (node.EndPoint))
                 return false;
 
-            Bucket bucket = Buckets.Find (b => b.CanContain (node))!;
+            var bucket = FindBucket (node.Id);
             if (bucket.Nodes.Contains (node))
                 return false;
 
@@ -97,6 +97,15 @@ namespace MonoTorrent.Dht
         public void AddIgnoredEndpoint (CompactEndPoint endpoint)
         {
             NodesToIgnore.Add (endpoint);
+        }
+
+        Bucket FindBucket (NodeId id)
+        {
+            foreach (Bucket b in Buckets)
+                if (b.CanContain (id))
+                    return b;
+
+            throw new InvalidOperationException("Every node can fit into a bucket");
         }
 
         internal Node? FindNode (NodeId id)
@@ -147,7 +156,7 @@ namespace MonoTorrent.Dht
         }
 
 
-        public ICollection<Node> GetClosest (NodeId target)
+        public ClosestNodesCollection GetClosest (NodeId target)
         {
             var closestNodes = new ClosestNodesCollection (target);
             foreach (var bucket in Buckets)
