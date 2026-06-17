@@ -10,12 +10,15 @@ using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht;
+using MonoTorrent.Logging;
 using MonoTorrent.Messages;
 
 namespace ClientSample
 {
     class Program
     {
+        static bool SearchRandomHashes = false;
+
         static void Main (string[] args)
         {
             MainAsync ().Wait ();
@@ -23,6 +26,8 @@ namespace ClientSample
 
         static async Task MainAsync ()
         {
+            LoggerFactory.Register (new TextWriterLogger (Console.Out));
+
             // Create a DHT engine, and register a listener on port 15000
             var engine = new DhtEngine ();
             var listener = new DhtListener (new IPEndPoint (IPAddress.Any, 15000));
@@ -64,32 +69,30 @@ namespace ClientSample
                 await Task.Delay (1000);
             }
 
-            DumpStats (engine);
-            static async void DumpStats (DhtEngine engine)
-            {
-                while (true) {
-                    Console.WriteLine ("Nodes: " + engine.NodeCount);
-                    await Task.Delay (1500);
+            var infoHashes = new List<InfoHash> { InfoHash.FromHex ("d160b8d8ea35a5b4e52837468fc8f03d55cef1f7") };
+
+            if (SearchRandomHashes) {
+                for (int i = 0; i < 10000; i++) {
+                    var data = new byte[20];
+                    Random.Shared.NextBytes (data);
+                    infoHashes.Add (InfoHash.FromMemory (data));
                 }
             }
-
-            var infoHashes = new[] { InfoHash.FromHex ("d160b8d8ea35a5b4e52837468fc8f03d55cef1f7") };
 
             var tasks = new List<Task> ();
             var s = new SemaphoreSlim (50, 50);
             foreach (var hash in infoHashes) {
-                if (!s.Wait (0)) {
+                if (s.Wait (0)) {
+                    tasks.Add (engine.GetPeersAsync (hash).AsTask ());
+                    Console.WriteLine ("Starting one");
+                } else {
                     var done = await Task.WhenAny (tasks);
                     tasks.Remove (done);
                     s.Release ();
                     Console.WriteLine ("Done one");
                     await done;
                 }
-
-                tasks.Add (engine.GetPeersAsync (hash).AsTask ());
-                Console.WriteLine ("Starting one");
             }
-
 
             Console.WriteLine ("all done");
             Console.ReadLine ();
