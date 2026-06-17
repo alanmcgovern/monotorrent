@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="GitInfo" />
+    <PackageReference Include="ReusableTasks" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" />
