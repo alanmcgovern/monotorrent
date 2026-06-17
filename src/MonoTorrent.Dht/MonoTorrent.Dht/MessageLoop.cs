@@ -167,7 +167,7 @@ namespace MonoTorrent.Dht
             try {
                 //Console.WriteLine ("R: " + Encoding.UTF8.GetString (buffer.Span));
 
-                if (buffer.Span.Length > 0 && buffer.Span[0] != (byte) 'd') {
+                if (buffer.Span.Length < 1 || buffer.Span[0] != (byte) 'd') {
                     // Definitely cannot be a BEncoded Dictionary. Drop it immediately.
                     return;
                 }
