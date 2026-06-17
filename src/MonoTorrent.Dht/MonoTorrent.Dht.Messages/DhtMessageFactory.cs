@@ -62,8 +62,10 @@ namespace MonoTorrent.Dht.Messages
 
         public bool UnregisterSend (ReadOnlySpan<byte> transactionId, CompactEndPoint endPoint)
         {
+            // Remote peers may send spoofed, or invalid, responses containing a transaction ID this
+            // library did not create. If that happens, just return false. No need to raise an exception.
             if (transactionId.Length != 2)
-                throw new InvalidOperationException ("Transaction ids should be 2 byte BEncodedStrings");
+                return false;
 
             return messages.Remove ((TransactionId.From (transactionId), endPoint));
         }
