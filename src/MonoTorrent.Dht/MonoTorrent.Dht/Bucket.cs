@@ -101,9 +101,7 @@ namespace MonoTorrent.Dht
         }
 
         public bool CanContain (NodeId id)
-        {
-            return Min <= id && Max > id;
-        }
+            => id >= Min && id < Max;
 
         internal void Changed ()
         {

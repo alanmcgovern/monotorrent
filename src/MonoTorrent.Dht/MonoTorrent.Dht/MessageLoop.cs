@@ -33,6 +33,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -52,18 +53,20 @@ namespace MonoTorrent.Dht
 
         struct SendDetails
         {
-            public SendDetails (Node? node, CompactEndPoint destination, ReadOnlyMemory<byte> message, TaskCompletionSource<SendQueryEventArgs>? tcs)
+            public SendDetails (Node? node, CompactEndPoint destination, ReadOnlyMemory<byte> message, ChannelWriter<SendQueryEventArgs>? channel)
             {
-                CompletionSource = tcs;
+                Channel = channel;
                 Destination = destination;
                 Node = node;
                 Message = message;
                 SentAt = new ValueStopwatch ();
             }
-            public readonly TaskCompletionSource<SendQueryEventArgs>? CompletionSource;
+
+            public readonly ChannelWriter<SendQueryEventArgs>? Channel;
             public readonly CompactEndPoint Destination;
             public readonly ReadOnlyMemory<byte> Message;
             public readonly Node? Node;
+            public bool IsRetry => RemainingRetries != 2;
             public int RemainingRetries = 2;
             public ValueStopwatch SentAt;
         }
@@ -88,6 +91,8 @@ namespace MonoTorrent.Dht
         /// The number of DHT messages which have been sent and no response has been received.
         /// </summary>
         internal int PendingQueries => WaitingResponse.Count;
+
+        bool ProcessingSendQueue = false;
 
         /// <summary>
         /// The list of messages which have been received from the attached IDhtListener which
@@ -130,7 +135,6 @@ namespace MonoTorrent.Dht
             WaitingResponse = new Dictionary<(TransactionId, CompactEndPoint), SendDetails> ();
             WaitingResponseTimedOut = new List<SendDetails> ();
 
-            Task? sendTask = null;
             DhtEngine.MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (5), () => {
                 monitor.ReceiveMonitor.Tick ();
                 monitor.SendMonitor.Tick ();
@@ -138,8 +142,7 @@ namespace MonoTorrent.Dht
                 if (engine.Disposed)
                     return false;
                 try {
-                    if (sendTask == null || sendTask.IsCompleted)
-                        sendTask = SendMessages ();
+                    SendMessages ();
 
                     while (ReceiveQueue.Count > 0)
                         ReceiveMessage ();
@@ -196,29 +199,55 @@ namespace MonoTorrent.Dht
             QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query, response));
         }
 
-        async Task SendMessages ()
+        async void SendMessages ()
         {
-            for (int i = 0; i < 150 && SendQueue.Count > 0; i++) {
-                SendDetails details = SendQueue.Dequeue ();
+            if (ProcessingSendQueue)
+                return;
 
-                details.SentAt = ValueStopwatch.StartNew ();
-                var message = KrpcMessage.Parse (details.Message);
-                // FIXME: Don't merge message type (query, response, error) with the actual undetlying message (getpeers, findnode, ping etc)
-                if (message.MessageType == KrpcType.Query) {
-                    if (message.TransactionId.IsEmpty) {
-                        Logger.Error ("Transaction id was unexpectedly missing while sending messages");
-                        return;
+            ProcessingSendQueue = true;
+            try {
+                for (int i = 0; i < 150 && SendQueue.Count > 0; i++) {
+                    SendDetails details = SendQueue.Dequeue ();
+
+                    details.SentAt = ValueStopwatch.StartNew ();
+                    var message = KrpcMessage.Parse (details.Message);
+                    // FIXME: Don't merge message type (query, response, error) with the actual undetlying message (getpeers, findnode, ping etc)
+                    if (message.MessageType == KrpcType.Query) {
+                        if (message.TransactionId.IsEmpty) {
+                            Logger.Error ("Transaction id was unexpectedly missing while sending messages");
+                            return;
+                        }
+                        if (details.IsRetry) {
+                            // If we're still waiting for the response, update the struct we're storing
+                            if (WaitingResponse.ContainsKey ((TransactionId.From (message.TransactionId), details.Destination))) {
+                                WaitingResponse[(TransactionId.From (message.TransactionId), details.Destination)] = details;
+                            } else {
+                                // If the response has actually been received (the message was removed from 'WaitingResponse' prior the retry
+                                // bubbling to the top of the send queue, drop the message immediately. No further processing is needed.
+                                return;
+                            }
+                        } else {
+                            WaitingResponse.Add ((TransactionId.From (message.TransactionId), details.Destination), details);
+                        }
                     }
-                    WaitingResponse.Add ((TransactionId.From (message.TransactionId), details.Destination), details);
+
+                    try {
+                        Monitor.SendMonitor.AddDelta (details.Message.Length);
+                        //Console.WriteLine ("S: " + Encoding.UTF8.GetString (details.Message.Span));
+                        await Listener.SendAsync (details.Message, details.Destination);
+                    } catch (Exception ex) {
+                        Logger.Error (string.Format ("failed hard sending a message: {0}", ex));
+
+                        // Mark it ineligible for retries and also make it time out immediately.
+                        details.RemainingRetries = 0;
+                        details.SentAt = ValueStopwatch.WithTime (TimeSpan.FromMinutes (10));
+                        WaitingResponse[(TransactionId.From (message.TransactionId), details.Destination)] = details;
+                    }
                 }
-                
-                try {
-                    Monitor.SendMonitor.AddDelta (details.Message.Length);
-                    //Console.WriteLine ("S: " + Encoding.UTF8.GetString (details.Message.Span));
-                    await Listener.SendAsync (details.Message, details.Destination);
-                } catch {
-                    TimeoutMessage (details);
-                }
+            } catch (Exception ex) {
+                Logger.Error (string.Format ("Unexpected error sending pending messages to peers: {0}", ex));
+            } finally {
+                ProcessingSendQueue = false;
             }
         }
 
@@ -245,19 +274,28 @@ namespace MonoTorrent.Dht
                 Listener.Stop ();
         }
 
+        bool handlingTimeouts = false;
         void TimeoutMessages ()
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            foreach (KeyValuePair<(TransactionId, CompactEndPoint), SendDetails> v in WaitingResponse) {
-                if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
-                    WaitingResponseTimedOut.Add (v.Value);
+            if (handlingTimeouts)
+                return;
+
+            handlingTimeouts = true;
+            try {
+                foreach (KeyValuePair<(TransactionId, CompactEndPoint), SendDetails> v in WaitingResponse) {
+                    if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
+                        WaitingResponseTimedOut.Add (v.Value);
+                }
+
+                foreach (SendDetails v in WaitingResponseTimedOut)
+                    TimeoutMessage (v);
+
+                WaitingResponseTimedOut.Clear ();
+            } finally {
+                handlingTimeouts = false;
             }
-
-            foreach (SendDetails v in WaitingResponseTimedOut)
-                TimeoutMessage (v);
-
-            WaitingResponseTimedOut.Clear ();
         }
 
         void TimeoutMessage (SendDetails v)
@@ -265,17 +303,28 @@ namespace MonoTorrent.Dht
             DhtEngine.MainLoop.CheckThread ();
 
             var m = KrpcMessage.Parse (v.Message);
-            WaitingResponse.Remove ((TransactionId.From (m.TransactionId), v.Destination));
             v.Node!.FailedCount++;
-
-            RaiseMessageSent (v.Node!, v.Destination, v.Message);
 
             if (v.RemainingRetries > 0) {
                 v.RemainingRetries--;
+                v.SentAt = ValueStopwatch.StartNew ();
+                // Ensure we don't time it out again immediately
+                WaitingResponse[(TransactionId.From (m.TransactionId), v.Destination)] = v;
                 SendQueue.Enqueue (v);
             } else {
+                WaitingResponse.Remove ((TransactionId.From (m.TransactionId), v.Destination));
                 DhtMessageFactory.UnregisterSend (m.TransactionId, v.Destination);
-                v.CompletionSource?.TrySetResult (new SendQueryEventArgs (v.Node!, v.Destination, v.Message));
+
+                if (v.Channel is not null) {
+                    try {
+                        if (!v.Channel.TryWrite (new SendQueryEventArgs (v.Node!, v.Destination, v.Message)))
+                            Logger.Error ("Failed to write timeout result to the unbounded channel");
+                    } catch (Exception ex) {
+                        Logger.Error (string.Format ("unexpected error writing a result to the response chanenl: {0}", ex));
+                    }
+                }
+
+                RaiseMessageSent (v.Node!, v.Destination, v.Message);
             }
         }
 
@@ -372,7 +421,7 @@ namespace MonoTorrent.Dht
             } else {
                 response = KrpcMessageEncoder.EncodeError (rawResponse.TransactionId, (int) ErrorCode.ProtocolError, "Invalid or expired token received"u8);
             }
-            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint);
+            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint, null);
         }
 
         void HandleFindNode (Node node, ref KrpcMessage rawResponse)
@@ -384,7 +433,7 @@ namespace MonoTorrent.Dht
                 : Node.CompactNode (Engine.RoutingTable.GetClosest (nodeId));
 
             var response = KrpcMessageEncoder.EncodeFindNodeResponse (rawResponse.TransactionId, Engine.LocalId, nodes.Span);
-            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint);
+            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint, null);
         }
 
         void HandleGetPeers (Node node, ref KrpcMessage rawResponse)
@@ -402,13 +451,13 @@ namespace MonoTorrent.Dht
                 response = KrpcMessageEncoder.EncodeGetPeersResponseNodes (rawResponse.TransactionId, Engine.LocalId, token, Node.CompactNode (Engine.RoutingTable.GetClosest (infoHash)).Span);
             }
 
-            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint);
+            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint, null);
         }
 
         void HandlePing (Node node, ref KrpcMessage rawResponse)
         {
             var m = KrpcMessageEncoder.EncodePingResponse (rawResponse.TransactionId, Engine.LocalId);
-            Engine.MessageLoop.EnqueueSend (m, node, node.EndPoint);
+            Engine.MessageLoop.EnqueueSend (m, node, node.EndPoint, null);
         }
 
         void HandleError (SendDetails query, CompactEndPoint source, ReadOnlyMemory<byte> errorResposne)
@@ -418,7 +467,9 @@ namespace MonoTorrent.Dht
                 return;
             }
 
-            query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node!, source, query.Message, errorResposne));
+            if (query.Channel is not null)
+                if (!query.Channel.TryWrite (new SendQueryEventArgs (query.Node!, source, query.Message, errorResposne)))
+                    Logger.Error ("Failed to write error response to response channel");
             RaiseMessageSent (query.Node!, source, query.Message, errorResposne);
         }
 
@@ -432,7 +483,10 @@ namespace MonoTorrent.Dht
             node.Seen ();
             if (!rawResponse.Response.Token.IsEmpty)
                 node.Token = new BEncodedString (rawResponse.Response.Token.ToArray ());
-            query.CompletionSource?.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, query.Message, response));
+            if (query.Channel is not null) {
+                if (!query.Channel.TryWrite (new SendQueryEventArgs (node, node.EndPoint, query.Message, response)))
+                    Logger.Error ("Failed to write response to response channel");
+            }
             RaiseMessageSent (node, node.EndPoint, query.Message, response);
         }
 
@@ -446,7 +500,7 @@ namespace MonoTorrent.Dht
             return ReusableTask.CompletedTask;
         }
 
-        internal void EnqueueSend (ReadOnlyMemory<byte> messageBuffer, Node? node, CompactEndPoint endPoint, TaskCompletionSource<SendQueryEventArgs>? tcs = null)
+        internal void EnqueueSend (ReadOnlyMemory<byte> messageBuffer, Node? node, CompactEndPoint endPoint, ChannelWriter<SendQueryEventArgs>? channel)
         {
             DhtEngine.MainLoop.CheckThread ();
 
@@ -459,23 +513,21 @@ namespace MonoTorrent.Dht
             if (message.MessageType == KrpcType.Query)
                 DhtMessageFactory.RegisterSend (message.TransactionId, messageBuffer, endPoint);
 
-            SendQueue.Enqueue (new SendDetails (node, endPoint, messageBuffer, tcs));
+            SendQueue.Enqueue (new SendDetails (node, endPoint, messageBuffer, channel));
         }
 
-        internal void EnqueueSend (ReadOnlyMemory<byte> message, Node node, TaskCompletionSource<SendQueryEventArgs>? tcs = null)
+        internal void EnqueueSend (ReadOnlyMemory<byte> message, Node node, ChannelWriter<SendQueryEventArgs>? channel)
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            EnqueueSend (message, node, node.EndPoint, tcs);
+            EnqueueSend (message, node, node.EndPoint, channel);
         }
 
-        public Task<SendQueryEventArgs> SendAsync (ReadOnlyMemory<byte> message, Node node)
+        public void SendAsync (ReadOnlyMemory<byte> message, Node node, ChannelWriter<SendQueryEventArgs>? channel)
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            var tcs = new TaskCompletionSource<SendQueryEventArgs> ();
-            EnqueueSend (message, node, tcs);
-            return tcs.Task;
+            EnqueueSend (message, node, channel);
         }
     }
 }

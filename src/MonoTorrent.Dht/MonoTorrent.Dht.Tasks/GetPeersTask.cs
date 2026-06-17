@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -63,24 +64,26 @@ namespace MonoTorrent.Dht.Tasks
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            var activeQueries = new List<Task<SendQueryEventArgs>> ();
-            var closestNodes = new ClosestNodesCollection (InfoHash);
-            var closestActiveNodes = new ClosestNodesCollection (InfoHash);
+            var pendingGetPeers = 0;
+            var getPeersChannel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
 
-            foreach (Node node in Engine.RoutingTable.GetClosest (InfoHash)) {
-                if (closestNodes.Add (node)) {
-                    var transactionId = TransactionId.NextId ();
-                    var query = KrpcMessageEncoder.EncodeGetPeers (transactionId, Engine.LocalId, InfoHash.Span);
-                    activeQueries.Add (Engine.SendQueryAsync (query, node).AsTask ());
-                }
+            var closestNodes = Engine.RoutingTable.GetClosest (InfoHash);
+            foreach (Node node in closestNodes) {
+                var transactionId = TransactionId.NextId ();
+                var query = KrpcMessageEncoder.EncodeGetPeers (transactionId, Engine.LocalId, InfoHash.Span);
+                Engine.SendQueryAsync (query, node, getPeersChannel.Writer);
+                pendingGetPeers++;
             }
 
-            while (activeQueries.Count > 0) {
-                var completed = await Task.WhenAny (activeQueries);
-                activeQueries.Remove (completed);
-
+            var closestActiveNodes = new ClosestNodesCollection (InfoHash);
+            while (pendingGetPeers > 0) {
                 // If it timed out or failed just move to the next query.
-                SendQueryEventArgs query = await completed;
+                SendQueryEventArgs query = await getPeersChannel.Reader.ReadAsync ();
+                pendingGetPeers--;
+
                 if (query.Response.IsEmpty)
                     continue;
 
@@ -103,7 +106,8 @@ namespace MonoTorrent.Dht.Tasks
                         if (closestNodes.Add (node)) {
                             var transactionId = TransactionId.NextId ();
                             var getPeers = KrpcMessageEncoder.EncodeGetPeers (transactionId, Engine.LocalId, InfoHash.Span);
-                            activeQueries.Add (Engine.SendQueryAsync (getPeers, node).AsTask ());
+                            Engine.SendQueryAsync (getPeers, node, getPeersChannel.Writer);
+                            pendingGetPeers++;
                         }
                 }
 
@@ -118,7 +122,7 @@ namespace MonoTorrent.Dht.Tasks
         List<PeerInfo> ParseValues (ReadOnlySpan<byte> peersSpan)
         {
             var reader = new BEncodeReader (peersSpan);
-            var peers = new List<PeerInfo> ();
+            var peers = new List<PeerInfo> (peersSpan.Length % 6);
 
             // first token must be ListBegin
             if (!reader.Read () || reader.Token != BEncodeToken.ListBegin)
