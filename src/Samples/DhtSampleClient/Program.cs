@@ -81,21 +81,23 @@ namespace ClientSample
 
             var tasks = new List<Task> ();
             var s = new SemaphoreSlim (50, 50);
-            foreach (var hash in infoHashes) {
-                if (s.Wait (0)) {
-                    tasks.Add (engine.GetPeersAsync (hash).AsTask ());
-                    Console.WriteLine ("Starting one");
-                } else {
-                    var done = await Task.WhenAny (tasks);
-                    tasks.Remove (done);
-                    s.Release ();
-                    Console.WriteLine ("Done one");
-                    await done;
+            while (true) {
+                foreach (var hash in infoHashes) {
+                    if (s.Wait (0)) {
+                        tasks.Add (engine.GetPeersAsync (hash).AsTask ());
+                        Console.WriteLine ("Starting one");
+                    } else {
+                        var done = await Task.WhenAny (tasks);
+                        tasks.Remove (done);
+                        s.Release ();
+                        Console.WriteLine ("Done one");
+                        await done;
+                    }
                 }
-            }
 
-            Console.WriteLine ("all done");
-            Console.ReadLine ();
+                Console.WriteLine ("all done. Press enter to loop again");
+                Console.ReadLine ();
+            }
         }
     }
 }
