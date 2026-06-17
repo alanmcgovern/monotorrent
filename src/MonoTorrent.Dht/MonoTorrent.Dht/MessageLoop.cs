@@ -338,7 +338,11 @@ namespace MonoTorrent.Dht
                             HandlePing (node, ref rawResponse);
                             break;
                         default:
+#if DEBUG
                             throw new NotSupportedException ("what is this?");
+#else
+                            break;
+#endif
                     }
                 }
             } catch (MessageException) {
