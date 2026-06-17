@@ -236,7 +236,7 @@ namespace MonoTorrent.Dht
                         //Console.WriteLine ("S: " + Encoding.UTF8.GetString (details.Message.Span));
                         await Listener.SendAsync (details.Message, details.Destination);
                     } catch (Exception ex) {
-                        Logger.Error (string.Format ("failed hard sending a message: {0}", ex));
+                        Logger.Error (string.Format ("failed to send a message: {0}", ex));
 
                         // Mark it ineligible for retries and also make it time out immediately.
                         details.RemainingRetries = 0;
