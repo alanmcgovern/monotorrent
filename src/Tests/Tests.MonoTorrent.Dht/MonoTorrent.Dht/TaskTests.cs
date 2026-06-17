@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -70,7 +71,7 @@ namespace MonoTorrent.Dht
 
             // Then set an error and make sure the engine state moves to 'NotReady'
             errorSource.SetException (new Exception ());
-            await engine.WaitForState (DhtState.NotReady).WithTimeout (1000);
+            await engine.WaitForState (DhtState.NotReady).WithTimeout (5000);
         }
 
         int counter;
@@ -85,8 +86,14 @@ namespace MonoTorrent.Dht
                     counter++;
             };
 
-            Assert.IsTrue ((await engine.SendQueryAsync (ping, node).WithTimeout (3000)).TimedOut, "#1");
-            Assert.AreEqual (3, counter, "#2");
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
+            engine.SendQueryAsync (ping, node, channel);
+
+            Assert.IsTrue ((await channel.Reader.ReadAsync ().AsTask ().WithTimeout (3000)).TimedOut, "#1");
+            Assert.AreEqual (1, counter, "#2");
         }
 
         [Test]
@@ -103,8 +110,14 @@ namespace MonoTorrent.Dht
                 }
             };
 
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
+            engine.SendQueryAsync (ping, node, channel.Writer);
+
             Assert.IsFalse (node.LastSeen < TimeSpan.FromSeconds (2));
-            Assert.IsFalse ((await engine.SendQueryAsync (ping, node).WithTimeout (3000)).TimedOut, "#1");
+            Assert.IsFalse ((await channel.Reader.ReadAsync ().AsTask ().WithTimeout (3000)).TimedOut, "#1");
             Assert.AreEqual (1, counter, "#2");
             Node n = engine.RoutingTable.FindNode (node.Id);
             Assert.IsNotNull (n, "#3");

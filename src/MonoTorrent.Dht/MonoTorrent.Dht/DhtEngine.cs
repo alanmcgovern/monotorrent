@@ -33,6 +33,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -141,7 +142,7 @@ namespace MonoTorrent.Dht
                 // run GetPeers and Announce tasks sequentially.
                 foreach (var node in Node.FromCompactNode (nodes)) {
                     try {
-                        await Add (node);
+                        Add (node);
                     } catch {
                         // FIXME log this.
                     }
@@ -149,11 +150,11 @@ namespace MonoTorrent.Dht
             }
         }
 
-        internal async ReusableTask Add (Node node)
+        internal void Add (Node node)
         {
             var id = TransactionId.NextId ();
             var query = KrpcMessageEncoder.EncodePing (id, RoutingTable.LocalNodeId.Span);
-            await SendQueryAsync (query, node);
+            SendQueryAsync (query, node, null);
         }
 
         public async ReusableTask AnnounceAsync (InfoHash infoHash, int port)
@@ -207,7 +208,7 @@ namespace MonoTorrent.Dht
             }
         }
 
-        async void InitializeAsync (IEnumerable<Node> nodes)
+        async void InitialiseAsync (IEnumerable<Node> nodes)
         {
             await MainLoop;
 
@@ -266,10 +267,10 @@ namespace MonoTorrent.Dht
             return buffer.Slice (0, buffer.Length - tmp.Length);
         }
 
-        internal async ReusableTask<SendQueryEventArgs> SendQueryAsync (ReadOnlyMemory<byte> query, Node node)
+        internal async void SendQueryAsync (ReadOnlyMemory<byte> query, Node node, ChannelWriter<SendQueryEventArgs>? channel)
         {
             await MainLoop;
-            return await MessageLoop.SendAsync (query, node);
+            MessageLoop.SendAsync (query, node, channel);
         }
 
         public async ReusableTask SetBootstrapRoutersAsync (IEnumerable<BootstrapRouter> routers)
@@ -293,7 +294,7 @@ namespace MonoTorrent.Dht
             MessageLoop.Start ();
             if (RoutingTable.NeedsBootstrap) {
                 RaiseStateChanged (DhtState.Initialising);
-                InitializeAsync (nodes);
+                InitialiseAsync (nodes);
             } else {
                 RaiseStateChanged (DhtState.Ready);
             }

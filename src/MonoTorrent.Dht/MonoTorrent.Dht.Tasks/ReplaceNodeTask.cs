@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Threading.Channels;
 
 using MonoTorrent.Dht.Messages;
 
@@ -54,14 +55,20 @@ namespace MonoTorrent.Dht.Tasks
             bucket.Changed ();
             bucket.SortBySeen ();
 
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
+
             if (bucket.Nodes[0].LastSeen < TimeSpan.FromMinutes (3)) {
                 return;
             } else {
                 Node oldest = bucket.Nodes[0];
                 var transactionId = TransactionId.NextId ();
                 var ping = KrpcMessageEncoder.EncodePing (transactionId, engine.LocalId);
-                SendQueryEventArgs args = await engine.SendQueryAsync (ping, oldest);
+                engine.SendQueryAsync (ping, oldest, channel.Writer);
 
+                SendQueryEventArgs args = await channel.Reader.ReadAsync ();
                 if (args.TimedOut) {
                     // If the node didn't respond and it's no longer in our bucket,
                     // we need to send a ping to the oldest node in the bucket

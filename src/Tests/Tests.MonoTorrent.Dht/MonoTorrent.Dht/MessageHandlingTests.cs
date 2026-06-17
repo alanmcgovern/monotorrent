@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -64,10 +65,15 @@ namespace MonoTorrent.Dht
             };
 
             // Send the ping
-            var task = engine.SendQueryAsync (ping, node);
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
+            engine.SendQueryAsync (ping, node, channel.Writer);
 
+            var task = channel.Reader.ReadAsync ().AsTask ();
             // The query should complete, and the message should not have timed out.
-            Assert.IsTrue (task.AsTask ().Wait (100000), "#1");
+            Assert.IsTrue (task.Wait (100000), "#1");
             Assert.IsTrue (pingSuccessful.Task.Wait (1000), "#2");
             Assert.IsTrue (pingSuccessful.Task.Result, "#3");
             Assert.IsFalse (DhtMessageFactory.IsRegistered (transactionId, node.EndPoint), "#4");
@@ -106,7 +112,7 @@ namespace MonoTorrent.Dht
             Assert.AreEqual (NodeState.Unknown, node.State, "#1");
 
             // Should cause an implicit Ping to be sent to the node to verify it's alive.
-            await engine.Add (node);
+            engine.Add (node);
 
             Assert.IsTrue (tcs.Task.Wait (10_000), "#1a");
             Assert.IsTrue (node.LastSeen < TimeSpan.FromSeconds (1), "#2");
@@ -145,14 +151,20 @@ namespace MonoTorrent.Dht
             };
 
             // Send the ping which will be responded to
-            engine.SendQueryAsync (ping, node).WithTimeout ().Wait ();
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
+            engine.SendQueryAsync (ping, node, channel.Writer);
+            channel.Reader.ReadAsync ().AsTask ().WithTimeout ().Wait ();
             Assert.AreEqual (0, node.FailedCount, "#0b");
 
             engine.MessageLoop.Timeout = TimeSpan.Zero;
             node.Seen (TimeSpan.FromHours (1));
 
             // Send a ping which will time out
-            engine.SendQueryAsync (timedOutPing, node).WithTimeout ().Wait ();
+            engine.SendQueryAsync (timedOutPing, node, channel.Writer);
+            channel.Reader.ReadAsync ().AsTask ().WithTimeout ().Wait ();
 
             Assert.AreEqual (3, node.FailedCount, "#1");
             Assert.AreEqual (NodeState.Bad, node.State, "#2");
@@ -176,7 +188,12 @@ namespace MonoTorrent.Dht
             };
 
             // Send the ping
-            var task = engine.SendQueryAsync (ping, node);
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
+            engine.SendQueryAsync (ping, node, channel.Writer);
+            var task = channel.Reader.ReadAsync ().AsTask ();
 
             // Some other node sends us a Query with the same transaction ID
             listener.RaiseMessageReceived (ping, new CompactEndPoint (IPAddress.Any, 9876));
@@ -186,7 +203,7 @@ namespace MonoTorrent.Dht
             listener.RaiseMessageReceived (response, node.EndPoint);
 
             // The query should complete, and the message should not have timed out.
-            Assert.IsTrue (task.AsTask ().Wait (1000), "#1");
+            Assert.IsTrue (task.Wait (1000), "#1");
             Assert.IsTrue (pingSuccessful.Task.Wait (1000), "#2");
             Assert.IsTrue (pingSuccessful.Task.Result, "#3");
             Assert.AreEqual (0, engine.MessageLoop.PendingQueries, "#4");

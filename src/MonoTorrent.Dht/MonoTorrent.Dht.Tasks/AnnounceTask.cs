@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -62,15 +63,25 @@ namespace MonoTorrent.Dht.Tasks
             var getpeers = new GetPeersTask (engine, infoHash);
             IEnumerable<Node> nodes = await getpeers.ExecuteAsync ();
 
-            var announceTasks = new List<Task> ();
+            var pending = 0;
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
+
             foreach (Node n in nodes) {
                 if (n.Token != null) {
                     var id = TransactionId.NextId ();
                     var query = KrpcMessageEncoder.EncodeAnnouncePeer (id, engine.LocalId, infoHash.Span, ((BEncodedString) n.Token).Span, port, false);
-                    announceTasks.Add (engine.SendQueryAsync (query, n).AsTask ());
+                    engine.SendQueryAsync (query, n, channel.Writer);
+                    pending++;
                 }
             }
-            await Task.WhenAll (announceTasks);
+
+            while (pending > 0) {
+                await channel.Reader.ReadAsync ().ConfigureAwait (false);
+                pending--;
+            }
         }
     }
 }

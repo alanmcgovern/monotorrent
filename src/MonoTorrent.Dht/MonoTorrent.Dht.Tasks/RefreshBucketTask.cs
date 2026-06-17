@@ -27,6 +27,7 @@
 //
 
 
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.Dht.Messages;
@@ -51,11 +52,16 @@ namespace MonoTorrent.Dht.Tasks
 
             bucket.SortBySeen ();
 
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
             foreach (Node node in bucket.Nodes.ToArray ()) {
                 var transactionId = TransactionId.NextId ();
                 var message = KrpcMessageEncoder.EncodeFindNode (transactionId, engine.LocalId, node.Id.Span);
 
-                SendQueryEventArgs args = await engine.SendQueryAsync (message, node);
+                engine.SendQueryAsync (message, node, channel.Writer);
+                SendQueryEventArgs args = await channel.Reader.ReadAsync ();
                 if (!args.TimedOut)
                     return;
             }
