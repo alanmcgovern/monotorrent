@@ -83,29 +83,35 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<PeersAddedEventArgs>? PeersFound;
 
-        public async Task SetFilePriorityAsync (ITorrentManagerFile file, Priority priority)
+        public async ReusableTask SetFilePriorityAsync (ITorrentManagerFile file, Priority priority)
         {
-            if (!Files.Contains (file))
-                throw new ArgumentNullException (nameof (file), "The file is not part of this torrent");
-
             // No change - bail out
             if (priority == file.Priority)
                 return;
 
             await ClientEngine.MainLoop;
+            await SetFilePriority ((TorrentFileInfo) file, priority);
+        }
 
+        async ReusableTask SetFilePriority (TorrentFileInfo file, Priority newPriority)
+        {
             if (Engine == null)
                 throw new InvalidOperationException ("This torrent manager has been removed from it's ClientEngine");
 
+            var indexOfFile = Files.IndexOf (file);
+            if (indexOfFile < 0)
+                throw new ArgumentNullException (nameof (file), "The file is not part of this torrent");
+
             // If the old priority, or new priority, is 'DoNotDownload' then the selector needs to be refreshed
-            bool needsToUpdateSelector = file.Priority == Priority.DoNotDownload || priority == Priority.DoNotDownload;
             var oldPriority = file.Priority;
+            bool needsToUpdateSelector = oldPriority == Priority.DoNotDownload || newPriority == Priority.DoNotDownload;
 
             if (oldPriority == Priority.DoNotDownload) {
-                var maybeLength = await Engine.DiskManager.GetLengthAsync (file);
-                ((TorrentFileInfo) file).CachedActualLength = maybeLength;
+                if (!file.CachedActualLength.HasValue)
+                    file.CachedActualLength = await Engine.DiskManager.GetLengthAsync (file);
+
                 // If the file does not exist *and* it's a zero length file, create it immediately.
-                if (!maybeLength.HasValue) {
+                if (!file.CachedActualLength.HasValue) {
                     if (file.Length == 0) {
                         await Engine.DiskManager.CreateAsync (file, Engine.Settings.FileCreationOptions);
                         ((TorrentFileInfo) file).BitField[0] = true;
@@ -113,27 +119,39 @@ namespace MonoTorrent.Client
                 }
 
                 // The file already exists but is too large - time to truncate
-                if (maybeLength.HasValue && maybeLength.Value > file.Length)
+                if (file.CachedActualLength.HasValue && file.CachedActualLength.Value > file.Length)
                     await Engine.DiskManager.SetLengthAsync (file, file.Length);
             }
 
             // Update the priority for the file itself now that we've successfully created it!
-            ((TorrentFileInfo) file).Priority = priority;
-
-            // We do need to recheck the length of every file here. 
-            RefreshAllFilesDownloadableOrDownloaded ();
+            ((TorrentFileInfo) file).Priority = newPriority;
 
             // With the new priority, calculate which files we're actively downloading!
             if (needsToUpdateSelector) {
-                // If we change the priority of a file we need to figure out which files are marked
-                // as 'DoNotDownload' and which ones are downloadable.
-                PartialProgressSelector.SetAll (false);
-                if (Files.All (static t => t.Priority != Priority.DoNotDownload)) {
-                    PartialProgressSelector.SetAll (true);
-                } else {
-                    PartialProgressSelector.SetAll (false);
-                    foreach (var f in Files.Where (static t => t.Priority != Priority.DoNotDownload))
-                        PartialProgressSelector.SetTrue ((f.StartPieceIndex, f.EndPieceIndex));
+                if (oldPriority == Priority.DoNotDownload) {
+                    // a non-downloadable file has been marked as downloadable. Just OR in it's values
+                    for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
+                        PartialProgressSelector.Set (i, true);
+                } else if (newPriority == Priority.DoNotDownload) {
+                    // A downloadable file is not downloadable anymore. Ensure none of it's piece indices are shared with a file still marked as 'downloadable', then set those to false.
+                    for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
+                        PartialProgressSelector.Set (i, false);
+
+                    // If any other file is marked as downloadable and shares 'StartPieceIndex', set it to true.
+                    for (int down = indexOfFile - 1; down >= 0 && Files[down].EndPieceIndex == file.StartPieceIndex; down--) {
+                        if (Files[down].Priority != Priority.DoNotDownload) {
+                            PartialProgressSelector.Set (file.StartPieceIndex, true);
+                            break;
+                        }
+                    }
+
+                    // If any other file is marked as downloadable and shares 'EndPieceIndex', set it to true.
+                    for (int up = indexOfFile + 1; up < Files.Count && Files[up].StartPieceIndex == file.EndPieceIndex; up++) {
+                        if (Files[up].Priority != Priority.DoNotDownload) {
+                            PartialProgressSelector.Set (file.EndPieceIndex, true);
+                            break;
+                        }
+                    }
                 }
             }
 

@@ -592,6 +592,7 @@ namespace MonoTorrent.Client
             await rig.Manager.StartAsync ();
             await rig.Manager.WaitForState (TorrentState.Downloading);
 
+            Assert.IsTrue (rig.Manager.FilesAreNotMissingOrTooLarge);
             Assert.IsTrue (await writer.ExistsAsync (rig.Manager.Files[0]));
             Assert.IsFalse (await writer.ExistsAsync (rig.Manager.Files[1]));
             Assert.IsFalse (await writer.ExistsAsync (rig.Manager.Files[2]));
