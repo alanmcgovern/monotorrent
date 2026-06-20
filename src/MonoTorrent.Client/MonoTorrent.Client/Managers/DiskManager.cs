@@ -724,7 +724,12 @@ namespace MonoTorrent.Client
         internal async ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions fileCreationOptions)
         {
             await IOLoop;
-            return await Cache.Writer.CreateAsync (file, fileCreationOptions);
+            if (await Cache.Writer.CreateAsync (file, fileCreationOptions).ConfigureAwait (false)) {
+                ((TorrentFileInfo) file).CachedActualLength = 0;
+                return true;
+            }
+            ((TorrentFileInfo) file).CachedActualLength = null;
+            return false;
         }
 
         internal async ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)

@@ -103,13 +103,13 @@ namespace MonoTorrent.Client.Modes
                 // If the directory existed, it's worth checking if any files exist while we gather their sizes.
                 anyExisted = false;
                 foreach (TorrentFileInfo file in Manager.Files) {
-                    var length = await DiskManager.GetLengthAsync (file);
-                    file.CachedActualLength = length;
-
-                    anyExisted |= length.HasValue;
+                    // When hash checking we should double-check everything, which means we need to recheck the
+                    // length of the file on disk even if 'CachedActualLength' has been cached before.
+                    file.CachedActualLength = await DiskManager.GetLengthAsync (file);
+                    anyExisted |= file.CachedActualLength.HasValue;
                     // If this is a zero length file, mark it as downloaded if it exists.
                     if (file.Length == 0)
-                        file.BitField[0] = length.HasValue && length.Value == 0;
+                        file.BitField[0] = file.CachedActualLength.HasValue && file.CachedActualLength.Value == 0;
                 }
             }
 
