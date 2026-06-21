@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
         {
             Factories = Factories.Default
                 .WithTrackerCreator ("custom", uri => new CustomTracker (new CustomTrackerConnection (uri)));
-            trackerManager = new TrackerManager (Factories, new RequestFactory (), trackerUrls, true);
+            trackerManager = new TrackerManager (Factories, new ReusableSemaphore (0), new RequestFactory (), trackerUrls, true);
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
         }
 
@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
         public async Task AnnounceFailedByState ()
         {
             // Just have one tier as it's easier to reason about.
-            trackerManager = new TrackerManager (Factories, new RequestFactory (), new List<IEnumerable<string>> { trackerUrls[0] } , true);
+            trackerManager = new TrackerManager (Factories, new ReusableSemaphore (0), new RequestFactory (), new List<IEnumerable<string>> { trackerUrls[0] } , true);
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
 
             var tcs = new TaskCompletionSource<object> ();
@@ -300,7 +300,7 @@ namespace MonoTorrent.Client
                 .WithTrackerCreator ("custom", uri => new RateLimitingTracker (new RateLimitingTrackerConnection ()));
 
             var tier = new[] { new[] { $"custom://tracker/announce" } };
-            var trackerManager = new TrackerManager (factories, new RequestFactory (), tier, true);
+            var trackerManager = new TrackerManager (factories, new ReusableSemaphore (0), new RequestFactory (), tier, true);
             var trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<RateLimitingTracker> ().ToList ()).ToList ();
 
             // only 1 concurrent regular announce can run at a time. 
@@ -323,7 +323,7 @@ namespace MonoTorrent.Client
 
             // Create 100 tracker tiers.
             var urls = Enumerable.Range (0, 100).Select (t => new[] { $"custom://tracker{t}/announce" }).ToArray ();
-            var trackerManager = new TrackerManager (factories, new RequestFactory (), urls, true);
+            var trackerManager = new TrackerManager (factories, new ReusableSemaphore (0), new RequestFactory (), urls, true);
             var trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<RateLimitingTracker> ().ToList ()).ToList ();
 
             var cts = new CancellationTokenSource (TimeSpan.FromSeconds (10));
@@ -387,7 +387,7 @@ namespace MonoTorrent.Client
         public async Task MinInternal ()
         {
             // Just have one tier as it's easier to reason about.
-            trackerManager = new TrackerManager (Factories, new RequestFactory (), new List<IEnumerable<string>> { trackerUrls[0] }, true);
+            trackerManager = new TrackerManager (Factories, new ReusableSemaphore (0), new RequestFactory (), new List<IEnumerable<string>> { trackerUrls[0] }, true);
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
 
             var tcs = new TaskCompletionSource<object> ();
@@ -462,7 +462,7 @@ namespace MonoTorrent.Client
                 new List<string> { "unregistered://3.3.3.3:3331", "unregistered://3.3.3.3:3332" },
             };
 
-            var manager = new TrackerManager (Factories.Default, new RequestFactory (), tiers, false);
+            var manager = new TrackerManager (Factories.Default, new ReusableSemaphore (0), new RequestFactory (), tiers, false);
             Assert.AreEqual (0, manager.Tiers.Count, "#1");
         }
     }

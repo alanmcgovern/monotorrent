@@ -256,6 +256,8 @@ namespace MonoTorrent.Client
 
         public IList<TorrentManager> Torrents { get; }
 
+        internal ReusableSemaphore TrackerAnnounceLimiter { get; }
+
         public long TotalDownloadRate {
             get {
                 long total = 0;
@@ -344,6 +346,8 @@ namespace MonoTorrent.Client
 
             DhtEngine.PeersFound += DhtEnginePeersFound;
             LocalPeerDiscovery = new NullLocalPeerDiscovery ();
+
+            TrackerAnnounceLimiter = new ReusableSemaphore (15);
 
             RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery ? Factories.CreateLocalPeerDiscovery () : null);
         }

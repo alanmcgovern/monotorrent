@@ -484,7 +484,7 @@ namespace MonoTorrent.Client
                 if (magnetLink?.AnnounceUrls != null)
                     announces.Add (magnetLink.AnnounceUrls);
             }
-            TrackerManager = new TrackerManager (engine.Factories, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false);
+            TrackerManager = new TrackerManager (engine.Factories, engine.TrackerAnnounceLimiter, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false);
             SetTrackerManager (TrackerManager);
 
             PendingV2PieceHashes = new BitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
