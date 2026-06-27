@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
@@ -327,17 +328,17 @@ namespace MonoTorrent.IntegrationTests
         {
             // Give an example of how settings can be modified for the engine.
             var type = AnyAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
-            var settingBuilder = new EngineSettingsBuilder {
+            var settingBuilder = new EngineSettings () {
                 // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, port) } },
-                ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, port) } }.ToImmutableDictionary (),
+                ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } }.ToImmutableDictionary (),
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
                 DhtEndPoint = null,
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
             };
-            var engine = new ClientEngine (settingBuilder.ToSettings (), factories);
+            var engine = new ClientEngine (settingBuilder, factories);
             return engine;
         }
 
@@ -415,10 +416,10 @@ namespace MonoTorrent.IntegrationTests
 
         private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, string saveDirectory, EventHandler<TorrentStateChangedEventArgs> handler, FastResume fastResume = null)
         {
-            TorrentSettingsBuilder torrentSettingsBuilder = new TorrentSettingsBuilder () {
+            var torrentSettings = new TorrentSettings () with {
                 CreateContainingDirectory = false,
             };
-            TorrentManager manager = await clientEngine.AddAsync (torrent, saveDirectory, torrentSettingsBuilder.ToSettings ());
+            TorrentManager manager = await clientEngine.AddAsync (torrent, saveDirectory, torrentSettings);
 
             // load up some fastresume if it exists
             if (fastResume != null)

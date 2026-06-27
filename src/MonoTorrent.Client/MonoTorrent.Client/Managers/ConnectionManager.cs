@@ -183,7 +183,7 @@ namespace MonoTorrent.Client
                 if (connection == null)
                     return ConnectionFailureReason.UnknownUriSchema;
 
-                var timeout = Settings.ConnectionTimeouts[Math.Min (Settings.ConnectionTimeouts.Count - 1, peer.FailedConnectionAttempts)];
+                var timeout = Settings.ConnectionTimeouts[Math.Min (Settings.ConnectionTimeouts.Length - 1, peer.FailedConnectionAttempts)];
                 var state = new AsyncConnectState (manager, connection, timeout, ValueStopwatch.StartNew ());
                 try {
                     PendingConnects.Add (state);
@@ -262,7 +262,7 @@ namespace MonoTorrent.Client
                 MessageEncoder.WriteHandshake (handshakeBuffer.Span, manager.InfoHashes.V1OrV2.Span.Slice (0, 20), LocalPeerId.Span, enableFastPeer: true, enableExtended: true, supportUpgradeToV2: canUpgradeToV2);
                 logger.InfoFormatted (connection, "Sending handshake message with peer id '{0}' and infohash: {1}", LocalPeerId, manager.InfoHashes.V1OrV2);
 
-                var timeout = Settings.ConnectionTimeouts[Math.Min (Settings.ConnectionTimeouts.Count - 1, peer.FailedConnectionAttempts)];
+                var timeout = Settings.ConnectionTimeouts[Math.Min (Settings.ConnectionTimeouts.Length - 1, peer.FailedConnectionAttempts)];
                 EncryptorFactory.EncryptorResult result = await EncryptorFactory.CheckOutgoingConnectionAsync (connection, allowedEncryption, manager.InfoHashes.V1OrV2.Truncate (), handshakeBuffer, Factories, timeout);
                 decryptor = result.Decryptor;
                 encryptor = result.Encryptor;

@@ -15,6 +15,7 @@ using MonoTorrent.Messages;
 using NUnit.Framework;
 
 using ReusableTasks;
+using System.Collections.Immutable;
 
 namespace MonoTorrent.Client
 {
@@ -127,12 +128,12 @@ namespace MonoTorrent.Client
         public async Task CancelPending_SendingHandshake ()
         {
             var fake = new FakeConnection (new Uri ("ipv4://1.2.3.4:56789"));
-            var builder = new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
-                ConnectionTimeouts = new List<TimeSpan> { TimeSpan.FromHours (1) },
-                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.PlainText }
+            var builder = EngineHelpers.CreateSettings () with { 
+                ConnectionTimeouts = new List<TimeSpan> { TimeSpan.FromHours (1) }.ToImmutableArray (),
+                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.PlainText }.ToImmutableArray ()
             };
             var engine = EngineHelpers.Create (
-                builder.ToSettings (),
+                builder,
                 EngineHelpers.Factories.WithPeerConnectionCreator ("ipv4", t => {
                     return fake;
                 })
@@ -164,11 +165,11 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ConnectToSelf ()
         {
-            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            var seeder = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AllowLocalPeerDiscovery = false,
-                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full },
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
-            }.ToSettings ());
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full }.ToImmutableArray (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } }.ToImmutableDictionary (),
+            });
 
             var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
             var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
@@ -195,16 +196,16 @@ namespace MonoTorrent.Client
         public async Task EncryptionTiers_LastMatches ([Values (true, false)] bool addToSeeder)
         {
             int failedCount = 0;
-            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            var seeder = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AllowLocalPeerDiscovery = false,
-                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full },
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
-            }.ToSettings ());
-            var leecher = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full }.ToImmutableArray (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } }.ToImmutableDictionary (),
+            });
+            var leecher = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AllowLocalPeerDiscovery = false,
-                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full },
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
-            }.ToSettings ());
+                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full }.ToImmutableArray (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } }.ToImmutableDictionary (),
+            });
 
             var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
             var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
@@ -252,18 +253,18 @@ namespace MonoTorrent.Client
         public async Task EncryptionTiers_NoneMatch ([Values (true, false)] bool addToSeeder)
         {
             int failedCount = 0;
-            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            var seeder = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AllowLocalPeerDiscovery = false,
-                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText },
-                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromDays (1) },
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
-            }.ToSettings ());
-            var leecher = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText }.ToImmutableArray (),
+                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromDays (1) }.ToImmutableArray (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } }.ToImmutableDictionary (),
+            });
+            var leecher = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AllowLocalPeerDiscovery = false,
-                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full },
-                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromDays (1) },
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
-            }.ToSettings ());
+                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full }.ToImmutableArray (),
+                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromDays (1) }.ToImmutableArray (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } }.ToImmutableDictionary (),
+            });
 
             var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
             var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");
@@ -302,18 +303,18 @@ namespace MonoTorrent.Client
         public async Task RetryConnection_AfterTimeout ()
         {
             // The first retry should happen immediately, a second retry should take 'forever'.
-            var seeder = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            var seeder = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AllowLocalPeerDiscovery = false,
-                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromSeconds (1000), TimeSpan.FromSeconds (3000) },
-                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full },
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
-            }.ToSettings ());
+                ConnectionRetryDelays = new List<TimeSpan> { TimeSpan.FromSeconds (1000), TimeSpan.FromSeconds (3000) }.ToImmutableArray (),
+                AllowedEncryption = new List<EncryptionType> { EncryptionType.RC4Header, EncryptionType.PlainText, EncryptionType.RC4Full }.ToImmutableArray (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } }.ToImmutableDictionary (),
+            });
 
-            var leecher = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            var leecher = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AllowLocalPeerDiscovery = false,
-                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full },
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } },
-            }.ToSettings ());
+                AllowedEncryption = new System.Collections.Generic.List<EncryptionType> { EncryptionType.RC4Full }.ToImmutableArray (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) } }.ToImmutableDictionary (),
+            });
 
             var magnetLink = new MagnetLink (new InfoHash (Enumerable.Repeat ((byte) 0, 20).ToArray ()));
             var seederManager = await seeder.AddAsync (magnetLink, "tmp_seeder");

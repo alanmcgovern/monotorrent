@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -33,7 +34,7 @@ namespace ClientSample
         {
             const int httpListeningPort = 55125;
             // Give an example of how settings can be modified for the engine.
-            var settingBuilder = new EngineSettingsBuilder {
+            var settingBuilder = new EngineSettings () with {
                 // Allow the engine to automatically forward ports using upnp/nat-pmp (if a compatible router is available)
                 AllowPortForwarding = true,
 
@@ -55,7 +56,7 @@ namespace ClientSample
                 ListenEndPoints = new Dictionary<string, IPEndPoint> {
                     { "ipv4", new IPEndPoint (IPAddress.Any, 55123) },
                     { "ipv6", new IPEndPoint (IPAddress.IPv6Any, 55123) }
-                },
+                }.ToImmutableDictionary (),
 
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
                 DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),
@@ -68,7 +69,7 @@ namespace ClientSample
                 // For now just bind to localhost.
                 HttpStreamingPrefix = $"http://127.0.0.1:{httpListeningPort}/"
             };
-            using var engine = new ClientEngine (settingBuilder.ToSettings ());
+            using var engine = new ClientEngine (settingBuilder);
 
             Task task;
             if (args.Length == 1 && args[0] == "--vlc") {

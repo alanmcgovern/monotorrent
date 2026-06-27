@@ -62,11 +62,11 @@ namespace ClientSample
                     // 
                     // TorrentSettingsBuilder can be used to modify the settings for this
                     // torrent.
-                    var settingsBuilder = new TorrentSettingsBuilder {
+                    var settingsBuilder = new TorrentSettings () with {
                         MaximumConnections = 60,
                     };
                     try {
-                        await Engine.AddAsync (file, downloadsPath, settingsBuilder.ToSettings ());
+                        await Engine.AddAsync (file, downloadsPath, settingsBuilder);
                     } catch (Exception ex) {
                         Console.WriteLine ("Couldn't load torrent {0}{1}{2}", file, Environment.NewLine, ex);
                     }

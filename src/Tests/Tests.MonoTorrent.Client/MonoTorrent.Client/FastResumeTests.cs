@@ -133,11 +133,11 @@ namespace MonoTorrent.Client
         public async Task IgnoreInvalidFastResume ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings ());
+            });
 
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
@@ -192,11 +192,11 @@ namespace MonoTorrent.Client
         public async Task DeleteAfterDownloading ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings ());
+            });
 
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
@@ -213,11 +213,11 @@ namespace MonoTorrent.Client
         public async Task RetainAfterSeeding ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings ());
+            });
 
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
@@ -236,10 +236,10 @@ namespace MonoTorrent.Client
         {
             TestWriter testWriter = null;
             using var tmpDir = TempDir.Create ();
-            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AutoSaveLoadFastResume = true,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings (),
+            },
                 Factories.Default.WithPieceWriterCreator (maxOpenFiles => (testWriter = new TestWriter ()))
             );
 

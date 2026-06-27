@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.Modes
         [Test]
         public async Task AddPeers_TooMany ()
         {
-            await Manager.UpdateSettingsAsync (new TorrentSettingsBuilder (Manager.Settings) { MaximumConnections = 100 }.ToSettings ());
+            await Manager.UpdateSettingsAsync (Manager.Settings with { MaximumConnections = 100 });
 
             var peers = new List<PeerInfo> ();
             for (int i = 0; i < Manager.Settings.MaximumPeerDetails + 100; i++)
@@ -327,9 +327,9 @@ namespace MonoTorrent.Client.Modes
             var torrent = TestRig.CreatePrivate ();
             using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings ());
 
-            var settings = new TorrentSettingsBuilder {
+            var settings = new TorrentSettings () with {
                 RequirePeerIdToMatch = true,
-            }.ToSettings ();
+            };
             var manager = await engine.AddAsync (torrent, "", settings);
 
             manager.Mode = new DownloadMode (manager, DiskManager, ConnectionManager, Settings);

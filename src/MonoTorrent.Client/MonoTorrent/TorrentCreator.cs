@@ -406,12 +406,12 @@ namespace MonoTorrent
             // Some torrents use 16kB or 32kB pieces, so allowing preloading of up to 512kB worth seems reasonable?
             int preloadPieceCount = Math.Min (Math.Max (3, (512 * 1024) / PieceLength), pieceCount);
 
-            var settings = new EngineSettingsBuilder {
+            var settings = new EngineSettings () with {
                 // If we need to calculate per-file hashes, ensure we have enough capacity in the memory cache to avoid reading
                 // data from disk twice, and ensure we cache the data after we read it rather than ditching it ~immediately.
                 DiskCacheBytes = (StoreMD5 || StoreSHA1) ? preloadPieceCount * PieceLength : Constants.BlockSize * 8,
                 DiskCachePolicy = (StoreMD5 || StoreSHA1) ? CachePolicy.ReadsAndWrites : CachePolicy.WritesOnly
-            }.ToSettings ();
+            };
 
             using var diskManager = new DiskManager (settings, Factories);
             using var releaser = MemoryPool.Default.Rent (Constants.BlockSize, out Memory<Byte> reusableBlockBuffer);

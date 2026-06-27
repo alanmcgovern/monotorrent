@@ -295,7 +295,6 @@ namespace MonoTorrent.Client
 
         public ClientEngine (EngineSettings settings, Factories factories)
         {
-            settings = settings ?? throw new ArgumentNullException (nameof (settings));
             Factories = factories ?? throw new ArgumentNullException (nameof (factories));
 
             // This is just a sanity check to make sure the ReusableTasks.dll assembly is
@@ -303,7 +302,9 @@ namespace MonoTorrent.Client
             GC.KeepAlive (ReusableTasks.ReusableTask.CompletedTask);
 
             PeerId = GeneratePeerId ();
-            Settings = settings ?? throw new ArgumentNullException (nameof (settings));
+
+            // Runs validations and recomputes properties whose values are cached versions of things users can set with the 'with' operator.
+            Settings = EngineSettings.Create (settings);
             CheckSettingsAreValid (Settings);
 
             allTorrents = new Dictionary<InfoHash, TorrentManager> ();
@@ -893,7 +894,7 @@ namespace MonoTorrent.Client
             if (!Settings.AutoSaveLoadDhtCache)
                 return ReadOnlyMemory<byte>.Empty;
 
-            var savePath = Settings.GetDhtNodeCacheFilePath ();
+            var savePath = Settings.DhtNodeCacheFilePath;
             return await Task.Run (() => File.Exists (savePath) ? File.ReadAllBytes (savePath) : ReadOnlyMemory<byte>.Empty);
         }
 
@@ -914,7 +915,7 @@ namespace MonoTorrent.Client
             // TorrentManagers and the file write could happen
             // concurrently.
             using (await dhtNodeLocker.EnterAsync ().ConfigureAwait (false)) {
-                var savePath = Settings.GetDhtNodeCacheFilePath ();
+                var savePath = Settings.DhtNodeCacheFilePath;
                 var parentDir = Path.GetDirectoryName (savePath);
                 if (!(parentDir is null))
                     Directory.CreateDirectory (parentDir);
@@ -925,6 +926,8 @@ namespace MonoTorrent.Client
         public async Task UpdateSettingsAsync (EngineSettings settings)
         {
             await MainLoop.SwitchThread ();
+            // Runs validations and recomputes properties whose values are cached versions of things users can set with the 'with' operator.
+            settings = EngineSettings.Create (settings);
             CheckSettingsAreValid (settings);
 
             await MainLoop;

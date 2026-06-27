@@ -867,6 +867,9 @@ namespace MonoTorrent.Client
 
         public async Task UpdateSettingsAsync (TorrentSettings settings)
         {
+            // Validate all settings
+            settings = TorrentSettings.Create (settings);
+
             await ClientEngine.MainLoop;
             Settings = settings;
         }
