@@ -34,18 +34,41 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
+using MonoTorrent.Connections.Peer.Utp;
+
 using ReusableTasks;
 
 namespace MonoTorrent.Connections.Peer
 {
     class UtpPeerConnection : IPeerConnection
     {
+        // Most likely 'safe' limit on public internet is 1452 bytes.
+        // 1500 - (28 byte ip header overhead) - (20 byte utp header overhead)
+        // This will be lower if data is encapsulated in another protocol.
+        //
+        // Start with 1400 as that should allow a full 16kB piece to be sent
+        // in 12 packets incl and also provide some headroom for encapsulation.
+        //
+        // Can be probed at runtime to increase/decrease as necessary.
+        static readonly int InitialMtuSize = 1400;
+
         public ReadOnlyMemory<byte> AddressBytes { get; }
         public bool CanReconnect { get; }
         public bool Disposed { get; }
         public IPEndPoint? EndPoint { get; }
         public bool IsIncoming { get; }
         public Uri Uri { get; }
+
+
+        // Implement path MTU discovery to optimise this for the uncommon case.
+        // e.g. small MTU or jumbo frames.
+        int CurrentMtu { get; set; } = InitialMtuSize;
+
+        Queue<UtpPacket> ReceiveQueue = new Queue<UtpPacket> ();
+        Queue<UtpPacket> SendQueue = new Queue<UtpPacket> ();
+
+        public UtpPeerConnection (Uri uri)
+            => Uri = uri;
 
         public ReusableTask<bool> ConnectAsync ()
         {
