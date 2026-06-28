@@ -34,6 +34,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 {
     readonly struct UtpPacket
     {
+        public static int HeaderSize => 20;
+
         // Total size of '_raw' should not exceed MTU size. Roughly 12 udp packets
         // per 16kB piece request for most connections.
         readonly Memory<byte> _raw;
@@ -58,7 +60,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
         public uint Timestamp {
             get => BinaryPrimitives.ReadUInt32BigEndian (Span.Slice (4, 4));
-            set => BinaryPrimitives.WriteUInt32BigEndian (Span.Slice (4, 4), value);
+            private set => BinaryPrimitives.WriteUInt32BigEndian (Span.Slice (4, 4), value);
         }
         public uint TimestampDiff {
             get => BinaryPrimitives.ReadUInt32BigEndian (Span.Slice (8, 4));
@@ -77,7 +79,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             set => BinaryPrimitives.WriteUInt16BigEndian (Span.Slice (18, 2), value);
         }
 
+        public Span<byte> Payload => _raw.Slice (HeaderSize).Span;
+
         public UtpPacket (Memory<byte> packet)
             => _raw = packet;
+
+        public void SetTimestamp ()
+            => Timestamp = (uint) (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds () * 1_000);
     }
 }
