@@ -1,13 +1,13 @@
-﻿    using System;
-    using System.Collections.Concurrent;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Runtime.CompilerServices;
-    using System.Threading;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-    using ReusableTasks;
+using ReusableTasks;
 
 namespace MonoTorrent.Connections.Peer.Utp
 {
@@ -22,6 +22,12 @@ namespace MonoTorrent.Connections.Peer.Utp
     //   Initiator  picks  conn_id_recv  (sent in the SYN header).
     //   Acceptor   uses   conn_id_send = conn_id_recv + 1   in every reply.
     //   Acceptor   uses   conn_id_recv = conn_id_recv (same) to demux inbound.
+    //
+    // Connection map key: (remote EndPoint, conn_id_recv of the initiator).
+    //   Acceptor side  – keyed by syn.ConnectionId (the initiator's conn_id_recv).
+    //   Initiator side – keyed by the random conn_id_recv we chose for the SYN.
+    //   Every packet sent by the remote peer carries conn_id_send, which is
+    //   conn_id_recv + 1, so RouteToExisting subtracts 1 before the lookup.
     // =========================================================================
 
     public sealed class UtpPeerConnectionListener : SocketListener
@@ -31,10 +37,10 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public event EventHandler<PeerConnectionEventArgs>? ConnectionReceived;
 
-        readonly ConcurrentDictionary<(EndPoint, ushort), UtpPeerConnection> _connections = new ();
-        readonly ConcurrentDictionary<(EndPoint, ushort), UtpPacket> inFlightPackets = new ();
+        readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), UtpPeerConnection> _connections = new ();
 
-        Channel<(UtpPacket, IPEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, IPEndPoint)> ();
+        // FIXME: If packets are resent due to timeout we should still pull the latest 'lastMessageReceivedTimestamp' from the actual utpconnection object
+        public Channel<(UtpPacket packet, uint lastMessageReceivedTimestamp, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, uint, IPEndPoint)> ();
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint)
             : base (preferredLocalEndPoint)
@@ -59,7 +65,29 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             socket.Bind (PreferredLocalEndPoint);
             LocalEndPoint = (IPEndPoint?) socket.LocalEndPoint;
+
+            // Start both send and receive loops
+            SendLoopAsync (socket, token);
             ReceiveLoopAsync (socket, token);
+        }
+
+        async void SendLoopAsync (Socket socket, CancellationToken token)
+        {
+            try {
+                await foreach (var (pkt, lastPacketTimestamp, remote) in SendQueue.Reader.ReadAllAsync (token)) {
+                    try {
+                        pkt.SetTimestamp ();
+                        pkt.TimestampDiff = lastPacketTimestamp == 0 ? 0 : (uint) (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds () * 1000);
+                        await socket.SendToAsync (pkt.AsMemory (), SocketFlags.None, remote, token);
+                    } catch (OperationCanceledException) {
+                        return;
+                    } catch (SocketException) when (!token.IsCancellationRequested) {
+                        // Keep looping if one socket is closed.
+                    }
+                }
+            } catch (OperationCanceledException) {
+                // Listener stopped.
+            }
         }
 
         async void ReceiveLoopAsync (Socket socket, CancellationToken token)
@@ -71,7 +99,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             while (!token.IsCancellationRequested) {
                 try {
-                   var received = await socket.ReceiveFromAsync (buffer, endpoint, token);
+                    var received = await socket.ReceiveFromAsync (buffer, endpoint, token);
 
                     // If the packet is too small *or* if the version header doesn't match, drop the packet immediately.
                     if (received.ReceivedBytes < UtpPacket.HeaderSize || new UtpPacket (buffer).Version != UTP_VERSION)
@@ -79,7 +107,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                     var owned = new byte[received.ReceivedBytes];
                     buffer.AsSpan (0, owned.Length).CopyTo (owned);
-                    ProcessDatagram (socket, (IPEndPoint) received.RemoteEndPoint, owned);
+                    ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, owned);
                 } catch (OperationCanceledException) {
                     return;
                 } catch (SocketException) when (!token.IsCancellationRequested) {
@@ -90,7 +118,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        void ProcessDatagram (Socket socket, IPEndPoint remote, byte[] owned)
+        void ProcessDatagram (IPEndPoint remote, byte[] owned)
         {
             var pkt = new UtpPacket (owned);
 
@@ -99,7 +127,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             switch (pkt.Type) {
                 case PacketType.Syn:
-                    HandleSyn (socket, remote, pkt);
+                    HandleSyn (remote, pkt);
                     break;
 
                 case PacketType.Data:
@@ -111,9 +139,8 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        async void HandleSyn (Socket socket, IPEndPoint remote, UtpPacket syn)
+        async void HandleSyn (IPEndPoint remote, UtpPacket syn)
         {
-            // The SYN's conn_id IS the initiator's conn_id_recv.
             ushort initiatorConnIdRecv = syn.ConnectionId;
             ushort ourConnIdSend = (ushort) (initiatorConnIdRecv + 1);
 
@@ -121,7 +148,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             // Idempotent on retransmits – resend the ST_STATE.
             if (_connections.TryGetValue (key, out var existing)) {
-                await existing.SendSyncAck (syn.SequenceNumber);
+                await existing.SendSynAck (syn.SequenceNumber);
                 return;
             }
 
@@ -130,22 +157,24 @@ namespace MonoTorrent.Connections.Peer.Utp
                 remote: remote,
                 connIdSend: ourConnIdSend,
                 connIdRecv: initiatorConnIdRecv,
-                isIncoming: true,
                 syn.SequenceNumber);
 
             if (!_connections.TryAdd (key, connection))
                 return;
 
-            await connection.SendSyncAck (syn.SequenceNumber);
+            await connection.SendSynAck (syn.SequenceNumber);
 
             ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, null));
         }
 
         void RouteToExisting (EndPoint remote, UtpPacket pkt)
         {
-            ushort key_connId = (ushort) (pkt.ConnectionId - 1);
-            if (_connections.TryGetValue ((remote, key_connId), out var conn))
+            ushort initiatorConnIdRecv = (ushort) (pkt.ConnectionId - 1);
+            if (_connections.TryGetValue ((remote, initiatorConnIdRecv), out var conn))
                 conn.Receive (pkt);
         }
+
+        internal bool TryRegisterOutgoing (UtpPeerConnection connection)
+            => _connections.TryAdd ((connection.EndPoint, connection.ConnectionIdReceive), connection);
     }
 }

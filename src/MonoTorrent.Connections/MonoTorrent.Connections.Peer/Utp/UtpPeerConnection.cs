@@ -56,7 +56,15 @@ namespace MonoTorrent.Connections.Peer.Utp
         // Can be probed at runtime to increase/decrease as necessary.
         static readonly int InitialMtuSize = 1400;
 
-        ChannelWriter<(UtpPacket, IPEndPoint)> SendingChannel { get; }
+        ChannelWriter<(UtpPacket, uint, IPEndPoint)> SendingChannel { get; }
+
+        // BUG FIX 3: ConnectAsync needs a reference back to the listener so it can
+        // register the connection in _connections before sending the SYN, and so it
+        // can await the ST_STATE reply via HandshakeCompleted.
+        readonly UtpPeerConnectionListener? _listener;
+
+        // Set by ConnectAsync (outgoing); awaited on the first ST_STATE receipt.
+        TaskCompletionSource<bool>? HandshakeCompleted { get; set; }
 
         public bool Disposed => cts.IsCancellationRequested;
 
@@ -72,6 +80,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal ushort AckNumber { get; set; }
 
+        uint LastPacketTimestamp { get; set; }
+
         // Implement path MTU discovery to optimise this for the uncommon case.
         // e.g. small MTU or jumbo frames.
         CancellationTokenSource cts = new ();
@@ -82,43 +92,86 @@ namespace MonoTorrent.Connections.Peer.Utp
         public bool CanReconnect => false;
         public Uri Uri { get; }
 
-        internal UtpPeerConnection (
-            ChannelWriter<(UtpPacket, IPEndPoint)> sendingChannel,
-            IPEndPoint remote,
-            ushort connIdSend,
-            ushort connIdRecv,
-            bool isIncoming,
-            ushort? initialAckNumber = null)
+        public UtpPeerConnection (ChannelWriter<(UtpPacket, uint, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber)
         {
             SendingChannel = sendingChannel;
             EndPoint = remote;
             ReceivedPackets = Channel.CreateUnbounded<UtpPacket> ();
             ConnectionIdSend = connIdSend;
             ConnectionIdReceive = connIdRecv;
-            IsIncoming = isIncoming;
+            IsIncoming = true;
 
             var ep = (IPEndPoint) remote;
             Uri = new Uri ($"utp://{ep.Address}:{ep.Port}");
 
             // The ack for the syn sends sequence number 1. The next message will be 2.
             SequenceNumber = 2;
-            AckNumber = IsIncoming ? initialAckNumber!.Value : (ushort) 0;
+            AckNumber = initialAckNumber;
         }
 
-        public ReusableTask<bool> ConnectAsync ()
+        // Constructor for outgoing connections.
+        public UtpPeerConnection (UtpPeerConnectionListener listener, ChannelWriter<(UtpPacket, uint, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdRecv)
+            : this (sendingChannel, remote, (ushort) (connIdRecv + 1), connIdRecv, 0)
         {
-            return ReusableTask.FromResult (false);
+            _listener = listener;
+            IsIncoming = false;
+        }
+
+        public async ReusableTask<bool> ConnectAsync ()
+        {
+            if (_listener == null)
+                throw new InvalidOperationException ("ConnectAsync called on an incoming connection.");
+
+            HandshakeCompleted = new TaskCompletionSource<bool> (TaskCreationOptions.RunContinuationsAsynchronously);
+
+            // Register before sending SYN so the ST_STATE reply is never lost.
+            if (!_listener.TryRegisterOutgoing (this))
+                return false;
+
+            var buf = new byte[UtpPacket.HeaderSize];
+            var syn = new UtpPacket (buf);
+            syn.Type = PacketType.Syn;
+            syn.Version = UtpPeerConnectionListener.UTP_VERSION;
+            syn.Extension = 0;
+            syn.ConnectionId = ConnectionIdReceive;
+            syn.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW;
+            syn.SequenceNumber = 1;
+            syn.AckNumber = 0;
+
+            await SendingChannel.WriteAsync ((syn, 0, EndPoint));
+
+            try {
+                return await HandshakeCompleted.Task.WaitAsync (cts.Token);
+            } catch (OperationCanceledException) {
+                return false;
+            }
         }
 
         // Called by the listener for every packet routed to this connection.
         internal async void Receive (UtpPacket pkt)
         {
+            if (pkt.Type == PacketType.State && HandshakeCompleted != null && !HandshakeCompleted.Task.IsCompleted) {
+                AckNumber = pkt.SequenceNumber;
+                HandshakeCompleted.TrySetResult (true);
+                return;
+            }
+
             // FIXME: Instead of ignoring out of order packets, use a reorder buffer. We can save the received data and wait for the earlier one to arrive.
             // We can ack the most recent one then.
             if (pkt.SequenceNumber != (AckNumber + 1))
                 return;
 
             AckNumber = pkt.SequenceNumber;
+            LastPacketTimestamp = pkt.Timestamp;
+
+            if (pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset) {
+                cts.Cancel ();
+                return;
+            }
+
+            // Enqueue the ack now that the message has been received
+            await SendAckAsync (AckNumber);
+
             if (pkt.Type != PacketType.Data)
                 return;
 
@@ -126,6 +179,37 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
 
             await ReceivedPackets.Writer.WriteAsync (pkt);
+        }
+
+        async ReusableTask SendAckAsync (ushort ackNr)
+        {
+            var buf = new byte[UtpPacket.HeaderSize];
+            var pkt = new UtpPacket (buf);
+            pkt.Type = PacketType.State;
+            pkt.Version = UtpPeerConnectionListener.UTP_VERSION;
+            pkt.Extension = 0;
+            pkt.ConnectionId = ConnectionIdSend;
+            pkt.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW;
+            pkt.SequenceNumber = SequenceNumber;
+            pkt.AckNumber = ackNr;
+            await SendingChannel.WriteAsync ((pkt, LastPacketTimestamp, EndPoint));
+        }
+
+        internal async ReusableTask SendSynAck (ushort peerSeqNr)
+        {
+            var buf = new byte[UtpPacket.HeaderSize];
+            var pkt = new UtpPacket (buf);
+
+            pkt.Type = PacketType.State;
+            pkt.Version = UtpPeerConnectionListener.UTP_VERSION;
+            pkt.Extension = 0;
+            pkt.ConnectionId = ConnectionIdSend;
+            pkt.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW;
+            pkt.SequenceNumber = 1;
+            pkt.AckNumber = peerSeqNr;
+            pkt.TimestampDiff = 0;
+
+            await SendingChannel.WriteAsync ((pkt, 0, EndPoint));
         }
 
         UtpPacket? currentPacket;
@@ -166,40 +250,19 @@ namespace MonoTorrent.Connections.Peer.Utp
                 pkt.Version = 1;
                 pkt.Extension = 0;
                 pkt.ConnectionId = ConnectionIdSend;
-                pkt.TimestampDiff = 0;
                 pkt.WindowSize = 1 << 18;
                 pkt.SequenceNumber = SequenceNumber++;
                 pkt.AckNumber = AckNumber;
 
                 buffer.Span.Slice (0, payloadLen).CopyTo (pkt.Payload);
 
-                await SendingChannel.WriteAsync ((pkt, EndPoint));
+                await SendingChannel.WriteAsync ((pkt, LastPacketTimestamp, EndPoint));
 
                 buffer = buffer.Slice (payloadLen);
                 totalSent += payloadLen;
             }
 
             return totalSent;
-        }
-
-        internal async ReusableTask SendSyncAck (ushort peerSeqNr)
-        {
-            var buf = new byte[UtpPacket.HeaderSize];
-            var pkt = new UtpPacket (buf);
-
-            pkt.Type = PacketType.State;
-            pkt.Version = UtpPeerConnectionListener.UTP_VERSION;
-            pkt.Extension = 0;
-            pkt.ConnectionId = ConnectionIdSend;
-
-            pkt.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW;
-            pkt.SequenceNumber = 1;
-            pkt.AckNumber = peerSeqNr;
-
-            // timestamp diff is zero for connections
-            pkt.TimestampDiff = 0;
-
-            await SendingChannel.WriteAsync ((pkt, EndPoint));
         }
 
 

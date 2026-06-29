@@ -32,7 +32,7 @@ using System.Buffers.Binary;
 
 namespace MonoTorrent.Connections.Peer.Utp
 {
-    readonly struct UtpPacket
+    public readonly struct UtpPacket
     {
         public static int HeaderSize => 20;
 
@@ -40,7 +40,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         // per 16kB piece request for most connections.
         readonly Memory<byte> _raw;
 
-        public Span<byte> Span => _raw.Span;
+        Span<byte> Span => _raw.Span;
 
         public PacketType Type {
             get => (PacketType) ((Span[0] >> 4) & 0x0F);
@@ -79,6 +79,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             set => BinaryPrimitives.WriteUInt16BigEndian (Span.Slice (18, 2), value);
         }
 
+        public Memory<byte> AsMemory () => _raw;
         public Span<byte> Payload => _raw.Slice (HeaderSize).Span;
 
         public UtpPacket (Memory<byte> packet)

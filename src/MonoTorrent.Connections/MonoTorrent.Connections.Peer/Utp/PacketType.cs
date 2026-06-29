@@ -28,7 +28,7 @@
 
 namespace MonoTorrent.Connections.Peer.Utp
 {
-    enum PacketType : byte
+    public enum PacketType : byte
     {
         Data = 0,
         Fin = 1,
