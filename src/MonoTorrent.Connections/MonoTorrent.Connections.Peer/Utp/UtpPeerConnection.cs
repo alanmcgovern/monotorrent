@@ -349,8 +349,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             RetransmitTimeoutMicroseconds = Math.Max (500_000, RttMicroseconds + RttVarianceMicroseconds * 4);
         }
 
-        static IEnumerable<ushort> ReadSelectiveAcks (UtpPacket pkt)
+        static List<ushort> ReadSelectiveAcks (UtpPacket pkt)
         {
+            var result = new List<ushort> ();
             var span = pkt.AsMemory ().Span;
             byte extension = pkt.Extension;
             int offset = UtpPacket.HeaderSize;
@@ -361,14 +362,14 @@ namespace MonoTorrent.Connections.Peer.Utp
                 offset += 2;
 
                 if (offset + length > span.Length)
-                    yield break;
+                    return result;
 
                 if (extension == SelectiveAckExtension) {
                     for (int i = 0; i < length; i++) {
                         byte mask = span[offset + i];
                         for (int bit = 0; bit < 8; bit++) {
                             if ((mask & (1 << bit)) != 0)
-                                yield return unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit));
+                                result.Add (unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit)));
                         }
                     }
                 }
@@ -376,6 +377,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 offset += length;
                 extension = nextExtension;
             }
+            return result;
         }
 
         async Task DeliverAvailablePackets ()
