@@ -30,7 +30,7 @@ namespace MonoTorrent.Connections.Peer.Utp
     //   conn_id_recv + 1, so RouteToExisting subtracts 1 before the lookup.
     // =========================================================================
 
-    public sealed class UtpPeerConnectionListener : SocketListener
+    public sealed class UtpPeerConnectionListener : SocketListener, IPeerConnectionListener
     {
         internal const byte UTP_VERSION = 1;
         internal const uint INITIAL_WINDOW = 1 << 18;   // 256 kB
@@ -40,7 +40,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), UtpPeerConnection> _connections = new ();
 
         // FIXME: If packets are resent due to timeout we should still pull the latest 'lastMessageReceivedTimestamp' from the actual utpconnection object
-        public Channel<(UtpPacket packet, uint lastMessageReceivedTimestamp, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, uint, IPEndPoint)> ();
+        public Channel<(UtpPacket packet, uint timestampDifferenceMicroseconds, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, uint, IPEndPoint)> ();
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint)
             : base (preferredLocalEndPoint)
@@ -74,10 +74,10 @@ namespace MonoTorrent.Connections.Peer.Utp
         async void SendLoopAsync (Socket socket, CancellationToken token)
         {
             try {
-                await foreach (var (pkt, lastPacketTimestamp, remote) in SendQueue.Reader.ReadAllAsync (token)) {
+                await foreach (var (pkt, timestampDifferenceMicroseconds, remote) in SendQueue.Reader.ReadAllAsync (token)) {
                     try {
                         pkt.SetTimestamp ();
-                        pkt.TimestampDiff = lastPacketTimestamp == 0 ? 0 : (uint) (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds () * 1000);
+                        pkt.TimestampDiff = timestampDifferenceMicroseconds;
                         await socket.SendToAsync (pkt.AsMemory (), SocketFlags.None, remote, token);
                     } catch (OperationCanceledException) {
                         return;
