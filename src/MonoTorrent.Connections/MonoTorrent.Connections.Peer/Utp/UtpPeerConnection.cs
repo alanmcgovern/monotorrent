@@ -58,12 +58,10 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         ChannelWriter<(UtpPacket, uint, IPEndPoint)> SendingChannel { get; }
 
-        // BUG FIX 3: ConnectAsync needs a reference back to the listener so it can
-        // register the connection in _connections before sending the SYN, and so it
-        // can await the ST_STATE reply via HandshakeCompleted.
+        // Outgoing connections need to register with the Utp listener so the ack can be routed to this connection.
         readonly UtpPeerConnectionListener? _listener;
 
-        // Set by ConnectAsync (outgoing); awaited on the first ST_STATE receipt.
+        // We need to be able to block ConnectAsync until the connection is fully established.
         TaskCompletionSource<bool>? HandshakeCompleted { get; set; }
 
         public bool Disposed => cts.IsCancellationRequested;
@@ -232,6 +230,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             currentPayloadRead += read;
             if (currentPayloadRead == currentPacket.Value.Payload.Length)
                 currentPacket = null;
+
             return read;
         }
 

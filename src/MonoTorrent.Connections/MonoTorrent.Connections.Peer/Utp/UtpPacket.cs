@@ -86,6 +86,6 @@ namespace MonoTorrent.Connections.Peer.Utp
             => _raw = packet;
 
         public void SetTimestamp ()
-            => Timestamp = (uint) (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds () * 1_000);
+            => Timestamp = UtpClock.Microseconds;
     }
 }
