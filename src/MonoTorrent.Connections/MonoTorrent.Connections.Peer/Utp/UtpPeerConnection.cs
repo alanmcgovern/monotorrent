@@ -1,4 +1,4 @@
-﻿//
+//
 // UtpPeerConnection.cs
 //
 // Authors:
@@ -31,14 +31,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-
-using MonoTorrent.Connections.Peer;
-using MonoTorrent.Connections.Peer.Utp;
 
 using ReusableTasks;
 
@@ -46,27 +41,55 @@ namespace MonoTorrent.Connections.Peer.Utp
 {
     public sealed class UtpPeerConnection : IPeerConnection
     {
+        enum ConnectionState
+        {
+            SynSent,
+            SynReceived,
+            Connected,
+            FinReceived,
+            Closed,
+            Reset
+        }
+
+        sealed class SentPacket
+        {
+            public SentPacket (UtpPacket packet, int payloadBytes)
+            {
+                Packet = packet;
+                PayloadBytes = payloadBytes;
+                SentAtMicroseconds = UtpClock.Microseconds;
+                Transmissions = 1;
+            }
+
+            public UtpPacket Packet { get; }
+            public int PayloadBytes { get; }
+            public uint SentAtMicroseconds { get; set; }
+            public int Transmissions { get; set; }
+        }
+
+        const byte SelectiveAckExtension = 1;
+        const int MinimumPacketSize = 150;
+
         // Most likely 'safe' limit on public internet is 1452 bytes.
         // 1500 - (28 byte ip header overhead) - (20 byte utp header overhead)
-        // This will be lower if data is encapsulated in another protocol.
-        //
-        // Start with 1400 as that should allow a full 16kB piece to be sent
-        // in 12 packets and also provide some headroom for encapsulation.
-        //
-        // Can be probed at runtime to increase/decrease as necessary.
         static readonly int InitialMtuSize = 1400;
+
+        readonly object locker = new ();
+        readonly Dictionary<ushort, SentPacket> sentPackets = new ();
+        readonly Dictionary<ushort, UtpPacket> receiveBuffer = new ();
+        readonly SemaphoreSlim sendWindowChanged = new (0);
+        readonly CancellationTokenSource cts = new ();
+        readonly Task retransmitTask;
 
         ChannelWriter<(UtpPacket, uint, IPEndPoint)> SendingChannel { get; }
 
-        // Outgoing connections need to register with the Utp listener so the ack can be routed to this connection.
         readonly UtpPeerConnectionListener? _listener;
 
-        // We need to be able to block ConnectAsync until the connection is fully established.
         TaskCompletionSource<bool>? HandshakeCompleted { get; set; }
 
         public bool Disposed => cts.IsCancellationRequested;
 
-        public ReadOnlyMemory<byte> AddressBytes => default;
+        public ReadOnlyMemory<byte> AddressBytes { get; }
 
         public IPEndPoint EndPoint { get; }
 
@@ -78,13 +101,27 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal ushort AckNumber { get; set; }
 
-        uint LastPacketTimestamp { get; set; }
+        uint LastReceivedDelayMicroseconds { get; set; }
 
-        // Implement path MTU discovery to optimise this for the uncommon case.
-        // e.g. small MTU or jumbo frames.
-        CancellationTokenSource cts = new ();
+        uint PeerWindowSize { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
+
+        uint MaxWindow { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
+
         int CurrentMtu { get; set; } = InitialMtuSize;
+
+        uint RetransmitTimeoutMicroseconds { get; set; } = 1_000_000;
+
+        uint RttMicroseconds { get; set; }
+
+        uint RttVarianceMicroseconds { get; set; }
+
+        ushort LastAckReceived { get; set; }
+
+        int DuplicateAckCount { get; set; }
+
         Channel<UtpPacket> ReceivedPackets { get; }
+
+        ConnectionState State { get; set; }
 
         public bool IsIncoming { get; }
         public bool CanReconnect => false;
@@ -94,17 +131,19 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             SendingChannel = sendingChannel;
             EndPoint = remote;
+            AddressBytes = EndPoint.Address.GetAddressBytes ();
             ReceivedPackets = Channel.CreateUnbounded<UtpPacket> ();
             ConnectionIdSend = connIdSend;
             ConnectionIdReceive = connIdRecv;
             IsIncoming = true;
 
-            var ep = (IPEndPoint) remote;
-            Uri = new Uri ($"utp://{ep.Address}:{ep.Port}");
+            Uri = new Uri ($"utp://{remote.Address}:{remote.Port}");
 
-            // The ack for the syn sends sequence number 1. The next message will be 2.
             SequenceNumber = 2;
             AckNumber = initialAckNumber;
+            LastAckReceived = initialAckNumber;
+            State = ConnectionState.SynReceived;
+            retransmitTask = RetransmitLoopAsync ();
         }
 
         // Constructor for outgoing connections.
@@ -113,6 +152,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             _listener = listener;
             IsIncoming = false;
+            State = ConnectionState.SynSent;
         }
 
         public async ReusableTask<bool> ConnectAsync ()
@@ -127,16 +167,18 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return false;
 
             var buf = new byte[UtpPacket.HeaderSize];
-            var syn = new UtpPacket (buf);
-            syn.Type = PacketType.Syn;
-            syn.Version = UtpPeerConnectionListener.UTP_VERSION;
-            syn.Extension = 0;
-            syn.ConnectionId = ConnectionIdReceive;
-            syn.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW;
-            syn.SequenceNumber = 1;
-            syn.AckNumber = 0;
+            var syn = new UtpPacket (buf) {
+                Type = PacketType.Syn,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                Extension = 0,
+                ConnectionId = ConnectionIdReceive,
+                WindowSize = AdvertisedReceiveWindow,
+                SequenceNumber = 1,
+                AckNumber = 0
+            };
 
-            await SendingChannel.WriteAsync ((syn, 0, EndPoint));
+            RegisterSent (syn, 0);
+            await SendPacketAsync (syn);
 
             try {
                 return await HandshakeCompleted.Task.WaitAsync (cts.Token);
@@ -145,73 +187,279 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
+        uint AdvertisedReceiveWindow {
+            get {
+                lock (locker) {
+                    var queued = receiveBuffer.Values.Sum (t => t.Payload.Length);
+                    return (uint) Math.Max (0, (int) UtpPeerConnectionListener.INITIAL_WINDOW - queued);
+                }
+            }
+        }
+
+        int CurrentWindow {
+            get {
+                lock (locker)
+                    return sentPackets.Values.Sum (t => t.PayloadBytes + UtpPacket.HeaderSize);
+            }
+        }
+
+        static bool SequenceLessThanOrEqual (ushort left, ushort right)
+            => left == right || unchecked((short) (left - right)) < 0;
+
+        static bool SequenceGreaterThan (ushort left, ushort right)
+            => unchecked((short) (left - right)) > 0;
+
+        static int SequenceDistance (ushort newer, ushort older)
+            => unchecked((ushort) (newer - older));
+
+        void RegisterSent (UtpPacket packet, int payloadBytes)
+        {
+            if (packet.Type != PacketType.Syn && packet.Type != PacketType.Data && packet.Type != PacketType.Fin)
+                return;
+
+            lock (locker)
+                sentPackets[packet.SequenceNumber] = new SentPacket (packet, payloadBytes);
+        }
+
+        async Task SendPacketAsync (UtpPacket packet)
+        {
+            packet.WindowSize = AdvertisedReceiveWindow;
+            await SendingChannel.WriteAsync ((packet, LastReceivedDelayMicroseconds, EndPoint), cts.Token);
+        }
+
         // Called by the listener for every packet routed to this connection.
         internal async void Receive (UtpPacket pkt)
         {
+            try {
+                await ReceiveAsync (pkt);
+            } catch (OperationCanceledException) {
+            } catch {
+                Dispose ();
+            }
+        }
+
+        async Task ReceiveAsync (UtpPacket pkt)
+        {
+            UpdateDelaySample (pkt);
+            PeerWindowSize = pkt.WindowSize;
+            ProcessAcks (pkt);
+
+            if (pkt.Type == PacketType.Reset) {
+                State = ConnectionState.Reset;
+                Dispose ();
+                return;
+            }
+
             if (pkt.Type == PacketType.State && HandshakeCompleted != null && !HandshakeCompleted.Task.IsCompleted) {
-                AckNumber = pkt.SequenceNumber;
-                HandshakeCompleted.TrySetResult (true);
+                if (pkt.AckNumber == 1) {
+                    AckNumber = pkt.SequenceNumber;
+                    State = ConnectionState.Connected;
+                    HandshakeCompleted.TrySetResult (true);
+                }
                 return;
             }
 
-            // FIXME: Instead of ignoring out of order packets, use a reorder buffer. We can save the received data and wait for the earlier one to arrive.
-            // We can ack the most recent one then.
-            if (pkt.SequenceNumber != (AckNumber + 1))
+            if (pkt.Type == PacketType.State)
                 return;
 
-            AckNumber = pkt.SequenceNumber;
-            LastPacketTimestamp = pkt.Timestamp;
-
-            if (pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset) {
-                cts.Cancel ();
+            if (pkt.Type != PacketType.Data && pkt.Type != PacketType.Fin)
                 return;
+
+            bool shouldAck;
+            lock (locker) {
+                shouldAck = SequenceGreaterThan (pkt.SequenceNumber, AckNumber);
+                if (shouldAck && !receiveBuffer.ContainsKey (pkt.SequenceNumber))
+                    receiveBuffer[pkt.SequenceNumber] = pkt;
             }
 
-            // Enqueue the ack now that the message has been received
+            await DeliverAvailablePackets ();
+
+            // ACK duplicates too. This helps the remote side recover from lost ACKs.
             await SendAckAsync (AckNumber);
+        }
 
-            if (pkt.Type != PacketType.Data)
+        void UpdateDelaySample (UtpPacket pkt)
+        {
+            if (pkt.Timestamp != 0)
+                LastReceivedDelayMicroseconds = unchecked(UtpClock.Microseconds - pkt.Timestamp);
+        }
+
+        void ProcessAcks (UtpPacket pkt)
+        {
+            List<SentPacket> acked = new ();
+            List<UtpPacket> fastRetransmits = new ();
+
+            lock (locker) {
+                if (pkt.AckNumber == LastAckReceived)
+                    DuplicateAckCount++;
+                else {
+                    LastAckReceived = pkt.AckNumber;
+                    DuplicateAckCount = 0;
+                }
+
+                foreach (var seq in sentPackets.Keys.ToArray ()) {
+                    if (SequenceLessThanOrEqual (seq, pkt.AckNumber)) {
+                        acked.Add (sentPackets[seq]);
+                        sentPackets.Remove (seq);
+                    }
+                }
+
+                foreach (var seq in ReadSelectiveAcks (pkt)) {
+                    if (sentPackets.Remove (seq, out var sent))
+                        acked.Add (sent);
+                }
+
+                if (DuplicateAckCount >= 3) {
+                    var missing = unchecked((ushort) (pkt.AckNumber + 1));
+                    if (sentPackets.TryGetValue (missing, out var sent))
+                        fastRetransmits.Add (sent.Packet);
+                    DuplicateAckCount = 0;
+                    MaxWindow = Math.Max ((uint) MinimumPacketSize, MaxWindow / 2);
+                }
+            }
+
+            foreach (var sent in acked)
+                UpdateRtt (sent);
+
+            if (acked.Count > 0)
+                sendWindowChanged.Release ();
+
+            foreach (var packet in fastRetransmits)
+                _ = RetransmitAsync (packet);
+        }
+
+        void UpdateRtt (SentPacket sent)
+        {
+            if (sent.Transmissions != 1)
                 return;
 
-            if (pkt.Payload.IsEmpty)
+            var packetRtt = unchecked(UtpClock.Microseconds - sent.SentAtMicroseconds);
+            if (packetRtt == 0)
                 return;
 
-            await ReceivedPackets.Writer.WriteAsync (pkt);
+            if (RttMicroseconds == 0) {
+                RttMicroseconds = packetRtt;
+                RttVarianceMicroseconds = packetRtt / 2;
+            } else {
+                var delta = RttMicroseconds > packetRtt ? RttMicroseconds - packetRtt : packetRtt - RttMicroseconds;
+                RttVarianceMicroseconds += (delta - RttVarianceMicroseconds) / 4;
+                RttMicroseconds += (packetRtt - RttMicroseconds) / 8;
+            }
+
+            RetransmitTimeoutMicroseconds = Math.Max (500_000, RttMicroseconds + RttVarianceMicroseconds * 4);
+        }
+
+        static IEnumerable<ushort> ReadSelectiveAcks (UtpPacket pkt)
+        {
+            var span = pkt.AsMemory ().Span;
+            byte extension = pkt.Extension;
+            int offset = UtpPacket.HeaderSize;
+
+            while (extension != 0 && offset + 2 <= span.Length) {
+                byte nextExtension = span[offset];
+                int length = span[offset + 1];
+                offset += 2;
+
+                if (offset + length > span.Length)
+                    yield break;
+
+                if (extension == SelectiveAckExtension) {
+                    for (int i = 0; i < length; i++) {
+                        byte mask = span[offset + i];
+                        for (int bit = 0; bit < 8; bit++) {
+                            if ((mask & (1 << bit)) != 0)
+                                yield return unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit));
+                        }
+                    }
+                }
+
+                offset += length;
+                extension = nextExtension;
+            }
+        }
+
+        async Task DeliverAvailablePackets ()
+        {
+            while (true) {
+                UtpPacket pkt;
+                lock (locker) {
+                    var next = unchecked((ushort) (AckNumber + 1));
+                    if (!receiveBuffer.Remove (next, out pkt))
+                        return;
+                    AckNumber = next;
+                }
+
+                if (pkt.Type == PacketType.Fin) {
+                    State = ConnectionState.FinReceived;
+                    ReceivedPackets.Writer.TryComplete ();
+                    return;
+                }
+
+                if (pkt.Payload.Length > 0)
+                    await ReceivedPackets.Writer.WriteAsync (pkt, cts.Token);
+            }
         }
 
         async ReusableTask SendAckAsync (ushort ackNr)
         {
-            var buf = new byte[UtpPacket.HeaderSize];
-            var pkt = new UtpPacket (buf);
-            pkt.Type = PacketType.State;
-            pkt.Version = UtpPeerConnectionListener.UTP_VERSION;
-            pkt.Extension = 0;
-            pkt.ConnectionId = ConnectionIdSend;
-            pkt.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW;
-            pkt.SequenceNumber = SequenceNumber;
-            pkt.AckNumber = ackNr;
-            await SendingChannel.WriteAsync ((pkt, LastPacketTimestamp, EndPoint));
+            var sack = CreateSelectiveAckExtension (ackNr);
+            var buf = new byte[UtpPacket.HeaderSize + sack.Length];
+            var pkt = new UtpPacket (buf) {
+                Type = PacketType.State,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                Extension = sack.Length == 0 ? (byte) 0 : SelectiveAckExtension,
+                ConnectionId = ConnectionIdSend,
+                WindowSize = AdvertisedReceiveWindow,
+                SequenceNumber = SequenceNumber,
+                AckNumber = ackNr
+            };
+            sack.CopyTo (buf.AsSpan (UtpPacket.HeaderSize));
+            await SendPacketAsync (pkt);
+        }
+
+        byte[] CreateSelectiveAckExtension (ushort ackNr)
+        {
+            ushort[] buffered;
+            lock (locker)
+                buffered = receiveBuffer.Keys.Where (t => SequenceGreaterThan (t, unchecked((ushort) (ackNr + 1)))).ToArray ();
+
+            if (buffered.Length == 0)
+                return Array.Empty<byte> ();
+
+            int maxBit = buffered.Max (t => SequenceDistance (t, unchecked((ushort) (ackNr + 2))));
+            int length = Math.Max (4, ((maxBit / 8) + 4) / 4 * 4);
+            var result = new byte[2 + length];
+            result[0] = 0;
+            result[1] = (byte) length;
+
+            foreach (var seq in buffered) {
+                int bit = SequenceDistance (seq, unchecked((ushort) (ackNr + 2)));
+                result[2 + bit / 8] |= (byte) (1 << (bit % 8));
+            }
+
+            return result;
         }
 
         internal async ReusableTask SendSynAck (ushort peerSeqNr)
         {
             var buf = new byte[UtpPacket.HeaderSize];
-            var pkt = new UtpPacket (buf);
+            var pkt = new UtpPacket (buf) {
+                Type = PacketType.State,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                Extension = 0,
+                ConnectionId = ConnectionIdSend,
+                WindowSize = AdvertisedReceiveWindow,
+                SequenceNumber = 1,
+                AckNumber = peerSeqNr,
+                TimestampDiff = 0
+            };
 
-            pkt.Type = PacketType.State;
-            pkt.Version = UtpPeerConnectionListener.UTP_VERSION;
-            pkt.Extension = 0;
-            pkt.ConnectionId = ConnectionIdSend;
-            pkt.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW;
-            pkt.SequenceNumber = 1;
-            pkt.AckNumber = peerSeqNr;
-            pkt.TimestampDiff = 0;
-
-            await SendingChannel.WriteAsync ((pkt, 0, EndPoint));
+            State = ConnectionState.Connected;
+            await SendPacketAsync (pkt);
         }
 
         UtpPacket? currentPacket;
-        int currentPayloadRead = 0;
+        int currentPayloadRead;
         public async ReusableTask<int> ReceiveAsync (Memory<byte> buffer)
         {
             static int ReadFromPacket (ReadOnlySpan<byte> src, Span<byte> dest)
@@ -221,9 +469,18 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return toRead;
             }
 
-            if (currentPacket == null) {
-                currentPacket = await ReceivedPackets.Reader.ReadAsync (cts.Token);
-                currentPayloadRead = 0;
+            if (buffer.IsEmpty)
+                return 0;
+
+            try {
+                if (currentPacket == null) {
+                    currentPacket = await ReceivedPackets.Reader.ReadAsync (cts.Token);
+                    currentPayloadRead = 0;
+                }
+            } catch (ChannelClosedException) {
+                return 0;
+            } catch (OperationCanceledException) {
+                return 0;
             }
 
             int read = ReadFromPacket (currentPacket.Value.Payload.Slice (currentPayloadRead), buffer.Span);
@@ -236,26 +493,27 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
         {
-            // figure out the best way to use a reusablesemaphore to pause sending
-            // when the window is full.
             int totalSent = 0;
 
             while (!buffer.IsEmpty) {
-                int payloadLen = Math.Min (buffer.Span.Length, CurrentMtu);
-                var pktBuf = new byte[UtpPacket.HeaderSize + payloadLen];
-                var pkt = new UtpPacket (pktBuf);
+                int payloadLen = Math.Min (buffer.Length, CurrentMtu);
+                await WaitForSendWindow (payloadLen);
 
-                pkt.Type = PacketType.Data;
-                pkt.Version = 1;
-                pkt.Extension = 0;
-                pkt.ConnectionId = ConnectionIdSend;
-                pkt.WindowSize = 1 << 18;
-                pkt.SequenceNumber = SequenceNumber++;
-                pkt.AckNumber = AckNumber;
+                var pktBuf = new byte[UtpPacket.HeaderSize + payloadLen];
+                var pkt = new UtpPacket (pktBuf) {
+                    Type = PacketType.Data,
+                    Version = UtpPeerConnectionListener.UTP_VERSION,
+                    Extension = 0,
+                    ConnectionId = ConnectionIdSend,
+                    WindowSize = AdvertisedReceiveWindow,
+                    SequenceNumber = SequenceNumber++,
+                    AckNumber = AckNumber
+                };
 
                 buffer.Span.Slice (0, payloadLen).CopyTo (pkt.Payload);
 
-                await SendingChannel.WriteAsync ((pkt, LastPacketTimestamp, EndPoint));
+                RegisterSent (pkt, payloadLen);
+                await SendPacketAsync (pkt);
 
                 buffer = buffer.Slice (payloadLen);
                 totalSent += payloadLen;
@@ -264,11 +522,69 @@ namespace MonoTorrent.Connections.Peer.Utp
             return totalSent;
         }
 
+        async Task WaitForSendWindow (int payloadLen)
+        {
+            while (!cts.IsCancellationRequested) {
+                var allowed = Math.Min (MaxWindow, PeerWindowSize);
+                if (CurrentWindow + payloadLen + UtpPacket.HeaderSize <= allowed || CurrentWindow == 0)
+                    return;
+
+                await sendWindowChanged.WaitAsync (TimeSpan.FromMilliseconds (100), cts.Token);
+            }
+        }
+
+        async Task RetransmitLoopAsync ()
+        {
+            try {
+                while (!cts.IsCancellationRequested) {
+                    await Task.Delay (50, cts.Token);
+
+                    SentPacket? timedOut = null;
+                    lock (locker) {
+                        foreach (var packet in sentPackets.Values.OrderBy (t => t.Packet.SequenceNumber)) {
+                            if (unchecked(UtpClock.Microseconds - packet.SentAtMicroseconds) >= RetransmitTimeoutMicroseconds) {
+                                timedOut = packet;
+                                break;
+                            }
+                        }
+
+                        if (timedOut != null) {
+                            CurrentMtu = MinimumPacketSize;
+                            MaxWindow = MinimumPacketSize;
+                            RetransmitTimeoutMicroseconds = Math.Min (60_000_000, RetransmitTimeoutMicroseconds * 2);
+                        }
+                    }
+
+                    if (timedOut != null)
+                        await RetransmitAsync (timedOut.Packet);
+                }
+            } catch (OperationCanceledException) {
+            }
+        }
+
+        async Task RetransmitAsync (UtpPacket packet)
+        {
+            lock (locker) {
+                if (sentPackets.TryGetValue (packet.SequenceNumber, out var sent)) {
+                    sent.Transmissions++;
+                    sent.SentAtMicroseconds = UtpClock.Microseconds;
+                } else {
+                    return;
+                }
+            }
+
+            await SendPacketAsync (packet);
+        }
 
         public void Dispose ()
         {
-            ReceivedPackets.Writer.Complete ();
+            if (cts.IsCancellationRequested)
+                return;
+
+            State = State == ConnectionState.Reset ? ConnectionState.Reset : ConnectionState.Closed;
+            ReceivedPackets.Writer.TryComplete ();
             cts.Cancel ();
+            sendWindowChanged.Release ();
         }
     }
 }
