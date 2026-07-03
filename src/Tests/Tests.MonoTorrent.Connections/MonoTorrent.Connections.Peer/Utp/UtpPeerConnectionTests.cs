@@ -15,7 +15,7 @@ namespace MonoTorrent.Connections.Peer
         [Test]
         public async Task ReceiveOutOfOrderPackets ()
         {
-            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, uint timestampDifferenceMicroseconds, IPEndPoint remoteEndPoint)> ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
 
             connection.Receive (CreateDataPacket (3, "b"));
@@ -30,7 +30,7 @@ namespace MonoTorrent.Connections.Peer
         [Test]
         public async Task ReceiveOutOfOrderPacketSendsSelectiveAck ()
         {
-            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, uint timestampDifferenceMicroseconds, IPEndPoint remoteEndPoint)> ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
 
             connection.Receive (CreateDataPacket (4, "d"));
@@ -45,7 +45,7 @@ namespace MonoTorrent.Connections.Peer
         [Test]
         public async Task UnackedDataPacketIsRetransmitted ()
         {
-            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, uint timestampDifferenceMicroseconds, IPEndPoint remoteEndPoint)> ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
 
             await connection.SendAsync (new byte[] { 1, 2, 3 }).WithTimeout (5000);

@@ -53,11 +53,11 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         sealed class SentPacket
         {
-            public SentPacket (UtpPacket packet, int payloadBytes)
+            public SentPacket (UtpPacket packet, int payloadBytes, uint sentAtMicroseconds)
             {
                 Packet = packet;
                 PayloadBytes = payloadBytes;
-                SentAtMicroseconds = UtpClock.Microseconds;
+                SentAtMicroseconds = sentAtMicroseconds;
                 Transmissions = 1;
             }
 
@@ -69,6 +69,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         const byte SelectiveAckExtension = 1;
         const int MinimumPacketSize = 150;
+        const uint CControlTargetMicroseconds = 100_000;
+        const int DelaySampleLifetimeMicroseconds = 120_000_000;
 
         // Most likely 'safe' limit on public internet is 1452 bytes.
         // 1500 - (28 byte ip header overhead) - (20 byte utp header overhead)
@@ -77,11 +79,13 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly object locker = new ();
         readonly Dictionary<ushort, SentPacket> sentPackets = new ();
         readonly Dictionary<ushort, UtpPacket> receiveBuffer = new ();
+        readonly Queue<(uint ReceivedAtMicroseconds, uint DelayMicroseconds)> delaySamples = new ();
         readonly SemaphoreSlim sendWindowChanged = new (0);
         readonly CancellationTokenSource cts = new ();
         readonly Task retransmitTask;
+        readonly IUtpClock clock;
 
-        ChannelWriter<(UtpPacket, uint, IPEndPoint)> SendingChannel { get; }
+        ChannelWriter<(UtpPacket, UtpPeerConnection, IPEndPoint)> SendingChannel { get; }
 
         readonly UtpPeerConnectionListener? _listener;
 
@@ -127,9 +131,15 @@ namespace MonoTorrent.Connections.Peer.Utp
         public bool CanReconnect => false;
         public Uri Uri { get; }
 
-        public UtpPeerConnection (ChannelWriter<(UtpPacket, uint, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber)
+        public UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber)
+            : this (sendingChannel, remote, connIdSend, connIdRecv, initialAckNumber, StopwatchUtpClock.Instance)
+        {
+        }
+
+        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock)
         {
             SendingChannel = sendingChannel;
+            this.clock = clock;
             EndPoint = remote;
             AddressBytes = EndPoint.Address.GetAddressBytes ();
             ReceivedPackets = Channel.CreateUnbounded<UtpPacket> ();
@@ -147,12 +157,17 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         // Constructor for outgoing connections.
-        public UtpPeerConnection (UtpPeerConnectionListener listener, ChannelWriter<(UtpPacket, uint, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdRecv)
-            : this (sendingChannel, remote, (ushort) (connIdRecv + 1), connIdRecv, 0)
+        public UtpPeerConnection (UtpPeerConnectionListener listener, ChannelWriter<(UtpPacket, UtpPeerConnection, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdRecv)
+            : this (sendingChannel, remote, (ushort) (connIdRecv + 1), connIdRecv, 0, listener.Clock)
         {
             _listener = listener;
             IsIncoming = false;
             State = ConnectionState.SynSent;
+        }
+
+        public UtpPeerConnection (UtpPeerConnectionListener listener, IPEndPoint remote, ushort connIdRecv)
+            : this (listener, listener.SendQueue.Writer, remote, connIdRecv)
+        {
         }
 
         public async ReusableTask<bool> ConnectAsync ()
@@ -203,13 +218,13 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        static bool SequenceLessThanOrEqual (ushort left, ushort right)
+        internal static bool SequenceLessThanOrEqual (ushort left, ushort right)
             => left == right || unchecked((short) (left - right)) < 0;
 
-        static bool SequenceGreaterThan (ushort left, ushort right)
+        internal static bool SequenceGreaterThan (ushort left, ushort right)
             => unchecked((short) (left - right)) > 0;
 
-        static int SequenceDistance (ushort newer, ushort older)
+        internal static int SequenceDistance (ushort newer, ushort older)
             => unchecked((ushort) (newer - older));
 
         void RegisterSent (UtpPacket packet, int payloadBytes)
@@ -218,13 +233,24 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
 
             lock (locker)
-                sentPackets[packet.SequenceNumber] = new SentPacket (packet, payloadBytes);
+                sentPackets[packet.SequenceNumber] = new SentPacket (packet, payloadBytes, clock.Microseconds);
         }
 
         async Task SendPacketAsync (UtpPacket packet)
         {
             packet.WindowSize = AdvertisedReceiveWindow;
-            await SendingChannel.WriteAsync ((packet, LastReceivedDelayMicroseconds, EndPoint), cts.Token);
+            await SendingChannel.WriteAsync ((packet, this, EndPoint), cts.Token);
+        }
+
+        internal void PrepareForSend (ref UtpPacket packet)
+        {
+            packet.SetTimestamp (clock);
+            packet.TimestampDiff = LastReceivedDelayMicroseconds;
+
+            lock (locker) {
+                if (sentPackets.TryGetValue (packet.SequenceNumber, out var sent))
+                    sent.SentAtMicroseconds = packet.Timestamp;
+            }
         }
 
         // Called by the listener for every packet routed to this connection.
@@ -280,8 +306,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         void UpdateDelaySample (UtpPacket pkt)
         {
-            if (pkt.Timestamp != 0)
-                LastReceivedDelayMicroseconds = unchecked(UtpClock.Microseconds - pkt.Timestamp);
+            LastReceivedDelayMicroseconds = unchecked(clock.Microseconds - pkt.Timestamp);
         }
 
         void ProcessAcks (UtpPacket pkt)
@@ -321,6 +346,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             foreach (var sent in acked)
                 UpdateRtt (sent);
 
+            foreach (var sent in acked)
+                ApplyCongestionControl (sent, pkt.TimestampDiff);
+
             if (acked.Count > 0)
                 sendWindowChanged.Release ();
 
@@ -333,7 +361,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (sent.Transmissions != 1)
                 return;
 
-            var packetRtt = unchecked(UtpClock.Microseconds - sent.SentAtMicroseconds);
+            var packetRtt = unchecked(clock.Microseconds - sent.SentAtMicroseconds);
             if (packetRtt == 0)
                 return;
 
@@ -341,12 +369,33 @@ namespace MonoTorrent.Connections.Peer.Utp
                 RttMicroseconds = packetRtt;
                 RttVarianceMicroseconds = packetRtt / 2;
             } else {
-                var delta = RttMicroseconds > packetRtt ? RttMicroseconds - packetRtt : packetRtt - RttMicroseconds;
-                RttVarianceMicroseconds += (delta - RttVarianceMicroseconds) / 4;
-                RttMicroseconds += (packetRtt - RttMicroseconds) / 8;
+                var delta = Math.Abs ((long) RttMicroseconds - packetRtt);
+                RttVarianceMicroseconds = (uint) Math.Max (0, RttVarianceMicroseconds + (delta - RttVarianceMicroseconds) / 4);
+                RttMicroseconds = (uint) Math.Max (0, RttMicroseconds + ((long) packetRtt - RttMicroseconds) / 8);
             }
 
             RetransmitTimeoutMicroseconds = Math.Max (500_000, RttMicroseconds + RttVarianceMicroseconds * 4);
+        }
+
+        void ApplyCongestionControl (SentPacket sent, uint delayMicroseconds)
+        {
+            if (delayMicroseconds == 0 || sent.PayloadBytes == 0)
+                return;
+
+            lock (locker) {
+                var now = clock.Microseconds;
+                delaySamples.Enqueue ((now, delayMicroseconds));
+                while (delaySamples.Count > 0 && unchecked(now - delaySamples.Peek ().ReceivedAtMicroseconds) > DelaySampleLifetimeMicroseconds)
+                    delaySamples.Dequeue ();
+
+                uint baseDelay = delaySamples.Min (t => t.DelayMicroseconds);
+                uint ourDelay = delayMicroseconds > baseDelay ? delayMicroseconds - baseDelay : 0;
+                double offTarget = (long) CControlTargetMicroseconds - ourDelay;
+                double delayFactor = offTarget / CControlTargetMicroseconds;
+                double windowFactor = Math.Min (1, sent.PayloadBytes / Math.Max (1.0, MaxWindow));
+                double gain = CurrentMtu * delayFactor * windowFactor;
+                MaxWindow = (uint) Math.Max (MinimumPacketSize, MaxWindow + gain);
+            }
         }
 
         static List<ushort> ReadSelectiveAcks (UtpPacket pkt)
@@ -544,7 +593,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     SentPacket? timedOut = null;
                     lock (locker) {
                         foreach (var packet in sentPackets.Values.OrderBy (t => t.Packet.SequenceNumber)) {
-                            if (unchecked(UtpClock.Microseconds - packet.SentAtMicroseconds) >= RetransmitTimeoutMicroseconds) {
+                            if (unchecked(clock.Microseconds - packet.SentAtMicroseconds) >= RetransmitTimeoutMicroseconds) {
                                 timedOut = packet;
                                 break;
                             }
@@ -569,7 +618,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             lock (locker) {
                 if (sentPackets.TryGetValue (packet.SequenceNumber, out var sent)) {
                     sent.Transmissions++;
-                    sent.SentAtMicroseconds = UtpClock.Microseconds;
+                    sent.SentAtMicroseconds = clock.Microseconds;
                 } else {
                     return;
                 }

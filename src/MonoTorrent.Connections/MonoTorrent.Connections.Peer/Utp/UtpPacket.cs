@@ -86,6 +86,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             => _raw = packet;
 
         public void SetTimestamp ()
-            => Timestamp = UtpClock.Microseconds;
+            => SetTimestamp (StopwatchUtpClock.Instance);
+
+        public void SetTimestamp (uint microseconds)
+            => Timestamp = microseconds;
+
+        internal void SetTimestamp (IUtpClock clock)
+            => Timestamp = clock.Microseconds;
     }
 }

@@ -39,14 +39,21 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), UtpPeerConnection> _connections = new ();
 
-        // FIXME: If packets are resent due to timeout we should still pull the latest 'lastMessageReceivedTimestamp' from the actual utpconnection object
-        public Channel<(UtpPacket packet, uint timestampDifferenceMicroseconds, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, uint, IPEndPoint)> ();
+        public Channel<(UtpPacket packet, UtpPeerConnection connection, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection, IPEndPoint)> ();
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint)
+            : this (preferredLocalEndPoint, StopwatchUtpClock.Instance)
+        {
+        }
+
+        internal UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint, IUtpClock clock)
             : base (preferredLocalEndPoint)
         {
             PreferredLocalEndPoint = preferredLocalEndPoint;
+            Clock = clock;
         }
+
+        internal IUtpClock Clock { get; }
 
         protected override void Start (CancellationToken token)
         {
@@ -74,11 +81,11 @@ namespace MonoTorrent.Connections.Peer.Utp
         async void SendLoopAsync (Socket socket, CancellationToken token)
         {
             try {
-                await foreach (var (pkt, timestampDifferenceMicroseconds, remote) in SendQueue.Reader.ReadAllAsync (token)) {
+                await foreach (var (pkt, connection, remote) in SendQueue.Reader.ReadAllAsync (token)) {
                     try {
-                        pkt.SetTimestamp ();
-                        pkt.TimestampDiff = timestampDifferenceMicroseconds;
-                        await socket.SendToAsync (pkt.AsMemory (), SocketFlags.None, remote, token);
+                        var packet = pkt;
+                        connection.PrepareForSend (ref packet);
+                        await socket.SendToAsync (packet.AsMemory (), SocketFlags.None, remote, token);
                     } catch (OperationCanceledException) {
                         return;
                     } catch (SocketException) when (!token.IsCancellationRequested) {
@@ -157,7 +164,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 remote: remote,
                 connIdSend: ourConnIdSend,
                 connIdRecv: initiatorConnIdRecv,
-                syn.SequenceNumber);
+                initialAckNumber: syn.SequenceNumber,
+                clock: Clock);
 
             if (!_connections.TryAdd (key, connection))
                 return;
