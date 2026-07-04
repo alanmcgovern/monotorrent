@@ -71,17 +71,12 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         const byte SelectiveAckExtension = 1;
-        const int MinimumPacketSize = 150;
         const uint CControlTargetMicroseconds = 100_000;
         const int DelaySampleLifetimeMicroseconds = 120_000_000;
         const int DefaultMaxReceiveBufferBytes = (int) UtpPeerConnectionListener.INITIAL_WINDOW;
         const uint InitialRetransmitTimeoutMicroseconds = 1_000_000;
         const uint MinimumRetransmitTimeoutMicroseconds = 500_000;
         const uint MaximumRetransmitTimeoutMicroseconds = 60_000_000;
-
-        // Most likely 'safe' limit on public internet is 1452 bytes.
-        // 1500 - (28 byte ip header overhead) - (20 byte utp header overhead)
-        static readonly int InitialMtuSize = 1400;
 
         readonly object locker = new ();
         readonly Dictionary<ushort, SentPacket> sentPackets = new ();
@@ -121,7 +116,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         uint MaxWindow { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
 
-        int CurrentMtu { get; set; } = InitialMtuSize;
+        int CurrentMtu { get; set; }
 
         uint RetransmitTimeoutMicroseconds { get; set; } = InitialRetransmitTimeoutMicroseconds;
 
@@ -158,12 +153,13 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
         }
 
-        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock, UtpPeerConnectionListener? listener = null, int maxReceiveBufferBytes = DefaultMaxReceiveBufferBytes)
+        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock, UtpPeerConnectionListener? listener = null, int maxReceiveBufferBytes = DefaultMaxReceiveBufferBytes, UtpTransportSettings? transportSettings = null)
         {
             SendingChannel = sendingChannel;
             _listener = listener;
             this.clock = clock;
             this.maxReceiveBufferBytes = maxReceiveBufferBytes;
+            var settings = UtpTransportSettings.Create (transportSettings ?? listener?.TransportSettings);
             EndPoint = remote;
             AddressBytes = EndPoint.Address.GetAddressBytes ();
             ReceivedPackets = Channel.CreateUnbounded<UtpPacket> ();
@@ -177,6 +173,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             LastSentSequenceNumber = 1;
             AckNumber = initialAckNumber;
             LastAckReceived = initialAckNumber;
+            CurrentMtu = settings.InitialPacketSize;
             State = ConnectionState.SynReceived;
             retransmitTask = RetransmitLoopAsync ();
         }
@@ -422,7 +419,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                         if (sent.DuplicateAckIndications >= 3 && !sent.FastRetransmitted) {
                             fastRetransmits.Add (sent.Packet);
                             sent.FastRetransmitted = true;
-                            MaxWindow = Math.Max ((uint) MinimumPacketSize, MaxWindow / 2);
+                            MaxWindow = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow / 2);
                         }
                     }
                 }
@@ -492,7 +489,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 double delayFactor = offTarget / CControlTargetMicroseconds;
                 double windowFactor = Math.Min (1, bytesNewlyAcked / Math.Max (1.0, MaxWindow));
                 double gain = CurrentMtu * delayFactor * windowFactor;
-                MaxWindow = (uint) Math.Max (MinimumPacketSize, MaxWindow + gain);
+                MaxWindow = (uint) Math.Max (UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow + gain);
             }
         }
 
@@ -722,8 +719,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                         }
 
                         if (timedOut != null) {
-                            CurrentMtu = MinimumPacketSize;
-                            MaxWindow = MinimumPacketSize;
+                            CurrentMtu = UtpTransportSettings.MinimumRecoveryPacketSize;
+                            MaxWindow = UtpTransportSettings.MinimumRecoveryPacketSize;
                             ConsecutiveTimeouts++;
                             RetransmitTimeoutMicroseconds = Math.Min (
                                 MaximumRetransmitTimeoutMicroseconds,

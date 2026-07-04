@@ -272,6 +272,64 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task DefaultTransportSettingUsesConservativeInitialPacketSize ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize + 1]).WithTimeout (5000);
+
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize, first.packet.Payload.Length);
+            Assert.AreEqual (1, second.packet.Payload.Length);
+        }
+
+        [Test]
+        public async Task TransportSettingControlsInitialPacketSize ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                transportSettings: new UtpTransportSettings { InitialPacketSize = 512 });
+
+            await connection.SendAsync (new byte[513]).WithTimeout (5000);
+
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (512, first.packet.Payload.Length);
+            Assert.AreEqual (1, second.packet.Payload.Length);
+        }
+
+        [Test]
+        public void ListenerPassesTransportSettingToConnections ()
+        {
+            var listener = new UtpPeerConnectionListener (
+                new IPEndPoint (IPAddress.Loopback, 0),
+                new UtpTransportSettings { InitialPacketSize = 512 });
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            Assert.AreEqual (512, connection.CurrentMtuForTests);
+        }
+
+        [Test]
+        public void InitialPacketSizeCannotBeBelowRecoveryMinimum ()
+        {
+            var ex = Assert.Throws<ArgumentOutOfRangeException> (() => UtpTransportSettings.Create (new UtpTransportSettings {
+                InitialPacketSize = UtpTransportSettings.MinimumRecoveryPacketSize - 1
+            }));
+
+            Assert.AreEqual ("settings", ex!.ParamName);
+        }
+
+        [Test]
         public async Task LedbatGrowsWindowWhenDelayIsBelowTarget ()
         {
             var clock = new ManualClock ();

@@ -42,18 +42,26 @@ namespace MonoTorrent.Connections.Peer.Utp
         public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection?, IPEndPoint)> ();
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint)
-            : this (preferredLocalEndPoint, StopwatchUtpClock.Instance)
+            : this (preferredLocalEndPoint, null)
         {
         }
 
-        internal UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint, IUtpClock clock)
+        public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint, UtpTransportSettings? transportSettings)
+            : this (preferredLocalEndPoint, StopwatchUtpClock.Instance, transportSettings)
+        {
+        }
+
+        internal UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint, IUtpClock clock, UtpTransportSettings? transportSettings = null)
             : base (preferredLocalEndPoint)
         {
             PreferredLocalEndPoint = preferredLocalEndPoint;
             Clock = clock;
+            TransportSettings = UtpTransportSettings.Create (transportSettings);
         }
 
         internal IUtpClock Clock { get; }
+
+        internal UtpTransportSettings TransportSettings { get; }
 
         protected override void Start (CancellationToken token)
         {
@@ -171,7 +179,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 connIdRecv: initiatorConnIdRecv,
                 initialAckNumber: syn.SequenceNumber,
                 clock: Clock,
-                listener: this);
+                listener: this,
+                transportSettings: TransportSettings);
 
             if (!_connections.TryAdd (key, connection))
                 return;
