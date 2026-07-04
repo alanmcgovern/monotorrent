@@ -46,6 +46,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             SynSent,
             SynReceived,
             Connected,
+            FinSent,
             FinReceived,
             Closed,
             Reset
@@ -85,7 +86,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly Task retransmitTask;
         readonly IUtpClock clock;
 
-        ChannelWriter<(UtpPacket, UtpPeerConnection, IPEndPoint)> SendingChannel { get; }
+        ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> SendingChannel { get; }
 
         readonly UtpPeerConnectionListener? _listener;
 
@@ -98,6 +99,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         public IPEndPoint EndPoint { get; }
 
         ushort SequenceNumber { get; set; }
+
+        ushort LastSentSequenceNumber { get; set; }
 
         internal ushort ConnectionIdSend { get; }
 
@@ -127,18 +130,21 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         ConnectionState State { get; set; }
 
+        internal bool IsClosedOrReset => State == ConnectionState.Closed || State == ConnectionState.Reset;
+
         public bool IsIncoming { get; }
         public bool CanReconnect => false;
         public Uri Uri { get; }
 
-        public UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber)
+        public UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber)
             : this (sendingChannel, remote, connIdSend, connIdRecv, initialAckNumber, StopwatchUtpClock.Instance)
         {
         }
 
-        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock)
+        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock, UtpPeerConnectionListener? listener = null)
         {
             SendingChannel = sendingChannel;
+            _listener = listener;
             this.clock = clock;
             EndPoint = remote;
             AddressBytes = EndPoint.Address.GetAddressBytes ();
@@ -149,7 +155,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             Uri = new Uri ($"utp://{remote.Address}:{remote.Port}");
 
-            SequenceNumber = 2;
+            SequenceNumber = 1;
+            LastSentSequenceNumber = 1;
             AckNumber = initialAckNumber;
             LastAckReceived = initialAckNumber;
             State = ConnectionState.SynReceived;
@@ -157,11 +164,11 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         // Constructor for outgoing connections.
-        public UtpPeerConnection (UtpPeerConnectionListener listener, ChannelWriter<(UtpPacket, UtpPeerConnection, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdRecv)
-            : this (sendingChannel, remote, (ushort) (connIdRecv + 1), connIdRecv, 0, listener.Clock)
+        public UtpPeerConnection (UtpPeerConnectionListener listener, ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdRecv)
+            : this (sendingChannel, remote, (ushort) (connIdRecv + 1), connIdRecv, 0, listener.Clock, listener)
         {
-            _listener = listener;
             IsIncoming = false;
+            LastSentSequenceNumber = 0;
             State = ConnectionState.SynSent;
         }
 
@@ -188,7 +195,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Extension = 0,
                 ConnectionId = ConnectionIdReceive,
                 WindowSize = AdvertisedReceiveWindow,
-                SequenceNumber = 1,
+                SequenceNumber = NextSequenceNumber (),
                 AckNumber = 0
             };
 
@@ -226,6 +233,15 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal static int SequenceDistance (ushort newer, ushort older)
             => unchecked((ushort) (newer - older));
+
+        ushort NextSequenceNumber ()
+        {
+            var result = SequenceNumber++;
+            LastSentSequenceNumber = result;
+            return result;
+        }
+
+        ushort StateSequenceNumber => LastSentSequenceNumber == 0 ? SequenceNumber : LastSentSequenceNumber;
 
         void RegisterSent (UtpPacket packet, int payloadBytes)
         {
@@ -266,19 +282,20 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         async Task ReceiveAsync (UtpPacket pkt)
         {
+            if (!IsValidPacketForCurrentState (pkt))
+                return;
+
             UpdateDelaySample (pkt);
             PeerWindowSize = pkt.WindowSize;
             ProcessAcks (pkt);
 
             if (pkt.Type == PacketType.Reset) {
-                State = ConnectionState.Reset;
-                Dispose ();
+                Close (ConnectionState.Reset);
                 return;
             }
 
             if (pkt.Type == PacketType.State && HandshakeCompleted != null && !HandshakeCompleted.Task.IsCompleted) {
-                if (pkt.AckNumber == 1) {
-                    AckNumber = pkt.SequenceNumber;
+                if (pkt.AckNumber == LastSentSequenceNumber) {
                     State = ConnectionState.Connected;
                     HandshakeCompleted.TrySetResult (true);
                 }
@@ -302,6 +319,21 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             // ACK duplicates too. This helps the remote side recover from lost ACKs.
             await SendAckAsync (AckNumber);
+        }
+
+        internal bool IsValidPacketForCurrentState (UtpPacket pkt)
+        {
+            if (pkt.ConnectionId != ConnectionIdSend)
+                return false;
+
+            return State switch {
+                ConnectionState.SynSent => pkt.Type == PacketType.State && pkt.AckNumber == LastSentSequenceNumber || pkt.Type == PacketType.Reset,
+                ConnectionState.SynReceived => pkt.Type == PacketType.State || pkt.Type == PacketType.Data || pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset,
+                ConnectionState.Connected => pkt.Type == PacketType.State || pkt.Type == PacketType.Data || pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset,
+                ConnectionState.FinSent => pkt.Type == PacketType.State || pkt.Type == PacketType.Data || pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset,
+                ConnectionState.FinReceived => pkt.Type == PacketType.State || pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset,
+                _ => false,
+            };
         }
 
         void UpdateDelaySample (UtpPacket pkt)
@@ -348,6 +380,9 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             foreach (var sent in acked)
                 ApplyCongestionControl (sent, pkt.TimestampDiff);
+
+            if (acked.Any (t => t.Packet.Type == PacketType.Fin) && State == ConnectionState.FinSent)
+                Close (ConnectionState.Closed);
 
             if (acked.Count > 0)
                 sendWindowChanged.Release ();
@@ -461,7 +496,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Extension = sack.Length == 0 ? (byte) 0 : SelectiveAckExtension,
                 ConnectionId = ConnectionIdSend,
                 WindowSize = AdvertisedReceiveWindow,
-                SequenceNumber = SequenceNumber,
+                SequenceNumber = StateSequenceNumber,
                 AckNumber = ackNr
             };
             sack.CopyTo (buf.AsSpan (UtpPacket.HeaderSize));
@@ -500,7 +535,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Extension = 0,
                 ConnectionId = ConnectionIdSend,
                 WindowSize = AdvertisedReceiveWindow,
-                SequenceNumber = 1,
+                SequenceNumber = StateSequenceNumber,
                 AckNumber = peerSeqNr,
                 TimestampDiff = 0
             };
@@ -544,6 +579,9 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
         {
+            if (IsClosedOrReset || State == ConnectionState.FinSent || State == ConnectionState.FinReceived)
+                return 0;
+
             int totalSent = 0;
 
             while (!buffer.IsEmpty) {
@@ -557,7 +595,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     Extension = 0,
                     ConnectionId = ConnectionIdSend,
                     WindowSize = AdvertisedReceiveWindow,
-                    SequenceNumber = SequenceNumber++,
+                    SequenceNumber = NextSequenceNumber (),
                     AckNumber = AckNumber
                 };
 
@@ -571,6 +609,27 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
 
             return totalSent;
+        }
+
+        internal async ReusableTask SendFinAsync ()
+        {
+            if (IsClosedOrReset || State == ConnectionState.FinSent)
+                return;
+
+            var pktBuf = new byte[UtpPacket.HeaderSize];
+            var pkt = new UtpPacket (pktBuf) {
+                Type = PacketType.Fin,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                Extension = 0,
+                ConnectionId = ConnectionIdSend,
+                WindowSize = AdvertisedReceiveWindow,
+                SequenceNumber = NextSequenceNumber (),
+                AckNumber = AckNumber
+            };
+
+            State = ConnectionState.FinSent;
+            RegisterSent (pkt, 0);
+            await SendPacketAsync (pkt);
         }
 
         async Task WaitForSendWindow (int payloadLen)
@@ -628,14 +687,18 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         public void Dispose ()
+            => Close (State == ConnectionState.Reset ? ConnectionState.Reset : ConnectionState.Closed);
+
+        void Close (ConnectionState finalState)
         {
             if (cts.IsCancellationRequested)
                 return;
 
-            State = State == ConnectionState.Reset ? ConnectionState.Reset : ConnectionState.Closed;
+            State = finalState;
             ReceivedPackets.Writer.TryComplete ();
             cts.Cancel ();
             sendWindowChanged.Release ();
+            _listener?.Unregister (this);
         }
     }
 }

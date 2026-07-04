@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Net;
 using System.Threading.Channels;
@@ -15,7 +17,7 @@ namespace MonoTorrent.Connections.Peer
         [Test]
         public async Task ReceiveOutOfOrderPackets ()
         {
-            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection connection, IPEndPoint remoteEndPoint)> ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
 
             connection.Receive (CreateDataPacket (3, "b"));
@@ -30,7 +32,7 @@ namespace MonoTorrent.Connections.Peer
         [Test]
         public async Task ReceiveOutOfOrderPacketSendsSelectiveAck ()
         {
-            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection connection, IPEndPoint remoteEndPoint)> ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
 
             connection.Receive (CreateDataPacket (4, "d"));
@@ -45,7 +47,7 @@ namespace MonoTorrent.Connections.Peer
         [Test]
         public async Task UnackedDataPacketIsRetransmitted ()
         {
-            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection connection, IPEndPoint remoteEndPoint)> ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
 
             await connection.SendAsync (new byte[] { 1, 2, 3 }).WithTimeout (5000);
@@ -56,6 +58,116 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (PacketType.Data, first.packet.Type);
             Assert.AreEqual (first.packet.SequenceNumber, second.packet.SequenceNumber);
             Assert.IsTrue (first.packet.Payload.SequenceEqual (second.packet.Payload));
+        }
+
+        [Test]
+        public async Task PureStatePacketDoesNotConsumeSequenceNumber ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            await connection.SendSynAck (1);
+            await connection.SendAsync (new byte[] { 1 });
+
+            var state = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.State, state.packet.Type);
+            Assert.AreEqual (PacketType.Data, data.packet.Type);
+            Assert.AreEqual (state.packet.SequenceNumber, data.packet.SequenceNumber);
+        }
+
+        [Test]
+        public async Task SynAndDataConsumeSequenceNumbers ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            var connectTask = connection.ConnectAsync ().AsTask ();
+            var syn = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.Syn, syn.packet.Type);
+            Assert.AreEqual (1, syn.packet.SequenceNumber);
+
+            connection.Receive (CreateStatePacket (connection.ConnectionIdSend, sequenceNumber: 9, ackNumber: 1));
+            Assert.IsTrue (await connectTask.WithTimeout (5000));
+
+            await connection.SendAsync (new byte[] { 1 });
+            var data = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.Data, data.packet.Type);
+            Assert.AreEqual (2, data.packet.SequenceNumber);
+        }
+
+        [Test]
+        public async Task FinConsumesSequenceNumber ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            await connection.SendAsync (new byte[] { 1 });
+            await connection.SendFinAsync ();
+
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var fin = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.Data, data.packet.Type);
+            Assert.AreEqual (PacketType.Fin, fin.packet.Type);
+            Assert.AreEqual (unchecked((ushort) (data.packet.SequenceNumber + 1)), fin.packet.SequenceNumber);
+        }
+
+        [Test]
+        public async Task InvalidRoutedPacketSendsReset ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            Assert.IsTrue (listener.TryRegisterOutgoing (connection));
+            listener.ProcessDatagram ((IPEndPoint) connection.EndPoint, CreateDataPacket (2, "x").AsMemory ().ToArray ());
+
+            var reset = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+            Assert.IsNull (reset.connection);
+        }
+
+        [Test]
+        public async Task StalePacketSendsReset ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var remote = new IPEndPoint (IPAddress.Loopback, 12345);
+
+            listener.ProcessDatagram (remote, CreateDataPacket (2, "x").AsMemory ().ToArray ());
+
+            var reset = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+            Assert.IsNull (reset.connection);
+        }
+
+        [Test]
+        public void DisposeUnregistersConnection ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            Assert.IsTrue (listener.TryRegisterOutgoing (connection));
+            Assert.IsTrue (listener.IsRegistered (connection));
+
+            connection.Dispose ();
+
+            Assert.IsFalse (listener.IsRegistered (connection));
+        }
+
+        [Test]
+        public void ReceivedResetUnregistersConnection ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            Assert.IsTrue (listener.TryRegisterOutgoing (connection));
+
+            connection.Receive (CreateResetPacket (connection.ConnectionIdSend));
+
+            Assert.IsFalse (listener.IsRegistered (connection));
         }
 
         static UtpPacket CreateDataPacket (ushort sequenceNumber, string payload)
@@ -70,6 +182,34 @@ namespace MonoTorrent.Connections.Peer
                 AckNumber = 1
             };
             bytes.CopyTo (packet.Payload);
+            packet.SetTimestamp ();
+            return packet;
+        }
+
+        static UtpPacket CreateStatePacket (ushort connectionId, ushort sequenceNumber, ushort ackNumber)
+        {
+            var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
+                Type = PacketType.State,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                ConnectionId = connectionId,
+                WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
+                SequenceNumber = sequenceNumber,
+                AckNumber = ackNumber
+            };
+            packet.SetTimestamp ();
+            return packet;
+        }
+
+        static UtpPacket CreateResetPacket (ushort connectionId)
+        {
+            var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
+                Type = PacketType.Reset,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                ConnectionId = connectionId,
+                WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
+                SequenceNumber = 2,
+                AckNumber = 1
+            };
             packet.SetTimestamp ();
             return packet;
         }

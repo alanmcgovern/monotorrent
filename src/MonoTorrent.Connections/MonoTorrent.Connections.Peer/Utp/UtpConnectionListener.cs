@@ -39,7 +39,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), UtpPeerConnection> _connections = new ();
 
-        public Channel<(UtpPacket packet, UtpPeerConnection connection, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection, IPEndPoint)> ();
+        public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection?, IPEndPoint)> ();
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint)
             : this (preferredLocalEndPoint, StopwatchUtpClock.Instance)
@@ -84,7 +84,12 @@ namespace MonoTorrent.Connections.Peer.Utp
                 await foreach (var (pkt, connection, remote) in SendQueue.Reader.ReadAllAsync (token)) {
                     try {
                         var packet = pkt;
-                        connection.PrepareForSend (ref packet);
+                        if (connection == null) {
+                            packet.SetTimestamp (Clock);
+                            packet.TimestampDiff = 0;
+                        } else {
+                            connection.PrepareForSend (ref packet);
+                        }
                         await socket.SendToAsync (packet.AsMemory (), SocketFlags.None, remote, token);
                     } catch (OperationCanceledException) {
                         return;
@@ -125,7 +130,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        void ProcessDatagram (IPEndPoint remote, byte[] owned)
+        internal void ProcessDatagram (IPEndPoint remote, byte[] owned)
         {
             var pkt = new UtpPacket (owned);
 
@@ -165,7 +170,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 connIdSend: ourConnIdSend,
                 connIdRecv: initiatorConnIdRecv,
                 initialAckNumber: syn.SequenceNumber,
-                clock: Clock);
+                clock: Clock,
+                listener: this);
 
             if (!_connections.TryAdd (key, connection))
                 return;
@@ -175,14 +181,39 @@ namespace MonoTorrent.Connections.Peer.Utp
             ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, null));
         }
 
-        void RouteToExisting (EndPoint remote, UtpPacket pkt)
+        void RouteToExisting (IPEndPoint remote, UtpPacket pkt)
         {
             ushort initiatorConnIdRecv = (ushort) (pkt.ConnectionId - 1);
-            if (_connections.TryGetValue ((remote, initiatorConnIdRecv), out var conn))
+            if (_connections.TryGetValue ((remote, initiatorConnIdRecv), out var conn) && !conn.IsClosedOrReset && conn.IsValidPacketForCurrentState (pkt))
                 conn.Receive (pkt);
+            else
+                SendReset (remote, pkt);
         }
 
         internal bool TryRegisterOutgoing (UtpPeerConnection connection)
             => _connections.TryAdd ((connection.EndPoint, connection.ConnectionIdReceive), connection);
+
+        internal void Unregister (UtpPeerConnection connection)
+            => _connections.TryRemove ((connection.EndPoint, connection.ConnectionIdReceive), out _);
+
+        internal bool IsRegistered (UtpPeerConnection connection)
+            => _connections.ContainsKey ((connection.EndPoint, connection.ConnectionIdReceive));
+
+        void SendReset (IPEndPoint remote, UtpPacket received)
+        {
+            if (received.Type == PacketType.Reset)
+                return;
+
+            var reset = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
+                Type = PacketType.Reset,
+                Version = UTP_VERSION,
+                Extension = 0,
+                ConnectionId = received.ConnectionId,
+                WindowSize = INITIAL_WINDOW,
+                SequenceNumber = 0,
+                AckNumber = received.SequenceNumber
+            };
+            SendQueue.Writer.TryWrite ((reset, null, remote));
+        }
     }
 }
