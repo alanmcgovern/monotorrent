@@ -411,7 +411,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (acked.Count > 0)
                     ConsecutiveTimeouts = 0;
 
-                if (!ackAdvanced || selectiveAcks.Count > 0) {
+                if ((!ackAdvanced && acked.Count == 0) || selectiveAcks.Count > 0) {
                     foreach (var sent in sentPackets.Values) {
                         if (!IsPacketIndicatedMissing (sent.Packet.SequenceNumber, pkt.AckNumber, selectiveAcks))
                             continue;

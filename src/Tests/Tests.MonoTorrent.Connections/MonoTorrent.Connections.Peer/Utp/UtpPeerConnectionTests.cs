@@ -182,6 +182,37 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task AckMatchingInitialAckNumberDoesNotCountAsDuplicateWhenItReleasesPacket ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 3 }).WithTimeout (5000);
+
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (1, first.packet.SequenceNumber);
+            Assert.AreEqual (2, second.packet.SequenceNumber);
+
+            connection.Receive (CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (124, sequenceNumber: 10, ackNumber: first.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (124, sequenceNumber: 11, ackNumber: first.packet.SequenceNumber));
+            await Task.Delay (50);
+
+            if (sendQueue.Reader.TryRead (out var retransmit))
+                Assert.Fail ($"Unexpected fast retransmit of packet {retransmit.packet.SequenceNumber}");
+
+            connection.Receive (CreateStatePacket (124, sequenceNumber: 12, ackNumber: first.packet.SequenceNumber));
+            retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (second.packet.SequenceNumber, retransmit.packet.SequenceNumber);
+        }
+
+        [Test]
         public async Task ThreeSackIndicationsFastRetransmitMissingPacket ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
