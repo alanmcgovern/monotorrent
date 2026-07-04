@@ -72,6 +72,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         const int MinimumPacketSize = 150;
         const uint CControlTargetMicroseconds = 100_000;
         const int DelaySampleLifetimeMicroseconds = 120_000_000;
+        const int DefaultMaxReceiveBufferBytes = (int) UtpPeerConnectionListener.INITIAL_WINDOW;
 
         // Most likely 'safe' limit on public internet is 1452 bytes.
         // 1500 - (28 byte ip header overhead) - (20 byte utp header overhead)
@@ -85,6 +86,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly CancellationTokenSource cts = new ();
         readonly Task retransmitTask;
         readonly IUtpClock clock;
+        readonly int maxReceiveBufferBytes;
 
         ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> SendingChannel { get; }
 
@@ -141,11 +143,12 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
         }
 
-        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock, UtpPeerConnectionListener? listener = null)
+        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock, UtpPeerConnectionListener? listener = null, int maxReceiveBufferBytes = DefaultMaxReceiveBufferBytes)
         {
             SendingChannel = sendingChannel;
             _listener = listener;
             this.clock = clock;
+            this.maxReceiveBufferBytes = maxReceiveBufferBytes;
             EndPoint = remote;
             AddressBytes = EndPoint.Address.GetAddressBytes ();
             ReceivedPackets = Channel.CreateUnbounded<UtpPacket> ();
@@ -212,11 +215,13 @@ namespace MonoTorrent.Connections.Peer.Utp
         uint AdvertisedReceiveWindow {
             get {
                 lock (locker) {
-                    var queued = receiveBuffer.Values.Sum (t => t.Payload.Length);
-                    return (uint) Math.Max (0, (int) UtpPeerConnectionListener.INITIAL_WINDOW - queued);
+                    return (uint) Math.Max (0, (int) UtpPeerConnectionListener.INITIAL_WINDOW - ReceiveBufferBytes);
                 }
             }
         }
+
+        int ReceiveBufferBytes
+            => receiveBuffer.Values.Sum (PacketBufferCost);
 
         int CurrentWindow {
             get {
@@ -256,6 +261,24 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             packet.WindowSize = AdvertisedReceiveWindow;
             await SendingChannel.WriteAsync ((packet, this, EndPoint), cts.Token);
+        }
+
+        static int PacketBufferCost (UtpPacket packet)
+            => UtpPacket.HeaderSize + packet.Payload.Length;
+
+        bool TryBufferReceivedPacket (UtpPacket packet)
+        {
+            if (!SequenceGreaterThan (packet.SequenceNumber, AckNumber))
+                return false;
+
+            if (receiveBuffer.ContainsKey (packet.SequenceNumber))
+                return false;
+
+            if (ReceiveBufferBytes + PacketBufferCost (packet) > maxReceiveBufferBytes)
+                return false;
+
+            receiveBuffer[packet.SequenceNumber] = packet;
+            return true;
         }
 
         internal void PrepareForSend (ref UtpPacket packet)
@@ -308,11 +331,8 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (pkt.Type != PacketType.Data && pkt.Type != PacketType.Fin)
                 return;
 
-            bool shouldAck;
             lock (locker) {
-                shouldAck = SequenceGreaterThan (pkt.SequenceNumber, AckNumber);
-                if (shouldAck && !receiveBuffer.ContainsKey (pkt.SequenceNumber))
-                    receiveBuffer[pkt.SequenceNumber] = pkt;
+                TryBufferReceivedPacket (pkt);
             }
 
             await DeliverAvailablePackets ();

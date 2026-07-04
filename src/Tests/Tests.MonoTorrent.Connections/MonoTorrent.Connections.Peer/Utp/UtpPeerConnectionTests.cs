@@ -45,6 +45,89 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task SelectiveAckBitOrderingMatchesBep29 ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 10);
+
+            connection.Receive (CreateDataPacket (12, "a"));
+            connection.Receive (CreateDataPacket (13, "b"));
+            connection.Receive (CreateDataPacket (20, "c"));
+
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var bytes = ack.packet.AsMemory ().ToArray ();
+            Assert.AreEqual (PacketType.State, ack.packet.Type);
+            Assert.AreEqual (10, ack.packet.AckNumber);
+            Assert.AreEqual (1, ack.packet.Extension);
+            Assert.AreEqual (0, bytes[UtpPacket.HeaderSize]);
+            Assert.AreEqual (4, bytes[UtpPacket.HeaderSize + 1]);
+            Assert.AreEqual (0b_0000_0011, bytes[UtpPacket.HeaderSize + 2]);
+            Assert.AreEqual (0b_0000_0001, bytes[UtpPacket.HeaderSize + 3]);
+        }
+
+        [Test]
+        public async Task ReceiveWindowAccountsForBufferedPacketBytes ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            connection.Receive (CreateDataPacket (3, "abcd"));
+
+            var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW - UtpPacket.HeaderSize - 4, ack.packet.WindowSize);
+        }
+
+        [Test]
+        public async Task ReorderBufferDropsPacketsBeyondLimit ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                maxReceiveBufferBytes: UtpPacket.HeaderSize + 1);
+
+            connection.Receive (CreateDataPacket (3, "a"));
+            connection.Receive (CreateDataPacket (4, "b"));
+
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (1, ack.packet.AckNumber);
+            Assert.AreEqual (1, ack.packet.Extension);
+            Assert.AreEqual (0b_0000_0001, ack.packet.AsMemory ().Span[UtpPacket.HeaderSize + 2]);
+        }
+
+        [Test]
+        public async Task FinWaitsForPriorDataBeforeEof ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            connection.Receive (CreateDataPacket (2, "a"));
+            connection.Receive (CreateFinPacket (4));
+
+            var buffer = new byte[1];
+            Assert.AreEqual (1, await connection.ReceiveAsync (buffer).WithTimeout (5000));
+            Assert.AreEqual ("a", System.Text.Encoding.ASCII.GetString (buffer));
+
+            var blockedRead = connection.ReceiveAsync (buffer).AsTask ();
+            Assert.IsFalse (await Task.WhenAny (blockedRead, Task.Delay (100)) == blockedRead);
+
+            connection.Receive (CreateDataPacket (3, "b"));
+
+            Assert.AreEqual (1, await blockedRead.WithTimeout (5000));
+            Assert.AreEqual ("b", System.Text.Encoding.ASCII.GetString (buffer));
+            Assert.AreEqual (0, await connection.ReceiveAsync (buffer).WithTimeout (5000));
+        }
+
+        [Test]
         public async Task UnackedDataPacketIsRetransmitted ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
@@ -212,6 +295,25 @@ namespace MonoTorrent.Connections.Peer
             };
             packet.SetTimestamp ();
             return packet;
+        }
+
+        static UtpPacket CreateFinPacket (ushort sequenceNumber)
+        {
+            var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
+                Type = PacketType.Fin,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                ConnectionId = 124,
+                WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
+                SequenceNumber = sequenceNumber,
+                AckNumber = 1
+            };
+            packet.SetTimestamp ();
+            return packet;
+        }
+
+        sealed class ManualClock : IUtpClock
+        {
+            public uint Microseconds { get; set; }
         }
     }
 }
