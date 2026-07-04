@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+
+using MonoTorrent.Logging;
 
 using ReusableTasks;
 
@@ -37,7 +40,24 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public event EventHandler<PeerConnectionEventArgs>? ConnectionReceived;
 
-        readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), UtpPeerConnection> _connections = new ();
+        sealed class RegisteredConnection
+        {
+            public RegisteredConnection (UtpPeerConnection connection, uint lastActivityMicroseconds)
+            {
+                Connection = connection;
+                LastActivityMicroseconds = lastActivityMicroseconds;
+            }
+
+            public UtpPeerConnection Connection { get; }
+            public uint LastActivityMicroseconds { get; set; }
+        }
+
+        static readonly ILogger Logger = LoggerFactory.Create (nameof (UtpPeerConnectionListener));
+        static readonly TimeSpan StaleConnectionTimeout = TimeSpan.FromMinutes (2);
+
+        readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), RegisteredConnection> _connections = new ();
+        readonly object backgroundTasksLocker = new ();
+        readonly List<Task> backgroundTasks = new ();
 
         public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection?, IPEndPoint)> ();
 
@@ -81,12 +101,39 @@ namespace MonoTorrent.Connections.Peer.Utp
             socket.Bind (PreferredLocalEndPoint);
             LocalEndPoint = (IPEndPoint?) socket.LocalEndPoint;
 
-            // Start both send and receive loops
-            SendLoopAsync (socket, token);
-            ReceiveLoopAsync (socket, token);
+            token.Register (() => {
+                try {
+                    socket.Close ();
+                } catch {
+                }
+            });
+
+            TrackBackgroundTask (SendLoopAsync (socket, token));
+            TrackBackgroundTask (ReceiveLoopAsync (socket, token));
         }
 
-        async void SendLoopAsync (Socket socket, CancellationToken token)
+        void TrackBackgroundTask (Task task)
+        {
+            lock (backgroundTasksLocker)
+                backgroundTasks.Add (task);
+
+            _ = task.ContinueWith (completed => {
+                lock (backgroundTasksLocker)
+                    backgroundTasks.Remove (completed);
+
+                if (completed.Exception != null)
+                    Logger.Error ($"uTP listener background task failed: {completed.Exception.GetBaseException ().Message}");
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
+        internal Task[] BackgroundTasksForTests {
+            get {
+                lock (backgroundTasksLocker)
+                    return backgroundTasks.ToArray ();
+            }
+        }
+
+        async Task SendLoopAsync (Socket socket, CancellationToken token)
         {
             try {
                 await foreach (var (pkt, connection, remote) in SendQueue.Reader.ReadAllAsync (token)) {
@@ -101,20 +148,21 @@ namespace MonoTorrent.Connections.Peer.Utp
                         await socket.SendToAsync (packet.AsMemory (), SocketFlags.None, remote, token);
                     } catch (OperationCanceledException) {
                         return;
-                    } catch (SocketException) when (!token.IsCancellationRequested) {
-                        // Keep looping if one socket is closed.
+                    } catch (SocketException ex) when (!token.IsCancellationRequested) {
+                        Logger.Debug ($"uTP send failed: {ex.SocketErrorCode}");
                     }
                 }
             } catch (OperationCanceledException) {
-                // Listener stopped.
+            } catch (ObjectDisposedException) {
+            } catch (Exception ex) {
+                Logger.Error ($"uTP send loop failed: {ex.Message}");
             }
         }
 
-        async void ReceiveLoopAsync (Socket socket, CancellationToken token)
+        async Task ReceiveLoopAsync (Socket socket, CancellationToken token)
         {
             var buffer = new byte[65_536];
 
-            using var closer = token.Register (() => socket.Close ());
             var endpoint = new IPEndPoint (PreferredLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
 
             while (!token.IsCancellationRequested) {
@@ -130,9 +178,13 @@ namespace MonoTorrent.Connections.Peer.Utp
                     ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, owned);
                 } catch (OperationCanceledException) {
                     return;
-                } catch (SocketException) when (!token.IsCancellationRequested) {
+                } catch (SocketException ex) when (!token.IsCancellationRequested) {
+                    Logger.Debug ($"uTP receive failed: {ex.SocketErrorCode}");
                     continue;
                 } catch (ObjectDisposedException) {
+                    return;
+                } catch (Exception ex) {
+                    Logger.Error ($"uTP receive loop failed: {ex.Message}");
                     return;
                 }
             }
@@ -145,9 +197,11 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (pkt.Version != UTP_VERSION)
                 return;
 
+            PruneStaleConnections ();
+
             switch (pkt.Type) {
                 case PacketType.Syn:
-                    HandleSyn (remote, pkt);
+                    TrackBackgroundTask (HandleSynAsync (remote, pkt));
                     break;
 
                 case PacketType.Data:
@@ -159,7 +213,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        async void HandleSyn (IPEndPoint remote, UtpPacket syn)
+        async Task HandleSynAsync (IPEndPoint remote, UtpPacket syn)
         {
             ushort initiatorConnIdRecv = syn.ConnectionId;
             ushort ourConnIdSend = (ushort) (initiatorConnIdRecv + 1);
@@ -168,8 +222,17 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             // Idempotent on retransmits – resend the ST_STATE.
             if (_connections.TryGetValue (key, out var existing)) {
-                await existing.SendSynAck (syn.SequenceNumber);
-                return;
+                if (existing.Connection.IsClosedOrReset) {
+                    _connections.TryRemove (key, out _);
+                } else if (existing.Connection.IsIncoming) {
+                    existing.LastActivityMicroseconds = Clock.Microseconds;
+                    await existing.Connection.SendSynAck (syn.SequenceNumber);
+                    return;
+                } else {
+                    Logger.Debug ($"Reset uTP SYN colliding with outgoing connection {remote} / {initiatorConnIdRecv}");
+                    SendReset (remote, syn);
+                    return;
+                }
             }
 
             var connection = new UtpPeerConnection (
@@ -182,8 +245,11 @@ namespace MonoTorrent.Connections.Peer.Utp
                 listener: this,
                 transportSettings: TransportSettings);
 
-            if (!_connections.TryAdd (key, connection))
+            if (!_connections.TryAdd (key, new RegisteredConnection (connection, Clock.Microseconds))) {
+                connection.Dispose ();
+                Logger.Debug ($"uTP connection-id collision for {remote} / {initiatorConnIdRecv}");
                 return;
+            }
 
             await connection.SendSynAck (syn.SequenceNumber);
 
@@ -193,20 +259,47 @@ namespace MonoTorrent.Connections.Peer.Utp
         void RouteToExisting (IPEndPoint remote, UtpPacket pkt)
         {
             ushort initiatorConnIdRecv = (ushort) (pkt.ConnectionId - 1);
-            if (_connections.TryGetValue ((remote, initiatorConnIdRecv), out var conn) && !conn.IsClosedOrReset && conn.IsValidPacketForCurrentState (pkt))
-                conn.Receive (pkt);
-            else
-                SendReset (remote, pkt);
+            var key = (remote, initiatorConnIdRecv);
+            if (_connections.TryGetValue (key, out var registration)) {
+                var conn = registration.Connection;
+                if (!conn.IsClosedOrReset && conn.IsValidPacketForCurrentState (pkt)) {
+                    registration.LastActivityMicroseconds = Clock.Microseconds;
+                    conn.Receive (pkt);
+                    return;
+                }
+
+                if (conn.IsClosedOrReset)
+                    _connections.TryRemove (key, out _);
+            }
+
+            SendReset (remote, pkt);
         }
 
         internal bool TryRegisterOutgoing (UtpPeerConnection connection)
-            => _connections.TryAdd ((connection.EndPoint, connection.ConnectionIdReceive), connection);
+            => _connections.TryAdd ((connection.EndPoint, connection.ConnectionIdReceive), new RegisteredConnection (connection, Clock.Microseconds));
 
         internal void Unregister (UtpPeerConnection connection)
             => _connections.TryRemove ((connection.EndPoint, connection.ConnectionIdReceive), out _);
 
         internal bool IsRegistered (UtpPeerConnection connection)
             => _connections.ContainsKey ((connection.EndPoint, connection.ConnectionIdReceive));
+
+        internal int RegisteredConnectionCount => _connections.Count;
+
+        internal void PruneStaleConnections ()
+        {
+            var now = Clock.Microseconds;
+            var staleAfter = (uint) StaleConnectionTimeout.TotalMicroseconds;
+            foreach (var pair in _connections.ToArray ()) {
+                var connection = pair.Value.Connection;
+                if (connection.IsClosedOrReset || unchecked(now - pair.Value.LastActivityMicroseconds) >= staleAfter) {
+                    if (_connections.TryRemove (pair.Key, out _)) {
+                        Logger.Debug ($"Pruned stale uTP connection {pair.Key.remoteEndpoint} / {pair.Key.remoteConnectionReceiveId}");
+                        connection.Dispose ();
+                    }
+                }
+            }
+        }
 
         void SendReset (IPEndPoint remote, UtpPacket received)
         {

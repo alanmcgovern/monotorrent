@@ -313,14 +313,12 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         // Called by the listener for every packet routed to this connection.
-        internal async void Receive (UtpPacket pkt)
+        internal void Receive (UtpPacket pkt)
         {
-            try {
-                await ReceiveAsync (pkt);
-            } catch (OperationCanceledException) {
-            } catch {
-                Dispose ();
-            }
+            _ = ReceiveAsync (pkt).ContinueWith (task => {
+                if (!task.IsCanceled && task.Exception != null)
+                    Dispose ();
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
         async Task ReceiveAsync (UtpPacket pkt)

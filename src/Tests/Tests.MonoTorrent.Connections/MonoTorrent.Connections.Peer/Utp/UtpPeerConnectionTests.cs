@@ -525,6 +525,143 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task DuplicateSynReusesExistingConnectionAndResendsState ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+            int received = 0;
+            harness.Listener.ConnectionReceived += (o, e) => received++;
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            var first = await harness.ReadOutbound ().WithTimeout (5000);
+
+            harness.DeliverDuplicate (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            var second = await harness.ReadOutbound ().WithTimeout (5000);
+
+            Assert.AreEqual (1, received);
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
+            Assert.AreEqual (PacketType.State, first.packet.Type);
+            Assert.AreEqual (PacketType.State, second.packet.Type);
+            Assert.AreEqual (7, first.packet.AckNumber);
+            Assert.AreEqual (7, second.packet.AckNumber);
+        }
+
+        [Test]
+        public async Task UnknownConnectionPacketSendsReset ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+
+            harness.Deliver (CreateDataPacket (2, "x"));
+
+            var reset = await harness.ReadOutbound ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+            Assert.IsNull (reset.connection);
+        }
+
+        [Test]
+        public async Task SynCollidingWithOutgoingConnectionSendsReset ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+            using var outgoing = new UtpPeerConnection (harness.Listener, harness.Remote, 123);
+
+            Assert.IsTrue (harness.Listener.TryRegisterOutgoing (outgoing));
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+
+            var reset = await harness.ReadOutbound ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+            Assert.IsNull (reset.connection);
+        }
+
+        [Test]
+        public async Task StaleConnectionsArePrunedAndThenResetUnknownPackets ()
+        {
+            var clock = new ManualClock ();
+            using var harness = new InMemoryUtpHarness (clock);
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            await harness.ReadOutbound ().WithTimeout (5000);
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
+
+            clock.Microseconds = 120_000_000;
+            harness.Listener.PruneStaleConnections ();
+
+            Assert.AreEqual (0, harness.Listener.RegisteredConnectionCount);
+
+            harness.Deliver (CreateDataPacket (2, "x"));
+            var reset = await harness.ReadOutbound ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+        }
+
+        [Test]
+        public async Task InMemoryHarnessCanReorderAndDuplicatePackets ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 1));
+            await harness.ReadOutbound ().WithTimeout (5000);
+
+            harness.DeliverReordered (
+                CreateDataPacket (3, "b"),
+                CreateDataPacket (2, "a"));
+            harness.DeliverDuplicate (CreateDataPacket (3, "b"));
+
+            var ack1 = await harness.ReadOutbound ().WithTimeout (5000);
+            var ack2 = await harness.ReadOutbound ().WithTimeout (5000);
+            var ack3 = await harness.ReadOutbound ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.State, ack1.packet.Type);
+            Assert.AreEqual (PacketType.State, ack2.packet.Type);
+            Assert.AreEqual (PacketType.State, ack3.packet.Type);
+        }
+
+        [Test]
+        public async Task InMemoryHarnessCanDropAndDelayAckDelivery ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+
+            harness.Drop (CreateSynPacket (connectionId: 123, sequenceNumber: 1));
+            Assert.IsFalse (harness.Listener.SendQueue.Reader.TryRead (out _));
+
+            harness.DeliverDelayed (CreateSynPacket (connectionId: 123, sequenceNumber: 1));
+            var state = await harness.ReadOutbound ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.State, state.packet.Type);
+        }
+
+        [Test]
+        public async Task InMemoryHarnessCanDelayAcknowledgements ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+            using var connection = new UtpPeerConnection (harness.Listener, harness.Listener.SendQueue, harness.Remote, 123);
+
+            Assert.IsTrue (harness.Listener.TryRegisterOutgoing (connection));
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (5000);
+            var data = await harness.ReadOutbound ().WithTimeout (5000);
+
+            Assert.Greater (connection.BytesInFlightForTests, 0);
+
+            harness.DeliverDelayed (CreateStatePacket (connection.ConnectionIdSend, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber));
+            await Task.Delay (50);
+
+            Assert.AreEqual (0, connection.BytesInFlightForTests);
+        }
+
+        [Test]
+        public void ListenerTracksBackgroundTasksAndStopsGracefully ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+
+            listener.Start ();
+            Assert.IsNotEmpty (listener.BackgroundTasksForTests);
+
+            listener.Stop ();
+
+            Assert.DoesNotThrowAsync (async () => await Task.WhenAll (listener.BackgroundTasksForTests).WaitAsync (TimeSpan.FromSeconds (5)));
+        }
+
+        [Test]
         public async Task StalePacketSendsReset ()
         {
             var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
@@ -605,6 +742,20 @@ namespace MonoTorrent.Connections.Peer
             return packet;
         }
 
+        static UtpPacket CreateSynPacket (ushort connectionId, ushort sequenceNumber)
+        {
+            var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
+                Type = PacketType.Syn,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                ConnectionId = connectionId,
+                WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
+                SequenceNumber = sequenceNumber,
+                AckNumber = 0
+            };
+            packet.SetTimestamp ();
+            return packet;
+        }
+
         static UtpPacket CreateResetPacket (ushort connectionId)
         {
             var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
@@ -636,6 +787,56 @@ namespace MonoTorrent.Connections.Peer
         sealed class ManualClock : IUtpClock
         {
             public uint Microseconds { get; set; }
+        }
+
+        sealed class InMemoryUtpHarness : IDisposable
+        {
+            public InMemoryUtpHarness ()
+                : this (new ManualClock ())
+            {
+            }
+
+            public InMemoryUtpHarness (ManualClock clock)
+            {
+                Clock = clock;
+                Listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0), clock);
+                Remote = new IPEndPoint (IPAddress.Loopback, 12345);
+            }
+
+            public ManualClock Clock { get; }
+            public UtpPeerConnectionListener Listener { get; }
+            public IPEndPoint Remote { get; }
+
+            public void Deliver (UtpPacket packet)
+                => Listener.ProcessDatagram (Remote, packet.AsMemory ().ToArray ());
+
+            public void DeliverDelayed (UtpPacket packet)
+            {
+                Clock.Microseconds += 50_000;
+                Deliver (packet);
+            }
+
+            public void DeliverDuplicate (UtpPacket packet)
+            {
+                Deliver (packet);
+                Deliver (packet);
+            }
+
+            public void DeliverReordered (params UtpPacket[] packets)
+            {
+                for (int i = packets.Length - 1; i >= 0; i--)
+                    Deliver (packets[i]);
+            }
+
+            public void Drop (UtpPacket packet)
+            {
+            }
+
+            public Task<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ReadOutbound ()
+                => Listener.SendQueue.Reader.ReadAsync ().AsTask ();
+
+            public void Dispose ()
+                => Listener.Stop ();
         }
     }
 }
