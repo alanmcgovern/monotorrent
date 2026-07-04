@@ -272,6 +272,131 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task LedbatGrowsWindowWhenDelayIsBelowTarget ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+
+            var initialWindow = connection.MaxWindowForTests;
+
+            await connection.SendAsync (new byte[1400]).WithTimeout (5000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var ack = CreateStatePacket (124, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
+            ack.TimestampDiff = 0;
+            connection.Receive (ack);
+            await Task.Delay (50);
+
+            Assert.Greater (connection.MaxWindowForTests, initialWindow);
+        }
+
+        [Test]
+        public async Task LedbatYieldsWhenDelayRisesAboveTarget ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+
+            await connection.SendAsync (new byte[1400]).WithTimeout (5000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var lowDelayAck = CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
+            lowDelayAck.TimestampDiff = 10_000;
+            connection.Receive (lowDelayAck);
+            await Task.Delay (50);
+
+            var afterLowDelay = connection.MaxWindowForTests;
+
+            await connection.SendAsync (new byte[1400]).WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var highDelayAck = CreateStatePacket (124, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
+            highDelayAck.TimestampDiff = 220_000;
+            connection.Receive (highDelayAck);
+            await Task.Delay (50);
+
+            Assert.Less (connection.MaxWindowForTests, afterLowDelay);
+        }
+
+        [Test]
+        public async Task LedbatBaseDelayExpiresAfterTwoMinutes ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+
+            await connection.SendAsync (new byte[1400]).WithTimeout (5000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var lowDelayAck = CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
+            lowDelayAck.TimestampDiff = 10_000;
+            connection.Receive (lowDelayAck);
+            await Task.Delay (50);
+
+            var afterLowDelay = connection.MaxWindowForTests;
+
+            clock.Microseconds = 120_000_001;
+
+            await connection.SendAsync (new byte[1400]).WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var highDelayAck = CreateStatePacket (124, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
+            highDelayAck.TimestampDiff = 220_000;
+            connection.Receive (highDelayAck);
+            await Task.Delay (50);
+
+            Assert.Greater (connection.MaxWindowForTests, afterLowDelay);
+        }
+
+        [Test]
+        public async Task LedbatHalvesWindowOnPacketLoss ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            var initialWindow = connection.MaxWindowForTests;
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 3 }).WithTimeout (5000);
+
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            for (int i = 0; i < 3; i++)
+                connection.Receive (CreateStatePacket (124, sequenceNumber: (ushort) (9 + i), ackNumber: first.packet.SequenceNumber, third.packet.SequenceNumber));
+
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (initialWindow / 2, connection.MaxWindowForTests);
+        }
+
+        [Test]
+        public async Task LedbatRecoversWindowAfterTimeoutMinimum ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (5000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 1_000_000;
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (150, connection.MaxWindowForTests);
+
+            var ack = CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
+            ack.TimestampDiff = 0;
+            connection.Receive (ack);
+            await Task.Delay (50);
+
+            Assert.Greater (connection.MaxWindowForTests, 150);
+        }
+
+        [Test]
         public async Task PureStatePacketDoesNotConsumeSequenceNumber ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();

@@ -145,6 +145,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal int CurrentMtuForTests => CurrentMtu;
 
+        internal uint MaxWindowForTests => MaxWindow;
+
         internal uint RetransmitTimeoutMicrosecondsForTests => RetransmitTimeoutMicroseconds;
 
         public bool IsIncoming { get; }
@@ -429,8 +431,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             foreach (var sent in acked)
                 UpdateRtt (sent);
 
-            foreach (var sent in acked)
-                ApplyCongestionControl (sent, pkt.TimestampDiff);
+            ApplyCongestionControl (acked.Sum (t => t.PayloadBytes), pkt.TimestampDiff);
 
             if (acked.Any (t => t.Packet.Type == PacketType.Fin) && State == ConnectionState.FinSent)
                 Close (ConnectionState.Closed);
@@ -474,9 +475,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             RetransmitTimeoutMicroseconds = Math.Max (MinimumRetransmitTimeoutMicroseconds, RttMicroseconds + RttVarianceMicroseconds * 4);
         }
 
-        void ApplyCongestionControl (SentPacket sent, uint delayMicroseconds)
+        void ApplyCongestionControl (int bytesNewlyAcked, uint delayMicroseconds)
         {
-            if (delayMicroseconds == 0 || sent.PayloadBytes == 0)
+            if (bytesNewlyAcked == 0)
                 return;
 
             lock (locker) {
@@ -489,7 +490,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 uint ourDelay = delayMicroseconds > baseDelay ? delayMicroseconds - baseDelay : 0;
                 double offTarget = (long) CControlTargetMicroseconds - ourDelay;
                 double delayFactor = offTarget / CControlTargetMicroseconds;
-                double windowFactor = Math.Min (1, sent.PayloadBytes / Math.Max (1.0, MaxWindow));
+                double windowFactor = Math.Min (1, bytesNewlyAcked / Math.Max (1.0, MaxWindow));
                 double gain = CurrentMtu * delayFactor * windowFactor;
                 MaxWindow = (uint) Math.Max (MinimumPacketSize, MaxWindow + gain);
             }
