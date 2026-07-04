@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -47,6 +48,90 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class ClientEngineTests
     {
+        [Test]
+        public void AllowedPeerTransports_DefaultDoesNotCreateUtpListeners ()
+        {
+            var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
+                { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+            });
+
+            using var engine = new ClientEngine (settings, EngineHelpers.Factories);
+
+            Assert.AreEqual (1, engine.PeerListeners.Count);
+            Assert.AreEqual (0, engine.UtpPeerListeners.Count);
+        }
+
+        [Test]
+        public void AllowedPeerTransports_UtpOptInCreatesUdpListeners ()
+        {
+            var ipv4Listener = new FakeListener (0) {
+                PreferredLocalEndPoint = new IPEndPoint (IPAddress.Loopback, 0)
+            };
+            var ipv6Listener = new FakeListener (0) {
+                PreferredLocalEndPoint = new IPEndPoint (IPAddress.IPv6Loopback, 0)
+            };
+            var listeners = new Queue<IPeerConnectionListener> (new[] { ipv4Listener, ipv6Listener });
+            var factories = EngineHelpers.Factories.WithUtpPeerConnectionListenerCreator (_ => listeners.Dequeue ());
+            var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
+                { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) },
+                { "ipv6", new IPEndPoint (IPAddress.IPv6Loopback, 0) }
+            }) with {
+                AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+            };
+
+            using var engine = new ClientEngine (settings, factories);
+
+            Assert.AreEqual (2, engine.PeerListeners.Count);
+            Assert.AreEqual (2, engine.UtpPeerListeners.Count);
+            CollectionAssert.AreEqual (new IPeerConnectionListener[] { ipv4Listener, ipv6Listener }, engine.UtpPeerListeners);
+        }
+
+        [Test]
+        public async Task AllowedPeerTransports_UpdateSettingsRebuildsUtpListeners ()
+        {
+            var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
+                { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+            });
+
+            using var engine = new ClientEngine (settings, EngineHelpers.Factories);
+            Assert.AreEqual (0, engine.UtpPeerListeners.Count);
+
+            await engine.UpdateSettingsAsync (engine.Settings with {
+                AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+            });
+
+            Assert.AreEqual (1, engine.UtpPeerListeners.Count);
+        }
+
+        [Test]
+        public void AllowedPeerTransports_CreatesConfiguredPeerConnectionTypes ()
+        {
+            var tcpPeer = new PeerInfo (new Uri ("ipv4://127.0.0.1:12345"));
+            var fake = new ConnectionManagerTests.FakeConnection (tcpPeer.ConnectionUri);
+            var utp = new ConnectionManagerTests.FakeConnection (new Uri ("utp://127.0.0.1:12345"));
+            IPeerConnectionListener utpListener = null;
+            IPEndPoint utpEndPoint = null;
+            var factories = EngineHelpers.Factories
+                .WithPeerConnectionCreator ("ipv4", uri => fake)
+                .WithUtpPeerConnectionCreator ((listener, remoteEndPoint, _) => {
+                    utpListener = listener;
+                    utpEndPoint = remoteEndPoint;
+                    return utp;
+                });
+            var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
+                { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+            }) with {
+                AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+            };
+
+            using var engine = new ClientEngine (settings, factories);
+
+            Assert.AreSame (fake, engine.ConnectionManager.CreatePeerConnection (tcpPeer, PeerTransport.Tcp));
+            Assert.AreSame (utp, engine.ConnectionManager.CreatePeerConnection (tcpPeer, PeerTransport.Utp));
+            Assert.AreSame (engine.UtpPeerListeners.Single (), utpListener);
+            Assert.AreEqual (new IPEndPoint (IPAddress.Loopback, 12345), utpEndPoint);
+        }
+
         [Test]
         public async Task AddPeers_Dht_Public ()
         {

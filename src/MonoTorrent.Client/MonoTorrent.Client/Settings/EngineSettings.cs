@@ -63,6 +63,11 @@ namespace MonoTorrent.Client
         public ImmutableArray<EncryptionType> AllowedEncryption { get; init; } = EncryptionTypes.All;
 
         /// <summary>
+        /// The peer transports which can be used for outgoing connections, in priority order. Defaults to TCP only.
+        /// </summary>
+        public ImmutableArray<PeerTransport> AllowedPeerTransports { get; init; } = ImmutableArray.Create (PeerTransport.Tcp);
+
+        /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
         /// which do not already have that piece. A peer will never request a piece they have already downloaded,
         /// so informing them that we have that piece is not beneficial. Defaults to <see langword="false" />.
@@ -363,6 +368,10 @@ namespace MonoTorrent.Client
                 throw new ArgumentException ("At least one encryption type must be specified");
             if (settings.AllowedEncryption.Distinct ().Count () != settings.AllowedEncryption.Length)
                 throw new ArgumentException ("Each encryption type can be specified at most once. Please verify the AllowedEncryption list contains no duplicates", "AllowedEncryption");
+            if (settings.AllowedPeerTransports.Length == 0)
+                throw new ArgumentException ("At least one peer transport must be specified", nameof (AllowedPeerTransports));
+            if (settings.AllowedPeerTransports.Distinct ().Count () != settings.AllowedPeerTransports.Length)
+                throw new ArgumentException ("Each peer transport can be specified at most once. Please verify the AllowedPeerTransports list contains no duplicates", nameof (AllowedPeerTransports));
 
             if (settings.ConnectionRetryDelays.Any (t => t < TimeSpan.Zero))
                 throw new ArgumentException ("ConnectionRetryDelays cannot be less than zero", nameof (ConnectionRetryDelays));

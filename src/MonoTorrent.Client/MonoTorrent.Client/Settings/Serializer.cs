@@ -23,6 +23,10 @@ namespace MonoTorrent.Client
                     ? ReadEncryptionList ((BEncodedList) v0)
                     : defaults.AllowedEncryption,
 
+                AllowedPeerTransports = dict.TryGetValue (nameof (EngineSettings.AllowedPeerTransports), out var v31)
+                    ? ReadPeerTransportList ((BEncodedList) v31)
+                    : defaults.AllowedPeerTransports,
+
                 AllowHaveSuppression = dict.TryGetValue (nameof (EngineSettings.AllowHaveSuppression), out var v1)
                     ? bool.Parse (v1.ToString ()!)
                     : defaults.AllowHaveSuppression,
@@ -210,6 +214,7 @@ namespace MonoTorrent.Client
             var dict = new BEncodedDictionary ();
 
             dict[nameof (s.AllowedEncryption)] = WriteEncryptionList (s.AllowedEncryption);
+            dict[nameof (s.AllowedPeerTransports)] = WritePeerTransportList (s.AllowedPeerTransports);
             dict[nameof (s.AllowHaveSuppression)] = new BEncodedString (s.AllowHaveSuppression.ToString ());
             dict[nameof (s.AllowLocalPeerDiscovery)] = new BEncodedString (s.AllowLocalPeerDiscovery.ToString ());
             dict[nameof (s.AllowPortForwarding)] = new BEncodedString (s.AllowPortForwarding.ToString ());
@@ -252,6 +257,14 @@ namespace MonoTorrent.Client
             return result.ToImmutableArray ();
         }
 
+        static ImmutableArray<PeerTransport> ReadPeerTransportList (BEncodedList list)
+        {
+            var result = new List<PeerTransport> (list.Count);
+            foreach (BEncodedString item in list)
+                result.Add (Enum.Parse<PeerTransport> (item.Text));
+            return result.ToImmutableArray ();
+        }
+
         static ImmutableArray<BootstrapRouter> ReadBootstrapRouters (BEncodedList list)
         {
             var result = new List<BootstrapRouter> (list.Count);
@@ -290,6 +303,9 @@ namespace MonoTorrent.Client
         }
 
         static BEncodedList WriteEncryptionList (IList<EncryptionType> value)
+            => new BEncodedList (value.Select (v => (BEncodedValue) new BEncodedString (v.ToString ())));
+
+        static BEncodedList WritePeerTransportList (IList<PeerTransport> value)
             => new BEncodedList (value.Select (v => (BEncodedValue) new BEncodedString (v.ToString ())));
 
         static BEncodedList WriteBootstrapRouters (IList<BootstrapRouter> value)

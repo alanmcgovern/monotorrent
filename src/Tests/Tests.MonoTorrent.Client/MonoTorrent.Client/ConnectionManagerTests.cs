@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (torrents[0], manager.Torrents[2]);
         }
 
-        class FakeConnection : IPeerConnection
+        internal class FakeConnection : IPeerConnection
         {
             public ReadOnlyMemory<byte> AddressBytes { get; }
             public bool CanReconnect { get; }

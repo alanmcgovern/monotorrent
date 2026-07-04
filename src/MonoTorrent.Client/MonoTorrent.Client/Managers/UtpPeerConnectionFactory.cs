@@ -1,0 +1,68 @@
+//
+// UtpPeerConnectionFactory.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2026 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+
+using MonoTorrent.Connections.Peer;
+
+namespace MonoTorrent.Client
+{
+    sealed class UtpPeerConnectionFactory
+    {
+        readonly Factories factories;
+        readonly IReadOnlyList<IPeerConnectionListener> listeners;
+        readonly Random random;
+
+        public UtpPeerConnectionFactory (Factories factories, IReadOnlyList<IPeerConnectionListener> listeners)
+        {
+            this.factories = factories ?? throw new ArgumentNullException (nameof (factories));
+            this.listeners = listeners ?? throw new ArgumentNullException (nameof (listeners));
+            random = new Random ();
+        }
+
+        internal IPeerConnection? CreatePeerConnection (PeerInfo peer)
+        {
+            if (!IPAddress.TryParse (peer.ConnectionUri.Host, out var address))
+                return null;
+
+            var listener = listeners.FirstOrDefault (t => t.PreferredLocalEndPoint.AddressFamily == address.AddressFamily);
+            if (listener == null)
+                return null;
+
+            ushort connectionIdReceive;
+            lock (random)
+                connectionIdReceive = (ushort) random.Next (1, ushort.MaxValue);
+
+            return factories.CreateUtpPeerConnection (listener, new IPEndPoint (address, peer.ConnectionUri.Port), connectionIdReceive);
+        }
+    }
+}
