@@ -20,10 +20,10 @@ namespace MonoTorrent.IntegrationTests
 {
     [TestFixture]
     [Platform (Include ="Win")]
-    public class IPv4IntegrationTests : IntegrationTestsBase
+    public class IPv4TcpIntegrationTests : IntegrationTestsBase
     {
-        public IPv4IntegrationTests ()
-            : base (IPAddress.Any, IPAddress.Loopback)
+        public IPv4TcpIntegrationTests ()
+            : base (IPAddress.Any, IPAddress.Loopback, PeerTransport.Tcp)
         {
 
         }
@@ -31,10 +31,32 @@ namespace MonoTorrent.IntegrationTests
 
     [TestFixture]
     [Platform (Include ="Win")]
-    public class IPv6IntegrationTests : IntegrationTestsBase
+    public class IPv4UtpIntegrationTests : IntegrationTestsBase
     {
-        public IPv6IntegrationTests ()
-            : base (IPAddress.IPv6Any, IPAddress.IPv6Loopback)
+        public IPv4UtpIntegrationTests ()
+            : base (IPAddress.Any, IPAddress.Loopback, PeerTransport.Utp)
+        {
+
+        }
+    }
+
+    [TestFixture]
+    [Platform (Include ="Win")]
+    public class IPv6TcpIntegrationTests : IntegrationTestsBase
+    {
+        public IPv6TcpIntegrationTests ()
+            : base (IPAddress.IPv6Any, IPAddress.IPv6Loopback, PeerTransport.Tcp)
+        {
+
+        }
+    }
+
+    [TestFixture]
+    [Platform (Include ="Win")]
+    public class IPv6UtpIntegrationTests : IntegrationTestsBase
+    {
+        public IPv6UtpIntegrationTests ()
+            : base (IPAddress.IPv6Any, IPAddress.IPv6Loopback, PeerTransport.Utp)
         {
 
         }
@@ -47,9 +69,10 @@ namespace MonoTorrent.IntegrationTests
 
         public IPAddress AnyAddress { get; }
         public IPAddress LoopbackAddress { get; }
+        public PeerTransport PeerTransport { get; }
 
-        protected IntegrationTestsBase (IPAddress anyAddress, IPAddress loopbackAddress)
-            => (AnyAddress, LoopbackAddress) = (anyAddress, loopbackAddress);
+        protected IntegrationTestsBase (IPAddress anyAddress, IPAddress loopbackAddress, PeerTransport peerTransport)
+            => (AnyAddress, LoopbackAddress, PeerTransport) = (anyAddress, loopbackAddress, peerTransport);
 
         protected virtual Factories LeecherFactory => Factories.Default;
         protected virtual Factories SeederFactory => Factories.Default;
@@ -75,8 +98,8 @@ namespace MonoTorrent.IntegrationTests
             _leecherDir = _directory.CreateSubdirectory ("Leecher");
 
             streams = new List<FileStream> ();
-            seederEngine = GetEngine (0, SeederFactory);
-            leecherEngine = GetEngine (0, LeecherFactory);
+            seederEngine = GetEngine (GetFreePort (), SeederFactory);
+            leecherEngine = GetEngine (GetFreePort (), LeecherFactory);
         }
 
         [TearDown]
@@ -307,15 +330,12 @@ namespace MonoTorrent.IntegrationTests
             await leecherIsReady.Task;
 
             // manually add the leecher to the seeder so we aren't unintentionally dependent on annouce ordering
-            if (seederConnectionDirection == Direction.Incoming) {
-                var listenerPort = seederEngine.PeerListeners.Single ().LocalEndPoint.Port;
-                var ipAddress = new IPEndPoint (LoopbackAddress, listenerPort);
-                await leecherEngine.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{(LoopbackAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6")}://{ipAddress}")));
-            } else if (seederConnectionDirection == Direction.Outgoing) {
-                var listenerPort = leecherEngine.PeerListeners.Single ().LocalEndPoint.Port;
-                var ipAddress = new IPEndPoint (LoopbackAddress, listenerPort);
-                await seederEngine.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{(LoopbackAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6")}://{ipAddress}")));
-            }
+            if (seederConnectionDirection == Direction.Incoming)
+                await AddPeerAsync (leecherEngine, seederEngine);
+            else if (seederConnectionDirection == Direction.Outgoing)
+                await AddPeerAsync (seederEngine, leecherEngine);
+            else if (!useWebSeedDownload)
+                await AddPeerAsync (leecherEngine, seederEngine);
 
             if (!useWebSeedDownload) {
                 Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task, "Seeder should be seeding after hashcheck completes");
@@ -367,9 +387,26 @@ namespace MonoTorrent.IntegrationTests
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
                 AllowLocalPeerDiscovery = false,
+                AllowedPeerTransports = ImmutableArray.Create (PeerTransport),
             };
             var engine = new ClientEngine (settingBuilder, factories);
             return engine;
+        }
+
+        private Task AddPeerAsync (ClientEngine source, ClientEngine target)
+        {
+            var listener = target.PeerListeners.Single ();
+            var ipAddress = new IPEndPoint (LoopbackAddress, listener.LocalEndPoint.Port);
+            return source.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{PeerUriScheme}://{ipAddress}")));
+        }
+
+        string PeerUriScheme => LoopbackAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
+
+        int GetFreePort ()
+        {
+            using var listener = new TcpListener (LoopbackAddress, 0);
+            listener.Start ();
+            return ((IPEndPoint) listener.LocalEndpoint).Port;
         }
 
         private HttpListener CreateWebSeeder ()

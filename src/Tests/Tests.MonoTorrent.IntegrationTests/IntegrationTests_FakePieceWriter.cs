@@ -26,7 +26,24 @@ using ReusableTasks;
 namespace MonoTorrent.IntegrationTests
 {
     [TestFixture]
-    public class LargeFiles_FakeIPieceWriter
+    public class LargeFiles_FakeIPieceWriter_Tcp : LargeFiles_FakeIPieceWriter
+    {
+        public LargeFiles_FakeIPieceWriter_Tcp ()
+            : base (PeerTransport.Tcp)
+        {
+        }
+    }
+
+    [TestFixture]
+    public class LargeFiles_FakeIPieceWriter_Utp : LargeFiles_FakeIPieceWriter
+    {
+        public LargeFiles_FakeIPieceWriter_Utp ()
+            : base (PeerTransport.Utp)
+        {
+        }
+    }
+
+    public abstract class LargeFiles_FakeIPieceWriter
     {
         class FakePieceWriter : IPieceWriter
         {
@@ -146,12 +163,13 @@ namespace MonoTorrent.IntegrationTests
 
         public IPAddress AnyAddress { get; }
         public IPAddress LoopbackAddress { get; }
+        public PeerTransport PeerTransport { get; }
 
         FakePieceWriter SeederWriter { get; set; }
         FakePieceWriter LeecherWriter { get; set; }
 
-        public LargeFiles_FakeIPieceWriter ()
-            => (AnyAddress, LoopbackAddress) = (IPAddress.Any, IPAddress.Loopback);
+        protected LargeFiles_FakeIPieceWriter (PeerTransport peerTransport)
+            => (AnyAddress, LoopbackAddress, PeerTransport) = (IPAddress.Any, IPAddress.Loopback, peerTransport);
 
         [OneTimeSetUp]
         public void FixtureSetup ()
@@ -174,8 +192,8 @@ namespace MonoTorrent.IntegrationTests
             SeederWriter = new FakePieceWriter { IsSeeder = true };
 
             streams = new List<FileStream> ();
-            leecherEngine = GetEngine (0, Factories.Default.WithPieceWriterCreator (t => LeecherWriter));
-            seederEngine = GetEngine (0, Factories.Default.WithPieceWriterCreator (t => SeederWriter));
+            leecherEngine = GetEngine (GetFreePort (), Factories.Default.WithPieceWriterCreator (t => LeecherWriter));
+            seederEngine = GetEngine (GetFreePort (), Factories.Default.WithPieceWriterCreator (t => SeederWriter));
         }
 
         [TearDown]
@@ -289,6 +307,7 @@ namespace MonoTorrent.IntegrationTests
 
             var fastResumeIncomplete = new FastResume (torrent.InfoHashes, bf, new BitField (bf).SetAll (false));
             var leecherManager = await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, leecherIsSeedingHandler, fastResumeIncomplete);
+            await AddPeerAsync (leecherEngine, seederEngine);
 
             var timeout = new CancellationTokenSource (CancellationTimeout);
             timeout.Token.Register (() => { seederIsSeeding.TrySetCanceled (); });
@@ -337,9 +356,26 @@ namespace MonoTorrent.IntegrationTests
                 DhtEndPoint = null,
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
+                AllowedPeerTransports = ImmutableArray.Create (PeerTransport),
             };
             var engine = new ClientEngine (settingBuilder, factories);
             return engine;
+        }
+
+        private Task AddPeerAsync (ClientEngine source, ClientEngine target)
+        {
+            var listener = target.PeerListeners.Single ();
+            var ipAddress = new IPEndPoint (LoopbackAddress, listener.LocalEndPoint.Port);
+            return source.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{PeerUriScheme}://{ipAddress}")));
+        }
+
+        string PeerUriScheme => LoopbackAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
+
+        int GetFreePort ()
+        {
+            using var listener = new TcpListener (LoopbackAddress, 0);
+            listener.Start ();
+            return ((IPEndPoint) listener.LocalEndpoint).Port;
         }
 
         private HttpListener CreateWebSeeder ()
