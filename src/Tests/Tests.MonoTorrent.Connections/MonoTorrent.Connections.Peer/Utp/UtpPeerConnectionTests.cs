@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -540,6 +541,46 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task ConnectedPairCanSendMixedPayloadSizes ()
+        {
+            var localListener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var remoteListener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var accepted = new TaskCompletionSource<UtpPeerConnection> (TaskCreationOptions.RunContinuationsAsynchronously);
+
+            remoteListener.ConnectionReceived += (o, e) => accepted.TrySetResult ((UtpPeerConnection) e.Connection);
+
+            try {
+                localListener.Start ();
+                remoteListener.Start ();
+                Assert.NotNull (localListener.LocalEndPoint);
+                Assert.NotNull (remoteListener.LocalEndPoint);
+
+                using var local = new UtpPeerConnection (localListener, localListener.SendQueue, remoteListener.LocalEndPoint!, 123);
+
+                Assert.IsTrue (await local.ConnectAsync ().WithTimeout (5000));
+                using var remote = await accepted.Task.WithTimeout (5000);
+
+                List<byte[]> expectedResults = new List<byte[]> ();
+                foreach (var size in new[] { 68, 100, 3, 16 * 1024 }) {
+                    var expected = CreatePayload (size);
+                    await local.SendAsync (expected).WithTimeout (10_000);
+                    expectedResults.Add (expected);
+                }
+
+                foreach (var expected in expectedResults) {
+                    var receiveTask = ReceiveExactlyAsync (remote, expected.Length);
+                    var actual = await receiveTask.WithTimeout (10_000);
+                    CollectionAssert.AreEqual (expected, actual);
+                }
+            } finally {
+                localListener.Stop ();
+                remoteListener.Stop ();
+                Assert.DoesNotThrowAsync (async () => await Task.WhenAll (localListener.BackgroundTasksForTests).WaitAsync (TimeSpan.FromSeconds (5)));
+                Assert.DoesNotThrowAsync (async () => await Task.WhenAll (remoteListener.BackgroundTasksForTests).WaitAsync (TimeSpan.FromSeconds (5)));
+            }
+        }
+
+        [Test]
         public async Task FinConsumesSequenceNumber ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
@@ -800,6 +841,27 @@ namespace MonoTorrent.Connections.Peer
             bytes.CopyTo (packet.Payload);
             packet.SetTimestamp ();
             return packet;
+        }
+
+        static byte[] CreatePayload (int length)
+        {
+            var result = new byte[length];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = (byte) (i % 251);
+            return result;
+        }
+
+        static async Task<byte[]> ReceiveExactlyAsync (UtpPeerConnection connection, int length)
+        {
+            var buffer = new byte[length];
+            int received = 0;
+            while (received < buffer.Length) {
+                var read = await connection.ReceiveAsync (buffer.AsMemory (received)).WithTimeout (5000);
+                if (read == 0)
+                    throw new InvalidOperationException ("The remote uTP connection closed before the expected payload was received.");
+                received += read;
+            }
+            return buffer;
         }
 
         static UtpPacket CreateStatePacket (ushort connectionId, ushort sequenceNumber, ushort ackNumber, params ushort[] selectiveAcks)
