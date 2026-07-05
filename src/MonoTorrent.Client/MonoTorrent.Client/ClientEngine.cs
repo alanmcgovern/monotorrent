@@ -238,7 +238,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public IList<IPeerConnectionListener> PeerListeners { get; private set; } = Array.Empty<IPeerConnectionListener> ();
 
-        internal IList<IPeerConnectionListener> UtpPeerListeners { get; private set; } = Array.Empty<IPeerConnectionListener> ();
+        public IList<IPeerConnectionListener> UtpPeerListeners { get; private set; } = Array.Empty<IPeerConnectionListener> ();
 
         internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
@@ -1078,7 +1078,7 @@ namespace MonoTorrent.Client
                 return reportedEndPoint.Port;
 
             // Try to get the actual port first.
-            foreach (var endPoint in PeerListeners.Select (t => t.LocalEndPoint!).Where (t => t != null)) {
+            foreach (var endPoint in AllPeerListeners ().Select (t => t.LocalEndPoint!).Where (t => t != null)) {
                 if (scheme == "ipv4" && endPoint.AddressFamily == AddressFamily.InterNetwork)
                     return endPoint.Port;
                 if (scheme == "ipv6" && endPoint.AddressFamily == AddressFamily.InterNetworkV6)
@@ -1086,7 +1086,7 @@ namespace MonoTorrent.Client
             }
 
             // If there was a listener but it hadn't successfully bound to a port, return the preferred port port... if it's non-zero.
-            foreach (var endPoint in PeerListeners.Select (t => t.PreferredLocalEndPoint!).Where (t => t != null)) {
+            foreach (var endPoint in AllPeerListeners ().Select (t => t.PreferredLocalEndPoint!).Where (t => t != null)) {
                 if (scheme == "ipv4" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetwork)
                     return endPoint.Port;
                 if (scheme == "ipv6" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetworkV6)

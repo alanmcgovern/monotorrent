@@ -395,7 +395,9 @@ namespace MonoTorrent.IntegrationTests
 
         private Task AddPeerAsync (ClientEngine source, ClientEngine target)
         {
-            var listener = target.PeerListeners.Single ();
+            var listener = PeerTransport == PeerTransport.Utp
+                ? target.UtpPeerListeners.Single ()
+                : target.PeerListeners.Single ();
             var ipAddress = new IPEndPoint (LoopbackAddress, listener.LocalEndPoint.Port);
             return source.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{PeerUriScheme}://{ipAddress}")));
         }
