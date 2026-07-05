@@ -337,6 +337,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             if (pkt.Type == PacketType.State && HandshakeCompleted != null && !HandshakeCompleted.Task.IsCompleted) {
                 if (pkt.AckNumber == LastSentSequenceNumber) {
+                    AckNumber = unchecked((ushort) (pkt.SequenceNumber - 1));
                     State = ConnectionState.Connected;
                     HandshakeCompleted.TrySetResult (true);
                 }
@@ -361,7 +362,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal bool IsValidPacketForCurrentState (UtpPacket pkt)
         {
-            if (pkt.ConnectionId != ConnectionIdSend)
+            if (pkt.ConnectionId != ConnectionIdReceive)
                 return false;
 
             return State switch {
@@ -554,7 +555,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Extension = sack.Length == 0 ? (byte) 0 : SelectiveAckExtension,
                 ConnectionId = ConnectionIdSend,
                 WindowSize = AdvertisedReceiveWindow,
-                SequenceNumber = StateSequenceNumber,
+                SequenceNumber = NextSequenceNumber (),
                 AckNumber = ackNr
             };
             sack.CopyTo (buf.AsSpan (UtpPacket.HeaderSize));

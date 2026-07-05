@@ -97,7 +97,7 @@ namespace MonoTorrent.Connections.Peer
             connection.Receive (CreatePacket (sequenceNumber: 2, timestamp: 900));
             await sendQueue.Reader.ReadAsync ();
 
-            await connection.SendAsync (new byte[] { 1 });
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
             var outgoing = await sendQueue.Reader.ReadAsync ();
 
             clock.Microseconds = 2_000;

@@ -28,9 +28,12 @@
 
 
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections;
@@ -48,6 +51,7 @@ namespace MonoTorrent.Client
         UtpPeerConnectionListener IncomingListener;
         UtpPeerConnection Outgoing;
         UtpPeerConnectionListener OutgoingListener;
+        static readonly object UcatOutputLocker = new object ();
 
         [SetUp]
         public async Task Setup ()
@@ -84,6 +88,60 @@ namespace MonoTorrent.Client
             Assert.IsTrue (sendBuffer.AsSpan ().SequenceEqual (receiveBuffer));
         }
 
+        [Test]
+        public async Task SendRandomBytes_ToUcatListener ([Values (1, 1399, 1401, 3000, 60_000)] int size)
+        {
+            var port = GetFreeUdpPort ();
+            var server = StartUcatListener (port);
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            UtpPeerConnection connection = null;
+
+            try {
+                listener.Start ();
+
+                connection = new UtpPeerConnection (
+                    listener,
+                    listener.SendQueue,
+                    new IPEndPoint (IPAddress.Loopback, port),
+                    (ushort) RandomNumberGenerator.GetInt32 (1, ushort.MaxValue));
+
+                try {
+                    Assert.IsTrue (await connection.ConnectAsync ().WithTimeout (5000), "Could not connect to ucat.exe.");
+                } catch {
+                    Assert.Fail ($"Could not connect to ucat.exe. Log: {server.OutputPath}. Output: {server.ErrorOutput}");
+                }
+
+                var sendBuffer = new byte[size];
+                var receiveBuffer = new byte[size];
+                Random.Shared.NextBytes (sendBuffer);
+
+                const int chunkSize = 1400;
+                for (int transferred = 0; transferred != size;) {
+                    int chunk = Math.Min (chunkSize, size - transferred);
+
+                    try {
+                        Assert.AreEqual (chunk, await connection.SendAsync (sendBuffer.AsMemory (transferred, chunk)).WithTimeout (10_000), "Did not send the full payload.");
+                    } catch (Exception ex) {
+                        Assert.Fail ($"Did not send the full payload. Process exited: {server.Process.HasExited}. Log: {server.OutputPath}. {ex}. Output: {server.ErrorOutput}");
+                    }
+
+                    try {
+                        await ReceiveExactlyAsync (connection, receiveBuffer.AsMemory (transferred, chunk)).WithTimeout (10_000);
+                    } catch (Exception ex) {
+                        Assert.Fail ($"ucat.exe did not echo the full payload. Process exited: {server.Process.HasExited}. Log: {server.OutputPath}. {ex}. Output: {server.ErrorOutput}");
+                    }
+
+                    transferred += chunk;
+                }
+
+                Assert.IsTrue (sendBuffer.AsSpan ().SequenceEqual (receiveBuffer));
+            } finally {
+                connection?.Dispose ();
+                listener.Stop ();
+                StopUcatListener (server.Process);
+            }
+        }
+
         [TearDown]
         public void Teardown ()
         {
@@ -91,6 +149,113 @@ namespace MonoTorrent.Client
             IncomingListener?.Stop ();
             Outgoing?.Dispose ();
             OutgoingListener?.Stop ();
+        }
+
+        static int GetFreeUdpPort ()
+        {
+            using var socket = new Socket (AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket.Bind (new IPEndPoint (IPAddress.Loopback, 0));
+            return ((IPEndPoint) socket.LocalEndPoint).Port;
+        }
+
+        sealed class UcatProcess
+        {
+            public Process Process { get; set; }
+            public StringBuilder ErrorOutput { get; } = new StringBuilder ();
+            public string OutputPath { get; set; }
+        }
+
+        static UcatProcess StartUcatListener (int port)
+        {
+            var ucat = FindUcatExecutable ();
+            var outputPath = Path.Combine (TestContext.CurrentContext.WorkDirectory, $"ucat-{TestContext.CurrentContext.Test.ID}.log");
+            File.Delete (outputPath);
+            var process = new Process {
+                StartInfo = new ProcessStartInfo {
+                    FileName = ucat,
+                    Arguments = $"-d -d -d -d -d -e -l -p {port}",
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    WorkingDirectory = Path.GetDirectoryName (ucat),
+                }
+            };
+            var result = new UcatProcess { Process = process, OutputPath = outputPath };
+            process.ErrorDataReceived += (o, e) => {
+                if (e.Data != null) {
+                    result.ErrorOutput.AppendLine (e.Data);
+                    AppendUcatOutput (outputPath, "stderr", e.Data);
+                }
+            };
+            process.OutputDataReceived += (o, e) => {
+                if (e.Data != null)
+                    AppendUcatOutput (outputPath, "stdout", e.Data);
+            };
+
+            try {
+                Assert.IsTrue (process.Start (), "Could not start ucat.exe.");
+                process.BeginErrorReadLine ();
+                process.BeginOutputReadLine ();
+                return result;
+            } catch {
+                process.Dispose ();
+                throw;
+            }
+        }
+
+        static void AppendUcatOutput (string path, string stream, string line)
+        {
+            lock (UcatOutputLocker)
+                File.AppendAllText (path, $"[{stream}] {line}{Environment.NewLine}");
+        }
+
+        static void StopUcatListener (Process process)
+        {
+            try {
+                if (!process.HasExited)
+                    process.Kill (entireProcessTree: true);
+            } finally {
+                process.Dispose ();
+            }
+        }
+
+        static async Task ReceiveExactlyAsync (UtpPeerConnection connection, Memory<byte> buffer)
+        {
+            int received = 0;
+            while (received != buffer.Length) {
+                var bytesRead = await connection.ReceiveAsync (buffer.Slice (received));
+                if (bytesRead == 0)
+                    throw new EndOfStreamException ("ucat.exe closed the connection before echoing the full payload.");
+
+                received += bytesRead;
+            }
+        }
+
+        static string FindUcatExecutable ()
+        {
+            var result = FindUcatExecutable (TestContext.CurrentContext.TestDirectory);
+            if (result == null)
+                result = FindUcatExecutable (Environment.CurrentDirectory);
+
+            if (result == null)
+                Assert.Fail ("Could not find ucat.exe. The executable must be available in the repository root.");
+
+            return result;
+        }
+
+        static string FindUcatExecutable (string startDirectory)
+        {
+            var directory = new DirectoryInfo (startDirectory);
+            while (directory != null) {
+                var candidate = Path.Combine (directory.FullName, "ucat.exe");
+                if (File.Exists (candidate))
+                    return candidate;
+
+                directory = directory.Parent;
+            }
+
+            return null;
         }
     }
 }

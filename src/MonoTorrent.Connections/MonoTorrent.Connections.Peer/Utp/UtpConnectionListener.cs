@@ -23,14 +23,13 @@ namespace MonoTorrent.Connections.Peer.Utp
     //
     // Connection-ID convention (BEP 29 §connection id):
     //   Initiator  picks  conn_id_recv  (sent in the SYN header).
-    //   Acceptor   uses   conn_id_send = conn_id_recv + 1   in every reply.
-    //   Acceptor   uses   conn_id_recv = conn_id_recv (same) to demux inbound.
+    //   Initiator  uses   conn_id_send = conn_id_recv + 1   after the SYN.
+    //   Acceptor   uses   conn_id_send = conn_id_recv       in every reply.
+    //   Acceptor   uses   conn_id_recv = conn_id_recv + 1   to demux inbound.
     //
-    // Connection map key: (remote EndPoint, conn_id_recv of the initiator).
-    //   Acceptor side  – keyed by syn.ConnectionId (the initiator's conn_id_recv).
+    // Connection map key: (remote EndPoint, local conn_id_recv).
+    //   Acceptor side  – keyed by syn.ConnectionId + 1.
     //   Initiator side – keyed by the random conn_id_recv we chose for the SYN.
-    //   Every packet sent by the remote peer carries conn_id_send, which is
-    //   conn_id_recv + 1, so RouteToExisting subtracts 1 before the lookup.
     // =========================================================================
 
     public sealed class UtpPeerConnectionListener : SocketListener, IPeerConnectionListener
@@ -216,9 +215,9 @@ namespace MonoTorrent.Connections.Peer.Utp
         async Task HandleSynAsync (IPEndPoint remote, UtpPacket syn)
         {
             ushort initiatorConnIdRecv = syn.ConnectionId;
-            ushort ourConnIdSend = (ushort) (initiatorConnIdRecv + 1);
+            ushort ourConnIdRecv = (ushort) (initiatorConnIdRecv + 1);
 
-            var key = (remote, initiatorConnIdRecv);
+            var key = (remote, ourConnIdRecv);
 
             // Idempotent on retransmits – resend the ST_STATE.
             if (_connections.TryGetValue (key, out var existing)) {
@@ -238,8 +237,8 @@ namespace MonoTorrent.Connections.Peer.Utp
             var connection = new UtpPeerConnection (
                 sendingChannel: SendQueue.Writer,
                 remote: remote,
-                connIdSend: ourConnIdSend,
-                connIdRecv: initiatorConnIdRecv,
+                connIdSend: initiatorConnIdRecv,
+                connIdRecv: ourConnIdRecv,
                 initialAckNumber: syn.SequenceNumber,
                 clock: Clock,
                 listener: this,
@@ -258,8 +257,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         void RouteToExisting (IPEndPoint remote, UtpPacket pkt)
         {
-            ushort initiatorConnIdRecv = (ushort) (pkt.ConnectionId - 1);
-            var key = (remote, initiatorConnIdRecv);
+            var key = (remote, pkt.ConnectionId);
             if (_connections.TryGetValue (key, out var registration)) {
                 var conn = registration.Connection;
                 if (!conn.IsClosedOrReset && conn.IsValidPacketForCurrentState (pkt)) {
