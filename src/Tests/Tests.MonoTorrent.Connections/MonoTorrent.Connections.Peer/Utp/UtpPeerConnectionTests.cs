@@ -46,7 +46,7 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task AckOnlyPacketsUseUniqueSequenceNumbers ()
+        public async Task AckOnlyPacketsDoNotConsumeSequenceNumbers ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
@@ -61,7 +61,25 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (PacketType.State, second.packet.Type);
             Assert.AreEqual (2, first.packet.AckNumber);
             Assert.AreEqual (3, second.packet.AckNumber);
-            Assert.AreEqual (first.packet.SequenceNumber + 1, second.packet.SequenceNumber);
+            Assert.AreEqual (first.packet.SequenceNumber, second.packet.SequenceNumber);
+        }
+
+        [Test]
+        public async Task AckOnlyPacketDoesNotCreateGapBeforeNextDataPacket ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            connection.Receive (CreateDataPacket (2, "a"));
+
+            var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.State, ack.packet.Type);
+            Assert.AreEqual (PacketType.Data, data.packet.Type);
+            Assert.AreEqual (ack.packet.SequenceNumber, data.packet.SequenceNumber);
         }
 
         [Test]

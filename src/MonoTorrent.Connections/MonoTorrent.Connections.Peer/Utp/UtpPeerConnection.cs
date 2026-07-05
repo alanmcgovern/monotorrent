@@ -562,7 +562,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Extension = sack.Length == 0 ? (byte) 0 : SelectiveAckExtension,
                 ConnectionId = ConnectionIdSend,
                 WindowSize = AdvertisedReceiveWindow,
-                SequenceNumber = NextSequenceNumber (),
+                SequenceNumber = SequenceNumber,
                 AckNumber = ackNr
             };
             sack.CopyTo (buf.AsSpan (UtpPacket.HeaderSize));
