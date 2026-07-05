@@ -95,14 +95,14 @@ namespace MonoTorrent.Connections.Peer
 
             clock.Microseconds = 1_000;
             connection.Receive (CreatePacket (sequenceNumber: 2, timestamp: 900));
-            await sendQueue.Reader.ReadAsync ();
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
-            var outgoing = await sendQueue.Reader.ReadAsync ();
+            var outgoing = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             clock.Microseconds = 2_000;
             connection.Receive (CreatePacket (sequenceNumber: 3, timestamp: 1_750));
-            await sendQueue.Reader.ReadAsync ();
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             outgoing.connection!.PrepareForSend (ref outgoing.packet);
 
@@ -115,7 +115,7 @@ namespace MonoTorrent.Connections.Peer
             var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
                 Type = PacketType.Data,
                 Version = UtpPeerConnectionListener.UTP_VERSION,
-                ConnectionId = 124,
+                ConnectionId = 123,
                 WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
                 SequenceNumber = sequenceNumber,
                 AckNumber = 1
