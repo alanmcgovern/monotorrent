@@ -65,7 +65,7 @@ namespace MonoTorrent.IntegrationTests
     public abstract class IntegrationTestsBase
     {
         const int PieceLength = 32768;
-        static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (60);
+        static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (10);
 
         public IPAddress AnyAddress { get; }
         public IPAddress LoopbackAddress { get; }
@@ -106,9 +106,9 @@ namespace MonoTorrent.IntegrationTests
         public async Task TearDown ()
         {
             if (seederEngine != null)
-                await seederEngine.StopAllAsync ();
+                await seederEngine.StopAllAsync ().WithTimeout ();
             if (leecherEngine != null)
-                await leecherEngine.StopAllAsync ();
+                await leecherEngine.StopAllAsync ().WithTimeout ();
 
             foreach (var stream in streams)
                 stream.Dispose ();
@@ -268,7 +268,7 @@ namespace MonoTorrent.IntegrationTests
                 torrentCreator.GetrightHttpSeeds.Add ($"http://{new IPEndPoint (LoopbackAddress, _webSeedPort)}/{_webSeedPrefix}/");
             }
 
-            var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
+            var encodedTorrent = await torrentCreator.CreateAsync (fileSource).WithTimeout ();
             var torrent = Torrent.Load (encodedTorrent);
 
             var seederIsSeeding = new TaskCompletionSource<bool> ();
@@ -309,39 +309,39 @@ namespace MonoTorrent.IntegrationTests
                         { "ipv6", new IPEndPoint (IPAddress.Parse ("127.0.0.153"), 12345) },
                     }.ToImmutableDictionary ()
                 };
-                await engine.UpdateSettingsAsync (settings);
+                await engine.UpdateSettingsAsync (settings).WithTimeout ();
             }
 
-            var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
+            var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler).WithTimeout () : null;
             if (seederManager is null)
                 seederIsSeeding.TrySetResult (true);
 
             var magnetLink = new MagnetLink (torrent.InfoHashes, "testing", torrent.AnnounceUrls.SelectMany (t => t).ToList (), null, torrent.Size);
             var leecherManager = magnetLinkLeecher
-                ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
-                : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+                ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler).WithTimeout ()
+                : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler).WithTimeout ();
 
             Assert.AreEqual (leecherManager.Torrent.HttpSeeds.Count, leecherManager.MagnetLink.Webseeds.Count);
             if (leecherManager.Torrent.HttpSeeds.Count > 0)
                 Assert.AreEqual (leecherManager.Torrent.HttpSeeds[0], leecherManager.MagnetLink.Webseeds[0]);
 
             // Wait for both managers to finish hashing/prepping!
-            await seederIsSeeding.Task;
-            await leecherIsReady.Task;
+            await seederIsSeeding.Task.WithTimeout ();
+            await leecherIsReady.Task.WithTimeout ();
 
             // manually add the leecher to the seeder so we aren't unintentionally dependent on annouce ordering
             if (seederConnectionDirection == Direction.Incoming)
-                await AddPeerAsync (leecherEngine, seederEngine);
+                await AddPeerAsync (leecherEngine, seederEngine).WithTimeout ();
             else if (seederConnectionDirection == Direction.Outgoing)
-                await AddPeerAsync (seederEngine, leecherEngine);
+                await AddPeerAsync (seederEngine, leecherEngine).WithTimeout ();
             else if (!useWebSeedDownload)
-                await AddPeerAsync (leecherEngine, seederEngine);
+                await AddPeerAsync (leecherEngine, seederEngine).WithTimeout ();
 
             if (!useWebSeedDownload) {
-                Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task, "Seeder should be seeding after hashcheck completes");
+                Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task.WithTimeout (), "Seeder should be seeding after hashcheck completes");
                 Assert.True (seederManager.Complete, "Seeder should have all data");
             }
-            Assert.DoesNotThrowAsync (async () => await leecherIsSeeding.Task, "Leecher should have downloaded all data");
+            Assert.DoesNotThrowAsync (async () => await leecherIsSeeding.Task.WithTimeout (), "Leecher should have downloaded all data");
 
             foreach (var file in nonEmptyFiles) {
                 var leecherNonEmptyFile = new FileInfo (Path.Combine (_leecherDir.FullName, file.Name));
@@ -495,16 +495,37 @@ namespace MonoTorrent.IntegrationTests
             };
 
             TorrentManager manager = torrent != null
-                ? await clientEngine.AddAsync (torrent, saveDirectory, settings)
-                : await clientEngine.AddAsync (magnetLink, saveDirectory, settings);
+                ? await clientEngine.AddAsync (torrent, saveDirectory, settings).WithTimeout ()
+                : await clientEngine.AddAsync (magnetLink, saveDirectory, settings).WithTimeout ();
 
             manager.TorrentStateChanged += handler;
             if (explicitlyHashCheck)
-                await manager.HashCheckAsync (true);
+                await manager.HashCheckAsync (true).WithTimeout ();
             else
-                await manager.StartAsync ();
+                await manager.StartAsync ().WithTimeout ();
 
             return manager;
+        }
+
+    }
+
+
+    static class TaskExtensions
+    {
+        public static async Task WithTimeout (this Task task)
+        {
+            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (20)), task);
+            if (task != done)
+                throw new TimeoutException ("The supplied task did nt complete");
+            await done;
+        }
+
+        public static async Task<T> WithTimeout<T> (this Task<T> task)
+        {
+            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (20)), task);
+            if (task != done)
+                throw new TimeoutException ("The supplied task did nt complete");
+            return await task;
         }
     }
 }
