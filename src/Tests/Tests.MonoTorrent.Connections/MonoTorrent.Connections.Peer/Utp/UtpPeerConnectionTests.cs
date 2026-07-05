@@ -599,6 +599,78 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task ClosedPairCanReconnectAndSendMixedPayloadSizes (
+            [Values (true, false)] bool closerInitiatesSecondConnection,
+            [Values (true, false)] bool gracefulShutdown)
+        {
+            var localListener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var remoteListener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var localAccepted = new TaskCompletionSource<UtpPeerConnection> (TaskCreationOptions.RunContinuationsAsynchronously);
+            var remoteAccepted = new TaskCompletionSource<UtpPeerConnection> (TaskCreationOptions.RunContinuationsAsynchronously);
+
+            localListener.ConnectionReceived += (o, e) => localAccepted.TrySetResult ((UtpPeerConnection) e.Connection);
+            remoteListener.ConnectionReceived += (o, e) => remoteAccepted.TrySetResult ((UtpPeerConnection) e.Connection);
+
+            UtpPeerConnection? firstLocal = null;
+            UtpPeerConnection? firstRemote = null;
+            UtpPeerConnection? secondInitiator = null;
+            UtpPeerConnection? secondAcceptor = null;
+
+            try {
+                localListener.Start ();
+                remoteListener.Start ();
+                Assert.NotNull (localListener.LocalEndPoint);
+                Assert.NotNull (remoteListener.LocalEndPoint);
+
+                firstLocal = new UtpPeerConnection (localListener, localListener.SendQueue, remoteListener.LocalEndPoint!, 123);
+
+                Assert.IsTrue (await firstLocal.ConnectAsync ().WithTimeout (5000));
+                firstRemote = await remoteAccepted.Task.WithTimeout (5000);
+
+                if (gracefulShutdown) {
+                    await firstLocal.SendFinAsync ();
+                    Assert.AreEqual (0, await firstRemote.ReceiveAsync (new byte[1]).WithTimeout (10_000));
+                } else {
+                    firstRemote.Dispose ();
+                    firstLocal.Dispose ();
+                }
+
+                if (closerInitiatesSecondConnection) {
+                    remoteAccepted = new TaskCompletionSource<UtpPeerConnection> (TaskCreationOptions.RunContinuationsAsynchronously);
+                    secondInitiator = new UtpPeerConnection (localListener, localListener.SendQueue, remoteListener.LocalEndPoint!, 456);
+                    Assert.IsTrue (await secondInitiator.ConnectAsync ().WithTimeout (5000));
+                    secondAcceptor = await remoteAccepted.Task.WithTimeout (5000);
+                } else {
+                    secondInitiator = new UtpPeerConnection (remoteListener, remoteListener.SendQueue, localListener.LocalEndPoint!, 456);
+                    Assert.IsTrue (await secondInitiator.ConnectAsync ().WithTimeout (5000));
+                    secondAcceptor = await localAccepted.Task.WithTimeout (5000);
+                }
+
+                List<byte[]> expectedResults = new List<byte[]> ();
+                foreach (var size in new[] { 68, 100, 3, 16 * 1024 }) {
+                    var expected = CreatePayload (size);
+                    await secondInitiator.SendAsync (expected).WithTimeout (10_000);
+                    expectedResults.Add (expected);
+                }
+
+                foreach (var expected in expectedResults) {
+                    var receiveTask = ReceiveExactlyAsync (secondAcceptor, expected.Length);
+                    var actual = await receiveTask.WithTimeout (10_000);
+                    CollectionAssert.AreEqual (expected, actual);
+                }
+            } finally {
+                firstLocal?.Dispose ();
+                firstRemote?.Dispose ();
+                secondInitiator?.Dispose ();
+                secondAcceptor?.Dispose ();
+                localListener.Stop ();
+                remoteListener.Stop ();
+                Assert.DoesNotThrowAsync (async () => await Task.WhenAll (localListener.BackgroundTasksForTests).WaitAsync (TimeSpan.FromSeconds (5)));
+                Assert.DoesNotThrowAsync (async () => await Task.WhenAll (remoteListener.BackgroundTasksForTests).WaitAsync (TimeSpan.FromSeconds (5)));
+            }
+        }
+
+        [Test]
         public async Task FinConsumesSequenceNumber ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();

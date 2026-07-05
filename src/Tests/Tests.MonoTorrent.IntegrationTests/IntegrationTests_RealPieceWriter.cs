@@ -29,7 +29,6 @@ namespace MonoTorrent.IntegrationTests
         }
     }
 
-    /*
     [TestFixture]
     [Platform (Include ="Win")]
     public class IPv4UtpIntegrationTests : IntegrationTestsBase
@@ -40,7 +39,7 @@ namespace MonoTorrent.IntegrationTests
 
         }
     }
-    */
+
     [TestFixture]
     [Platform (Include ="Win")]
     public class IPv6TcpIntegrationTests : IntegrationTestsBase
@@ -52,7 +51,6 @@ namespace MonoTorrent.IntegrationTests
         }
     }
 
-    /*
     [TestFixture]
     [Platform (Include ="Win")]
     public class IPv6UtpIntegrationTests : IntegrationTestsBase
@@ -63,7 +61,7 @@ namespace MonoTorrent.IntegrationTests
 
         }
     }
-    */
+
     public abstract class IntegrationTestsBase
     {
         const int PieceLength = 32768;
@@ -304,7 +302,9 @@ namespace MonoTorrent.IntegrationTests
                 var engine = seederConnectionDirection == Direction.Incoming ? leecherEngine : seederEngine;
 
                 var settings = engine.Settings with {
-                    ListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
+                    ListenEndPoints = PeerTransport == PeerTransport.Utp
+                        ? engine.Settings.ListenEndPoints
+                        : ImmutableDictionary.Create<string, IPEndPoint> (),
                     ReportedListenEndPoints = new Dictionary<string, IPEndPoint> {
                         // report two fake non-routable addresses.
                         { "ipv4", new IPEndPoint (IPAddress.Parse ("127.0.0.153"), 12345) },
@@ -518,7 +518,7 @@ namespace MonoTorrent.IntegrationTests
     {
         public static async Task WithTimeout (this Task task)
         {
-            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (Debugger.IsAttached ? 10_000 : 10)), task);
+            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (Debugger.IsAttached ? 20 : 10)), task);
             if (task != done)
                 throw new TimeoutException ("The supplied task did nt complete");
             await done;
@@ -526,7 +526,7 @@ namespace MonoTorrent.IntegrationTests
 
         public static async Task<T> WithTimeout<T> (this Task<T> task)
         {
-            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (Debugger.IsAttached ? 10_000 : 10)), task);
+            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (Debugger.IsAttached ? 20 : 10)), task);
             if (task != done)
                 throw new TimeoutException ("The supplied task did nt complete");
             return await task;
