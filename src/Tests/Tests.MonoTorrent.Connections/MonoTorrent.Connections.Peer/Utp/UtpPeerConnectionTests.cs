@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
@@ -355,6 +356,22 @@ namespace MonoTorrent.Connections.Peer
             using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
 
             Assert.AreEqual (512, connection.CurrentMtuForTests);
+        }
+
+        [TestCase ("127.0.0.1", "ipv4")]
+        [TestCase ("::1", "ipv6")]
+        public void UriUsesPeerAddressScheme (string address, string scheme)
+        {
+            using var connection = new UtpPeerConnection (
+                Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ().Writer,
+                new IPEndPoint (IPAddress.Parse (address), 12345),
+                124,
+                123,
+                1);
+
+            Assert.AreEqual (scheme, connection.Uri.Scheme);
+            Assert.AreEqual (IPAddress.Parse (address), IPAddress.Parse (connection.Uri.Host));
+            Assert.AreEqual (12345, connection.Uri.Port);
         }
 
         [Test]

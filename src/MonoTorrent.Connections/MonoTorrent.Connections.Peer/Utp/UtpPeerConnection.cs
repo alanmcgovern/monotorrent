@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Channels;
@@ -171,7 +172,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             IsIncoming = true;
             InitialSequenceNumber = GenerateInitialSequenceNumber ();
 
-            Uri = new Uri ($"utp://{remote.Address}:{remote.Port}");
+            Uri = CreatePeerUri (remote);
 
             SequenceNumber = InitialSequenceNumber;
             LastSentSequenceNumber = InitialSequenceNumber;
@@ -195,6 +196,13 @@ namespace MonoTorrent.Connections.Peer.Utp
             : this (listener, listener.SendQueue.Writer, remote, connIdRecv)
         {
         }
+
+        static Uri CreatePeerUri (IPEndPoint endpoint)
+            => endpoint.AddressFamily switch {
+                AddressFamily.InterNetwork => new Uri ($"ipv4://{endpoint}"),
+                AddressFamily.InterNetworkV6 => new Uri ($"ipv6://{endpoint}"),
+                _ => throw new NotSupportedException ($"Unsupported address family: {endpoint.AddressFamily}")
+            };
 
         public async ReusableTask<bool> ConnectAsync ()
         {
