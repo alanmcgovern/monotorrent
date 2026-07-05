@@ -173,7 +173,7 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.AreEqual (UtpPacket.HeaderSize + 3, connection.BytesInFlightForTests);
 
-            connection.Receive (CreateStatePacket (124, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber));
             await Task.Delay (50);
 
             Assert.AreEqual (0, connection.BytesInFlightForTests);
@@ -193,7 +193,7 @@ namespace MonoTorrent.Connections.Peer
             var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            connection.Receive (CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber, third.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber, third.packet.SequenceNumber));
             await Task.Delay (50);
 
             Assert.AreEqual (second.packet.SequenceNumber, unchecked((ushort) (first.packet.SequenceNumber + 1)));
@@ -217,15 +217,15 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (1, first.packet.SequenceNumber);
             Assert.AreEqual (2, second.packet.SequenceNumber);
 
-            connection.Receive (CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber));
-            connection.Receive (CreateStatePacket (124, sequenceNumber: 10, ackNumber: first.packet.SequenceNumber));
-            connection.Receive (CreateStatePacket (124, sequenceNumber: 11, ackNumber: first.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 10, ackNumber: first.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 11, ackNumber: first.packet.SequenceNumber));
             await Task.Delay (50);
 
             if (sendQueue.Reader.TryRead (out var retransmit))
                 Assert.Fail ($"Unexpected fast retransmit of packet {retransmit.packet.SequenceNumber}");
 
-            connection.Receive (CreateStatePacket (124, sequenceNumber: 12, ackNumber: first.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 12, ackNumber: first.packet.SequenceNumber));
             retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             Assert.AreEqual (second.packet.SequenceNumber, retransmit.packet.SequenceNumber);
@@ -246,7 +246,7 @@ namespace MonoTorrent.Connections.Peer
             var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             for (int i = 0; i < 3; i++)
-                connection.Receive (CreateStatePacket (124, sequenceNumber: (ushort) (9 + i), ackNumber: first.packet.SequenceNumber, third.packet.SequenceNumber));
+                connection.Receive (CreateStatePacket (123, sequenceNumber: (ushort) (9 + i), ackNumber: first.packet.SequenceNumber, third.packet.SequenceNumber));
 
             var retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
@@ -284,7 +284,7 @@ namespace MonoTorrent.Connections.Peer
             var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             clock.Microseconds = 100;
-            connection.Receive (CreateStatePacket (124, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber));
             await Task.Delay (50);
 
             Assert.AreEqual (500_000, connection.RetransmitTimeoutMicrosecondsForTests);
@@ -360,7 +360,7 @@ namespace MonoTorrent.Connections.Peer
             await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
             var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            var ack = CreateStatePacket (124, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
+            var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
             ack.TimestampDiff = 0;
             connection.Receive (ack);
             await Task.Delay (50);
@@ -378,7 +378,7 @@ namespace MonoTorrent.Connections.Peer
             await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
             var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            var lowDelayAck = CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
+            var lowDelayAck = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             lowDelayAck.TimestampDiff = 10_000;
             connection.Receive (lowDelayAck);
             await Task.Delay (50);
@@ -388,7 +388,7 @@ namespace MonoTorrent.Connections.Peer
             await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
             var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            var highDelayAck = CreateStatePacket (124, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
+            var highDelayAck = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
             highDelayAck.TimestampDiff = 220_000;
             connection.Receive (highDelayAck);
             await Task.Delay (50);
@@ -406,7 +406,7 @@ namespace MonoTorrent.Connections.Peer
             await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
             var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            var lowDelayAck = CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
+            var lowDelayAck = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             lowDelayAck.TimestampDiff = 10_000;
             connection.Receive (lowDelayAck);
             await Task.Delay (50);
@@ -418,7 +418,7 @@ namespace MonoTorrent.Connections.Peer
             await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
             var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            var highDelayAck = CreateStatePacket (124, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
+            var highDelayAck = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
             highDelayAck.TimestampDiff = 220_000;
             connection.Receive (highDelayAck);
             await Task.Delay (50);
@@ -443,7 +443,7 @@ namespace MonoTorrent.Connections.Peer
             var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             for (int i = 0; i < 3; i++)
-                connection.Receive (CreateStatePacket (124, sequenceNumber: (ushort) (9 + i), ackNumber: first.packet.SequenceNumber, third.packet.SequenceNumber));
+                connection.Receive (CreateStatePacket (123, sequenceNumber: (ushort) (9 + i), ackNumber: first.packet.SequenceNumber, third.packet.SequenceNumber));
 
             await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
@@ -465,7 +465,7 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.AreEqual (150, connection.MaxWindowForTests);
 
-            var ack = CreateStatePacket (124, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
+            var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             ack.TimestampDiff = 0;
             connection.Receive (ack);
             await Task.Delay (50);
@@ -502,7 +502,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (PacketType.Syn, syn.packet.Type);
             Assert.AreEqual (1, syn.packet.SequenceNumber);
 
-            connection.Receive (CreateStatePacket (connection.ConnectionIdSend, sequenceNumber: 9, ackNumber: 1));
+            connection.Receive (CreateStatePacket (connection.ConnectionIdReceive, sequenceNumber: 9, ackNumber: 1));
             Assert.IsTrue (await connectTask.WithTimeout (5000));
 
             await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
@@ -584,7 +584,7 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.IsTrue (harness.Listener.TryRegisterOutgoing (outgoing));
 
-            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            harness.Deliver (CreateSynPacket (connectionId: 122, sequenceNumber: 7));
 
             var reset = await harness.ReadOutbound ().WithTimeout (5000);
             Assert.AreEqual (PacketType.Reset, reset.packet.Type);
@@ -621,9 +621,9 @@ namespace MonoTorrent.Connections.Peer
             await harness.ReadOutbound ().WithTimeout (5000);
 
             harness.DeliverReordered (
-                CreateDataPacket (3, "b"),
-                CreateDataPacket (2, "a"));
-            harness.DeliverDuplicate (CreateDataPacket (3, "b"));
+                CreateDataPacket (3, "b", connectionId: 124),
+                CreateDataPacket (2, "a", connectionId: 124));
+            harness.DeliverDuplicate (CreateDataPacket (3, "b", connectionId: 124));
 
             var ack1 = await harness.ReadOutbound ().WithTimeout (5000);
             var ack2 = await harness.ReadOutbound ().WithTimeout (5000);
@@ -661,7 +661,7 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.Greater (connection.BytesInFlightForTests, 0);
 
-            harness.DeliverDelayed (CreateStatePacket (connection.ConnectionIdSend, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber));
+            harness.DeliverDelayed (CreateStatePacket (connection.ConnectionIdReceive, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber));
             await Task.Delay (50);
 
             Assert.AreEqual (0, connection.BytesInFlightForTests);
@@ -715,18 +715,18 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.IsTrue (listener.TryRegisterOutgoing (connection));
 
-            connection.Receive (CreateResetPacket (connection.ConnectionIdSend));
+            connection.Receive (CreateResetPacket (connection.ConnectionIdReceive));
 
             Assert.IsFalse (listener.IsRegistered (connection));
         }
 
-        static UtpPacket CreateDataPacket (ushort sequenceNumber, string payload)
+        static UtpPacket CreateDataPacket (ushort sequenceNumber, string payload, ushort connectionId = 123)
         {
             var bytes = System.Text.Encoding.ASCII.GetBytes (payload);
             var packet = new UtpPacket (new byte[UtpPacket.HeaderSize + bytes.Length]) {
                 Type = PacketType.Data,
                 Version = UtpPeerConnectionListener.UTP_VERSION,
-                ConnectionId = 124,
+                ConnectionId = connectionId,
                 WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
                 SequenceNumber = sequenceNumber,
                 AckNumber = 1
@@ -794,7 +794,7 @@ namespace MonoTorrent.Connections.Peer
             var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
                 Type = PacketType.Fin,
                 Version = UtpPeerConnectionListener.UTP_VERSION,
-                ConnectionId = 124,
+                ConnectionId = 123,
                 WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
                 SequenceNumber = sequenceNumber,
                 AckNumber = 1
