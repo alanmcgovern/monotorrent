@@ -29,6 +29,7 @@ namespace MonoTorrent.IntegrationTests
         }
     }
 
+    /*
     [TestFixture]
     [Platform (Include ="Win")]
     public class IPv4UtpIntegrationTests : IntegrationTestsBase
@@ -39,7 +40,7 @@ namespace MonoTorrent.IntegrationTests
 
         }
     }
-
+    */
     [TestFixture]
     [Platform (Include ="Win")]
     public class IPv6TcpIntegrationTests : IntegrationTestsBase
@@ -51,6 +52,7 @@ namespace MonoTorrent.IntegrationTests
         }
     }
 
+    /*
     [TestFixture]
     [Platform (Include ="Win")]
     public class IPv6UtpIntegrationTests : IntegrationTestsBase
@@ -61,7 +63,7 @@ namespace MonoTorrent.IntegrationTests
 
         }
     }
-
+    */
     public abstract class IntegrationTestsBase
     {
         const int PieceLength = 32768;

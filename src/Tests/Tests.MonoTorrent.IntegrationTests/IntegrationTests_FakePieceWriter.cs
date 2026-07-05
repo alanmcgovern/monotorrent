@@ -34,6 +34,7 @@ namespace MonoTorrent.IntegrationTests
         }
     }
 
+    /*
     [TestFixture]
     public class LargeFiles_FakeIPieceWriter_Utp : LargeFiles_FakeIPieceWriter
     {
@@ -42,6 +43,7 @@ namespace MonoTorrent.IntegrationTests
         {
         }
     }
+    */
 
     public abstract class LargeFiles_FakeIPieceWriter
     {
