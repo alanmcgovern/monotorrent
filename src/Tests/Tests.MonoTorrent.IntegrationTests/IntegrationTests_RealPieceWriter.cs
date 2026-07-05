@@ -514,7 +514,7 @@ namespace MonoTorrent.IntegrationTests
     {
         public static async Task WithTimeout (this Task task)
         {
-            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (20)), task);
+            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (Debugger.IsAttached ? 10_000 : 10)), task);
             if (task != done)
                 throw new TimeoutException ("The supplied task did nt complete");
             await done;
@@ -522,7 +522,7 @@ namespace MonoTorrent.IntegrationTests
 
         public static async Task<T> WithTimeout<T> (this Task<T> task)
         {
-            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (20)), task);
+            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (Debugger.IsAttached ? 10_000 : 10)), task);
             if (task != done)
                 throw new TimeoutException ("The supplied task did nt complete");
             return await task;

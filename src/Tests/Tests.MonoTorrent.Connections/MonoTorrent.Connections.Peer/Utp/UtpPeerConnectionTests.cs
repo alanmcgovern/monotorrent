@@ -214,8 +214,8 @@ namespace MonoTorrent.Connections.Peer
             var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            Assert.AreEqual (1, first.packet.SequenceNumber);
-            Assert.AreEqual (2, second.packet.SequenceNumber);
+            Assert.AreEqual (connection.InitialSequenceNumber, first.packet.SequenceNumber);
+            Assert.AreEqual (unchecked((ushort) (first.packet.SequenceNumber + 1)), second.packet.SequenceNumber);
 
             connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber));
             connection.Receive (CreateStatePacket (123, sequenceNumber: 10, ackNumber: first.packet.SequenceNumber));
@@ -500,16 +500,43 @@ namespace MonoTorrent.Connections.Peer
             var syn = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             Assert.AreEqual (PacketType.Syn, syn.packet.Type);
-            Assert.AreEqual (1, syn.packet.SequenceNumber);
+            Assert.AreEqual (connection.ConnectionIdReceive, syn.packet.ConnectionId);
+            Assert.AreEqual (connection.InitialSequenceNumber, syn.packet.SequenceNumber);
+            Assert.AreEqual (0, syn.packet.AckNumber);
 
-            connection.Receive (CreateStatePacket (connection.ConnectionIdReceive, sequenceNumber: 9, ackNumber: 1));
+            connection.Receive (CreateStatePacket (connection.ConnectionIdReceive, sequenceNumber: 9, ackNumber: syn.packet.SequenceNumber));
             Assert.IsTrue (await connectTask.WithTimeout (5000));
 
             await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
             var data = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             Assert.AreEqual (PacketType.Data, data.packet.Type);
-            Assert.AreEqual (2, data.packet.SequenceNumber);
+            Assert.AreEqual (connection.ConnectionIdSend, data.packet.ConnectionId);
+            Assert.AreEqual (unchecked((ushort) (syn.packet.SequenceNumber + 1)), data.packet.SequenceNumber);
+            Assert.AreEqual (8, data.packet.AckNumber);
+        }
+
+        [Test]
+        public async Task IncomingSynAckUsesLibutpConnectionIdsAndSequenceNumber ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 125, 7);
+
+            await connection.SendSynAck (7);
+            var state = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.State, state.packet.Type);
+            Assert.AreEqual (124, state.packet.ConnectionId);
+            Assert.AreEqual (connection.InitialSequenceNumber, state.packet.SequenceNumber);
+            Assert.AreEqual (7, state.packet.AckNumber);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.Data, data.packet.Type);
+            Assert.AreEqual (124, data.packet.ConnectionId);
+            Assert.AreEqual (state.packet.SequenceNumber, data.packet.SequenceNumber);
+            Assert.AreEqual (7, data.packet.AckNumber);
         }
 
         [Test]
@@ -708,6 +735,32 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public void DisposeCancelsPendingReceive ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+            var receiveTask = connection.ReceiveAsync (new byte[1]).AsTask ();
+
+            connection.Dispose ();
+
+            Assert.ThrowsAsync<OperationCanceledException> (async () => await receiveTask.WithTimeout (5000));
+        }
+
+        [Test]
+        public void DisposeCancelsPendingSend ()
+        {
+            var sendQueue = Channel.CreateBounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> (1);
+            Assert.IsTrue (sendQueue.Writer.TryWrite ((new UtpPacket (new byte[UtpPacket.HeaderSize]), null, new IPEndPoint (IPAddress.Loopback, 12345))));
+
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+            var sendTask = connection.SendAsync (new byte[] { 1 }).AsTask ();
+
+            connection.Dispose ();
+
+            Assert.ThrowsAsync<OperationCanceledException> (async () => await sendTask.WithTimeout (5000));
+        }
+
+        [Test]
         public void ReceivedResetUnregistersConnection ()
         {
             var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
@@ -716,6 +769,19 @@ namespace MonoTorrent.Connections.Peer
             Assert.IsTrue (listener.TryRegisterOutgoing (connection));
 
             connection.Receive (CreateResetPacket (connection.ConnectionIdReceive));
+
+            Assert.IsFalse (listener.IsRegistered (connection));
+        }
+
+        [Test]
+        public void ReceivedResetWithSendConnectionIdUnregistersConnection ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            Assert.IsTrue (listener.TryRegisterOutgoing (connection));
+
+            listener.ProcessDatagram ((IPEndPoint) connection.EndPoint, CreateResetPacket (connection.ConnectionIdSend).AsMemory ().ToArray ());
 
             Assert.IsFalse (listener.IsRegistered (connection));
         }

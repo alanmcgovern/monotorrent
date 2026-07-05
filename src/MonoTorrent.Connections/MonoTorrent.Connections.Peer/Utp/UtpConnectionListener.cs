@@ -257,7 +257,10 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         void RouteToExisting (IPEndPoint remote, UtpPacket pkt)
         {
-            var key = (remote, pkt.ConnectionId);
+            var key = pkt.Type == PacketType.Reset
+                ? FindResetKey (remote, pkt.ConnectionId)
+                : (remote, pkt.ConnectionId);
+
             if (_connections.TryGetValue (key, out var registration)) {
                 var conn = registration.Connection;
                 if (!conn.IsClosedOrReset && conn.IsValidPacketForCurrentState (pkt)) {
@@ -271,6 +274,23 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
 
             SendReset (remote, pkt);
+        }
+
+        (EndPoint remote, ushort connectionIdReceive) FindResetKey (IPEndPoint remote, ushort connectionId)
+        {
+            var key = ((EndPoint) remote, connectionId);
+            if (_connections.TryGetValue (key, out _))
+                return key;
+
+            key = (remote, unchecked((ushort) (connectionId + 1)));
+            if (_connections.TryGetValue (key, out var plusOne) && plusOne.Connection.ConnectionIdSend == connectionId)
+                return key;
+
+            key = (remote, unchecked((ushort) (connectionId - 1)));
+            if (_connections.TryGetValue (key, out var minusOne) && minusOne.Connection.ConnectionIdSend == connectionId)
+                return key;
+
+            return ((EndPoint) remote, connectionId);
         }
 
         internal bool TryRegisterOutgoing (UtpPeerConnection connection)

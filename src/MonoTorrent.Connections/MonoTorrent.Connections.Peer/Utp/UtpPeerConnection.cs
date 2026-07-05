@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -108,6 +109,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal ushort ConnectionIdReceive { get; }
 
+        internal ushort InitialSequenceNumber { get; }
+
         internal ushort AckNumber { get; set; }
 
         uint LastReceivedDelayMicroseconds { get; set; }
@@ -166,13 +169,14 @@ namespace MonoTorrent.Connections.Peer.Utp
             ConnectionIdSend = connIdSend;
             ConnectionIdReceive = connIdRecv;
             IsIncoming = true;
+            InitialSequenceNumber = GenerateInitialSequenceNumber ();
 
             Uri = new Uri ($"utp://{remote.Address}:{remote.Port}");
 
-            SequenceNumber = 1;
-            LastSentSequenceNumber = 1;
+            SequenceNumber = InitialSequenceNumber;
+            LastSentSequenceNumber = InitialSequenceNumber;
             AckNumber = initialAckNumber;
-            LastAckReceived = initialAckNumber;
+            LastAckReceived = unchecked((ushort) (InitialSequenceNumber - 1));
             CurrentMtu = settings.InitialPacketSize;
             State = ConnectionState.SynReceived;
             retransmitTask = RetransmitLoopAsync ();
@@ -250,6 +254,9 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal static int SequenceDistance (ushort newer, ushort older)
             => unchecked((ushort) (newer - older));
+
+        static ushort GenerateInitialSequenceNumber ()
+            => (ushort) RandomNumberGenerator.GetInt32 (0, ushort.MaxValue + 1);
 
         ushort NextSequenceNumber ()
         {
@@ -362,7 +369,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal bool IsValidPacketForCurrentState (UtpPacket pkt)
         {
-            if (pkt.ConnectionId != ConnectionIdReceive)
+            if (pkt.ConnectionId != ConnectionIdReceive && (pkt.Type != PacketType.Reset || pkt.ConnectionId != ConnectionIdSend))
                 return false;
 
             return State switch {
@@ -624,8 +631,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                 }
             } catch (ChannelClosedException) {
                 return 0;
-            } catch (OperationCanceledException) {
-                return 0;
             }
 
             int read = ReadFromPacket (currentPacket.Value.Payload.Slice (currentPayloadRead), buffer.Span);
@@ -700,6 +705,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                 await sendWindowChanged.WaitAsync (TimeSpan.FromMilliseconds (100), cts.Token);
             }
+            cts.Token.ThrowIfCancellationRequested ();
         }
 
         async Task RetransmitLoopAsync ()
@@ -758,8 +764,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
 
             State = finalState;
-            ReceivedPackets.Writer.TryComplete ();
             cts.Cancel ();
+            ReceivedPackets.Writer.TryComplete ();
             sendWindowChanged.Release ();
             _listener?.Unregister (this);
         }
