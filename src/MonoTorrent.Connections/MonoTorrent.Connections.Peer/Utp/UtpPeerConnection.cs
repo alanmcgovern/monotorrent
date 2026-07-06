@@ -126,6 +126,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal ushort AckNumber { get; set; }
 
+        ushort? ReceivedFinSequence { get; set; }
+
         uint LastReceivedDelayMicroseconds { get; set; }
 
         uint PeerWindowSize { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
@@ -384,6 +386,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (receiveBuffer.ContainsKey (packet.SequenceNumber))
                 return ReceiveSequenceStatus.OldOrDuplicate;
 
+            if (ReceivedFinSequence.HasValue && SequenceGreaterThan (packet.SequenceNumber, ReceivedFinSequence.Value))
+                return ReceiveSequenceStatus.OldOrDuplicate;
+
             var nextExpected = unchecked((ushort) (AckNumber + 1));
             if (SequenceDistance (packet.SequenceNumber, nextExpected) > transportSettings.MaxReorderDistance)
                 return ReceiveSequenceStatus.TooFarAhead;
@@ -451,6 +456,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 sequenceStatus = GetReceiveSequenceStatus (pkt);
                 if (sequenceStatus == ReceiveSequenceStatus.Acceptable) {
                     wasNextExpected = pkt.SequenceNumber == unchecked((ushort) (AckNumber + 1));
+                    if (pkt.Type == PacketType.Fin && (!ReceivedFinSequence.HasValue || SequenceGreaterThan (ReceivedFinSequence.Value, pkt.SequenceNumber)))
+                        ReceivedFinSequence = pkt.SequenceNumber;
                     TryBufferReceivedPacket (pkt);
                 }
             }
@@ -703,7 +710,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         bool HasSelectiveAckContent (ushort ackNr)
         {
             lock (locker)
-                return receiveBuffer.Keys.Any (t => SequenceGreaterThan (t, unchecked((ushort) (ackNr + 1))));
+                return receiveBuffer.Keys.Any (t => ShouldIncludeInSelectiveAck (t, ackNr));
         }
 
         void ScheduleDelayedAck ()
@@ -780,7 +787,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             ushort[] buffered;
             lock (locker)
-                buffered = receiveBuffer.Keys.Where (t => SequenceGreaterThan (t, unchecked((ushort) (ackNr + 1)))).ToArray ();
+                buffered = receiveBuffer.Keys.Where (t => ShouldIncludeInSelectiveAck (t, ackNr)).ToArray ();
 
             if (buffered.Length == 0)
                 return Array.Empty<byte> ();
@@ -797,6 +804,14 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
 
             return result;
+        }
+
+        bool ShouldIncludeInSelectiveAck (ushort sequenceNumber, ushort ackNr)
+        {
+            if (!SequenceGreaterThan (sequenceNumber, unchecked((ushort) (ackNr + 1))))
+                return false;
+
+            return !ReceivedFinSequence.HasValue || !SequenceGreaterThan (sequenceNumber, ReceivedFinSequence.Value);
         }
 
         internal async ReusableTask SendSynAck (ushort peerSeqNr)
