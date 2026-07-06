@@ -630,8 +630,11 @@ namespace MonoTorrent.Connections.Peer.Utp
             List<SentPacket> acked = new ();
             List<UtpPacket> fastRetransmits = new ();
             List<ushort>? selectiveAcks = null;
+            bool wasWindowLimited;
 
             lock (locker) {
+                wasWindowLimited = IsWindowLimited ();
+
                 bool ackAdvanced = SequenceGreaterThan (pkt.AckNumber, LastAckReceived);
                 if (ackAdvanced)
                     LastAckReceived = pkt.AckNumber;
@@ -694,7 +697,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
 
             ProcessMtuProbeAcks (acked);
-            ApplyCongestionControl (bytesNewlyAcked, pkt.TimestampDiff, minAckedRttMicroseconds);
+            ApplyCongestionControl (bytesNewlyAcked, pkt.TimestampDiff, minAckedRttMicroseconds, wasWindowLimited);
 
             if (finAcked && State == ConnectionState.FinSent)
                 CloseCleanly ();
@@ -761,7 +764,16 @@ namespace MonoTorrent.Connections.Peer.Utp
             return packetRtt;
         }
 
-        void ApplyCongestionControl (int bytesNewlyAcked, uint delayMicroseconds, uint minAckedRttMicroseconds)
+        bool IsWindowLimited ()
+        {
+            var allowed = Math.Min (MaxWindow, PeerWindowSize);
+            if (allowed == 0)
+                return false;
+
+            return BytesInFlight + CurrentMtu + UtpPacket.HeaderSize > allowed;
+        }
+
+        void ApplyCongestionControl (int bytesNewlyAcked, uint delayMicroseconds, uint minAckedRttMicroseconds, bool wasWindowLimited)
         {
             if (bytesNewlyAcked == 0 || delayMicroseconds == 0 || minAckedRttMicroseconds == 0)
                 return;
@@ -773,6 +785,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                 RecentDelayMicroseconds = recentDelay;
                 uint ourDelay = RecentDelayMicroseconds > baseDelay ? RecentDelayMicroseconds - baseDelay : 0;
                 double offTarget = (long) CControlTargetMicroseconds - ourDelay;
+                if (offTarget > 0 && !wasWindowLimited)
+                    return;
+
                 double delayFactor = offTarget / CControlTargetMicroseconds;
                 double windowFactor = Math.Min (1, bytesNewlyAcked / Math.Max (1.0, MaxWindow));
                 double gain = CurrentMtu * delayFactor * windowFactor;

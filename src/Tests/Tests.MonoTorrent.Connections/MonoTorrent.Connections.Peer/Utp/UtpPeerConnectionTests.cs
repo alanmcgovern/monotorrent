@@ -1083,7 +1083,7 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task LedbatGrowsWindowWhenDelayIsBelowTarget ()
+        public async Task LedbatDoesNotGrowWindowWhenNotWindowLimited ()
         {
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
@@ -1095,6 +1095,30 @@ namespace MonoTorrent.Connections.Peer
             var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
+            clock.Microseconds = 50_000;
+            ack.TimestampDiff = 10_000;
+            connection.Receive (ack);
+            await Task.Delay (50);
+
+            Assert.AreEqual (initialWindow, connection.MaxWindowForTests);
+        }
+
+        [Test]
+        public async Task LedbatGrowsWindowWhenDelayIsBelowTargetAndWindowLimited ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+
+            var initialWindow = connection.MaxWindowForTests;
+            int payloadSize = UtpTransportSettings.DefaultInitialPacketSize;
+            int packetCost = payloadSize + UtpPacket.HeaderSize;
+            int packetsToFillWindow = (int) (initialWindow / (uint) packetCost);
+
+            await connection.SendAsync (new byte[payloadSize * packetsToFillWindow]).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             clock.Microseconds = 50_000;
             ack.TimestampDiff = 10_000;
             connection.Receive (ack);
@@ -1233,7 +1257,8 @@ namespace MonoTorrent.Connections.Peer
             connection.Receive (highDelayAck);
             await Task.Delay (50);
 
-            Assert.Greater (connection.MaxWindowForTests, afterLowDelay);
+            Assert.AreEqual (afterLowDelay, connection.MaxWindowForTests);
+            Assert.AreEqual (220_000, connection.RecentDelayMicrosecondsForTests);
         }
 
         [Test]
