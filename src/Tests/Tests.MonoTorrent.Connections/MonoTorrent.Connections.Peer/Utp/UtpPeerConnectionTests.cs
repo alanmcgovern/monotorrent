@@ -294,6 +294,89 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task SynTimeoutFailureCompletesConnectFalse ()
+        {
+            var clock = new ManualClock ();
+            var listener = new UtpPeerConnectionListener (
+                new IPEndPoint (IPAddress.Loopback, 0),
+                clock,
+                new UtpTransportSettings { MaxSynTimeouts = 2 });
+            using var connection = new UtpPeerConnection (listener, listener.SendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            var connectTask = connection.ConnectAsync ().AsTask ();
+            var syn = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 1_000_000;
+            var retransmit = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (syn.packet.SequenceNumber, retransmit.packet.SequenceNumber);
+
+            clock.Microseconds = 3_000_000;
+
+            Assert.IsFalse (await connectTask.WithTimeout (5000));
+            Assert.IsTrue (connection.IsClosedOrReset);
+            Assert.IsFalse (listener.IsRegistered (connection));
+        }
+
+        [Test]
+        public async Task ConnectedTimeoutTeardownCompletesReceiveAndUnregisters ()
+        {
+            var clock = new ManualClock ();
+            var listener = new UtpPeerConnectionListener (
+                new IPEndPoint (IPAddress.Loopback, 0),
+                clock,
+                new UtpTransportSettings { MaxConnectedTimeouts = 1 });
+            using var connection = new UtpPeerConnection (listener, listener.SendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            var connectTask = connection.ConnectAsync ().AsTask ();
+            var syn = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            connection.Receive (CreateStatePacket (connection.ConnectionIdReceive, 9, syn.packet.SequenceNumber));
+
+            Assert.IsTrue (await connectTask.WithTimeout (5000));
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 1_000_000;
+
+            Assert.AreEqual (0, await connection.ReceiveAsync (new byte[1]).WithTimeout (5000));
+            Assert.IsTrue (connection.IsClosedOrReset);
+            Assert.IsFalse (listener.IsRegistered (connection));
+        }
+
+        [Test]
+        public async Task TimeoutExhaustionStopsRetransmitting ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                transportSettings: new UtpTransportSettings { MaxConnectedTimeouts = 2 });
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 1_000_000;
+            var retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (first.packet.SequenceNumber, retransmit.packet.SequenceNumber);
+
+            clock.Microseconds = 3_000_000;
+
+            Assert.AreEqual (0, await connection.ReceiveAsync (new byte[1]).WithTimeout (5000));
+
+            clock.Microseconds = 60_000_000;
+            await Task.Delay (150);
+
+            Assert.IsFalse (sendQueue.Reader.TryRead (out _));
+        }
+
+        [Test]
         public async Task RtoUsesBep29MinimumAfterShortRttSample ()
         {
             var clock = new ManualClock ();

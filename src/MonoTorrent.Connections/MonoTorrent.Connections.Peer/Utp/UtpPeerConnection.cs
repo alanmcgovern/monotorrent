@@ -89,6 +89,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly Task retransmitTask;
         readonly IUtpClock clock;
         readonly int maxReceiveBufferBytes;
+        readonly UtpTransportSettings transportSettings;
 
         ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> SendingChannel { get; }
 
@@ -164,6 +165,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             this.clock = clock;
             this.maxReceiveBufferBytes = maxReceiveBufferBytes;
             var settings = UtpTransportSettings.Create (transportSettings ?? listener?.TransportSettings);
+            this.transportSettings = settings;
             EndPoint = remote;
             AddressBytes = EndPoint.Address.GetAddressBytes ();
             ReceivedPackets = Channel.CreateUnbounded<UtpPacket> ();
@@ -639,6 +641,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 }
             } catch (ChannelClosedException) {
                 return 0;
+            } catch (OperationCanceledException) when (State == ConnectionState.Reset) {
+                return 0;
             }
 
             int read = ReadFromPacket (currentPacket.Value.Payload.Slice (currentPayloadRead), buffer.Span);
@@ -735,10 +739,16 @@ namespace MonoTorrent.Connections.Peer.Utp
                             CurrentMtu = UtpTransportSettings.MinimumRecoveryPacketSize;
                             MaxWindow = UtpTransportSettings.MinimumRecoveryPacketSize;
                             ConsecutiveTimeouts++;
-                            RetransmitTimeoutMicroseconds = Math.Min (
-                                MaximumRetransmitTimeoutMicroseconds,
-                                Math.Max (MinimumRetransmitTimeoutMicroseconds, RetransmitTimeoutMicroseconds) * 2);
+                            if (ConsecutiveTimeouts < MaxConsecutiveTimeouts)
+                                RetransmitTimeoutMicroseconds = Math.Min (
+                                    MaximumRetransmitTimeoutMicroseconds,
+                                    Math.Max (MinimumRetransmitTimeoutMicroseconds, RetransmitTimeoutMicroseconds) * 2);
                         }
+                    }
+
+                    if (timedOut != null && ConsecutiveTimeouts >= MaxConsecutiveTimeouts) {
+                        Close (ConnectionState.Reset);
+                        continue;
                     }
 
                     if (timedOut != null)
@@ -747,6 +757,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             } catch (OperationCanceledException) {
             }
         }
+
+        int MaxConsecutiveTimeouts
+            => State == ConnectionState.SynSent ? transportSettings.MaxSynTimeouts : transportSettings.MaxConnectedTimeouts;
 
         async Task RetransmitAsync (UtpPacket packet)
         {
@@ -772,10 +785,14 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
 
             State = finalState;
-            cts.Cancel ();
-            ReceivedPackets.Writer.TryComplete ();
-            sendWindowChanged.Release ();
+            if (finalState == ConnectionState.Reset)
+                ReceivedPackets.Writer.TryComplete ();
             _listener?.Unregister (this);
+            HandshakeCompleted?.TrySetResult (false);
+            cts.Cancel ();
+            if (finalState != ConnectionState.Reset)
+                ReceivedPackets.Writer.TryComplete ();
+            sendWindowChanged.Release ();
         }
     }
 }
