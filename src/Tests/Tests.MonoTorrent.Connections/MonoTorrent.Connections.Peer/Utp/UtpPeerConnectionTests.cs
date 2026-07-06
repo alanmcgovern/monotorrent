@@ -155,6 +155,24 @@ namespace MonoTorrent.Connections.Peer
             await AssertNoOutboundPacket (sendQueue);
         }
 
+        [TestCase (3)]
+        [TestCase (5)]
+        public async Task MalformedSelectiveAckLengthDropsPacket (int selectiveAckLength)
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateStatePacketWithExtensions (123, 9, data.packet.SequenceNumber,
+                new ExtensionBlock (1, new byte[selectiveAckLength])));
+            await Task.Delay (50);
+
+            Assert.AreEqual (UtpPacket.HeaderSize + 1, connection.BytesInFlightForTests);
+            await AssertNoOutboundPacket (sendQueue);
+        }
+
         [Test]
         public async Task ExtensionBitsAreParsedAndIgnored ()
         {
@@ -170,6 +188,22 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.AreEqual (0, connection.BytesInFlightForTests);
             Assert.AreEqual (0x0123456789abcdefUL, connection.PeerExtensionBitsForTests);
+        }
+
+        [Test]
+        public async Task DataPacketWithExtensionsDeliversOnlyPayload ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            connection.Receive (CreateDataPacketWithExtensions (2, "ok",
+                new ExtensionBlock (99, new byte[] { 1, 2, 3 }),
+                new ExtensionBlock (2, new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 })));
+
+            var buffer = new byte[2];
+            Assert.AreEqual (2, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
+            Assert.AreEqual ("ok", System.Text.Encoding.ASCII.GetString (buffer));
+            Assert.AreEqual (1UL, connection.PeerExtensionBitsForTests);
         }
 
         [Test]
@@ -1642,6 +1676,33 @@ namespace MonoTorrent.Connections.Peer
                 AckNumber = ackNumber
             };
             bytes.CopyTo (packet.Payload);
+            packet.SetTimestamp ();
+            return packet;
+        }
+
+        static UtpPacket CreateDataPacketWithExtensions (ushort sequenceNumber, string payload, params ExtensionBlock[] extensions)
+        {
+            var bytes = System.Text.Encoding.ASCII.GetBytes (payload);
+            var extensionLength = extensions.Sum (t => 2 + t.Payload.Length);
+            var packet = new UtpPacket (new byte[UtpPacket.HeaderSize + extensionLength + bytes.Length]) {
+                Type = PacketType.Data,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                Extension = extensions.Length == 0 ? (byte) 0 : extensions[0].Type,
+                ConnectionId = 123,
+                WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
+                SequenceNumber = sequenceNumber,
+                AckNumber = 1
+            };
+
+            var span = packet.AsMemory ().Span;
+            int offset = UtpPacket.HeaderSize;
+            for (int i = 0; i < extensions.Length; i++) {
+                span[offset] = i + 1 == extensions.Length ? (byte) 0 : extensions[i + 1].Type;
+                span[offset + 1] = (byte) extensions[i].Payload.Length;
+                extensions[i].Payload.CopyTo (span.Slice (offset + 2));
+                offset += 2 + extensions[i].Payload.Length;
+            }
+            bytes.CopyTo (span.Slice (offset));
             packet.SetTimestamp ();
             return packet;
         }

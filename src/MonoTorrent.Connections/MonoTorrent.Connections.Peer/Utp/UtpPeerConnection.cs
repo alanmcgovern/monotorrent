@@ -74,10 +74,24 @@ namespace MonoTorrent.Connections.Peer.Utp
             public bool FastRetransmitted { get; set; }
         }
 
-        sealed class ParsedExtensions
+        sealed class ParsedPacket
         {
-            public List<ushort> SelectiveAcks { get; } = new ();
-            public ulong? ExtensionBits { get; set; }
+            public ParsedPacket (UtpPacket packet, int extensionStart, int payloadOffset, List<ushort> selectiveAcks, ulong? extensionBits)
+            {
+                Packet = packet;
+                ExtensionStart = extensionStart;
+                PayloadOffset = payloadOffset;
+                SelectiveAcks = selectiveAcks;
+                ExtensionBits = extensionBits;
+            }
+
+            public UtpPacket Packet { get; }
+            public int ExtensionStart { get; }
+            public int PayloadOffset { get; }
+            public int PayloadLength => Packet.AsMemory ().Length - PayloadOffset;
+            public Memory<byte> Payload => Packet.AsMemory ().Slice (PayloadOffset, PayloadLength);
+            public List<ushort> SelectiveAcks { get; }
+            public ulong? ExtensionBits { get; }
         }
 
         enum ReceiveSequenceStatus
@@ -99,7 +113,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         readonly object locker = new ();
         readonly Dictionary<ushort, SentPacket> sentPackets = new ();
-        readonly Dictionary<ushort, UtpPacket> receiveBuffer = new ();
+        readonly Dictionary<ushort, ParsedPacket> receiveBuffer = new ();
         readonly Queue<(uint ReceivedAtMicroseconds, uint DelayMicroseconds)> delaySamples = new ();
         readonly SemaphoreSlim sendWindowChanged = new (0);
         readonly CancellationTokenSource cts = new ();
@@ -175,7 +189,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         int BytesInFlight { get; set; }
 
-        Channel<UtpPacket> ReceivedPackets { get; }
+        Channel<ParsedPacket> ReceivedPackets { get; }
 
         ConnectionState State { get; set; }
 
@@ -227,7 +241,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             this.transportSettings = settings;
             EndPoint = remote;
             AddressBytes = EndPoint.Address.GetAddressBytes ();
-            ReceivedPackets = Channel.CreateUnbounded<UtpPacket> ();
+            ReceivedPackets = Channel.CreateUnbounded<ParsedPacket> ();
             ConnectionIdSend = connIdSend;
             ConnectionIdReceive = connIdRecv;
             IsIncoming = true;
@@ -373,21 +387,21 @@ namespace MonoTorrent.Connections.Peer.Utp
             HasSentPacket = true;
         }
 
-        static int PacketBufferCost (UtpPacket packet)
-            => UtpPacket.HeaderSize + packet.Payload.Length;
+        static int PacketBufferCost (ParsedPacket packet)
+            => packet.Packet.AsMemory ().Length;
 
         static int PacketSendCost (SentPacket packet)
             => UtpPacket.HeaderSize + packet.PayloadBytes;
 
-        bool TryBufferReceivedPacket (UtpPacket packet)
+        bool TryBufferReceivedPacket (ParsedPacket packet)
         {
-            if (receiveBuffer.ContainsKey (packet.SequenceNumber))
+            if (receiveBuffer.ContainsKey (packet.Packet.SequenceNumber))
                 return false;
 
             if (ReceiveBufferBytes + PacketBufferCost (packet) > maxReceiveBufferBytes)
                 return false;
 
-            receiveBuffer[packet.SequenceNumber] = packet;
+            receiveBuffer[packet.Packet.SequenceNumber] = packet;
             return true;
         }
 
@@ -434,11 +448,11 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (!IsValidPacketForCurrentState (pkt))
                 return;
 
-            if (!TryReadExtensions (pkt, out var extensions))
+            if (!TryParsePacket (pkt, out var parsed))
                 return;
 
-            if (extensions.ExtensionBits.HasValue)
-                PeerExtensionBits = extensions.ExtensionBits.Value;
+            if (parsed.ExtensionBits.HasValue)
+                PeerExtensionBits = parsed.ExtensionBits.Value;
 
             UpdateDelaySample (pkt);
             var wasPeerWindowZero = PeerWindowSize == 0;
@@ -447,7 +461,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 sendWindowChanged.Release ();
             if (!wasPeerWindowZero && PeerWindowSize == 0)
                 LastZeroWindowProbeMicroseconds = clock.Microseconds;
-            ProcessAcks (pkt, extensions.SelectiveAcks);
+            ProcessAcks (pkt, parsed.SelectiveAcks);
 
             if (pkt.Type == PacketType.Reset) {
                 Close (ConnectionState.Reset);
@@ -477,7 +491,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     wasNextExpected = pkt.SequenceNumber == unchecked((ushort) (AckNumber + 1));
                     if (pkt.Type == PacketType.Fin && (!ReceivedFinSequence.HasValue || SequenceGreaterThan (ReceivedFinSequence.Value, pkt.SequenceNumber)))
                         ReceivedFinSequence = pkt.SequenceNumber;
-                    TryBufferReceivedPacket (pkt);
+                    TryBufferReceivedPacket (parsed);
                 }
             }
 
@@ -559,7 +573,13 @@ namespace MonoTorrent.Connections.Peer.Utp
                     }
                 }
 
-                selectiveAcks = receivedSelectiveAcks.Where (sentPackets.ContainsKey).ToList ();
+                selectiveAcks = new List<ushort> ();
+                foreach (var seq in receivedSelectiveAcks) {
+                    if (!SequenceGreaterThan (seq, pkt.AckNumber) || !SequenceLessThanOrEqual (seq, LastSentSequenceNumber))
+                        continue;
+                    if (sentPackets.ContainsKey (seq))
+                        selectiveAcks.Add (seq);
+                }
 
                 foreach (var seq in selectiveAcks) {
                     if (sentPackets.Remove (seq, out var sent)) {
@@ -681,14 +701,19 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        static bool TryReadExtensions (UtpPacket pkt, out ParsedExtensions extensions)
+        static bool TryParsePacket (UtpPacket pkt, out ParsedPacket parsed)
         {
-            extensions = new ParsedExtensions ();
+            parsed = null!;
             var span = pkt.AsMemory ().Span;
             byte extension = pkt.Extension;
             int offset = UtpPacket.HeaderSize;
+            var selectiveAcks = new List<ushort> ();
+            ulong? extensionBits = null;
 
-            while (extension != 0 && offset + 2 <= span.Length) {
+            while (extension != 0) {
+                if (offset + 2 > span.Length)
+                    return false;
+
                 byte nextExtension = span[offset];
                 int length = span[offset + 1];
                 offset += 2;
@@ -697,11 +722,14 @@ namespace MonoTorrent.Connections.Peer.Utp
                     return false;
 
                 if (extension == SelectiveAckExtension) {
+                    if (length < 4 || length % 4 != 0)
+                        return false;
+
                     for (int i = 0; i < length; i++) {
                         byte mask = span[offset + i];
                         for (int bit = 0; bit < 8; bit++) {
                             if ((mask & (1 << bit)) != 0)
-                                extensions.SelectiveAcks.Add (unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit)));
+                                selectiveAcks.Add (unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit)));
                         }
                     }
                 } else if (extension == ExtensionBitsExtension) {
@@ -711,36 +739,38 @@ namespace MonoTorrent.Connections.Peer.Utp
                     ulong bits = 0;
                     for (int i = 0; i < 8; i++)
                         bits = bits << 8 | (ulong) span[offset + i];
-                    extensions.ExtensionBits = bits;
+                    extensionBits = bits;
                 }
 
                 offset += length;
                 extension = nextExtension;
             }
 
-            return extension == 0;
+            parsed = new ParsedPacket (pkt, UtpPacket.HeaderSize, offset, selectiveAcks, extensionBits);
+            return true;
         }
 
         async Task<(bool AckAdvanced, bool FinDelivered)> DeliverAvailablePackets ()
         {
             bool ackAdvanced = false;
             while (true) {
-                UtpPacket pkt;
+                ParsedPacket? buffered;
                 lock (locker) {
                     var next = unchecked((ushort) (AckNumber + 1));
-                    if (!receiveBuffer.Remove (next, out pkt))
+                    if (!receiveBuffer.Remove (next, out buffered))
                         return (ackAdvanced, false);
                     AckNumber = next;
                     ackAdvanced = true;
                 }
 
-                if (pkt.Type == PacketType.Fin) {
+                var pkt = buffered!;
+                if (pkt.Packet.Type == PacketType.Fin) {
                     State = ConnectionState.FinReceived;
                     ReceivedPackets.Writer.TryComplete ();
                     return (ackAdvanced, true);
                 }
 
-                if (pkt.Payload.Length > 0)
+                if (pkt.PayloadLength > 0)
                     await ReceivedPackets.Writer.WriteAsync (pkt, cts.Token);
             }
         }
@@ -870,7 +900,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             await SendPacketAsync (pkt);
         }
 
-        UtpPacket? currentPacket;
+        ParsedPacket? currentPacket;
         int currentPayloadRead;
         public async ReusableTask<int> ReceiveAsync (Memory<byte> buffer)
         {
@@ -898,9 +928,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return 0;
             }
 
-            int read = ReadFromPacket (currentPacket.Value.Payload.Slice (currentPayloadRead), buffer.Span);
+            int read = ReadFromPacket (currentPacket.Payload.Span.Slice (currentPayloadRead), buffer.Span);
             currentPayloadRead += read;
-            if (currentPayloadRead == currentPacket.Value.Payload.Length)
+            if (currentPayloadRead == currentPacket.PayloadLength)
                 currentPacket = null;
 
             return read;
