@@ -170,6 +170,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         ConnectionState State { get; set; }
 
+        bool CleanReadEof { get; set; }
+
         internal bool IsClosedOrReset => State == ConnectionState.Closed || State == ConnectionState.Reset;
 
         internal int BytesInFlightForTests => CurrentWindow;
@@ -505,6 +507,17 @@ namespace MonoTorrent.Connections.Peer.Utp
             };
         }
 
+        internal bool IsHarmlessStalePacket (UtpPacket pkt)
+        {
+            if (pkt.ConnectionId != ConnectionIdReceive)
+                return false;
+
+            if (pkt.Type != PacketType.Data && pkt.Type != PacketType.Fin)
+                return false;
+
+            return !SequenceGreaterThan (pkt.SequenceNumber, AckNumber);
+        }
+
         void UpdateDelaySample (UtpPacket pkt)
         {
             LastReceivedDelayMicroseconds = unchecked(clock.Microseconds - pkt.Timestamp);
@@ -570,7 +583,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             ApplyCongestionControl (acked.Sum (t => t.PayloadBytes), pkt.TimestampDiff, minAckedRttMicroseconds);
 
             if (acked.Any (t => t.Packet.Type == PacketType.Fin) && State == ConnectionState.FinSent)
-                Close (ConnectionState.Closed);
+                CloseCleanly ();
 
             if (acked.Count > 0)
                 sendWindowChanged.Release ();
@@ -846,6 +859,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (buffer.IsEmpty)
                 return 0;
 
+            if (CleanReadEof && currentPacket == null)
+                return 0;
+
             try {
                 if (currentPacket == null) {
                     currentPacket = await ReceivedPackets.Reader.ReadAsync (cts.Token);
@@ -1057,6 +1073,21 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public void Dispose ()
             => Close (State == ConnectionState.Reset ? ConnectionState.Reset : ConnectionState.Closed);
+
+        void CloseCleanly ()
+        {
+            if (cts.IsCancellationRequested)
+                return;
+
+            CancelDelayedAck ();
+            State = ConnectionState.Closed;
+            CleanReadEof = true;
+            ReceivedPackets.Writer.TryComplete ();
+            _listener?.Unregister (this);
+            HandshakeCompleted?.TrySetResult (false);
+            cts.Cancel ();
+            sendWindowChanged.Release ();
+        }
 
         void Close (ConnectionState finalState)
         {

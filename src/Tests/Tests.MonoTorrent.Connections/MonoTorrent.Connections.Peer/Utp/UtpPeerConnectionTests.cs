@@ -1319,6 +1319,55 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task DuplicateSynAfterCloseCreatesFreshConnectionOnSameKey ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+            UtpPeerConnection? accepted = null;
+            int received = 0;
+            harness.Listener.ConnectionReceived += (o, e) => {
+                accepted = (UtpPeerConnection) e.Connection;
+                received++;
+            };
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            var first = await harness.ReadOutbound ().WithTimeout (5000);
+            accepted!.Dispose ();
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            var second = await harness.ReadOutbound ().WithTimeout (5000);
+
+            Assert.AreEqual (2, received);
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
+            Assert.AreEqual (PacketType.State, first.packet.Type);
+            Assert.AreEqual (PacketType.State, second.packet.Type);
+            Assert.AreEqual (7, second.packet.AckNumber);
+        }
+
+        [Test]
+        public async Task StaleDuplicateDataAfterRemoteFinDoesNotSendReset ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+            UtpPeerConnection? accepted = null;
+            harness.Listener.ConnectionReceived += (o, e) => accepted = (UtpPeerConnection) e.Connection;
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 1));
+            await harness.ReadOutbound ().WithTimeout (5000);
+
+            harness.Deliver (CreateDataPacket (2, "a", connectionId: 124));
+            await harness.ReadOutbound ().WithTimeout (5000);
+            harness.Deliver (CreateFinPacket (3, connectionId: 124));
+            await harness.ReadOutbound ().WithTimeout (5000);
+
+            var buffer = new byte[1];
+            Assert.AreEqual (1, await accepted!.ReceiveAsync (buffer).WithTimeout (5000));
+            Assert.AreEqual (0, await accepted.ReceiveAsync (buffer).WithTimeout (5000));
+
+            harness.Deliver (CreateDataPacket (2, "a", connectionId: 124));
+            await AssertNoOutboundPacket (harness.Listener.SendQueue, TimeSpan.FromMilliseconds (100));
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
+        }
+
+        [Test]
         public async Task UnknownConnectionPacketSendsReset ()
         {
             using var harness = new InMemoryUtpHarness ();
@@ -1510,6 +1559,19 @@ namespace MonoTorrent.Connections.Peer
             Assert.IsFalse (listener.IsRegistered (connection));
         }
 
+        [Test]
+        public void RoutedResetWithReceiveConnectionIdUnregistersConnection ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            Assert.IsTrue (listener.TryRegisterOutgoing (connection));
+
+            listener.ProcessDatagram ((IPEndPoint) connection.EndPoint, CreateResetPacket (connection.ConnectionIdReceive).AsMemory ().ToArray ());
+
+            Assert.IsFalse (listener.IsRegistered (connection));
+        }
+
         static UtpPacket CreateDataPacket (ushort sequenceNumber, string payload, ushort connectionId = 123, ushort ackNumber = 1)
         {
             var bytes = System.Text.Encoding.ASCII.GetBytes (payload);
@@ -1561,6 +1623,9 @@ namespace MonoTorrent.Connections.Peer
             await Task.Delay (delay);
             Assert.IsFalse (sendQueue.Reader.TryRead (out _));
         }
+
+        static byte SelectiveAckByte (UtpPacket packet)
+            => packet.AsMemory ().Span[UtpPacket.HeaderSize + 2];
 
         static UtpPacket CreateStatePacket (ushort connectionId, ushort sequenceNumber, ushort ackNumber, params ushort[] selectiveAcks)
         {
@@ -1615,12 +1680,12 @@ namespace MonoTorrent.Connections.Peer
             return packet;
         }
 
-        static UtpPacket CreateFinPacket (ushort sequenceNumber)
+        static UtpPacket CreateFinPacket (ushort sequenceNumber, ushort connectionId = 123)
         {
             var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
                 Type = PacketType.Fin,
                 Version = UtpPeerConnectionListener.UTP_VERSION,
-                ConnectionId = 123,
+                ConnectionId = connectionId,
                 WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
                 SequenceNumber = sequenceNumber,
                 AckNumber = 1

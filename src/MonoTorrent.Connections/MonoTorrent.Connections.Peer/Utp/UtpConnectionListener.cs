@@ -269,6 +269,11 @@ namespace MonoTorrent.Connections.Peer.Utp
                     return;
                 }
 
+                if (!conn.IsClosedOrReset && conn.IsHarmlessStalePacket (pkt)) {
+                    registration.LastActivityMicroseconds = Clock.Microseconds;
+                    return;
+                }
+
                 if (conn.IsClosedOrReset)
                     _connections.TryRemove (key, out _);
             }
