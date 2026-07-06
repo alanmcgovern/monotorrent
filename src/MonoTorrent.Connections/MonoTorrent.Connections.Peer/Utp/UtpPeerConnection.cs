@@ -97,6 +97,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly IUtpClock clock;
         readonly int maxReceiveBufferBytes;
         readonly UtpTransportSettings transportSettings;
+        CancellationTokenSource? delayedAckCancellation;
 
         ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> SendingChannel { get; }
 
@@ -387,19 +388,41 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
 
             ReceiveSequenceStatus sequenceStatus;
+            bool wasNextExpected = false;
             lock (locker) {
                 sequenceStatus = GetReceiveSequenceStatus (pkt);
-                if (sequenceStatus == ReceiveSequenceStatus.Acceptable)
+                if (sequenceStatus == ReceiveSequenceStatus.Acceptable) {
+                    wasNextExpected = pkt.SequenceNumber == unchecked((ushort) (AckNumber + 1));
                     TryBufferReceivedPacket (pkt);
+                }
             }
 
             if (sequenceStatus == ReceiveSequenceStatus.TooFarAhead)
                 return;
 
-            await DeliverAvailablePackets ();
+            var delivery = await DeliverAvailablePackets ();
 
-            // ACK duplicates too. This helps the remote side recover from lost ACKs.
-            await SendAckAsync (AckNumber);
+            if (ShouldAckImmediately (pkt, sequenceStatus, wasNextExpected))
+                await SendImmediateAckAsync ();
+            else if (delivery.AckAdvanced)
+                ScheduleDelayedAck ();
+        }
+
+        bool ShouldAckImmediately (UtpPacket pkt, ReceiveSequenceStatus sequenceStatus, bool wasNextExpected)
+        {
+            if (!transportSettings.EnableDelayedAcks)
+                return true;
+
+            if (pkt.Type == PacketType.Fin)
+                return true;
+
+            if (sequenceStatus == ReceiveSequenceStatus.OldOrDuplicate)
+                return true;
+
+            if (!wasNextExpected)
+                return true;
+
+            return HasSelectiveAckContent (AckNumber);
         }
 
         internal bool IsValidPacketForCurrentState (UtpPacket pkt)
@@ -570,26 +593,84 @@ namespace MonoTorrent.Connections.Peer.Utp
             return result;
         }
 
-        async Task DeliverAvailablePackets ()
+        async Task<(bool AckAdvanced, bool FinDelivered)> DeliverAvailablePackets ()
         {
+            bool ackAdvanced = false;
             while (true) {
                 UtpPacket pkt;
                 lock (locker) {
                     var next = unchecked((ushort) (AckNumber + 1));
                     if (!receiveBuffer.Remove (next, out pkt))
-                        return;
+                        return (ackAdvanced, false);
                     AckNumber = next;
+                    ackAdvanced = true;
                 }
 
                 if (pkt.Type == PacketType.Fin) {
                     State = ConnectionState.FinReceived;
                     ReceivedPackets.Writer.TryComplete ();
-                    return;
+                    return (ackAdvanced, true);
                 }
 
                 if (pkt.Payload.Length > 0)
                     await ReceivedPackets.Writer.WriteAsync (pkt, cts.Token);
             }
+        }
+
+        bool HasSelectiveAckContent (ushort ackNr)
+        {
+            lock (locker)
+                return receiveBuffer.Keys.Any (t => SequenceGreaterThan (t, unchecked((ushort) (ackNr + 1))));
+        }
+
+        void ScheduleDelayedAck ()
+        {
+            CancellationTokenSource? scheduled;
+            lock (locker) {
+                if (delayedAckCancellation != null || cts.IsCancellationRequested)
+                    return;
+
+                scheduled = CancellationTokenSource.CreateLinkedTokenSource (cts.Token);
+                delayedAckCancellation = scheduled;
+            }
+
+            _ = SendDelayedAckAsync (scheduled);
+        }
+
+        async Task SendDelayedAckAsync (CancellationTokenSource scheduled)
+        {
+            try {
+                await Task.Delay (transportSettings.DelayedAckDelay, scheduled.Token);
+
+                lock (locker) {
+                    if (delayedAckCancellation != scheduled)
+                        return;
+
+                    delayedAckCancellation = null;
+                }
+
+                await SendAckAsync (AckNumber);
+            } catch (OperationCanceledException) {
+            } finally {
+                scheduled.Dispose ();
+            }
+        }
+
+        void CancelDelayedAck ()
+        {
+            CancellationTokenSource? pending;
+            lock (locker) {
+                pending = delayedAckCancellation;
+                delayedAckCancellation = null;
+            }
+
+            pending?.Cancel ();
+        }
+
+        async ReusableTask SendImmediateAckAsync ()
+        {
+            CancelDelayedAck ();
+            await SendAckAsync (AckNumber);
         }
 
         async ReusableTask SendAckAsync (ushort ackNr)
@@ -693,6 +774,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             while (!buffer.IsEmpty) {
                 int payloadLen = Math.Min (buffer.Length, CurrentMtu);
                 await WaitForSendWindow (payloadLen);
+                CancelDelayedAck ();
 
                 var pktBuf = new byte[UtpPacket.HeaderSize + payloadLen];
                 var pkt = new UtpPacket (pktBuf) {
@@ -721,6 +803,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             if (IsClosedOrReset || State == ConnectionState.FinSent)
                 return;
+
+            CancelDelayedAck ();
 
             var pktBuf = new byte[UtpPacket.HeaderSize];
             var pkt = new UtpPacket (pktBuf) {
@@ -814,6 +898,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (cts.IsCancellationRequested)
                 return;
 
+            CancelDelayedAck ();
             State = finalState;
             if (finalState == ConnectionState.Reset)
                 ReceivedPackets.Writer.TryComplete ();
