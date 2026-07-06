@@ -74,6 +74,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             public bool FastRetransmitted { get; set; }
         }
 
+        sealed class ParsedExtensions
+        {
+            public List<ushort> SelectiveAcks { get; } = new ();
+            public ulong? ExtensionBits { get; set; }
+        }
+
         enum ReceiveSequenceStatus
         {
             OldOrDuplicate,
@@ -82,6 +88,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         const byte SelectiveAckExtension = 1;
+        const byte ExtensionBitsExtension = 2;
         const uint CControlTargetMicroseconds = 100_000;
         const int DelaySampleLifetimeMicroseconds = 120_000_000;
         const int DefaultMaxReceiveBufferBytes = (int) UtpPeerConnectionListener.INITIAL_WINDOW;
@@ -154,6 +161,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         uint RecentDelayMicroseconds { get; set; }
 
+        ulong PeerExtensionBits { get; set; }
+
         ushort LastAckReceived { get; set; }
 
         uint LastSentPacketMicroseconds { get; set; }
@@ -196,6 +205,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal uint RetransmitTimeoutMicrosecondsForTests => RetransmitTimeoutMicroseconds;
 
         internal uint RecentDelayMicrosecondsForTests => RecentDelayMicroseconds;
+
+        internal ulong PeerExtensionBitsForTests => PeerExtensionBits;
 
         public bool IsIncoming { get; }
         public bool CanReconnect => false;
@@ -423,6 +434,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (!IsValidPacketForCurrentState (pkt))
                 return;
 
+            if (!TryReadExtensions (pkt, out var extensions))
+                return;
+
+            if (extensions.ExtensionBits.HasValue)
+                PeerExtensionBits = extensions.ExtensionBits.Value;
+
             UpdateDelaySample (pkt);
             var wasPeerWindowZero = PeerWindowSize == 0;
             PeerWindowSize = pkt.WindowSize;
@@ -430,7 +447,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 sendWindowChanged.Release ();
             if (!wasPeerWindowZero && PeerWindowSize == 0)
                 LastZeroWindowProbeMicroseconds = clock.Microseconds;
-            ProcessAcks (pkt);
+            ProcessAcks (pkt, extensions.SelectiveAcks);
 
             if (pkt.Type == PacketType.Reset) {
                 Close (ConnectionState.Reset);
@@ -523,11 +540,10 @@ namespace MonoTorrent.Connections.Peer.Utp
             LastReceivedDelayMicroseconds = unchecked(clock.Microseconds - pkt.Timestamp);
         }
 
-        void ProcessAcks (UtpPacket pkt)
+        void ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks)
         {
             List<SentPacket> acked = new ();
             List<UtpPacket> fastRetransmits = new ();
-            var receivedSelectiveAcks = ReadSelectiveAcks (pkt);
             List<ushort> selectiveAcks = new ();
 
             lock (locker) {
@@ -665,9 +681,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        static List<ushort> ReadSelectiveAcks (UtpPacket pkt)
+        static bool TryReadExtensions (UtpPacket pkt, out ParsedExtensions extensions)
         {
-            var result = new List<ushort> ();
+            extensions = new ParsedExtensions ();
             var span = pkt.AsMemory ().Span;
             byte extension = pkt.Extension;
             int offset = UtpPacket.HeaderSize;
@@ -678,22 +694,31 @@ namespace MonoTorrent.Connections.Peer.Utp
                 offset += 2;
 
                 if (offset + length > span.Length)
-                    return result;
+                    return false;
 
                 if (extension == SelectiveAckExtension) {
                     for (int i = 0; i < length; i++) {
                         byte mask = span[offset + i];
                         for (int bit = 0; bit < 8; bit++) {
                             if ((mask & (1 << bit)) != 0)
-                                result.Add (unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit)));
+                                extensions.SelectiveAcks.Add (unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit)));
                         }
                     }
+                } else if (extension == ExtensionBitsExtension) {
+                    if (length != 8)
+                        return false;
+
+                    ulong bits = 0;
+                    for (int i = 0; i < 8; i++)
+                        bits = bits << 8 | (ulong) span[offset + i];
+                    extensions.ExtensionBits = bits;
                 }
 
                 offset += length;
                 extension = nextExtension;
             }
-            return result;
+
+            return extension == 0;
         }
 
         async Task<(bool AckAdvanced, bool FinDelivered)> DeliverAvailablePackets ()

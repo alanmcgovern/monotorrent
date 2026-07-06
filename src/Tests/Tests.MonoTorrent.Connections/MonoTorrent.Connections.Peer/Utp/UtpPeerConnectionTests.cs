@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Channels;
@@ -112,6 +113,63 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (4, bytes[UtpPacket.HeaderSize + 1]);
             Assert.AreEqual (0b_0000_0011, bytes[UtpPacket.HeaderSize + 2]);
             Assert.AreEqual (0b_0000_0001, bytes[UtpPacket.HeaderSize + 3]);
+        }
+
+        [Test]
+        public async Task UnknownExtensionIsSkippedBeforeSelectiveAck ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 3 }).WithTimeout (10_000);
+
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateStatePacketWithExtensions (123, 9, first.packet.SequenceNumber,
+                new ExtensionBlock (99, new byte[] { 1, 2, 3 }),
+                new ExtensionBlock (1, new byte[] { 0b_0000_0001, 0, 0, 0 })));
+            await Task.Delay (50);
+
+            Assert.AreEqual (second.packet.SequenceNumber, unchecked((ushort) (first.packet.SequenceNumber + 1)));
+            Assert.AreEqual (third.packet.SequenceNumber, unchecked((ushort) (first.packet.SequenceNumber + 2)));
+            Assert.AreEqual (UtpPacket.HeaderSize + 1, connection.BytesInFlightForTests);
+        }
+
+        [Test]
+        public async Task MalformedExtensionLengthDropsPacket ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateMalformedExtensionPacket (123, 9, data.packet.SequenceNumber));
+            await Task.Delay (50);
+
+            Assert.AreEqual (UtpPacket.HeaderSize + 1, connection.BytesInFlightForTests);
+            await AssertNoOutboundPacket (sendQueue);
+        }
+
+        [Test]
+        public async Task ExtensionBitsAreParsedAndIgnored ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateStatePacketWithExtensions (123, 9, data.packet.SequenceNumber,
+                new ExtensionBlock (2, new byte[] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef })));
+            await Task.Delay (50);
+
+            Assert.AreEqual (0, connection.BytesInFlightForTests);
+            Assert.AreEqual (0x0123456789abcdefUL, connection.PeerExtensionBitsForTests);
         }
 
         [Test]
@@ -1626,6 +1684,62 @@ namespace MonoTorrent.Connections.Peer
 
         static byte SelectiveAckByte (UtpPacket packet)
             => packet.AsMemory ().Span[UtpPacket.HeaderSize + 2];
+
+        readonly struct ExtensionBlock
+        {
+            public ExtensionBlock (byte type, byte[] payload)
+            {
+                Type = type;
+                Payload = payload;
+            }
+
+            public byte Type { get; }
+            public byte[] Payload { get; }
+        }
+
+        static UtpPacket CreateStatePacketWithExtensions (ushort connectionId, ushort sequenceNumber, ushort ackNumber, params ExtensionBlock[] extensions)
+        {
+            var extensionLength = extensions.Sum (t => 2 + t.Payload.Length);
+            var packet = new UtpPacket (new byte[UtpPacket.HeaderSize + extensionLength]) {
+                Type = PacketType.State,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                Extension = extensions.Length == 0 ? (byte) 0 : extensions[0].Type,
+                ConnectionId = connectionId,
+                WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
+                SequenceNumber = sequenceNumber,
+                AckNumber = ackNumber
+            };
+
+            var span = packet.AsMemory ().Span;
+            int offset = UtpPacket.HeaderSize;
+            for (int i = 0; i < extensions.Length; i++) {
+                span[offset] = i + 1 == extensions.Length ? (byte) 0 : extensions[i + 1].Type;
+                span[offset + 1] = (byte) extensions[i].Payload.Length;
+                extensions[i].Payload.CopyTo (span.Slice (offset + 2));
+                offset += 2 + extensions[i].Payload.Length;
+            }
+            packet.SetTimestamp ();
+            return packet;
+        }
+
+        static UtpPacket CreateMalformedExtensionPacket (ushort connectionId, ushort sequenceNumber, ushort ackNumber)
+        {
+            var packet = new UtpPacket (new byte[UtpPacket.HeaderSize + 3]) {
+                Type = PacketType.State,
+                Version = UtpPeerConnectionListener.UTP_VERSION,
+                Extension = 99,
+                ConnectionId = connectionId,
+                WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
+                SequenceNumber = sequenceNumber,
+                AckNumber = ackNumber
+            };
+            var span = packet.AsMemory ().Span;
+            span[UtpPacket.HeaderSize] = 0;
+            span[UtpPacket.HeaderSize + 1] = 8;
+            span[UtpPacket.HeaderSize + 2] = 1;
+            packet.SetTimestamp ();
+            return packet;
+        }
 
         static UtpPacket CreateStatePacket (ushort connectionId, ushort sequenceNumber, ushort ackNumber, params ushort[] selectiveAcks)
         {
