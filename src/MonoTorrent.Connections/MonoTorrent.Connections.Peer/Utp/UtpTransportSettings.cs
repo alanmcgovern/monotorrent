@@ -36,6 +36,24 @@ namespace MonoTorrent.Connections.Peer.Utp
         public const int DefaultInitialPacketSize = 1400;
         public const int MinimumRecoveryPacketSize = 150;
 
+        public int MaxConnectedTimeouts { get; init; } = 4;
+
+        public int MaxSynTimeouts { get; init; } = 2;
+
+        public TimeSpan KeepAliveInterval { get; init; } = TimeSpan.FromSeconds (29);
+
+        public TimeSpan ZeroWindowProbeInterval { get; init; } = TimeSpan.FromSeconds (15);
+
+        public int MaxReorderDistance { get; init; } = 1024;
+
+        public TimeSpan DelayedAckDelay { get; init; } = TimeSpan.FromMilliseconds (50);
+
+        public bool EnableDelayedAcks { get; init; } = true;
+
+        public bool EnablePathMtuDiscovery { get; init; } = true;
+
+        public TimeSpan MtuProbeInterval { get; init; } = TimeSpan.FromMinutes (30);
+
         public int InitialPacketSize { get; init; } = DefaultInitialPacketSize;
 
         public static UtpTransportSettings Create (UtpTransportSettings? settings)
@@ -44,6 +62,20 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             if (settings.InitialPacketSize < MinimumRecoveryPacketSize)
                 throw new ArgumentOutOfRangeException (nameof (settings), $"The initial uTP packet size must be at least {MinimumRecoveryPacketSize} bytes.");
+            if (settings.MaxConnectedTimeouts < 1)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The maximum connected timeout count must be at least 1.");
+            if (settings.MaxSynTimeouts < 1)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The maximum SYN timeout count must be at least 1.");
+            if (settings.MaxReorderDistance < 32)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The maximum reorder distance must be at least 32 packets.");
+            if (settings.KeepAliveInterval <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The keep-alive interval must be positive.");
+            if (settings.ZeroWindowProbeInterval <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The zero window probe interval must be positive.");
+            if (settings.DelayedAckDelay <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The delayed ACK delay must be positive.");
+            if (settings.MtuProbeInterval <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The MTU probe interval must be positive.");
 
             return settings;
         }

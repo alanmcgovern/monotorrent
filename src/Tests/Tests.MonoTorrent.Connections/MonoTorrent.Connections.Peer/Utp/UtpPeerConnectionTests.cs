@@ -385,6 +385,40 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public void TransportSettingsUseLibutpCompatibleDefaults ()
+        {
+            var settings = UtpTransportSettings.Create (null);
+
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize, settings.InitialPacketSize);
+            Assert.AreEqual (150, UtpTransportSettings.MinimumRecoveryPacketSize);
+            Assert.AreEqual (4, settings.MaxConnectedTimeouts);
+            Assert.AreEqual (2, settings.MaxSynTimeouts);
+            Assert.AreEqual (TimeSpan.FromSeconds (29), settings.KeepAliveInterval);
+            Assert.AreEqual (TimeSpan.FromSeconds (15), settings.ZeroWindowProbeInterval);
+            Assert.AreEqual (1024, settings.MaxReorderDistance);
+            Assert.AreEqual (TimeSpan.FromMilliseconds (50), settings.DelayedAckDelay);
+            Assert.IsTrue (settings.EnableDelayedAcks);
+            Assert.IsTrue (settings.EnablePathMtuDiscovery);
+            Assert.AreEqual (TimeSpan.FromMinutes (30), settings.MtuProbeInterval);
+        }
+
+        [Test]
+        public void TransportSettingsValidateTuningProperties ()
+        {
+            AssertInvalidSetting (new UtpTransportSettings { MaxConnectedTimeouts = 0 });
+            AssertInvalidSetting (new UtpTransportSettings { MaxSynTimeouts = 0 });
+            AssertInvalidSetting (new UtpTransportSettings { MaxReorderDistance = 31 });
+            AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.Zero });
+            AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.FromTicks (-1) });
+            AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.Zero });
+            AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.FromTicks (-1) });
+            AssertInvalidSetting (new UtpTransportSettings { DelayedAckDelay = TimeSpan.Zero });
+            AssertInvalidSetting (new UtpTransportSettings { DelayedAckDelay = TimeSpan.FromTicks (-1) });
+            AssertInvalidSetting (new UtpTransportSettings { MtuProbeInterval = TimeSpan.Zero });
+            AssertInvalidSetting (new UtpTransportSettings { MtuProbeInterval = TimeSpan.FromTicks (-1) });
+        }
+
+        [Test]
         public async Task LedbatGrowsWindowWhenDelayIsBelowTarget ()
         {
             var clock = new ManualClock ();
@@ -956,6 +990,12 @@ namespace MonoTorrent.Connections.Peer
             for (int i = 0; i < result.Length; i++)
                 result[i] = (byte) (i % 251);
             return result;
+        }
+
+        static void AssertInvalidSetting (UtpTransportSettings settings)
+        {
+            var ex = Assert.Throws<ArgumentOutOfRangeException> (() => UtpTransportSettings.Create (settings));
+            Assert.AreEqual ("settings", ex!.ParamName);
         }
 
         static async Task<byte[]> ReceiveExactlyAsync (UtpPeerConnection connection, int length)
