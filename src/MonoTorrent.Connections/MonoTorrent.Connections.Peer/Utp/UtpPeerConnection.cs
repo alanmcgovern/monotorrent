@@ -401,7 +401,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             List<SentPacket> acked = new ();
             List<UtpPacket> fastRetransmits = new ();
-            var selectiveAcks = ReadSelectiveAcks (pkt);
+            var receivedSelectiveAcks = ReadSelectiveAcks (pkt);
+            List<ushort> selectiveAcks = new ();
 
             lock (locker) {
                 bool ackAdvanced = SequenceGreaterThan (pkt.AckNumber, LastAckReceived);
@@ -416,6 +417,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                     }
                 }
 
+                selectiveAcks = receivedSelectiveAcks.Where (sentPackets.ContainsKey).ToList ();
+
                 foreach (var seq in selectiveAcks) {
                     if (sentPackets.Remove (seq, out var sent)) {
                         acked.Add (sent);
@@ -426,9 +429,11 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (acked.Count > 0)
                     ConsecutiveTimeouts = 0;
 
-                if ((!ackAdvanced && acked.Count == 0) || selectiveAcks.Count > 0) {
+                bool pureDuplicateAck = pkt.Type == PacketType.State && receivedSelectiveAcks.Count == 0 && !ackAdvanced && acked.Count == 0;
+                bool sackEvidence = selectiveAcks.Count > 0;
+                if (pureDuplicateAck || sackEvidence) {
                     foreach (var sent in sentPackets.Values) {
-                        if (!IsPacketIndicatedMissing (sent.Packet.SequenceNumber, pkt.AckNumber, selectiveAcks))
+                        if (!IsPacketIndicatedMissing (sent.Packet.SequenceNumber, pkt.AckNumber, selectiveAcks, pureDuplicateAck))
                             continue;
 
                         sent.DuplicateAckIndications++;
@@ -456,13 +461,13 @@ namespace MonoTorrent.Connections.Peer.Utp
                 _ = RetransmitAsync (packet);
         }
 
-        static bool IsPacketIndicatedMissing (ushort sequenceNumber, ushort ackNumber, List<ushort> selectiveAcks)
+        static bool IsPacketIndicatedMissing (ushort sequenceNumber, ushort ackNumber, List<ushort> selectiveAcks, bool pureDuplicateAck)
         {
             if (SequenceLessThanOrEqual (sequenceNumber, ackNumber))
                 return false;
 
             if (selectiveAcks.Count == 0)
-                return sequenceNumber == unchecked((ushort) (ackNumber + 1));
+                return pureDuplicateAck && sequenceNumber == unchecked((ushort) (ackNumber + 1));
 
             return selectiveAcks.Any (sack => SequenceGreaterThan (sack, sequenceNumber));
         }
