@@ -144,6 +144,71 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task DuplicateDataPacketSendsAck ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            connection.Receive (CreateDataPacket (2, "a"));
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateDataPacket (2, "a"));
+            var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.State, ack.packet.Type);
+            Assert.AreEqual (2, ack.packet.AckNumber);
+        }
+
+        [Test]
+        public async Task StaleDataPacketSendsAck ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 10);
+
+            connection.Receive (CreateDataPacket (9, "a"));
+            var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.State, ack.packet.Type);
+            Assert.AreEqual (10, ack.packet.AckNumber);
+        }
+
+        [Test]
+        public async Task FarFutureDataPacketIsDroppedWithoutAck ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                transportSettings: new UtpTransportSettings { MaxReorderDistance = 32 });
+
+            connection.Receive (CreateDataPacket (35, "a"));
+
+            await AssertNoOutboundPacket (sendQueue);
+        }
+
+        [Test]
+        public async Task FarFutureFinPacketIsDroppedWithoutAck ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                transportSettings: new UtpTransportSettings { MaxReorderDistance = 32 });
+
+            connection.Receive (CreateFinPacket (35));
+
+            await AssertNoOutboundPacket (sendQueue);
+        }
+
+        [Test]
         public async Task FinWaitsForPriorDataBeforeEof ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
@@ -1156,6 +1221,12 @@ namespace MonoTorrent.Connections.Peer
                 received += read;
             }
             return buffer;
+        }
+
+        static async Task AssertNoOutboundPacket (Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> sendQueue)
+        {
+            await Task.Delay (100);
+            Assert.IsFalse (sendQueue.Reader.TryRead (out _));
         }
 
         static UtpPacket CreateStatePacket (ushort connectionId, ushort sequenceNumber, ushort ackNumber, params ushort[] selectiveAcks)

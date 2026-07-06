@@ -72,6 +72,13 @@ namespace MonoTorrent.Connections.Peer.Utp
             public bool FastRetransmitted { get; set; }
         }
 
+        enum ReceiveSequenceStatus
+        {
+            OldOrDuplicate,
+            Acceptable,
+            TooFarAhead
+        }
+
         const byte SelectiveAckExtension = 1;
         const uint CControlTargetMicroseconds = 100_000;
         const int DelaySampleLifetimeMicroseconds = 120_000_000;
@@ -305,9 +312,6 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         bool TryBufferReceivedPacket (UtpPacket packet)
         {
-            if (!SequenceGreaterThan (packet.SequenceNumber, AckNumber))
-                return false;
-
             if (receiveBuffer.ContainsKey (packet.SequenceNumber))
                 return false;
 
@@ -316,6 +320,21 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             receiveBuffer[packet.SequenceNumber] = packet;
             return true;
+        }
+
+        ReceiveSequenceStatus GetReceiveSequenceStatus (UtpPacket packet)
+        {
+            if (!SequenceGreaterThan (packet.SequenceNumber, AckNumber))
+                return ReceiveSequenceStatus.OldOrDuplicate;
+
+            if (receiveBuffer.ContainsKey (packet.SequenceNumber))
+                return ReceiveSequenceStatus.OldOrDuplicate;
+
+            var nextExpected = unchecked((ushort) (AckNumber + 1));
+            if (SequenceDistance (packet.SequenceNumber, nextExpected) > transportSettings.MaxReorderDistance)
+                return ReceiveSequenceStatus.TooFarAhead;
+
+            return ReceiveSequenceStatus.Acceptable;
         }
 
         internal void PrepareForSend (ref UtpPacket packet)
@@ -367,9 +386,15 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (pkt.Type != PacketType.Data && pkt.Type != PacketType.Fin)
                 return;
 
+            ReceiveSequenceStatus sequenceStatus;
             lock (locker) {
-                TryBufferReceivedPacket (pkt);
+                sequenceStatus = GetReceiveSequenceStatus (pkt);
+                if (sequenceStatus == ReceiveSequenceStatus.Acceptable)
+                    TryBufferReceivedPacket (pkt);
             }
+
+            if (sequenceStatus == ReceiveSequenceStatus.TooFarAhead)
+                return;
 
             await DeliverAvailablePackets ();
 
