@@ -1617,6 +1617,67 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task RepeatedUnknownDataPacketSendsOneReset ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+            var packet = CreateDataPacket (2, "x");
+
+            harness.Deliver (packet);
+            harness.Deliver (packet);
+
+            var reset = await harness.ReadOutbound ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+            Assert.IsNull (reset.connection);
+            await AssertNoOutboundPacket (harness.Listener.SendQueue, TimeSpan.FromMilliseconds (100));
+        }
+
+        [Test]
+        public async Task UnknownDataResetThrottleExpires ()
+        {
+            var clock = new ManualClock ();
+            using var harness = new InMemoryUtpHarness (clock);
+            var packet = CreateDataPacket (2, "x");
+
+            harness.Deliver (packet);
+            var reset = await harness.ReadOutbound ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+
+            harness.Deliver (packet);
+            await AssertNoOutboundPacket (harness.Listener.SendQueue, TimeSpan.FromMilliseconds (100));
+
+            clock.Microseconds = 10_000_000;
+            harness.Deliver (packet);
+            reset = await harness.ReadOutbound ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+        }
+
+        [Test]
+        public async Task UnknownResetPacketDoesNotSendReset ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+
+            harness.Deliver (CreateResetPacket (123));
+
+            await AssertNoOutboundPacket (harness.Listener.SendQueue, TimeSpan.FromMilliseconds (100));
+        }
+
+        [Test]
+        public async Task UnknownPacketResetThrottleSuppressesWhenFull ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+
+            for (int i = 0; i < UtpPeerConnectionListener.RecentResetCapacityForTests + 1; i++)
+                harness.Deliver (CreateDataPacket ((ushort) (2 + i), "x"));
+
+            for (int i = 0; i < UtpPeerConnectionListener.RecentResetCapacityForTests; i++) {
+                var reset = await harness.ReadOutbound ().WithTimeout (5000);
+                Assert.AreEqual (PacketType.Reset, reset.packet.Type);
+            }
+
+            await AssertNoOutboundPacket (harness.Listener.SendQueue, TimeSpan.FromMilliseconds (100));
+        }
+
+        [Test]
         public async Task SynCollidingWithOutgoingConnectionSendsReset ()
         {
             using var harness = new InMemoryUtpHarness ();

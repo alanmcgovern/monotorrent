@@ -51,10 +51,39 @@ namespace MonoTorrent.Connections.Peer.Utp
             public uint LastActivityMicroseconds { get; set; }
         }
 
+        readonly struct RecentResetKey : IEquatable<RecentResetKey>
+        {
+            public RecentResetKey (IPEndPoint remote, ushort connectionId, ushort sequenceNumber)
+            {
+                Remote = remote;
+                ConnectionId = connectionId;
+                SequenceNumber = sequenceNumber;
+            }
+
+            public IPEndPoint Remote { get; }
+            public ushort ConnectionId { get; }
+            public ushort SequenceNumber { get; }
+
+            public bool Equals (RecentResetKey other)
+                => EqualityComparer<IPEndPoint>.Default.Equals (Remote, other.Remote)
+                    && ConnectionId == other.ConnectionId
+                    && SequenceNumber == other.SequenceNumber;
+
+            public override bool Equals (object? obj)
+                => obj is RecentResetKey other && Equals (other);
+
+            public override int GetHashCode ()
+                => HashCode.Combine (Remote, ConnectionId, SequenceNumber);
+        }
+
         static readonly ILogger Logger = LoggerFactory.Create (nameof (UtpPeerConnectionListener));
         static readonly TimeSpan StaleConnectionTimeout = TimeSpan.FromMinutes (2);
+        const int MaxRecentResetEntries = 256;
+        const uint RecentResetLifetimeMicroseconds = 10_000_000;
 
         readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), RegisteredConnection> _connections = new ();
+        readonly Dictionary<RecentResetKey, uint> recentResets = new ();
+        readonly object recentResetsLocker = new ();
         readonly object backgroundTasksLocker = new ();
         readonly List<Task> backgroundTasks = new ();
 
@@ -278,7 +307,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     _connections.TryRemove (key, out _);
             }
 
-            SendReset (remote, pkt);
+            SendResetForUnknownNonSyn (remote, pkt);
         }
 
         (EndPoint remote, ushort connectionIdReceive) FindResetKey (IPEndPoint remote, ushort connectionId)
@@ -307,6 +336,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal bool IsRegistered (UtpPeerConnection connection)
             => _connections.ContainsKey ((connection.EndPoint, connection.ConnectionIdReceive));
 
+        internal static int RecentResetCapacityForTests => MaxRecentResetEntries;
+
         internal int RegisteredConnectionCount => _connections.Count;
 
         internal void PruneStaleConnections ()
@@ -322,6 +353,44 @@ namespace MonoTorrent.Connections.Peer.Utp
                     }
                 }
             }
+        }
+
+        bool ShouldSendResetForUnknownNonSyn (IPEndPoint remote, UtpPacket received)
+        {
+            if (received.Type == PacketType.Reset || received.Type == PacketType.Syn)
+                return false;
+
+            var now = Clock.Microseconds;
+            var key = new RecentResetKey (remote, received.ConnectionId, received.SequenceNumber);
+            lock (recentResetsLocker) {
+                List<RecentResetKey>? expired = null;
+                foreach (var entry in recentResets) {
+                    if (unchecked(now - entry.Value) >= RecentResetLifetimeMicroseconds)
+                        (expired ??= new List<RecentResetKey> ()).Add (entry.Key);
+                }
+
+                if (expired != null) {
+                    foreach (var expiredKey in expired)
+                        recentResets.Remove (expiredKey);
+                }
+
+                if (recentResets.ContainsKey (key))
+                    return false;
+
+                if (recentResets.Count >= MaxRecentResetEntries)
+                    return false;
+
+                recentResets[key] = now;
+                return true;
+            }
+        }
+
+        void SendResetForUnknownNonSyn (IPEndPoint remote, UtpPacket received)
+        {
+            if (!ShouldSendResetForUnknownNonSyn (remote, received))
+                return;
+
+            SendReset (remote, received);
         }
 
         void SendReset (IPEndPoint remote, UtpPacket received)
