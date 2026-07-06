@@ -150,6 +150,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         uint RttVarianceMicroseconds { get; set; }
 
+        uint RecentDelayMicroseconds { get; set; }
+
         ushort LastAckReceived { get; set; }
 
         uint LastSentPacketMicroseconds { get; set; }
@@ -188,6 +190,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal uint MaxWindowForTests => MaxWindow;
 
         internal uint RetransmitTimeoutMicrosecondsForTests => RetransmitTimeoutMicroseconds;
+
+        internal uint RecentDelayMicrosecondsForTests => RecentDelayMicroseconds;
 
         public bool IsIncoming { get; }
         public bool CanReconnect => false;
@@ -548,11 +552,15 @@ namespace MonoTorrent.Connections.Peer.Utp
                 }
             }
 
-            foreach (var sent in acked)
-                UpdateRtt (sent);
+            uint minAckedRttMicroseconds = 0;
+            foreach (var sent in acked) {
+                var packetRtt = UpdateRtt (sent);
+                if (packetRtt != 0 && (minAckedRttMicroseconds == 0 || packetRtt < minAckedRttMicroseconds))
+                    minAckedRttMicroseconds = packetRtt;
+            }
 
             ProcessMtuProbeAcks (acked);
-            ApplyCongestionControl (acked.Sum (t => t.PayloadBytes), pkt.TimestampDiff);
+            ApplyCongestionControl (acked.Sum (t => t.PayloadBytes), pkt.TimestampDiff, minAckedRttMicroseconds);
 
             if (acked.Any (t => t.Packet.Type == PacketType.Fin) && State == ConnectionState.FinSent)
                 Close (ConnectionState.Closed);
@@ -592,14 +600,14 @@ namespace MonoTorrent.Connections.Peer.Utp
             return selectiveAcks.Any (sack => SequenceGreaterThan (sack, sequenceNumber));
         }
 
-        void UpdateRtt (SentPacket sent)
+        uint UpdateRtt (SentPacket sent)
         {
             if (sent.Transmissions != 1)
-                return;
+                return 0;
 
             var packetRtt = unchecked(clock.Microseconds - sent.SentAtMicroseconds);
             if (packetRtt == 0)
-                return;
+                return 0;
 
             if (RttMicroseconds == 0) {
                 RttMicroseconds = packetRtt;
@@ -611,21 +619,24 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
 
             RetransmitTimeoutMicroseconds = Math.Max (MinimumRetransmitTimeoutMicroseconds, RttMicroseconds + RttVarianceMicroseconds * 4);
+            return packetRtt;
         }
 
-        void ApplyCongestionControl (int bytesNewlyAcked, uint delayMicroseconds)
+        void ApplyCongestionControl (int bytesNewlyAcked, uint delayMicroseconds, uint minAckedRttMicroseconds)
         {
-            if (bytesNewlyAcked == 0)
+            if (bytesNewlyAcked == 0 || delayMicroseconds == 0 || minAckedRttMicroseconds == 0)
                 return;
 
             lock (locker) {
                 var now = clock.Microseconds;
-                delaySamples.Enqueue ((now, delayMicroseconds));
+                var clampedDelay = Math.Min (delayMicroseconds, minAckedRttMicroseconds);
+                delaySamples.Enqueue ((now, clampedDelay));
                 while (delaySamples.Count > 0 && unchecked(now - delaySamples.Peek ().ReceivedAtMicroseconds) > DelaySampleLifetimeMicroseconds)
                     delaySamples.Dequeue ();
 
+                RecentDelayMicroseconds = (uint) delaySamples.Average (t => t.DelayMicroseconds);
                 uint baseDelay = delaySamples.Min (t => t.DelayMicroseconds);
-                uint ourDelay = delayMicroseconds > baseDelay ? delayMicroseconds - baseDelay : 0;
+                uint ourDelay = RecentDelayMicroseconds > baseDelay ? RecentDelayMicroseconds - baseDelay : 0;
                 double offTarget = (long) CControlTargetMicroseconds - ourDelay;
                 double delayFactor = offTarget / CControlTargetMicroseconds;
                 double windowFactor = Math.Min (1, bytesNewlyAcked / Math.Max (1.0, MaxWindow));
@@ -914,8 +925,9 @@ namespace MonoTorrent.Connections.Peer.Utp
         async Task WaitForSendWindow (int payloadLen)
         {
             while (!cts.IsCancellationRequested) {
+                var packetCost = payloadLen + UtpPacket.HeaderSize;
                 var allowed = Math.Min (MaxWindow, PeerWindowSize);
-                if (PeerWindowSize != 0 && (CurrentWindow + payloadLen + UtpPacket.HeaderSize <= allowed || CurrentWindow == 0))
+                if (PeerWindowSize != 0 && (CurrentWindow + packetCost <= allowed || CurrentWindow == 0 && packetCost <= PeerWindowSize))
                     return;
 
                 if (PeerWindowSize == 0 && CanSendZeroWindowProbe ())
@@ -957,7 +969,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                             HandleMtuProbeTimeout (timedOut!);
                         } else if (timedOut != null) {
                             CurrentMtu = UtpTransportSettings.MinimumRecoveryPacketSize;
-                            MaxWindow = UtpTransportSettings.MinimumRecoveryPacketSize;
+                            MaxWindow = (uint) (UtpTransportSettings.MinimumRecoveryPacketSize + UtpPacket.HeaderSize);
                             ConsecutiveTimeouts++;
                             if (ConsecutiveTimeouts < MaxConsecutiveTimeouts)
                                 RetransmitTimeoutMicroseconds = Math.Min (
