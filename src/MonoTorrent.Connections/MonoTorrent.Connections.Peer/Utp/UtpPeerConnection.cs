@@ -56,16 +56,18 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         sealed class SentPacket
         {
-            public SentPacket (UtpPacket packet, int payloadBytes, uint sentAtMicroseconds)
+            public SentPacket (UtpPacket packet, int payloadBytes, uint sentAtMicroseconds, bool isMtuProbe)
             {
                 Packet = packet;
                 PayloadBytes = payloadBytes;
                 SentAtMicroseconds = sentAtMicroseconds;
                 Transmissions = 1;
+                IsMtuProbe = isMtuProbe;
             }
 
             public UtpPacket Packet { get; }
             public int PayloadBytes { get; }
+            public bool IsMtuProbe { get; }
             public uint SentAtMicroseconds { get; set; }
             public int Transmissions { get; set; }
             public int DuplicateAckIndications { get; set; }
@@ -86,6 +88,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         const uint InitialRetransmitTimeoutMicroseconds = 1_000_000;
         const uint MinimumRetransmitTimeoutMicroseconds = 500_000;
         const uint MaximumRetransmitTimeoutMicroseconds = 60_000_000;
+        const int MtuConvergedThreshold = 16;
 
         readonly object locker = new ();
         readonly Dictionary<ushort, SentPacket> sentPackets = new ();
@@ -131,6 +134,16 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         int CurrentMtu { get; set; }
 
+        int MtuFloor { get; set; }
+
+        int MtuCeiling { get; set; }
+
+        ushort? MtuProbeSequence { get; set; }
+
+        int MtuProbeSize { get; set; }
+
+        uint NextMtuProbeAt { get; set; }
+
         uint RetransmitTimeoutMicroseconds { get; set; } = InitialRetransmitTimeoutMicroseconds;
 
         uint RttMicroseconds { get; set; }
@@ -158,6 +171,19 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal int BytesInFlightForTests => CurrentWindow;
 
         internal int CurrentMtuForTests => CurrentMtu;
+
+        internal int MtuFloorForTests => MtuFloor;
+
+        internal int MtuCeilingForTests => MtuCeiling;
+
+        internal ushort? MtuProbeSequenceForTests => MtuProbeSequence;
+
+        internal int MtuProbeSizeForTests => MtuProbeSize;
+
+        internal uint NextMtuProbeAtForTests {
+            get => NextMtuProbeAt;
+            set => NextMtuProbeAt = value;
+        }
 
         internal uint MaxWindowForTests => MaxWindow;
 
@@ -195,6 +221,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             AckNumber = initialAckNumber;
             LastAckReceived = unchecked((ushort) (InitialSequenceNumber - 1));
             CurrentMtu = settings.InitialPacketSize;
+            MtuFloor = CurrentMtu;
+            MtuCeiling = Math.Max (CurrentMtu, GetDefaultMtuCeiling (remote.AddressFamily));
+            NextMtuProbeAt = unchecked(clock.Microseconds + (uint) settings.MtuProbeInterval.TotalMicroseconds);
             State = ConnectionState.SynReceived;
             retransmitTask = RetransmitLoopAsync ();
         }
@@ -282,6 +311,13 @@ namespace MonoTorrent.Connections.Peer.Utp
         static ushort GenerateInitialSequenceNumber ()
             => (ushort) RandomNumberGenerator.GetInt32 (0, ushort.MaxValue + 1);
 
+        static int GetDefaultMtuCeiling (AddressFamily addressFamily)
+            => addressFamily switch {
+                AddressFamily.InterNetwork => 1452,
+                AddressFamily.InterNetworkV6 => 1432,
+                _ => UtpTransportSettings.DefaultInitialPacketSize
+            };
+
         ushort NextSequenceNumber ()
         {
             var result = SequenceNumber++;
@@ -291,7 +327,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         ushort StateSequenceNumber => LastSentSequenceNumber == 0 ? SequenceNumber : LastSentSequenceNumber;
 
-        void RegisterSent (UtpPacket packet, int payloadBytes)
+        void RegisterSent (UtpPacket packet, int payloadBytes, bool isMtuProbe = false)
         {
             if (packet.Type != PacketType.Syn && packet.Type != PacketType.Data && packet.Type != PacketType.Fin)
                 return;
@@ -300,8 +336,13 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (sentPackets.TryGetValue (packet.SequenceNumber, out var existing))
                     BytesInFlight -= PacketSendCost (existing);
 
-                sentPackets[packet.SequenceNumber] = new SentPacket (packet, payloadBytes, clock.Microseconds);
+                sentPackets[packet.SequenceNumber] = new SentPacket (packet, payloadBytes, clock.Microseconds, isMtuProbe);
                 BytesInFlight += PacketSendCost (sentPackets[packet.SequenceNumber]);
+
+                if (isMtuProbe) {
+                    MtuProbeSequence = packet.SequenceNumber;
+                    MtuProbeSize = payloadBytes;
+                }
             }
         }
 
@@ -510,6 +551,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             foreach (var sent in acked)
                 UpdateRtt (sent);
 
+            ProcessMtuProbeAcks (acked);
             ApplyCongestionControl (acked.Sum (t => t.PayloadBytes), pkt.TimestampDiff);
 
             if (acked.Any (t => t.Packet.Type == PacketType.Fin) && State == ConnectionState.FinSent)
@@ -520,6 +562,23 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             foreach (var packet in fastRetransmits)
                 _ = RetransmitAsync (packet);
+        }
+
+        void ProcessMtuProbeAcks (List<SentPacket> acked)
+        {
+            foreach (var sent in acked) {
+                if (!sent.IsMtuProbe || sent.Packet.SequenceNumber != MtuProbeSequence || sent.Transmissions != 1)
+                    continue;
+
+                MtuFloor = Math.Max (MtuFloor, sent.PayloadBytes);
+                MtuProbeSequence = null;
+                MtuProbeSize = 0;
+                CurrentMtu = MtuFloor;
+                if (MtuCeiling - MtuFloor <= MtuConvergedThreshold)
+                    NextMtuProbeAt = unchecked(clock.Microseconds + (uint) transportSettings.MtuProbeInterval.TotalMicroseconds);
+                else
+                    NextMtuProbeAt = clock.Microseconds;
+            }
         }
 
         static bool IsPacketIndicatedMissing (ushort sequenceNumber, ushort ackNumber, List<ushort> selectiveAcks, bool pureDuplicateAck)
@@ -788,7 +847,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             int totalSent = 0;
 
             while (!buffer.IsEmpty) {
-                int payloadLen = Math.Min (buffer.Length, CurrentMtu);
+                var (payloadLen, isMtuProbe) = SelectPayloadSize (buffer.Length);
                 await WaitForSendWindow (payloadLen);
                 CancelDelayedAck ();
 
@@ -805,7 +864,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                 buffer.Span.Slice (0, payloadLen).CopyTo (pkt.Payload);
 
-                RegisterSent (pkt, payloadLen);
+                RegisterSent (pkt, payloadLen, isMtuProbe);
                 await SendPacketAsync (pkt);
 
                 buffer = buffer.Slice (payloadLen);
@@ -813,6 +872,20 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
 
             return totalSent;
+        }
+
+        (int PayloadLength, bool IsMtuProbe) SelectPayloadSize (int remainingBytes)
+        {
+            if (!transportSettings.EnablePathMtuDiscovery || MtuProbeSequence != null || MtuCeiling - MtuFloor <= MtuConvergedThreshold)
+                return (Math.Min (remainingBytes, CurrentMtu), false);
+
+            if (unchecked(clock.Microseconds - NextMtuProbeAt) < 0x8000_0000u) {
+                var probeSize = MtuFloor + (MtuCeiling - MtuFloor + 1) / 2;
+                if (remainingBytes >= probeSize)
+                    return (probeSize, true);
+            }
+
+            return (Math.Min (remainingBytes, CurrentMtu), false);
         }
 
         internal async ReusableTask SendFinAsync ()
@@ -870,6 +943,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     await Task.Delay (50, cts.Token);
 
                     SentPacket? timedOut = null;
+                    bool mtuProbeOnlyTimedOut = false;
                     lock (locker) {
                         foreach (var packet in sentPackets.Values.OrderBy (t => t.SentAtMicroseconds)) {
                             if (unchecked(clock.Microseconds - packet.SentAtMicroseconds) >= RetransmitTimeoutMicroseconds) {
@@ -878,7 +952,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                             }
                         }
 
-                        if (timedOut != null) {
+                        mtuProbeOnlyTimedOut = timedOut?.IsMtuProbe == true && timedOut.Packet.SequenceNumber == MtuProbeSequence && sentPackets.Count == 1;
+                        if (mtuProbeOnlyTimedOut) {
+                            HandleMtuProbeTimeout (timedOut!);
+                        } else if (timedOut != null) {
                             CurrentMtu = UtpTransportSettings.MinimumRecoveryPacketSize;
                             MaxWindow = UtpTransportSettings.MinimumRecoveryPacketSize;
                             ConsecutiveTimeouts++;
@@ -901,6 +978,22 @@ namespace MonoTorrent.Connections.Peer.Utp
                 }
             } catch (OperationCanceledException) {
             }
+        }
+
+        void HandleMtuProbeTimeout (SentPacket timedOut)
+        {
+            if (timedOut.Packet.SequenceNumber != MtuProbeSequence)
+                return;
+
+            MtuCeiling = Math.Max (MtuFloor, timedOut.PayloadBytes - 1);
+            MtuProbeSequence = null;
+            MtuProbeSize = 0;
+            CurrentMtu = MtuFloor;
+
+            if (MtuCeiling - MtuFloor <= MtuConvergedThreshold)
+                NextMtuProbeAt = unchecked(clock.Microseconds + (uint) transportSettings.MtuProbeInterval.TotalMicroseconds);
+            else
+                NextMtuProbeAt = clock.Microseconds;
         }
 
         bool ShouldSendKeepAlive ()
