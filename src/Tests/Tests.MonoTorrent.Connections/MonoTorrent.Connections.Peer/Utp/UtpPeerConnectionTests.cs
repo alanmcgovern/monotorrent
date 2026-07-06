@@ -483,6 +483,64 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task IdleConnectedConnectionSendsKeepAliveAckForPreviousSequence ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                7,
+                clock,
+                transportSettings: new UtpTransportSettings { KeepAliveInterval = TimeSpan.FromMilliseconds (100) });
+
+            clock.Microseconds = 1;
+            await connection.SendSynAck (7);
+            var synAck = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 100_001;
+            var keepAlive = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (PacketType.State, keepAlive.packet.Type);
+            Assert.AreEqual (synAck.packet.SequenceNumber, keepAlive.packet.SequenceNumber);
+            Assert.AreEqual (6, keepAlive.packet.AckNumber);
+            Assert.AreEqual (0, keepAlive.packet.Payload.Length);
+        }
+
+        [Test]
+        public async Task ZeroWindowPeerAllowsProbeAfterInterval ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                transportSettings: new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.FromMilliseconds (100) });
+
+            var zeroWindow = CreateStatePacket (123, sequenceNumber: 9, ackNumber: 0);
+            zeroWindow.WindowSize = 0;
+            connection.Receive (zeroWindow);
+            await Task.Delay (50);
+
+            var sendTask = connection.SendAsync (new byte[] { 1 }).AsTask ();
+            await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (50));
+            Assert.IsFalse (sendTask.IsCompleted);
+
+            clock.Microseconds = 100_000;
+            var probe = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (1, await sendTask.WithTimeout (5000));
+            Assert.AreEqual (PacketType.Data, probe.packet.Type);
+            Assert.AreEqual (1, probe.packet.Payload.Length);
+        }
+
+        [Test]
         public async Task SynTimeoutFailureCompletesConnectFalse ()
         {
             var clock = new ManualClock ();

@@ -139,6 +139,12 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         ushort LastAckReceived { get; set; }
 
+        uint LastSentPacketMicroseconds { get; set; }
+
+        bool HasSentPacket { get; set; }
+
+        uint LastZeroWindowProbeMicroseconds { get; set; }
+
         int ConsecutiveTimeouts { get; set; }
 
         int BytesInFlight { get; set; }
@@ -303,6 +309,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             packet.WindowSize = AdvertisedReceiveWindow;
             await SendingChannel.WriteAsync ((packet, this, EndPoint), cts.Token);
+            LastSentPacketMicroseconds = clock.Microseconds;
+            HasSentPacket = true;
         }
 
         static int PacketBufferCost (UtpPacket packet)
@@ -364,7 +372,12 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
 
             UpdateDelaySample (pkt);
+            var wasPeerWindowZero = PeerWindowSize == 0;
             PeerWindowSize = pkt.WindowSize;
+            if (wasPeerWindowZero && PeerWindowSize > 0)
+                sendWindowChanged.Release ();
+            if (!wasPeerWindowZero && PeerWindowSize == 0)
+                LastZeroWindowProbeMicroseconds = clock.Microseconds;
             ProcessAcks (pkt);
 
             if (pkt.Type == PacketType.Reset) {
@@ -690,6 +703,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             await SendPacketAsync (pkt);
         }
 
+        async Task SendKeepAliveAsync ()
+            => await SendAckAsync (unchecked((ushort) (AckNumber - 1)));
+
         byte[] CreateSelectiveAckExtension (ushort ackNr)
         {
             ushort[] buffered;
@@ -826,12 +842,25 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             while (!cts.IsCancellationRequested) {
                 var allowed = Math.Min (MaxWindow, PeerWindowSize);
-                if (CurrentWindow + payloadLen + UtpPacket.HeaderSize <= allowed || CurrentWindow == 0)
+                if (PeerWindowSize != 0 && (CurrentWindow + payloadLen + UtpPacket.HeaderSize <= allowed || CurrentWindow == 0))
+                    return;
+
+                if (PeerWindowSize == 0 && CanSendZeroWindowProbe ())
                     return;
 
                 await sendWindowChanged.WaitAsync (TimeSpan.FromMilliseconds (100), cts.Token);
             }
             cts.Token.ThrowIfCancellationRequested ();
+        }
+
+        bool CanSendZeroWindowProbe ()
+        {
+            var now = clock.Microseconds;
+            if (unchecked(now - LastZeroWindowProbeMicroseconds) < (uint) transportSettings.ZeroWindowProbeInterval.TotalMicroseconds)
+                return false;
+
+            LastZeroWindowProbeMicroseconds = now;
+            return true;
         }
 
         async Task RetransmitLoopAsync ()
@@ -867,9 +896,25 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                     if (timedOut != null)
                         await RetransmitAsync (timedOut.Packet);
+                    else if (ShouldSendKeepAlive ())
+                        await SendKeepAliveAsync ();
                 }
             } catch (OperationCanceledException) {
             }
+        }
+
+        bool ShouldSendKeepAlive ()
+        {
+            if (State != ConnectionState.Connected)
+                return false;
+
+            if (!HasSentPacket)
+                return false;
+
+            if (CurrentWindow != 0)
+                return false;
+
+            return unchecked(clock.Microseconds - LastSentPacketMicroseconds) >= (uint) transportSettings.KeepAliveInterval.TotalMicroseconds;
         }
 
         int MaxConsecutiveTimeouts
