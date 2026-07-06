@@ -1145,6 +1145,35 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task LedbatRecentDelayUsesRollingAverage ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+
+            await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 50_000;
+            var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
+            ack.TimestampDiff = 10_000;
+            connection.Receive (ack);
+            await Task.Delay (50);
+
+            clock.Microseconds = 60_000;
+            await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 110_000;
+            ack = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
+            ack.TimestampDiff = 30_000;
+            connection.Receive (ack);
+            await Task.Delay (50);
+
+            Assert.AreEqual (20_000, connection.RecentDelayMicrosecondsForTests);
+        }
+
+        [Test]
         public async Task LedbatYieldsWhenDelayRisesAboveTarget ()
         {
             var clock = new ManualClock ();

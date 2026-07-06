@@ -94,6 +94,70 @@ namespace MonoTorrent.Connections.Peer.Utp
             public ulong? ExtensionBits { get; }
         }
 
+        sealed class LedbatDelayHistory
+        {
+            const int RecentSampleCapacity = 256;
+            const int BaseDelayBuckets = 3;
+
+            readonly uint[] recentReceivedAt = new uint[RecentSampleCapacity];
+            readonly uint[] recentDelays = new uint[RecentSampleCapacity];
+            readonly long[] baseBucketMinutes = new long[BaseDelayBuckets];
+            readonly uint[] baseBucketDelays = new uint[BaseDelayBuckets];
+
+            int nextRecentSample;
+            int recentSampleCount;
+
+            public LedbatDelayHistory ()
+            {
+                for (int i = 0; i < baseBucketMinutes.Length; i++)
+                    baseBucketMinutes[i] = -1;
+            }
+
+            public void AddSample (uint now, uint delayMicroseconds, out uint recentAverageMicroseconds, out uint baseDelayMicroseconds)
+            {
+                recentReceivedAt[nextRecentSample] = now;
+                recentDelays[nextRecentSample] = delayMicroseconds;
+                nextRecentSample = (nextRecentSample + 1) % RecentSampleCapacity;
+                if (recentSampleCount < RecentSampleCapacity)
+                    recentSampleCount++;
+
+                long currentMinute = now / 60_000_000u;
+                int bucket = (int) (currentMinute % BaseDelayBuckets);
+                if (baseBucketMinutes[bucket] != currentMinute) {
+                    baseBucketMinutes[bucket] = currentMinute;
+                    baseBucketDelays[bucket] = delayMicroseconds;
+                } else {
+                    baseBucketDelays[bucket] = Math.Min (baseBucketDelays[bucket], delayMicroseconds);
+                }
+
+                uint recentMinimum = uint.MaxValue;
+                ulong recentSum = 0;
+                int activeSamples = 0;
+                for (int i = 0; i < recentSampleCount; i++) {
+                    if (unchecked(now - recentReceivedAt[i]) > DelaySampleLifetimeMicroseconds)
+                        continue;
+
+                    var delay = recentDelays[i];
+                    recentMinimum = Math.Min (recentMinimum, delay);
+                    recentSum += delay;
+                    activeSamples++;
+                }
+
+                recentAverageMicroseconds = activeSamples == 0 ? delayMicroseconds : (uint) (recentSum / (uint) activeSamples);
+
+                baseDelayMicroseconds = recentMinimum == uint.MaxValue ? delayMicroseconds : recentMinimum;
+                for (int i = 0; i < BaseDelayBuckets; i++) {
+                    if (baseBucketMinutes[i] < 0)
+                        continue;
+
+                    if (currentMinute - baseBucketMinutes[i] >= BaseDelayBuckets - 1)
+                        continue;
+
+                    baseDelayMicroseconds = Math.Min (baseDelayMicroseconds, baseBucketDelays[i]);
+                }
+            }
+        }
+
         enum ReceiveSequenceStatus
         {
             OldOrDuplicate,
@@ -104,7 +168,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         const byte SelectiveAckExtension = 1;
         const byte ExtensionBitsExtension = 2;
         const uint CControlTargetMicroseconds = 100_000;
-        const int DelaySampleLifetimeMicroseconds = 120_000_000;
+        const uint DelaySampleLifetimeMicroseconds = 120_000_000;
         const int DefaultMaxReceiveBufferBytes = (int) UtpPeerConnectionListener.INITIAL_WINDOW;
         const uint InitialRetransmitTimeoutMicroseconds = 1_000_000;
         const uint MinimumRetransmitTimeoutMicroseconds = 500_000;
@@ -114,7 +178,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly object locker = new ();
         readonly Dictionary<ushort, SentPacket> sentPackets = new ();
         readonly Dictionary<ushort, ParsedPacket> receiveBuffer = new ();
-        readonly Queue<(uint ReceivedAtMicroseconds, uint DelayMicroseconds)> delaySamples = new ();
+        readonly LedbatDelayHistory delayHistory = new ();
         readonly SemaphoreSlim sendWindowChanged = new (0);
         readonly CancellationTokenSource cts = new ();
         readonly Task retransmitTask;
@@ -617,16 +681,22 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
 
             uint minAckedRttMicroseconds = 0;
+            int bytesNewlyAcked = 0;
+            bool finAcked = false;
             foreach (var sent in acked) {
+                bytesNewlyAcked += sent.PayloadBytes;
+                if (sent.Packet.Type == PacketType.Fin)
+                    finAcked = true;
+
                 var packetRtt = UpdateRtt (sent);
                 if (packetRtt != 0 && (minAckedRttMicroseconds == 0 || packetRtt < minAckedRttMicroseconds))
                     minAckedRttMicroseconds = packetRtt;
             }
 
             ProcessMtuProbeAcks (acked);
-            ApplyCongestionControl (acked.Sum (t => t.PayloadBytes), pkt.TimestampDiff, minAckedRttMicroseconds);
+            ApplyCongestionControl (bytesNewlyAcked, pkt.TimestampDiff, minAckedRttMicroseconds);
 
-            if (acked.Any (t => t.Packet.Type == PacketType.Fin) && State == ConnectionState.FinSent)
+            if (finAcked && State == ConnectionState.FinSent)
                 CloseCleanly ();
 
             if (acked.Count > 0)
@@ -699,12 +769,8 @@ namespace MonoTorrent.Connections.Peer.Utp
             lock (locker) {
                 var now = clock.Microseconds;
                 var clampedDelay = Math.Min (delayMicroseconds, minAckedRttMicroseconds);
-                delaySamples.Enqueue ((now, clampedDelay));
-                while (delaySamples.Count > 0 && unchecked(now - delaySamples.Peek ().ReceivedAtMicroseconds) > DelaySampleLifetimeMicroseconds)
-                    delaySamples.Dequeue ();
-
-                RecentDelayMicroseconds = (uint) delaySamples.Average (t => t.DelayMicroseconds);
-                uint baseDelay = delaySamples.Min (t => t.DelayMicroseconds);
+                delayHistory.AddSample (now, clampedDelay, out var recentDelay, out var baseDelay);
+                RecentDelayMicroseconds = recentDelay;
                 uint ourDelay = RecentDelayMicroseconds > baseDelay ? RecentDelayMicroseconds - baseDelay : 0;
                 double offTarget = (long) CControlTargetMicroseconds - ourDelay;
                 double delayFactor = offTarget / CControlTargetMicroseconds;
