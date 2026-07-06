@@ -189,6 +189,12 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         int BytesInFlight { get; set; }
 
+        int OutOfOrderBufferedBytes { get; set; }
+
+        int QueuedInOrderBytes { get; set; }
+
+        int CurrentUnreadPacketBytes { get; set; }
+
         Channel<ParsedPacket> ReceivedPackets { get; }
 
         ConnectionState State { get; set; }
@@ -317,13 +323,13 @@ namespace MonoTorrent.Connections.Peer.Utp
         uint AdvertisedReceiveWindow {
             get {
                 lock (locker) {
-                    return (uint) Math.Max (0, (int) UtpPeerConnectionListener.INITIAL_WINDOW - ReceiveBufferBytes);
+                    return (uint) Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
                 }
             }
         }
 
         int ReceiveBufferBytes
-            => receiveBuffer.Values.Sum (PacketBufferCost);
+            => OutOfOrderBufferedBytes + QueuedInOrderBytes + CurrentUnreadPacketBytes;
 
         int CurrentWindow {
             get {
@@ -402,6 +408,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return false;
 
             receiveBuffer[packet.Packet.SequenceNumber] = packet;
+            OutOfOrderBufferedBytes += PacketBufferCost (packet);
             return true;
         }
 
@@ -765,6 +772,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                     var next = unchecked((ushort) (AckNumber + 1));
                     if (!receiveBuffer.Remove (next, out buffered))
                         return (ackAdvanced, false);
+                    OutOfOrderBufferedBytes -= PacketBufferCost (buffered);
+                    if (buffered.Packet.Type != PacketType.Fin && buffered.PayloadLength > 0)
+                        QueuedInOrderBytes += PacketBufferCost (buffered);
                     AckNumber = next;
                     ackAdvanced = true;
                 }
@@ -927,6 +937,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (currentPacket == null) {
                     currentPacket = await ReceivedPackets.Reader.ReadAsync (cts.Token);
                     currentPayloadRead = 0;
+                    lock (locker) {
+                        QueuedInOrderBytes -= PacketBufferCost (currentPacket);
+                        CurrentUnreadPacketBytes += PacketBufferCost (currentPacket);
+                    }
                 }
             } catch (ChannelClosedException) {
                 return 0;
@@ -936,8 +950,13 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             int read = ReadFromPacket (currentPacket.Payload.Span.Slice (currentPayloadRead), buffer.Span);
             currentPayloadRead += read;
-            if (currentPayloadRead == currentPacket.PayloadLength)
+            lock (locker)
+                CurrentUnreadPacketBytes = Math.Max (0, CurrentUnreadPacketBytes - read);
+            if (currentPayloadRead == currentPacket.PayloadLength) {
+                lock (locker)
+                    CurrentUnreadPacketBytes = 0;
                 currentPacket = null;
+            }
 
             return read;
         }
