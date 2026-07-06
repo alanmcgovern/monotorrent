@@ -558,7 +558,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             List<SentPacket> acked = new ();
             List<UtpPacket> fastRetransmits = new ();
-            List<ushort> selectiveAcks = new ();
+            List<ushort>? selectiveAcks = null;
 
             lock (locker) {
                 bool ackAdvanced = SequenceGreaterThan (pkt.AckNumber, LastAckReceived);
@@ -573,16 +573,13 @@ namespace MonoTorrent.Connections.Peer.Utp
                     }
                 }
 
-                selectiveAcks = new List<ushort> ();
                 foreach (var seq in receivedSelectiveAcks) {
                     if (!SequenceGreaterThan (seq, pkt.AckNumber) || !SequenceLessThanOrEqual (seq, LastSentSequenceNumber))
                         continue;
-                    if (sentPackets.ContainsKey (seq))
-                        selectiveAcks.Add (seq);
-                }
 
-                foreach (var seq in selectiveAcks) {
                     if (sentPackets.Remove (seq, out var sent)) {
+                        selectiveAcks ??= new List<ushort> ();
+                        selectiveAcks.Add (seq);
                         acked.Add (sent);
                         BytesInFlight -= PacketSendCost (sent);
                     }
@@ -592,17 +589,21 @@ namespace MonoTorrent.Connections.Peer.Utp
                     ConsecutiveTimeouts = 0;
 
                 bool pureDuplicateAck = pkt.Type == PacketType.State && receivedSelectiveAcks.Count == 0 && !ackAdvanced && acked.Count == 0;
-                bool sackEvidence = selectiveAcks.Count > 0;
+                bool sackEvidence = selectiveAcks?.Count > 0;
                 if (pureDuplicateAck || sackEvidence) {
                     foreach (var sent in sentPackets.Values) {
-                        if (!IsPacketIndicatedMissing (sent.Packet.SequenceNumber, pkt.AckNumber, selectiveAcks, pureDuplicateAck))
+                        int duplicateAckIndications = CountDuplicateAckIndications (sent.Packet.SequenceNumber, pkt.AckNumber, selectiveAcks, pureDuplicateAck);
+                        if (duplicateAckIndications == 0)
                             continue;
 
-                        sent.DuplicateAckIndications++;
+                        sent.DuplicateAckIndications += duplicateAckIndications;
                         if (sent.DuplicateAckIndications >= 3 && !sent.FastRetransmitted) {
                             fastRetransmits.Add (sent.Packet);
                             sent.FastRetransmitted = true;
-                            MaxWindow = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow / 2);
+                            if (sent.IsMtuProbe && sent.Packet.SequenceNumber == MtuProbeSequence)
+                                HandleMtuProbeTimeout (sent);
+                            else
+                                MaxWindow = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow / 2);
                         }
                     }
                 }
@@ -645,15 +646,20 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        static bool IsPacketIndicatedMissing (ushort sequenceNumber, ushort ackNumber, List<ushort> selectiveAcks, bool pureDuplicateAck)
+        static int CountDuplicateAckIndications (ushort sequenceNumber, ushort ackNumber, List<ushort>? selectiveAcks, bool pureDuplicateAck)
         {
             if (SequenceLessThanOrEqual (sequenceNumber, ackNumber))
-                return false;
+                return 0;
 
-            if (selectiveAcks.Count == 0)
-                return pureDuplicateAck && sequenceNumber == unchecked((ushort) (ackNumber + 1));
+            if (selectiveAcks == null || selectiveAcks.Count == 0)
+                return pureDuplicateAck && sequenceNumber == unchecked((ushort) (ackNumber + 1)) ? 1 : 0;
 
-            return selectiveAcks.Any (sack => SequenceGreaterThan (sack, sequenceNumber));
+            int count = 0;
+            foreach (var sack in selectiveAcks) {
+                if (SequenceGreaterThan (sack, sequenceNumber))
+                    count++;
+            }
+            return count;
         }
 
         uint UpdateRtt (SentPacket sent)
