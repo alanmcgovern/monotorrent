@@ -530,6 +530,41 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task DiagnosticSnapshotReportsConnectionState ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
+
+            var initial = connection.DiagnosticSnapshot;
+            Assert.AreEqual ("SynReceived", initial.State);
+            Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW, initial.SendWindowBytes);
+            Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW, initial.PeerWindowBytes);
+            Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW, initial.ReceiveWindowBytes);
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize, initial.CurrentMtuBytes);
+
+            await connection.SendAsync (new byte[] { 1, 2, 3 }).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var inFlight = connection.DiagnosticSnapshot;
+            Assert.AreEqual (UtpPacket.HeaderSize + 3, inFlight.BytesInFlight);
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize, inFlight.MtuFloorBytes);
+            Assert.AreEqual (1452, inFlight.MtuCeilingBytes);
+
+            clock.Microseconds = 50_000;
+            var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
+            ack.TimestampDiff = 10_000;
+            connection.Receive (ack);
+            await Task.Delay (50);
+
+            var afterAck = connection.DiagnosticSnapshot;
+            Assert.AreEqual (0, afterAck.BytesInFlight);
+            Assert.AreEqual (50_000, afterAck.RttMicroseconds);
+            Assert.AreEqual (500_000, afterAck.RetransmitTimeoutMicroseconds);
+            Assert.AreEqual (10_000, afterAck.RecentDelayMicroseconds);
+        }
+
+        [Test]
         public async Task SelectiveAckReleasesSackedPacketAndLeavesGapInFlight ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();

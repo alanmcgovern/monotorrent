@@ -28,8 +28,8 @@
 
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -291,6 +291,25 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal uint RecentDelayMicrosecondsForTests => RecentDelayMicroseconds;
 
         internal ulong PeerExtensionBitsForTests => PeerExtensionBits;
+
+        public UtpConnectionDiagnosticSnapshot DiagnosticSnapshot {
+            get {
+                lock (locker) {
+                    return new UtpConnectionDiagnosticSnapshot (
+                        SendWindowBytes: MaxWindow,
+                        PeerWindowBytes: PeerWindowSize,
+                        BytesInFlight: BytesInFlight,
+                        ReceiveWindowBytes: AdvertisedReceiveWindow,
+                        RttMicroseconds: RttMicroseconds,
+                        RetransmitTimeoutMicroseconds: RetransmitTimeoutMicroseconds,
+                        MtuFloorBytes: MtuFloor,
+                        MtuCeilingBytes: MtuCeiling,
+                        CurrentMtuBytes: CurrentMtu,
+                        RecentDelayMicroseconds: RecentDelayMicroseconds,
+                        State: State.ToString ());
+                }
+            }
+        }
 
         public bool IsIncoming { get; }
         public bool CanReconnect => false;
@@ -629,7 +648,6 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             List<SentPacket> acked = new ();
             List<UtpPacket> fastRetransmits = new ();
-            List<ushort>? selectiveAcks = null;
             bool wasWindowLimited;
 
             lock (locker) {
@@ -639,34 +657,43 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (ackAdvanced)
                     LastAckReceived = pkt.AckNumber;
 
-                foreach (var seq in sentPackets.Keys.ToArray ()) {
-                    if (SequenceLessThanOrEqual (seq, pkt.AckNumber)) {
-                        acked.Add (sentPackets[seq]);
-                        BytesInFlight -= PacketSendCost (sentPackets[seq]);
-                        sentPackets.Remove (seq);
+                ushort[]? sequencesToRemove = null;
+                int sequencesToRemoveCount = 0;
+                try {
+                    if (sentPackets.Count > 0) {
+                        sequencesToRemove = ArrayPool<ushort>.Shared.Rent (sentPackets.Count);
+                        foreach (var seq in sentPackets.Keys) {
+                            if (SequenceLessThanOrEqual (seq, pkt.AckNumber))
+                                sequencesToRemove[sequencesToRemoveCount++] = seq;
+                        }
+
+                        for (int i = 0; i < sequencesToRemoveCount; i++) {
+                            var seq = sequencesToRemove[i];
+                            if (sentPackets.Remove (seq, out var sent)) {
+                                acked.Add (sent);
+                                BytesInFlight -= PacketSendCost (sent);
+                            }
+                        }
                     }
+                } finally {
+                    if (sequencesToRemove != null)
+                        ArrayPool<ushort>.Shared.Return (sequencesToRemove);
                 }
-
-                foreach (var seq in receivedSelectiveAcks) {
-                    if (!SequenceGreaterThan (seq, pkt.AckNumber) || !SequenceLessThanOrEqual (seq, LastSentSequenceNumber))
-                        continue;
-
-                    if (sentPackets.Remove (seq, out var sent)) {
-                        selectiveAcks ??= new List<ushort> ();
-                        selectiveAcks.Add (seq);
-                        acked.Add (sent);
-                        BytesInFlight -= PacketSendCost (sent);
-                    }
-                }
-
-                if (acked.Count > 0)
-                    ConsecutiveTimeouts = 0;
 
                 bool pureDuplicateAck = pkt.Type == PacketType.State && receivedSelectiveAcks.Count == 0 && !ackAdvanced && acked.Count == 0;
-                bool sackEvidence = selectiveAcks?.Count > 0;
+                bool sackEvidence = false;
+                if (receivedSelectiveAcks.Count > 0) {
+                    foreach (var seq in receivedSelectiveAcks) {
+                        if (IsSelectiveAckInSendWindow (seq, pkt.AckNumber) && sentPackets.ContainsKey (seq)) {
+                            sackEvidence = true;
+                            break;
+                        }
+                    }
+                }
+
                 if (pureDuplicateAck || sackEvidence) {
                     foreach (var sent in sentPackets.Values) {
-                        int duplicateAckIndications = CountDuplicateAckIndications (sent.Packet.SequenceNumber, pkt.AckNumber, selectiveAcks, pureDuplicateAck);
+                        int duplicateAckIndications = CountDuplicateAckIndications (sent.Packet.SequenceNumber, pkt.AckNumber, receivedSelectiveAcks, sentPackets, pureDuplicateAck);
                         if (duplicateAckIndications == 0)
                             continue;
 
@@ -681,6 +708,19 @@ namespace MonoTorrent.Connections.Peer.Utp
                         }
                     }
                 }
+
+                foreach (var seq in receivedSelectiveAcks) {
+                    if (!IsSelectiveAckInSendWindow (seq, pkt.AckNumber))
+                        continue;
+
+                    if (sentPackets.Remove (seq, out var sent)) {
+                        acked.Add (sent);
+                        BytesInFlight -= PacketSendCost (sent);
+                    }
+                }
+
+                if (acked.Count > 0)
+                    ConsecutiveTimeouts = 0;
             }
 
             uint minAckedRttMicroseconds = 0;
@@ -726,17 +766,20 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        static int CountDuplicateAckIndications (ushort sequenceNumber, ushort ackNumber, List<ushort>? selectiveAcks, bool pureDuplicateAck)
+        bool IsSelectiveAckInSendWindow (ushort selectiveAck, ushort ackNumber)
+            => SequenceGreaterThan (selectiveAck, ackNumber) && SequenceLessThanOrEqual (selectiveAck, LastSentSequenceNumber);
+
+        static int CountDuplicateAckIndications (ushort sequenceNumber, ushort ackNumber, List<ushort> selectiveAcks, Dictionary<ushort, SentPacket> sentPackets, bool pureDuplicateAck)
         {
             if (SequenceLessThanOrEqual (sequenceNumber, ackNumber))
                 return 0;
 
-            if (selectiveAcks == null || selectiveAcks.Count == 0)
+            if (selectiveAcks.Count == 0)
                 return pureDuplicateAck && sequenceNumber == unchecked((ushort) (ackNumber + 1)) ? 1 : 0;
 
             int count = 0;
             foreach (var sack in selectiveAcks) {
-                if (SequenceGreaterThan (sack, sequenceNumber))
+                if (sentPackets.ContainsKey (sack) && SequenceGreaterThan (sack, sequenceNumber))
                     count++;
             }
             return count;
@@ -874,8 +917,14 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         bool HasSelectiveAckContent (ushort ackNr)
         {
-            lock (locker)
-                return receiveBuffer.Keys.Any (t => ShouldIncludeInSelectiveAck (t, ackNr));
+            lock (locker) {
+                foreach (var sequenceNumber in receiveBuffer.Keys) {
+                    if (ShouldIncludeInSelectiveAck (sequenceNumber, ackNr))
+                        return true;
+                }
+
+                return false;
+            }
         }
 
         void ScheduleDelayedAck ()
@@ -950,22 +999,33 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         byte[] CreateSelectiveAckExtension (ushort ackNr)
         {
-            ushort[] buffered;
-            lock (locker)
-                buffered = receiveBuffer.Keys.Where (t => ShouldIncludeInSelectiveAck (t, ackNr)).ToArray ();
+            int maxBit = -1;
+            lock (locker) {
+                foreach (var seq in receiveBuffer.Keys) {
+                    if (!ShouldIncludeInSelectiveAck (seq, ackNr))
+                        continue;
 
-            if (buffered.Length == 0)
-                return Array.Empty<byte> ();
+                    maxBit = Math.Max (maxBit, SequenceDistance (seq, unchecked((ushort) (ackNr + 2))));
+                }
 
-            int maxBit = buffered.Max (t => SequenceDistance (t, unchecked((ushort) (ackNr + 2))));
+                if (maxBit < 0)
+                    return Array.Empty<byte> ();
+            }
+
             int length = Math.Max (4, ((maxBit / 8) + 4) / 4 * 4);
             var result = new byte[2 + length];
             result[0] = 0;
             result[1] = (byte) length;
 
-            foreach (var seq in buffered) {
-                int bit = SequenceDistance (seq, unchecked((ushort) (ackNr + 2)));
-                result[2 + bit / 8] |= (byte) (1 << (bit % 8));
+            lock (locker) {
+                foreach (var seq in receiveBuffer.Keys) {
+                    if (!ShouldIncludeInSelectiveAck (seq, ackNr))
+                        continue;
+
+                    int bit = SequenceDistance (seq, unchecked((ushort) (ackNr + 2)));
+                    if (bit <= maxBit)
+                        result[2 + bit / 8] |= (byte) (1 << (bit % 8));
+                }
             }
 
             return result;
@@ -1149,10 +1209,13 @@ namespace MonoTorrent.Connections.Peer.Utp
                     SentPacket? timedOut = null;
                     bool mtuProbeOnlyTimedOut = false;
                     lock (locker) {
-                        foreach (var packet in sentPackets.Values.OrderBy (t => t.SentAtMicroseconds)) {
-                            if (unchecked(clock.Microseconds - packet.SentAtMicroseconds) >= RetransmitTimeoutMicroseconds) {
+                        var now = clock.Microseconds;
+                        uint timedOutAge = 0;
+                        foreach (var packet in sentPackets.Values) {
+                            var age = unchecked(now - packet.SentAtMicroseconds);
+                            if (age >= RetransmitTimeoutMicroseconds && (timedOut == null || age > timedOutAge)) {
                                 timedOut = packet;
-                                break;
+                                timedOutAge = age;
                             }
                         }
 
