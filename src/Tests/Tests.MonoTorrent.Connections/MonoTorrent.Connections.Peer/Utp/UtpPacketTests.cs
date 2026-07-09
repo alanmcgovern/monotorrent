@@ -91,7 +91,14 @@ namespace MonoTorrent.Connections.Peer
         {
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
-            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
 
             clock.Microseconds = 1_000;
             connection.Receive (CreatePacket (sequenceNumber: 2, timestamp: 900));
@@ -101,7 +108,7 @@ namespace MonoTorrent.Connections.Peer
             var outgoing = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             clock.Microseconds = 2_000;
-            connection.Receive (CreatePacket (sequenceNumber: 3, timestamp: 1_750));
+            connection.Receive (CreatePacket (sequenceNumber: 3, timestamp: 1_750, ackNumber: outgoing.packet.SequenceNumber));
             await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             outgoing.connection!.PrepareForSend (ref outgoing.packet);
@@ -110,7 +117,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (250, outgoing.packet.TimestampDiff);
         }
 
-        static UtpPacket CreatePacket (ushort sequenceNumber, uint timestamp)
+        static UtpPacket CreatePacket (ushort sequenceNumber, uint timestamp, ushort ackNumber = 1)
         {
             var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
                 Type = PacketType.Data,
@@ -118,7 +125,7 @@ namespace MonoTorrent.Connections.Peer
                 ConnectionId = 123,
                 WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
                 SequenceNumber = sequenceNumber,
-                AckNumber = 1
+                AckNumber = ackNumber
             };
             packet.SetTimestamp (timestamp);
             return packet;

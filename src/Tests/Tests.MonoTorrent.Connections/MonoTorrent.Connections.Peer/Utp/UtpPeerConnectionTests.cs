@@ -244,16 +244,45 @@ namespace MonoTorrent.Connections.Peer
             var buffer = new byte[1];
             Assert.AreEqual (1, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
 
-            connection.Receive (CreateDataPacket (2, "abc"));
             var reopened = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (1, reopened.packet.WindowSize);
 
             Assert.AreEqual (1, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
             Assert.AreEqual (1, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
 
-            connection.Receive (CreateDataPacket (2, "abc"));
+            reopened = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (2, reopened.packet.WindowSize);
+
             reopened = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (UtpPacket.HeaderSize + 3, reopened.packet.WindowSize);
+        }
+
+        [Test]
+        public async Task AppReadSendsReceiveWindowUpdateWhenWindowReopens ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                maxReceiveBufferBytes: UtpPacket.HeaderSize + 3,
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
+
+            connection.Receive (CreateDataPacket (2, "abc"));
+
+            var zeroWindow = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (0, zeroWindow.packet.WindowSize);
+
+            var buffer = new byte[3];
+            Assert.AreEqual (3, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
+
+            var windowUpdate = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.State, windowUpdate.packet.Type);
+            Assert.AreEqual (UtpPacket.HeaderSize + 3, windowUpdate.packet.WindowSize);
+            Assert.AreEqual (2, windowUpdate.packet.AckNumber);
         }
 
         [Test]
@@ -282,6 +311,10 @@ namespace MonoTorrent.Connections.Peer
             var buffer = new byte[2];
             Assert.AreEqual (1, await connection.ReceiveAsync (buffer.AsMemory (0, 1)).WithTimeout (10_000));
 
+            var windowUpdate = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (2, windowUpdate.packet.AckNumber);
+            Assert.AreEqual (UtpPacket.HeaderSize + 1, windowUpdate.packet.WindowSize);
+
             connection.Receive (CreateDataPacket (3, "b"));
             ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (3, ack.packet.AckNumber);
@@ -289,6 +322,10 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.AreEqual (1, await connection.ReceiveAsync (buffer.AsMemory (1, 1)).WithTimeout (10_000));
             Assert.AreEqual ("ab", System.Text.Encoding.ASCII.GetString (buffer));
+
+            windowUpdate = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (3, windowUpdate.packet.AckNumber);
+            Assert.AreEqual (UtpPacket.HeaderSize + 1, windowUpdate.packet.WindowSize);
         }
 
         [Test]

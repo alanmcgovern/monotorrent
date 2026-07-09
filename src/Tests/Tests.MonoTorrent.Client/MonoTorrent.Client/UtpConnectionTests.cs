@@ -75,17 +75,25 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SendRandomBytes ([Values (1, 1399, 1401, 3000, 60_000, 100_000, 1024_000)] int size)
         {
-            var sendBuffer = new byte[size];
-            var receiveBuffer = new byte[size];
-            Random.Shared.NextBytes (sendBuffer);
+            for (int i = 0; i < 1000; i++) {
+                var sendBuffer = new byte[size];
+                var receiveBuffer = new byte[size];
+                Random.Shared.NextBytes (sendBuffer);
 
-            await Incoming.SendAsync (sendBuffer).WithTimeout (5000);
+                async Task DrainConnection ()
+                {
+                    int received = 0;
+                    while (received != size) {
+                        received += await Outgoing.ReceiveAsync (receiveBuffer.AsMemory (received)).WithTimeout (5000);
+                    }
+                }
 
-            int received = 0;
-            while (received != size) {
-                received += await Outgoing.ReceiveAsync (receiveBuffer.AsMemory (received)).WithTimeout (5000);
+                var drainer = DrainConnection ();
+                await Incoming.SendAsync (sendBuffer).WithTimeout (5000);
+                await drainer;
+
+                Assert.IsTrue (sendBuffer.AsSpan ().SequenceEqual (receiveBuffer));
             }
-            Assert.IsTrue (sendBuffer.AsSpan ().SequenceEqual (receiveBuffer));
         }
 
         [Test]

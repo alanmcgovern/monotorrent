@@ -219,6 +219,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         uint PeerWindowSize { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
 
+        uint LastAdvertisedReceiveWindow { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
+
         uint MaxWindow { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
 
         int CurrentMtu { get; set; }
@@ -476,6 +478,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         async Task SendPacketAsync (UtpPacket packet)
         {
             packet.WindowSize = AdvertisedReceiveWindow;
+            lock (locker)
+                LastAdvertisedReceiveWindow = packet.WindowSize;
             await SendingChannel.WriteAsync ((packet, this, EndPoint), cts.Token);
             LastSentPacketMicroseconds = clock.Microseconds;
             HasSentPacket = true;
@@ -1089,15 +1093,34 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             int read = ReadFromPacket (currentPacket.Payload.Span.Slice (currentPayloadRead), buffer.Span);
             currentPayloadRead += read;
-            lock (locker)
+            bool sendWindowUpdate;
+            lock (locker) {
+                var previousAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
                 CurrentUnreadPacketBytes = Math.Max (0, CurrentUnreadPacketBytes - read);
+                sendWindowUpdate = ShouldSendReceiveWindowUpdate (previousAdvertisedWindow);
+            }
             if (currentPayloadRead == currentPacket.PayloadLength) {
-                lock (locker)
+                lock (locker) {
+                    var previousAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
                     CurrentUnreadPacketBytes = 0;
+                    sendWindowUpdate |= ShouldSendReceiveWindowUpdate (previousAdvertisedWindow);
+                }
                 currentPacket = null;
             }
 
+            if (sendWindowUpdate)
+                await SendImmediateAckAsync ();
+
             return read;
+        }
+
+        bool ShouldSendReceiveWindowUpdate (int previousAdvertisedWindow)
+        {
+            var currentAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
+            var usefulWindow = CurrentMtu + UtpPacket.HeaderSize;
+            return currentAdvertisedWindow > previousAdvertisedWindow
+                && LastAdvertisedReceiveWindow < usefulWindow
+                && currentAdvertisedWindow > LastAdvertisedReceiveWindow;
         }
 
         public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
