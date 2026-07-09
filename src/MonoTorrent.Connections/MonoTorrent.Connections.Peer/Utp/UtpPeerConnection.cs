@@ -72,6 +72,8 @@ namespace MonoTorrent.Connections.Peer.Utp
             public int Transmissions { get; set; }
             public int DuplicateAckIndications { get; set; }
             public bool FastRetransmitted { get; set; }
+            public bool IsInFlight { get; set; } = true;
+            public bool PendingRetransmit { get; set; }
         }
 
         sealed class ParsedPacket
@@ -177,6 +179,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         readonly object locker = new ();
         readonly Dictionary<ushort, SentPacket> sentPackets = new ();
+        readonly Queue<ushort> pendingRetransmits = new ();
         readonly Dictionary<ushort, ParsedPacket> receiveBuffer = new ();
         readonly LedbatDelayHistory delayHistory = new ();
         readonly SemaphoreSlim sendWindowChanged = new (0);
@@ -272,6 +275,13 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal bool IsClosedOrReset => State == ConnectionState.Closed || State == ConnectionState.Reset;
 
         internal int BytesInFlightForTests => CurrentWindow;
+
+        internal int PendingRetransmitCountForTests {
+            get {
+                lock (locker)
+                    return pendingRetransmits.Count;
+            }
+        }
 
         internal int CurrentMtuForTests => CurrentMtu;
 
@@ -462,7 +472,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             lock (locker) {
                 if (sentPackets.TryGetValue (packet.SequenceNumber, out var existing))
-                    BytesInFlight -= PacketSendCost (existing);
+                    RemoveBytesInFlightLocked (existing);
 
                 sentPackets[packet.SequenceNumber] = new SentPacket (packet, payloadBytes, clock.Microseconds, isMtuProbe);
                 BytesInFlight += PacketSendCost (sentPackets[packet.SequenceNumber]);
@@ -491,6 +501,15 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         static int PacketSendCost (SentPacket packet)
             => UtpPacket.HeaderSize + packet.PayloadBytes;
+
+        void RemoveBytesInFlightLocked (SentPacket packet)
+        {
+            if (!packet.IsInFlight)
+                return;
+
+            BytesInFlight -= PacketSendCost (packet);
+            packet.IsInFlight = false;
+        }
 
         bool TryBufferReceivedPacket (ParsedPacket packet)
         {
@@ -558,8 +577,10 @@ namespace MonoTorrent.Connections.Peer.Utp
             var wasPeerWindowZero = PeerWindowSize == 0;
             var previousPeerWindow = PeerWindowSize;
             PeerWindowSize = pkt.WindowSize;
-            if (PeerWindowSize > previousPeerWindow)
+            if (PeerWindowSize > previousPeerWindow) {
                 sendWindowChanged.Release ();
+                _ = DrainRetransmitQueueAsync ();
+            }
             if (!wasPeerWindowZero && PeerWindowSize == 0)
                 LastZeroWindowProbeMicroseconds = clock.Microseconds;
             if (!ProcessAcks (pkt, parsed.SelectiveAcks))
@@ -669,7 +690,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         bool ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks)
         {
             List<SentPacket> acked = new ();
-            List<UtpPacket> fastRetransmits = new ();
+            List<SentPacket> fastRetransmits = new ();
             bool wasWindowLimited;
 
             lock (locker) {
@@ -696,7 +717,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                             var seq = sequencesToRemove[i];
                             if (sentPackets.Remove (seq, out var sent)) {
                                 acked.Add (sent);
-                                BytesInFlight -= PacketSendCost (sent);
+                                RemoveBytesInFlightLocked (sent);
                             }
                         }
                     }
@@ -724,7 +745,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                         sent.DuplicateAckIndications += duplicateAckIndications;
                         if (sent.DuplicateAckIndications >= 3 && !sent.FastRetransmitted) {
-                            fastRetransmits.Add (sent.Packet);
+                            fastRetransmits.Add (sent);
                             sent.FastRetransmitted = true;
                             if (sent.IsMtuProbe && sent.Packet.SequenceNumber == MtuProbeSequence)
                                 HandleMtuProbeTimeout (sent);
@@ -740,7 +761,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                     if (sentPackets.Remove (seq, out var sent)) {
                         acked.Add (sent);
-                        BytesInFlight -= PacketSendCost (sent);
+                        RemoveBytesInFlightLocked (sent);
                     }
                 }
 
@@ -770,8 +791,15 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (acked.Count > 0)
                 sendWindowChanged.Release ();
 
-            foreach (var packet in fastRetransmits)
-                _ = RetransmitAsync (packet);
+            if (fastRetransmits.Count > 0) {
+                lock (locker) {
+                    foreach (var packet in fastRetransmits)
+                        MarkForRetransmitLocked (packet);
+                }
+                _ = DrainRetransmitQueueAsync ();
+            } else if (acked.Count > 0) {
+                _ = DrainRetransmitQueueAsync ();
+            }
 
             return true;
         }
@@ -841,6 +869,25 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return false;
 
             return BytesInFlight + CurrentMtu + UtpPacket.HeaderSize > allowed;
+        }
+
+        bool CanSendCostLocked (int packetCost)
+        {
+            if (PeerWindowSize == 0)
+                return false;
+
+            var allowed = Math.Min (MaxWindow, PeerWindowSize);
+            return BytesInFlight + packetCost <= allowed || BytesInFlight == 0 && packetCost <= PeerWindowSize;
+        }
+
+        void MarkForRetransmitLocked (SentPacket packet)
+        {
+            if (packet.PendingRetransmit)
+                return;
+
+            RemoveBytesInFlightLocked (packet);
+            packet.PendingRetransmit = true;
+            pendingRetransmits.Enqueue (packet.Packet.SequenceNumber);
         }
 
         void ApplyCongestionControl (int bytesNewlyAcked, uint delayMicroseconds, uint minAckedRttMicroseconds, bool wasWindowLimited)
@@ -1246,8 +1293,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                     if (DelayedAckAt.HasValue)
                         Add (DelayedAckAt.Value);
 
-                    foreach (var packet in sentPackets.Values)
-                        Add (unchecked(packet.SentAtMicroseconds + RetransmitTimeoutMicroseconds));
+                    foreach (var packet in sentPackets.Values) {
+                        if (packet.IsInFlight)
+                            Add (unchecked(packet.SentAtMicroseconds + RetransmitTimeoutMicroseconds));
+                    }
 
                     if (State == ConnectionState.Connected && HasSentPacket && CurrentWindow == 0)
                         Add (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds));
@@ -1279,6 +1328,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                     }
 
                     foreach (var packet in sentPackets.Values) {
+                        if (!packet.IsInFlight)
+                            continue;
+
                         var age = unchecked(now - packet.SentAtMicroseconds);
                         if (age >= RetransmitTimeoutMicroseconds)
                             timedOut.Add (packet);
@@ -1287,6 +1339,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     var mtuProbeOnlyTimedOut = timedOut.Count == 1 && timedOut[0].IsMtuProbe && timedOut[0].Packet.SequenceNumber == MtuProbeSequence && sentPackets.Count == 1;
                     if (mtuProbeOnlyTimedOut) {
                         HandleMtuProbeTimeout (timedOut[0]);
+                        MarkForRetransmitLocked (timedOut[0]);
                     } else if (timedOut.Count > 0) {
                         CurrentMtu = MtuFloor;
                         MaxWindow = (uint) (CurrentMtu + UtpPacket.HeaderSize);
@@ -1295,6 +1348,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                             RetransmitTimeoutMicroseconds = Math.Min (
                                 MaximumRetransmitTimeoutMicroseconds,
                                 Math.Max (MinimumRetransmitTimeoutMicroseconds, RetransmitTimeoutMicroseconds) * 2);
+
+                        foreach (var packet in timedOut)
+                            MarkForRetransmitLocked (packet);
                     } else if (ShouldSendKeepAliveLocked () && (IsDue (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds), now) || IsForcedDue (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds), forcedDeadline))) {
                         sendKeepAlive = true;
                     }
@@ -1311,10 +1367,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (delayedAck.HasValue)
                     await SendAckAsync (delayedAck.Value);
 
-                if (timedOut.Count > 0) {
-                    foreach (var packet in timedOut)
-                        await RetransmitAsync (packet.Packet);
-                }
+                if (timedOut.Count > 0)
+                    await DrainRetransmitQueueAsync ();
                 else if (sendKeepAlive)
                     await SendKeepAliveAsync ();
 
@@ -1399,19 +1453,42 @@ namespace MonoTorrent.Connections.Peer.Utp
         int MaxConsecutiveTimeouts
             => State == ConnectionState.SynSent ? transportSettings.MaxSynTimeouts : transportSettings.MaxConnectedTimeouts;
 
-        async Task RetransmitAsync (UtpPacket packet)
+        async Task DrainRetransmitQueueAsync ()
         {
-            lock (locker) {
-                if (sentPackets.TryGetValue (packet.SequenceNumber, out var sent)) {
-                    sent.Transmissions++;
-                    sent.DuplicateAckIndications = 0;
-                    sent.SentAtMicroseconds = clock.Microseconds;
-                } else {
-                    return;
-                }
-            }
+            while (!cts.IsCancellationRequested) {
+                UtpPacket packet = default;
+                bool hasPacket = false;
 
-            await SendPacketAsync (packet);
+                lock (locker) {
+                    while (pendingRetransmits.Count > 0) {
+                        var sequence = pendingRetransmits.Peek ();
+                        if (!sentPackets.TryGetValue (sequence, out var sent) || !sent.PendingRetransmit) {
+                            pendingRetransmits.Dequeue ();
+                            continue;
+                        }
+
+                        var packetCost = PacketSendCost (sent);
+                        if (!CanSendCostLocked (packetCost))
+                            break;
+
+                        pendingRetransmits.Dequeue ();
+                        sent.PendingRetransmit = false;
+                        sent.IsInFlight = true;
+                        sent.Transmissions++;
+                        sent.DuplicateAckIndications = 0;
+                        sent.SentAtMicroseconds = clock.Microseconds;
+                        BytesInFlight += packetCost;
+                        packet = sent.Packet;
+                        hasPacket = true;
+                        break;
+                    }
+
+                    if (!hasPacket)
+                        return;
+                }
+
+                await SendPacketAsync (packet);
+            }
         }
 
         public void Dispose ()

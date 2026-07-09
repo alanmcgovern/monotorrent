@@ -801,6 +801,46 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task TimedOutPacketBatchDrainsThroughRecoveryWindow ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
+
+            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = connection.RetransmitTimeoutMicrosecondsForTests;
+            await connection.ProcessScheduledEventsAsync ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            var retransmit1 = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (first.packet.SequenceNumber, retransmit1.packet.SequenceNumber);
+            Assert.IsFalse (sendQueue.Reader.TryRead (out _));
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize + UtpPacket.HeaderSize, connection.BytesInFlightForTests);
+            Assert.AreEqual (2, connection.PendingRetransmitCountForTests);
+
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: retransmit1.packet.SequenceNumber));
+
+            var retransmit2 = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (second.packet.SequenceNumber, retransmit2.packet.SequenceNumber);
+            Assert.IsFalse (sendQueue.Reader.TryRead (out _));
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize + UtpPacket.HeaderSize, connection.BytesInFlightForTests);
+            Assert.AreEqual (1, connection.PendingRetransmitCountForTests);
+
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 10, ackNumber: retransmit2.packet.SequenceNumber));
+
+            var retransmit3 = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (third.packet.SequenceNumber, retransmit3.packet.SequenceNumber);
+            Assert.IsFalse (sendQueue.Reader.TryRead (out _));
+            Assert.AreEqual (0, connection.PendingRetransmitCountForTests);
+        }
+
+        [Test]
         public async Task OneSackMaskWithThreeLaterPacketsFastRetransmitsMissingPacket ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();

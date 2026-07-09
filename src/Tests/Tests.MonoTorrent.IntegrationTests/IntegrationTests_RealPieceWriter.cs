@@ -379,9 +379,10 @@ namespace MonoTorrent.IntegrationTests
         {
             // Give an example of how settings can be modified for the engine.
             var type = AnyAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
+            var listenPort = PeerTransport == PeerTransport.Utp ? 0 : port;
             var settingBuilder = new EngineSettings () with {
-                // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, port) } }.ToImmutableDictionary (),
+                // TCP tests use a preselected port. uTP binds the actual UDP listener to port 0 so the OS chooses a free UDP port.
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, listenPort) } }.ToImmutableDictionary (),
                 ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } }.ToImmutableDictionary (),
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
