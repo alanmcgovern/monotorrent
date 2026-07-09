@@ -105,11 +105,14 @@ namespace MonoTorrent.Connections.Peer.Utp
             PreferredLocalEndPoint = preferredLocalEndPoint;
             Clock = clock;
             TransportSettings = UtpTransportSettings.Create (transportSettings);
+            Scheduler = new UtpConnectionScheduler (clock);
         }
 
         internal IUtpClock Clock { get; }
 
         internal UtpTransportSettings TransportSettings { get; }
+
+        internal UtpConnectionScheduler Scheduler { get; }
 
         protected override void Start (CancellationToken token)
         {
@@ -335,6 +338,22 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal bool IsRegistered (UtpPeerConnection connection)
             => _connections.ContainsKey ((connection.EndPoint, connection.ConnectionIdReceive));
+
+        internal bool ApplyMtuFeedback (IPEndPoint remote, ushort connectionId, int nextHopMtu)
+        {
+            var key = ((EndPoint) remote, connectionId);
+            if (!_connections.TryGetValue (key, out var registration))
+                key = FindResetKey (remote, connectionId);
+
+            if (!_connections.TryGetValue (key, out registration))
+                return false;
+
+            registration.Connection.ApplyMtuFeedback (nextHopMtu);
+            return true;
+        }
+
+        internal Task ProcessScheduledEventsForTests ()
+            => Scheduler.ProcessDueEventsForTests ();
 
         internal static int RecentResetCapacityForTests => MaxRecentResetEntries;
 

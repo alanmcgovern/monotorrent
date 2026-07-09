@@ -181,11 +181,13 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly LedbatDelayHistory delayHistory = new ();
         readonly SemaphoreSlim sendWindowChanged = new (0);
         readonly CancellationTokenSource cts = new ();
-        readonly Task retransmitTask;
         readonly IUtpClock clock;
+        readonly UtpConnectionScheduler scheduler;
+        readonly bool ownsScheduler;
         readonly int maxReceiveBufferBytes;
         readonly UtpTransportSettings transportSettings;
-        CancellationTokenSource? delayedAckCancellation;
+        uint? DelayedAckAt { get; set; }
+        bool WaitingForSendWindow { get; set; }
 
         ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> SendingChannel { get; }
 
@@ -347,7 +349,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             MtuCeiling = Math.Max (CurrentMtu, GetDefaultMtuCeiling (remote.AddressFamily));
             NextMtuProbeAt = unchecked(clock.Microseconds + (uint) settings.MtuProbeInterval.TotalMicroseconds);
             State = ConnectionState.SynReceived;
-            retransmitTask = RetransmitLoopAsync ();
+            scheduler = listener?.Scheduler ?? new UtpConnectionScheduler (clock);
+            ownsScheduler = listener == null;
+            scheduler.Register (this);
         }
 
         // Constructor for outgoing connections.
@@ -466,6 +470,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     MtuProbeSize = payloadBytes;
                 }
             }
+            Reschedule ();
         }
 
         async Task SendPacketAsync (UtpPacket packet)
@@ -474,6 +479,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             await SendingChannel.WriteAsync ((packet, this, EndPoint), cts.Token);
             LastSentPacketMicroseconds = clock.Microseconds;
             HasSentPacket = true;
+            Reschedule ();
         }
 
         static int PacketBufferCost (ParsedPacket packet)
@@ -546,12 +552,14 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             UpdateDelaySample (pkt);
             var wasPeerWindowZero = PeerWindowSize == 0;
+            var previousPeerWindow = PeerWindowSize;
             PeerWindowSize = pkt.WindowSize;
-            if (wasPeerWindowZero && PeerWindowSize > 0)
+            if (PeerWindowSize > previousPeerWindow)
                 sendWindowChanged.Release ();
             if (!wasPeerWindowZero && PeerWindowSize == 0)
                 LastZeroWindowProbeMicroseconds = clock.Microseconds;
             ProcessAcks (pkt, parsed.SelectiveAcks);
+            Reschedule ();
 
             if (pkt.Type == PacketType.Reset) {
                 Close (ConnectionState.Reset);
@@ -929,46 +937,21 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         void ScheduleDelayedAck ()
         {
-            CancellationTokenSource? scheduled;
             lock (locker) {
-                if (delayedAckCancellation != null || cts.IsCancellationRequested)
+                if (DelayedAckAt.HasValue || cts.IsCancellationRequested)
                     return;
 
-                scheduled = CancellationTokenSource.CreateLinkedTokenSource (cts.Token);
-                delayedAckCancellation = scheduled;
+                DelayedAckAt = unchecked(clock.Microseconds + (uint) transportSettings.DelayedAckDelay.TotalMicroseconds);
             }
-
-            _ = SendDelayedAckAsync (scheduled);
-        }
-
-        async Task SendDelayedAckAsync (CancellationTokenSource scheduled)
-        {
-            try {
-                await Task.Delay (transportSettings.DelayedAckDelay, scheduled.Token);
-
-                lock (locker) {
-                    if (delayedAckCancellation != scheduled)
-                        return;
-
-                    delayedAckCancellation = null;
-                }
-
-                await SendAckAsync (AckNumber);
-            } catch (OperationCanceledException) {
-            } finally {
-                scheduled.Dispose ();
-            }
+            Reschedule ();
         }
 
         void CancelDelayedAck ()
         {
-            CancellationTokenSource? pending;
             lock (locker) {
-                pending = delayedAckCancellation;
-                delayedAckCancellation = null;
+                DelayedAckAt = null;
             }
-
-            pending?.Cancel ();
+            Reschedule ();
         }
 
         async ReusableTask SendImmediateAckAsync ()
@@ -1176,16 +1159,25 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         async Task WaitForSendWindow (int payloadLen)
         {
-            while (!cts.IsCancellationRequested) {
-                var packetCost = payloadLen + UtpPacket.HeaderSize;
-                var allowed = Math.Min (MaxWindow, PeerWindowSize);
-                if (PeerWindowSize != 0 && (CurrentWindow + packetCost <= allowed || CurrentWindow == 0 && packetCost <= PeerWindowSize))
-                    return;
+            try {
+                while (!cts.IsCancellationRequested) {
+                    var packetCost = payloadLen + UtpPacket.HeaderSize;
+                    var allowed = Math.Min (MaxWindow, PeerWindowSize);
+                    if (PeerWindowSize != 0 && (CurrentWindow + packetCost <= allowed || CurrentWindow == 0 && packetCost <= PeerWindowSize))
+                        return;
 
-                if (PeerWindowSize == 0 && CanSendZeroWindowProbe ())
-                    return;
+                    if (PeerWindowSize == 0 && CanSendZeroWindowProbe ())
+                        return;
 
-                await sendWindowChanged.WaitAsync (TimeSpan.FromMilliseconds (100), cts.Token);
+                    lock (locker)
+                        WaitingForSendWindow = true;
+                    Reschedule ();
+                    await sendWindowChanged.WaitAsync (cts.Token);
+                }
+            } finally {
+                lock (locker)
+                    WaitingForSendWindow = false;
+                Reschedule ();
             }
             cts.Token.ThrowIfCancellationRequested ();
         }
@@ -1200,50 +1192,100 @@ namespace MonoTorrent.Connections.Peer.Utp
             return true;
         }
 
-        async Task RetransmitLoopAsync ()
+        internal uint? NextScheduledEventMicroseconds {
+            get {
+                lock (locker) {
+                    if (cts.IsCancellationRequested)
+                        return null;
+
+                    uint? result = null;
+                    void Add (uint deadline)
+                    {
+                        if (!result.HasValue || IsBefore (deadline, result.Value))
+                            result = deadline;
+                    }
+
+                    if (DelayedAckAt.HasValue)
+                        Add (DelayedAckAt.Value);
+
+                    foreach (var packet in sentPackets.Values)
+                        Add (unchecked(packet.SentAtMicroseconds + RetransmitTimeoutMicroseconds));
+
+                    if (State == ConnectionState.Connected && HasSentPacket && CurrentWindow == 0)
+                        Add (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds));
+
+                    if (WaitingForSendWindow && PeerWindowSize == 0)
+                        Add (unchecked(LastZeroWindowProbeMicroseconds + (uint) transportSettings.ZeroWindowProbeInterval.TotalMicroseconds));
+
+                    if (transportSettings.EnablePathMtuDiscovery && MtuProbeSequence == null && MtuCeiling - MtuFloor > MtuConvergedThreshold)
+                        Add (NextMtuProbeAt);
+
+                    return result;
+                }
+            }
+        }
+
+        internal async Task ProcessScheduledEventsAsync (uint? forcedDeadline = null)
         {
             try {
-                while (!cts.IsCancellationRequested) {
-                    await Task.Delay (50, cts.Token);
+                SentPacket? timedOut = null;
+                ushort? delayedAck = null;
+                bool sendKeepAlive = false;
+                bool releaseSendWindow = false;
 
-                    SentPacket? timedOut = null;
-                    bool mtuProbeOnlyTimedOut = false;
-                    lock (locker) {
-                        var now = clock.Microseconds;
-                        uint timedOutAge = 0;
-                        foreach (var packet in sentPackets.Values) {
-                            var age = unchecked(now - packet.SentAtMicroseconds);
-                            if (age >= RetransmitTimeoutMicroseconds && (timedOut == null || age > timedOutAge)) {
-                                timedOut = packet;
-                                timedOutAge = age;
-                            }
-                        }
+                lock (locker) {
+                    var now = clock.Microseconds;
+                    if (DelayedAckAt.HasValue && (IsDue (DelayedAckAt.Value, now) || IsForcedDue (DelayedAckAt.Value, forcedDeadline))) {
+                        DelayedAckAt = null;
+                        delayedAck = AckNumber;
+                    }
 
-                        mtuProbeOnlyTimedOut = timedOut?.IsMtuProbe == true && timedOut.Packet.SequenceNumber == MtuProbeSequence && sentPackets.Count == 1;
-                        if (mtuProbeOnlyTimedOut) {
-                            HandleMtuProbeTimeout (timedOut!);
-                        } else if (timedOut != null) {
-                            CurrentMtu = UtpTransportSettings.MinimumRecoveryPacketSize;
-                            MaxWindow = (uint) (UtpTransportSettings.MinimumRecoveryPacketSize + UtpPacket.HeaderSize);
-                            ConsecutiveTimeouts++;
-                            if (ConsecutiveTimeouts < MaxConsecutiveTimeouts)
-                                RetransmitTimeoutMicroseconds = Math.Min (
-                                    MaximumRetransmitTimeoutMicroseconds,
-                                    Math.Max (MinimumRetransmitTimeoutMicroseconds, RetransmitTimeoutMicroseconds) * 2);
+                    uint timedOutAge = 0;
+                    foreach (var packet in sentPackets.Values) {
+                        var age = unchecked(now - packet.SentAtMicroseconds);
+                        if (age >= RetransmitTimeoutMicroseconds && (timedOut == null || age > timedOutAge)) {
+                            timedOut = packet;
+                            timedOutAge = age;
                         }
                     }
 
-                    if (timedOut != null && ConsecutiveTimeouts >= MaxConsecutiveTimeouts) {
-                        Close (ConnectionState.Reset);
-                        continue;
+                    var mtuProbeOnlyTimedOut = timedOut?.IsMtuProbe == true && timedOut.Packet.SequenceNumber == MtuProbeSequence && sentPackets.Count == 1;
+                    if (mtuProbeOnlyTimedOut) {
+                        HandleMtuProbeTimeout (timedOut!);
+                    } else if (timedOut != null) {
+                        CurrentMtu = UtpTransportSettings.MinimumRecoveryPacketSize;
+                        MaxWindow = (uint) (UtpTransportSettings.MinimumRecoveryPacketSize + UtpPacket.HeaderSize);
+                        ConsecutiveTimeouts++;
+                        if (ConsecutiveTimeouts < MaxConsecutiveTimeouts)
+                            RetransmitTimeoutMicroseconds = Math.Min (
+                                MaximumRetransmitTimeoutMicroseconds,
+                                Math.Max (MinimumRetransmitTimeoutMicroseconds, RetransmitTimeoutMicroseconds) * 2);
+                    } else if (ShouldSendKeepAliveLocked () && (IsDue (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds), now) || IsForcedDue (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds), forcedDeadline))) {
+                        sendKeepAlive = true;
                     }
 
-                    if (timedOut != null)
-                        await RetransmitAsync (timedOut.Packet);
-                    else if (ShouldSendKeepAlive ())
-                        await SendKeepAliveAsync ();
+                    releaseSendWindow = WaitingForSendWindow && PeerWindowSize == 0
+                        && (IsDue (unchecked(LastZeroWindowProbeMicroseconds + (uint) transportSettings.ZeroWindowProbeInterval.TotalMicroseconds), now) || IsForcedDue (unchecked(LastZeroWindowProbeMicroseconds + (uint) transportSettings.ZeroWindowProbeInterval.TotalMicroseconds), forcedDeadline));
                 }
+
+                if (timedOut != null && ConsecutiveTimeouts >= MaxConsecutiveTimeouts) {
+                    Close (ConnectionState.Reset);
+                    return;
+                }
+
+                if (delayedAck.HasValue)
+                    await SendAckAsync (delayedAck.Value);
+
+                if (timedOut != null)
+                    await RetransmitAsync (timedOut.Packet);
+                else if (sendKeepAlive)
+                    await SendKeepAliveAsync ();
+
+                if (releaseSendWindow)
+                    sendWindowChanged.Release ();
             } catch (OperationCanceledException) {
+            } finally {
+                Reschedule ();
             }
         }
 
@@ -1263,7 +1305,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 NextMtuProbeAt = clock.Microseconds;
         }
 
-        bool ShouldSendKeepAlive ()
+        bool ShouldSendKeepAliveLocked ()
         {
             if (State != ConnectionState.Connected)
                 return false;
@@ -1276,6 +1318,46 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             return unchecked(clock.Microseconds - LastSentPacketMicroseconds) >= (uint) transportSettings.KeepAliveInterval.TotalMicroseconds;
         }
+
+        internal void ApplyMtuFeedback (int nextHopMtu)
+        {
+            var payloadCeiling = nextHopMtu - (EndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? 48 : 28);
+            if (payloadCeiling < UtpTransportSettings.MinimumRecoveryPacketSize)
+                payloadCeiling = UtpTransportSettings.MinimumRecoveryPacketSize;
+
+            lock (locker) {
+                if (payloadCeiling >= MtuCeiling)
+                    return;
+
+                MtuCeiling = payloadCeiling;
+                if (MtuFloor > MtuCeiling)
+                    MtuFloor = MtuCeiling;
+                if (CurrentMtu > MtuCeiling)
+                    CurrentMtu = MtuCeiling;
+                if (MtuProbeSize > MtuCeiling) {
+                    MtuProbeSequence = null;
+                    MtuProbeSize = 0;
+                }
+
+                if (MtuCeiling - MtuFloor <= MtuConvergedThreshold)
+                    NextMtuProbeAt = unchecked(clock.Microseconds + (uint) transportSettings.MtuProbeInterval.TotalMicroseconds);
+                else
+                    NextMtuProbeAt = clock.Microseconds;
+            }
+            Reschedule ();
+        }
+
+        void Reschedule ()
+            => scheduler.Reschedule ();
+
+        static bool IsDue (uint deadline, uint now)
+            => unchecked(now - deadline) < 0x8000_0000u;
+
+        static bool IsBefore (uint left, uint right)
+            => unchecked(left - right) >= 0x8000_0000u;
+
+        static bool IsForcedDue (uint deadline, uint? forcedDeadline)
+            => forcedDeadline.HasValue && !IsBefore (forcedDeadline.Value, deadline);
 
         int MaxConsecutiveTimeouts
             => State == ConnectionState.SynSent ? transportSettings.MaxSynTimeouts : transportSettings.MaxConnectedTimeouts;
@@ -1307,6 +1389,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             State = ConnectionState.Closed;
             CleanReadEof = true;
             ReceivedPackets.Writer.TryComplete ();
+            scheduler.Unregister (this);
+            if (ownsScheduler)
+                scheduler.Dispose ();
             _listener?.Unregister (this);
             HandshakeCompleted?.TrySetResult (false);
             cts.Cancel ();
@@ -1322,6 +1407,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             State = finalState;
             if (finalState == ConnectionState.Reset)
                 ReceivedPackets.Writer.TryComplete ();
+            scheduler.Unregister (this);
+            if (ownsScheduler)
+                scheduler.Dispose ();
             _listener?.Unregister (this);
             HandshakeCompleted?.TrySetResult (false);
             cts.Cancel ();

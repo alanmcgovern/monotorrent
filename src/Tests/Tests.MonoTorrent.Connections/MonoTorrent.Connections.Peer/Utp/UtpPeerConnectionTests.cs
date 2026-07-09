@@ -1047,6 +1047,67 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task MtuFeedbackLowersCeilingAndKeepsProbeSemantics ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                transportSettings: new UtpTransportSettings { InitialPacketSize = 512 });
+
+            connection.ApplyMtuFeedback (1000);
+            connection.NextMtuProbeAtForTests = 0;
+
+            Assert.AreEqual (972, connection.MtuCeilingForTests);
+            Assert.AreEqual (512, connection.MtuFloorForTests);
+            Assert.AreEqual (512, connection.CurrentMtuForTests);
+
+            var expectedProbeSize = connection.MtuFloorForTests + (connection.MtuCeilingForTests - connection.MtuFloorForTests + 1) / 2;
+            await connection.SendAsync (new byte[expectedProbeSize]).WithTimeout (10_000);
+            var probe = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (expectedProbeSize, probe.packet.Payload.Length);
+            Assert.AreEqual (probe.packet.SequenceNumber, connection.MtuProbeSequenceForTests);
+        }
+
+        [Test]
+        public void ListenerRoutesMtuFeedbackToRegisteredConnection ()
+        {
+            var clock = new ManualClock ();
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0), clock);
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            Assert.IsTrue (listener.TryRegisterOutgoing (connection));
+            Assert.IsTrue (listener.ApplyMtuFeedback ((IPEndPoint) connection.EndPoint, connection.ConnectionIdReceive, 1000));
+
+            Assert.AreEqual (972, connection.MtuCeilingForTests);
+        }
+
+        [Test]
+        public async Task ListenerSchedulerRetransmitsDueConnection ()
+        {
+            var clock = new ManualClock ();
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0), clock);
+            using var connection = new UtpPeerConnection (listener, listener.SendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            Assert.IsTrue (listener.TryRegisterOutgoing (connection));
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var first = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 1_000_000;
+            await listener.ProcessScheduledEventsForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+            var retransmit = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (first.packet.SequenceNumber, retransmit.packet.SequenceNumber);
+        }
+
+        [Test]
         public void ListenerPassesTransportSettingToConnections ()
         {
             var listener = new UtpPeerConnectionListener (
