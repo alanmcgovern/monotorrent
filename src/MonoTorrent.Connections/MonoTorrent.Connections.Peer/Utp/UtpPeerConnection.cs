@@ -1288,8 +1288,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                     if (mtuProbeOnlyTimedOut) {
                         HandleMtuProbeTimeout (timedOut[0]);
                     } else if (timedOut.Count > 0) {
-                        CurrentMtu = UtpTransportSettings.MinimumRecoveryPacketSize;
-                        MaxWindow = (uint) (UtpTransportSettings.MinimumRecoveryPacketSize + UtpPacket.HeaderSize);
+                        CurrentMtu = MtuFloor;
+                        MaxWindow = (uint) (CurrentMtu + UtpPacket.HeaderSize);
                         ConsecutiveTimeouts++;
                         if (ConsecutiveTimeouts < MaxConsecutiveTimeouts)
                             RetransmitTimeoutMicroseconds = Math.Min (

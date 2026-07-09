@@ -844,8 +844,8 @@ namespace MonoTorrent.Connections.Peer
             var retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             Assert.AreEqual (first.packet.SequenceNumber, retransmit.packet.SequenceNumber);
-            Assert.AreEqual (150, connection.CurrentMtuForTests);
-            Assert.AreEqual (UtpTransportSettings.MinimumRecoveryPacketSize + UtpPacket.HeaderSize, connection.MaxWindowForTests);
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize, connection.CurrentMtuForTests);
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize + UtpPacket.HeaderSize, connection.MaxWindowForTests);
             Assert.AreEqual (2_000_000, connection.RetransmitTimeoutMicrosecondsForTests);
         }
 
@@ -1503,13 +1503,13 @@ namespace MonoTorrent.Connections.Peer
             clock.Microseconds = 1_000_000;
             await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            Assert.AreEqual (UtpTransportSettings.MinimumRecoveryPacketSize + UtpPacket.HeaderSize, connection.MaxWindowForTests);
+            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize + UtpPacket.HeaderSize, connection.MaxWindowForTests);
 
             var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             connection.Receive (ack);
             await Task.Delay (50);
 
-            await connection.SendAsync (new byte[UtpTransportSettings.MinimumRecoveryPacketSize]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
             var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             clock.Microseconds = 1_050_000;
@@ -1518,7 +1518,7 @@ namespace MonoTorrent.Connections.Peer
             connection.Receive (ack);
             await Task.Delay (50);
 
-            Assert.Greater (connection.MaxWindowForTests, UtpTransportSettings.MinimumRecoveryPacketSize + UtpPacket.HeaderSize);
+            Assert.Greater (connection.MaxWindowForTests, UtpTransportSettings.DefaultInitialPacketSize + UtpPacket.HeaderSize);
         }
 
         [Test]
