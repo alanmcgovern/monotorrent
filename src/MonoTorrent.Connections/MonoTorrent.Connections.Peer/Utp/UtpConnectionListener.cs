@@ -266,6 +266,11 @@ namespace MonoTorrent.Connections.Peer.Utp
                 }
             }
 
+            if (IncomingConnectionCount >= TransportSettings.MaxIncomingSynConnections) {
+                Logger.Debug ($"Dropped uTP SYN from {remote} / {initiatorConnIdRecv}: incoming SYN capacity reached");
+                return;
+            }
+
             var connection = new UtpPeerConnection (
                 sendingChannel: SendQueue.Writer,
                 remote: remote,
@@ -358,6 +363,17 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal static int RecentResetCapacityForTests => MaxRecentResetEntries;
 
         internal int RegisteredConnectionCount => _connections.Count;
+
+        int IncomingConnectionCount {
+            get {
+                int count = 0;
+                foreach (var connection in _connections.Values) {
+                    if (connection.Connection.IsIncoming && !connection.Connection.IsClosedOrReset)
+                        count++;
+                }
+                return count;
+            }
+        }
 
         internal void PruneStaleConnections ()
         {

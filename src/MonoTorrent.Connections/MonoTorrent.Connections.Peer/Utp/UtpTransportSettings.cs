@@ -46,6 +46,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public int MaxReorderDistance { get; init; } = 1024;
 
+        public int MaxIncomingSynConnections { get; init; } = 1024;
+
         public TimeSpan DelayedAckDelay { get; init; } = TimeSpan.FromMilliseconds (50);
 
         public bool EnableDelayedAcks { get; init; } = true;
@@ -68,6 +70,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum SYN timeout count must be at least 1.");
             if (settings.MaxReorderDistance < 32)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum reorder distance must be at least 32 packets.");
+            if (settings.MaxReorderDistance > 2015)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The maximum reorder distance must not exceed 2015 packets.");
+            if (settings.MaxIncomingSynConnections < 1)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The maximum incoming SYN connection count must be at least 1.");
             if (settings.KeepAliveInterval <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The keep-alive interval must be positive.");
             if (settings.ZeroWindowProbeInterval <= TimeSpan.Zero)

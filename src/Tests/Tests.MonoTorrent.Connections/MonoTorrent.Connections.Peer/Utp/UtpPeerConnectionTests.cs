@@ -611,6 +611,42 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task FutureCumulativeAckIsIgnored ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var sent = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: unchecked((ushort) (sent.packet.SequenceNumber + 1))));
+            await Task.Delay (50);
+
+            Assert.AreEqual (UtpPacket.HeaderSize + 1, connection.BytesInFlightForTests);
+        }
+
+        [Test]
+        public async Task MaximumReorderDistanceProducesValidSelectiveAckLength ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                transportSettings: new UtpTransportSettings { MaxReorderDistance = 2015 });
+
+            connection.Receive (CreateDataPacket (2017, "a"));
+
+            var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.State, ack.packet.Type);
+            Assert.AreEqual (1, ack.packet.Extension);
+            Assert.AreEqual (252, ack.packet.AsMemory ().Span[UtpPacket.HeaderSize + 1]);
+        }
+
+        [Test]
         public async Task RepeatedAcksPiggybackedOnDataDoNotFastRetransmit ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
@@ -1156,6 +1192,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (TimeSpan.FromSeconds (29), settings.KeepAliveInterval);
             Assert.AreEqual (TimeSpan.FromSeconds (15), settings.ZeroWindowProbeInterval);
             Assert.AreEqual (1024, settings.MaxReorderDistance);
+            Assert.AreEqual (1024, settings.MaxIncomingSynConnections);
             Assert.AreEqual (TimeSpan.FromMilliseconds (50), settings.DelayedAckDelay);
             Assert.IsTrue (settings.EnableDelayedAcks);
             Assert.IsTrue (settings.EnablePathMtuDiscovery);
@@ -1168,6 +1205,8 @@ namespace MonoTorrent.Connections.Peer
             AssertInvalidSetting (new UtpTransportSettings { MaxConnectedTimeouts = 0 });
             AssertInvalidSetting (new UtpTransportSettings { MaxSynTimeouts = 0 });
             AssertInvalidSetting (new UtpTransportSettings { MaxReorderDistance = 31 });
+            AssertInvalidSetting (new UtpTransportSettings { MaxReorderDistance = 2016 });
+            AssertInvalidSetting (new UtpTransportSettings { MaxIncomingSynConnections = 0 });
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.Zero });
@@ -1662,11 +1701,31 @@ namespace MonoTorrent.Connections.Peer
             Assert.IsTrue (listener.TryRegisterOutgoing (connection));
 
             await connection.SendFinAsync ();
-            await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var fin = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            connection.Receive (CreateResetPacket (connection.ConnectionIdReceive));
+            connection.Receive (CreateResetPacket (connection.ConnectionIdReceive, fin.packet.SequenceNumber));
 
             Assert.IsFalse (listener.IsRegistered (connection));
+            Assert.IsTrue (connection.IsClosedOrReset);
+        }
+
+        [Test]
+        public async Task FutureAckResetIsIgnored ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var sent = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateResetPacket (123, unchecked((ushort) (sent.packet.SequenceNumber + 1))));
+            await Task.Delay (50);
+
+            Assert.IsFalse (connection.IsClosedOrReset);
+
+            connection.Receive (CreateResetPacket (123, sent.packet.SequenceNumber));
+            await Task.Delay (50);
+
             Assert.IsTrue (connection.IsClosedOrReset);
         }
 
@@ -1682,6 +1741,26 @@ namespace MonoTorrent.Connections.Peer
             var reset = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (PacketType.Reset, reset.packet.Type);
             Assert.IsNull (reset.connection);
+        }
+
+        [Test]
+        public async Task IncomingSynCapacityDropsNewConnectionsButAllowsDuplicateSyn ()
+        {
+            using var harness = new InMemoryUtpHarness (transportSettings: new UtpTransportSettings { MaxIncomingSynConnections = 1 });
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            var first = await harness.ReadOutbound ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.State, first.packet.Type);
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
+
+            harness.Deliver (CreateSynPacket (connectionId: 124, sequenceNumber: 8));
+            await AssertNoOutboundPacket (harness.Listener.SendQueue, TimeSpan.FromMilliseconds (100));
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            var duplicate = await harness.ReadOutbound ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.State, duplicate.packet.Type);
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
         }
 
         [Test]
@@ -2197,7 +2276,7 @@ namespace MonoTorrent.Connections.Peer
             return packet;
         }
 
-        static UtpPacket CreateResetPacket (ushort connectionId)
+        static UtpPacket CreateResetPacket (ushort connectionId, ushort ackNumber = 0)
         {
             var packet = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
                 Type = PacketType.Reset,
@@ -2205,7 +2284,7 @@ namespace MonoTorrent.Connections.Peer
                 ConnectionId = connectionId,
                 WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW,
                 SequenceNumber = 2,
-                AckNumber = 1
+                AckNumber = ackNumber
             };
             packet.SetTimestamp ();
             return packet;
@@ -2233,14 +2312,14 @@ namespace MonoTorrent.Connections.Peer
         sealed class InMemoryUtpHarness : IDisposable
         {
             public InMemoryUtpHarness ()
-                : this (new ManualClock ())
+                : this (new ManualClock (), null)
             {
             }
 
-            public InMemoryUtpHarness (ManualClock clock)
+            public InMemoryUtpHarness (ManualClock? clock = null, UtpTransportSettings? transportSettings = null)
             {
-                Clock = clock;
-                Listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0), clock);
+                Clock = clock ?? new ManualClock ();
+                Listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0), Clock, transportSettings);
                 Remote = new IPEndPoint (IPAddress.Loopback, 12345);
             }
 

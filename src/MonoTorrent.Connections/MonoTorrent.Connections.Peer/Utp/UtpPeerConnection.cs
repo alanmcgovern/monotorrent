@@ -558,10 +558,13 @@ namespace MonoTorrent.Connections.Peer.Utp
                 sendWindowChanged.Release ();
             if (!wasPeerWindowZero && PeerWindowSize == 0)
                 LastZeroWindowProbeMicroseconds = clock.Microseconds;
-            ProcessAcks (pkt, parsed.SelectiveAcks);
+            if (!ProcessAcks (pkt, parsed.SelectiveAcks))
+                return;
             Reschedule ();
 
             if (pkt.Type == PacketType.Reset) {
+                if (!IsAckNumberValid (pkt.AckNumber))
+                    return;
                 Close (ConnectionState.Reset);
                 return;
             }
@@ -647,18 +650,28 @@ namespace MonoTorrent.Connections.Peer.Utp
             return !SequenceGreaterThan (pkt.SequenceNumber, AckNumber);
         }
 
+        bool IsAckNumberValid (ushort ackNumber)
+        {
+            lock (locker) {
+                return sentPackets.Count == 0 || !SequenceGreaterThan (ackNumber, LastSentSequenceNumber);
+            }
+        }
+
         void UpdateDelaySample (UtpPacket pkt)
         {
             LastReceivedDelayMicroseconds = unchecked(clock.Microseconds - pkt.Timestamp);
         }
 
-        void ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks)
+        bool ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks)
         {
             List<SentPacket> acked = new ();
             List<UtpPacket> fastRetransmits = new ();
             bool wasWindowLimited;
 
             lock (locker) {
+                if (sentPackets.Count > 0 && SequenceGreaterThan (pkt.AckNumber, LastSentSequenceNumber))
+                    return false;
+
                 wasWindowLimited = IsWindowLimited ();
 
                 bool ackAdvanced = SequenceGreaterThan (pkt.AckNumber, LastAckReceived);
@@ -755,6 +768,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             foreach (var packet in fastRetransmits)
                 _ = RetransmitAsync (packet);
+
+            return true;
         }
 
         void ProcessMtuProbeAcks (List<SentPacket> acked)
