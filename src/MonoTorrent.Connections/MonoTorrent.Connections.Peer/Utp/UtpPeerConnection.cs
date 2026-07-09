@@ -1266,7 +1266,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal async Task ProcessScheduledEventsAsync (uint? forcedDeadline = null)
         {
             try {
-                SentPacket? timedOut = null;
+                List<SentPacket> timedOut = new ();
                 ushort? delayedAck = null;
                 bool sendKeepAlive = false;
                 bool releaseSendWindow = false;
@@ -1278,19 +1278,16 @@ namespace MonoTorrent.Connections.Peer.Utp
                         delayedAck = AckNumber;
                     }
 
-                    uint timedOutAge = 0;
                     foreach (var packet in sentPackets.Values) {
                         var age = unchecked(now - packet.SentAtMicroseconds);
-                        if (age >= RetransmitTimeoutMicroseconds && (timedOut == null || age > timedOutAge)) {
-                            timedOut = packet;
-                            timedOutAge = age;
-                        }
+                        if (age >= RetransmitTimeoutMicroseconds)
+                            timedOut.Add (packet);
                     }
 
-                    var mtuProbeOnlyTimedOut = timedOut?.IsMtuProbe == true && timedOut.Packet.SequenceNumber == MtuProbeSequence && sentPackets.Count == 1;
+                    var mtuProbeOnlyTimedOut = timedOut.Count == 1 && timedOut[0].IsMtuProbe && timedOut[0].Packet.SequenceNumber == MtuProbeSequence && sentPackets.Count == 1;
                     if (mtuProbeOnlyTimedOut) {
-                        HandleMtuProbeTimeout (timedOut!);
-                    } else if (timedOut != null) {
+                        HandleMtuProbeTimeout (timedOut[0]);
+                    } else if (timedOut.Count > 0) {
                         CurrentMtu = UtpTransportSettings.MinimumRecoveryPacketSize;
                         MaxWindow = (uint) (UtpTransportSettings.MinimumRecoveryPacketSize + UtpPacket.HeaderSize);
                         ConsecutiveTimeouts++;
@@ -1306,7 +1303,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                         && (IsDue (unchecked(LastZeroWindowProbeMicroseconds + (uint) transportSettings.ZeroWindowProbeInterval.TotalMicroseconds), now) || IsForcedDue (unchecked(LastZeroWindowProbeMicroseconds + (uint) transportSettings.ZeroWindowProbeInterval.TotalMicroseconds), forcedDeadline));
                 }
 
-                if (timedOut != null && ConsecutiveTimeouts >= MaxConsecutiveTimeouts) {
+                if (timedOut.Count > 0 && ConsecutiveTimeouts >= MaxConsecutiveTimeouts) {
                     Close (ConnectionState.Reset);
                     return;
                 }
@@ -1314,8 +1311,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (delayedAck.HasValue)
                     await SendAckAsync (delayedAck.Value);
 
-                if (timedOut != null)
-                    await RetransmitAsync (timedOut.Packet);
+                if (timedOut.Count > 0) {
+                    foreach (var packet in timedOut)
+                        await RetransmitAsync (packet.Packet);
+                }
                 else if (sendKeepAlive)
                     await SendKeepAliveAsync ();
 

@@ -773,6 +773,34 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task TimedOutPacketBatchBacksOffOnce ()
+        {
+            var clock = new ManualClock ();
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0), clock);
+            using var connection = new UtpPeerConnection (listener, listener.SendQueue, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 3 }).WithTimeout (10_000);
+
+            var first = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var third = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = connection.RetransmitTimeoutMicrosecondsForTests;
+            await listener.ProcessScheduledEventsForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            var retransmit1 = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var retransmit2 = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var retransmit3 = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            CollectionAssert.AreEquivalent (
+                new[] { first.packet.SequenceNumber, second.packet.SequenceNumber, third.packet.SequenceNumber },
+                new[] { retransmit1.packet.SequenceNumber, retransmit2.packet.SequenceNumber, retransmit3.packet.SequenceNumber });
+            Assert.AreEqual (2_000_000, connection.RetransmitTimeoutMicrosecondsForTests);
+        }
+
+        [Test]
         public async Task OneSackMaskWithThreeLaterPacketsFastRetransmitsMissingPacket ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
