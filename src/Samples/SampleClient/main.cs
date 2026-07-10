@@ -51,7 +51,7 @@ namespace ClientSample
                 // it's cache directory. Otherwise the metadata will be downloaded and stored in the cache directory
                 // so it can be reloaded later.
                 AutoSaveLoadMagnetLinkMetadata = true,
-
+                AllowedPeerTransports =ImmutableArray.Create (PeerTransport.Utp),
                 // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
                 ListenEndPoints = new Dictionary<string, IPEndPoint> {
                     { "ipv4", new IPEndPoint (IPAddress.Any, 55123) },
@@ -59,7 +59,7 @@ namespace ClientSample
                 }.ToImmutableDictionary (),
 
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
-                DhtEndPoint = new IPEndPoint (IPAddress.Any, 55123),
+                DhtEndPoint = null, //new IPEndPoint (IPAddress.Any, 55124),
 
 
                 // Wildcards such as these are supported as long as the underlying .NET framework version, and the operating system, supports them:
