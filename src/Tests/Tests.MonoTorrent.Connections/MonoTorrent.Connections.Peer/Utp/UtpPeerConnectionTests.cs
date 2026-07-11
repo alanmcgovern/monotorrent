@@ -2395,6 +2395,22 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task ProcessingDatagramDoesNotPruneStaleConnections ()
+        {
+            var clock = new ManualClock ();
+            using var harness = new InMemoryUtpHarness (clock);
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            await harness.ReadOutbound ().WithTimeout (5000);
+            clock.Microseconds = 120_000_000;
+
+            harness.Deliver (CreateDataPacket (2, "x", connectionId: 999));
+            await harness.ReadOutbound ().WithTimeout (5000);
+
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
+        }
+
+        [Test]
         public async Task InMemoryHarnessCanReorderAndDuplicatePackets ()
         {
             using var harness = new InMemoryUtpHarness ();

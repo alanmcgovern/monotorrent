@@ -80,6 +80,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         static readonly ILogger Logger = LoggerFactory.Create (nameof (UtpPeerConnectionListener));
         static readonly TimeSpan StaleConnectionTimeout = TimeSpan.FromMinutes (2);
+        static readonly TimeSpan StaleConnectionPruneInterval = TimeSpan.FromSeconds (10);
         const int MaxRecentResetEntries = 256;
         const uint RecentResetLifetimeMicroseconds = 10_000_000;
 
@@ -143,6 +144,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             TrackBackgroundTask (SendLoopAsync (socket, token));
             TrackBackgroundTask (ReceiveLoopAsync (socket, token));
+            TrackBackgroundTask (PruneStaleConnectionsLoopAsync (token));
         }
 
         void TrackBackgroundTask (Task task)
@@ -223,14 +225,22 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
+        async Task PruneStaleConnectionsLoopAsync (CancellationToken token)
+        {
+            using var timer = new PeriodicTimer (StaleConnectionPruneInterval);
+            try {
+                while (await timer.WaitForNextTickAsync (token))
+                    PruneStaleConnections ();
+            } catch (OperationCanceledException) when (token.IsCancellationRequested) {
+            }
+        }
+
         internal void ProcessDatagram (IPEndPoint remote, byte[] owned)
         {
             var pkt = new UtpPacket (owned);
 
             if (pkt.Version != UTP_VERSION)
                 return;
-
-            PruneStaleConnections ();
 
             switch (pkt.Type) {
                 case PacketType.Syn:
