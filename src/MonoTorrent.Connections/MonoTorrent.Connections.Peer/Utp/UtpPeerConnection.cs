@@ -702,6 +702,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 wasWindowLimited = IsWindowLimited ();
 
                 bool ackAdvanced = SequenceGreaterThan (pkt.AckNumber, LastAckReceived);
+                bool isStaleAck = SequenceGreaterThan (LastAckReceived, pkt.AckNumber);
                 if (ackAdvanced)
                     LastAckReceived = pkt.AckNumber;
 
@@ -728,7 +729,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                         ArrayPool<ushort>.Shared.Return (sequencesToRemove);
                 }
 
-                bool pureDuplicateAck = pkt.Type == PacketType.State && receivedSelectiveAcks.Count == 0 && !ackAdvanced && acked.Count == 0;
+                bool pureDuplicateAck = pkt.Type == PacketType.State && receivedSelectiveAcks.Count == 0 && !ackAdvanced && !isStaleAck && acked.Count == 0;
                 bool sackEvidence = false;
                 if (receivedSelectiveAcks.Count > 0) {
                     foreach (var seq in receivedSelectiveAcks) {

@@ -774,6 +774,36 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task StaleAckDoesNotFastRetransmit ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 3 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 4 }).WithTimeout (10_000);
+
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: second.packet.SequenceNumber));
+
+            for (int i = 0; i < 3; i++)
+                connection.Receive (CreateStatePacket (123, sequenceNumber: (ushort) (10 + i), ackNumber: first.packet.SequenceNumber));
+
+            await Task.Delay (100);
+
+            if (sendQueue.Reader.TryRead (out var retransmit))
+                Assert.Fail ($"Unexpected fast retransmit of packet {retransmit.packet.SequenceNumber}");
+
+            Assert.AreEqual ((UtpPacket.HeaderSize + 1) * 2, connection.BytesInFlightForTests);
+            Assert.AreEqual (unchecked((ushort) (second.packet.SequenceNumber + 1)), third.packet.SequenceNumber);
+        }
+
+        [Test]
         public async Task ThreeSackIndicationsFastRetransmitMissingPacket ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
