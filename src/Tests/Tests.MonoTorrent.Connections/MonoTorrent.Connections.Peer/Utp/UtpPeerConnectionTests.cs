@@ -867,6 +867,8 @@ namespace MonoTorrent.Connections.Peer
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
 
+            int recoveryPayloadSize = UtpTransportSettings.DefaultInitialPacketSize - UtpPacket.HeaderSize;
+
             await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
             var warmup = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             clock.Microseconds = 50_000;
@@ -874,20 +876,20 @@ namespace MonoTorrent.Connections.Peer
             ack.TimestampDiff = 10_000;
             connection.Receive (ack);
 
-            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[recoveryPayloadSize]).WithTimeout (10_000);
             var acked = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[recoveryPayloadSize]).WithTimeout (10_000);
             var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             clock.Microseconds = 100_000;
             ack = CreateStatePacket (123, sequenceNumber: 8, ackNumber: acked.packet.SequenceNumber);
             ack.TimestampDiff = 10_000;
             connection.Receive (ack);
 
-            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[recoveryPayloadSize]).WithTimeout (10_000);
             var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[recoveryPayloadSize]).WithTimeout (10_000);
             var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             clock.Microseconds = 100_000 + connection.RetransmitTimeoutMicrosecondsForTests;
@@ -896,7 +898,7 @@ namespace MonoTorrent.Connections.Peer
             var retransmit1 = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (first.packet.SequenceNumber, retransmit1.packet.SequenceNumber);
             Assert.IsFalse (sendQueue.Reader.TryRead (out _));
-            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize + UtpPacket.HeaderSize, connection.BytesInFlightForTests);
+            Assert.AreEqual (recoveryPayloadSize + UtpPacket.HeaderSize, connection.BytesInFlightForTests);
             Assert.AreEqual (2, connection.PendingRetransmitCountForTests);
 
             connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: retransmit1.packet.SequenceNumber));
@@ -904,7 +906,7 @@ namespace MonoTorrent.Connections.Peer
             var retransmit2 = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (second.packet.SequenceNumber, retransmit2.packet.SequenceNumber);
             Assert.IsFalse (sendQueue.Reader.TryRead (out _));
-            Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize + UtpPacket.HeaderSize, connection.BytesInFlightForTests);
+            Assert.AreEqual (recoveryPayloadSize + UtpPacket.HeaderSize, connection.BytesInFlightForTests);
             Assert.AreEqual (1, connection.PendingRetransmitCountForTests);
 
             connection.Receive (CreateStatePacket (123, sequenceNumber: 10, ackNumber: retransmit2.packet.SequenceNumber));
@@ -1239,6 +1241,8 @@ namespace MonoTorrent.Connections.Peer
                 clock,
                 transportSettings: new UtpTransportSettings { InitialPacketSize = 512 });
 
+            int warmupPayloadSize = 512 - UtpPacket.HeaderSize;
+
             await connection.SendAsync (new byte[512]).WithTimeout (10_000);
             var warmup = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             clock.Microseconds = 50_000;
@@ -1246,9 +1250,9 @@ namespace MonoTorrent.Connections.Peer
             ack.TimestampDiff = 10_000;
             connection.Receive (ack);
 
-            await connection.SendAsync (new byte[512]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[warmupPayloadSize]).WithTimeout (10_000);
             var warmup2 = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
-            await connection.SendAsync (new byte[512]).WithTimeout (10_000);
+            await connection.SendAsync (new byte[warmupPayloadSize]).WithTimeout (10_000);
             var warmup3 = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             clock.Microseconds = 100_000;
             ack = CreateStatePacket (123, sequenceNumber: 8, ackNumber: warmup3.packet.SequenceNumber);
