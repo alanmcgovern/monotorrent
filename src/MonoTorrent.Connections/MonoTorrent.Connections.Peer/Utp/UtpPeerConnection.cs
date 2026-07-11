@@ -224,7 +224,9 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         uint LastAdvertisedReceiveWindow { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
 
-        uint MaxWindow { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
+        uint MaxWindow { get; set; }
+
+        uint SlowStartThreshold { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
 
         int CurrentMtu { get; set; }
 
@@ -359,6 +361,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             CurrentMtu = settings.InitialPacketSize;
             MtuFloor = CurrentMtu;
             MtuCeiling = Math.Max (CurrentMtu, GetDefaultMtuCeiling (remote.AddressFamily));
+            MaxWindow = InitialCongestionWindow;
             NextMtuProbeAt = unchecked(clock.Microseconds + (uint) settings.MtuProbeInterval.TotalMicroseconds);
             State = ConnectionState.SynReceived;
             scheduler = listener?.Scheduler ?? new UtpConnectionScheduler (clock);
@@ -750,7 +753,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                             if (sent.IsMtuProbe && sent.Packet.SequenceNumber == MtuProbeSequence)
                                 HandleMtuProbeTimeout (sent);
                             else
-                                MaxWindow = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow / 2);
+                                ReduceCongestionWindowAfterLoss ();
                         }
                     }
                 }
@@ -773,7 +776,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             int bytesNewlyAcked = 0;
             bool finAcked = false;
             foreach (var sent in acked) {
-                bytesNewlyAcked += sent.PayloadBytes;
+                bytesNewlyAcked += PacketSendCost (sent);
                 if (sent.Packet.Type == PacketType.Fin)
                     finAcked = true;
 
@@ -905,11 +908,29 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (offTarget > 0 && !wasWindowLimited)
                     return;
 
+                if (MaxWindow < SlowStartThreshold) {
+                    if (offTarget > 0) {
+                        MaxWindow = Math.Min (SlowStartThreshold, MaxWindow + (uint) bytesNewlyAcked);
+                        return;
+                    }
+
+                    SlowStartThreshold = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow);
+                }
+
                 double delayFactor = offTarget / CControlTargetMicroseconds;
                 double windowFactor = Math.Min (1, bytesNewlyAcked / Math.Max (1.0, MaxWindow));
                 double gain = CurrentMtu * delayFactor * windowFactor;
                 MaxWindow = (uint) Math.Max (UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow + gain);
             }
+        }
+
+        uint InitialCongestionWindow
+            => (uint) (CurrentMtu + UtpPacket.HeaderSize);
+
+        void ReduceCongestionWindowAfterLoss ()
+        {
+            SlowStartThreshold = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow / 2);
+            MaxWindow = SlowStartThreshold;
         }
 
         static bool TryParsePacket (UtpPacket pkt, out ParsedPacket parsed)
@@ -1339,13 +1360,15 @@ namespace MonoTorrent.Connections.Peer.Utp
                         MarkForRetransmitLocked (timedOut[0]);
                     } else if (timedOut.Count > 0) {
                         CurrentMtu = MtuFloor;
-                        MaxWindow = (uint) (CurrentMtu + UtpPacket.HeaderSize);
+                        SlowStartThreshold = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow / 2);
+                        MaxWindow = InitialCongestionWindow;
                         ConsecutiveTimeouts++;
                         if (ConsecutiveTimeouts < MaxConsecutiveTimeouts)
                             RetransmitTimeoutMicroseconds = Math.Min (
                                 MaximumRetransmitTimeoutMicroseconds,
                                 Math.Max (MinimumRetransmitTimeoutMicroseconds, RetransmitTimeoutMicroseconds) * 2);
 
+                        timedOut.Sort ((left, right) => SequenceDistance (left.Packet.SequenceNumber, LastAckReceived).CompareTo (SequenceDistance (right.Packet.SequenceNumber, LastAckReceived)));
                         foreach (var packet in timedOut)
                             MarkForRetransmitLocked (packet);
                     } else if (ShouldSendKeepAliveLocked () && (IsDue (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds), now) || IsForcedDue (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds), forcedDeadline))) {
