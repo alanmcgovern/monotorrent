@@ -1677,6 +1677,41 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task LedbatHalvesWindowOnceForBurstLossInSameRecoveryWindow ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            var initialWindow = connection.MaxWindowForTests;
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 3 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 4 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 5 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 6 }).WithTimeout (10_000);
+
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var fourth = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var fifth = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var sixth = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber,
+                fourth.packet.SequenceNumber,
+                fifth.packet.SequenceNumber,
+                sixth.packet.SequenceNumber));
+
+            var firstRetransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var secondRetransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (second.packet.SequenceNumber, firstRetransmit.packet.SequenceNumber);
+            Assert.AreEqual (third.packet.SequenceNumber, secondRetransmit.packet.SequenceNumber);
+            Assert.AreEqual (initialWindow / 2, connection.MaxWindowForTests);
+        }
+
+        [Test]
         public async Task LedbatRecoversWindowAfterTimeoutMinimum ()
         {
             var clock = new ManualClock ();

@@ -249,6 +249,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         ulong PeerExtensionBits { get; set; }
 
+        ushort? LossSeqNr { get; set; }
+
         ushort LastAckReceived { get; set; }
 
         uint LastSentPacketMicroseconds { get; set; }
@@ -753,7 +755,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                             if (sent.IsMtuProbe && sent.Packet.SequenceNumber == MtuProbeSequence)
                                 HandleMtuProbeTimeout (sent);
                             else
-                                ReduceCongestionWindowAfterLoss ();
+                                ReduceCongestionWindowAfterLoss (sent.Packet.SequenceNumber);
                         }
                     }
                 }
@@ -928,8 +930,12 @@ namespace MonoTorrent.Connections.Peer.Utp
         uint InitialCongestionWindow
             => (uint) (CurrentMtu + UtpPacket.HeaderSize);
 
-        void ReduceCongestionWindowAfterLoss ()
+        void ReduceCongestionWindowAfterLoss (ushort lostSequenceNumber)
         {
+            if (LossSeqNr.HasValue && SequenceLessThanOrEqual (lostSequenceNumber, LossSeqNr.Value))
+                return;
+
+            LossSeqNr = LastSentSequenceNumber;
             SlowStartThreshold = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow / 2);
             MaxWindow = SlowStartThreshold;
         }
