@@ -297,6 +297,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal uint RecentDelayMicrosecondsForTests => RecentDelayMicroseconds;
 
+        internal uint LastReceivedDelayMicrosecondsForTests => LastReceivedDelayMicroseconds;
+
         internal ulong PeerExtensionBitsForTests => PeerExtensionBits;
 
         public UtpConnectionDiagnosticSnapshot DiagnosticSnapshot {
@@ -716,8 +718,11 @@ namespace MonoTorrent.Connections.Peer.Utp
             LastReceivedDelayMicroseconds = unchecked(clock.Microseconds - pkt.Timestamp);
         }
 
-        internal void ProcessSynTimestamp (UtpPacket syn)
-            => UpdateDelaySample (syn);
+        internal void InitializeFromSyn (UtpPacket syn)
+        {
+            ApplyPeerWindow (syn.WindowSize);
+            UpdateDelaySample (syn);
+        }
 
         void ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks, AckDisposition ackDisposition)
         {

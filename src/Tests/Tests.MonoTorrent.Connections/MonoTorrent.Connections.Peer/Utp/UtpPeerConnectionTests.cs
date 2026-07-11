@@ -2202,6 +2202,42 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task IncomingSynInitializesPeerWindowAndTimestamp ()
+        {
+            var clock = new ManualClock { Microseconds = 100_000 };
+            using var harness = new InMemoryUtpHarness (clock);
+            UtpPeerConnection? accepted = null;
+            harness.Listener.ConnectionReceived += (o, e) => accepted = (UtpPeerConnection) e.Connection;
+            var syn = CreateSynPacket (connectionId: 123, sequenceNumber: 7);
+            syn.WindowSize = 777_777;
+            syn.SetTimestamp (40_000);
+
+            harness.Deliver (syn);
+            await harness.ReadOutbound ().WithTimeout (5000);
+
+            Assert.IsNotNull (accepted);
+            Assert.AreEqual (777_777, accepted!.DiagnosticSnapshot.PeerWindowBytes);
+            Assert.AreEqual (60_000, accepted.LastReceivedDelayMicrosecondsForTests);
+        }
+
+        [Test]
+        public async Task SynWithSameEndpointAndConnectionIdButDifferentSequenceIsIgnored ()
+        {
+            using var harness = new InMemoryUtpHarness ();
+            int received = 0;
+            harness.Listener.ConnectionReceived += (o, e) => received++;
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 7));
+            await harness.ReadOutbound ().WithTimeout (5000);
+
+            harness.Deliver (CreateSynPacket (connectionId: 123, sequenceNumber: 8));
+            await AssertNoOutboundPacket (harness.Listener.SendQueue, TimeSpan.FromMilliseconds (100));
+
+            Assert.AreEqual (1, received);
+            Assert.AreEqual (1, harness.Listener.RegisteredConnectionCount);
+        }
+
+        [Test]
         public async Task DuplicateSynAfterCloseCreatesFreshConnectionOnSameKey ()
         {
             using var harness = new InMemoryUtpHarness ();
@@ -2324,7 +2360,7 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task SynCollidingWithOutgoingConnectionSendsReset ()
+        public async Task SynCollidingWithOutgoingConnectionIsIgnored ()
         {
             using var harness = new InMemoryUtpHarness ();
             using var outgoing = new UtpPeerConnection (harness.Listener, harness.Remote, 123);
@@ -2333,9 +2369,8 @@ namespace MonoTorrent.Connections.Peer
 
             harness.Deliver (CreateSynPacket (connectionId: 122, sequenceNumber: 7));
 
-            var reset = await harness.ReadOutbound ().WithTimeout (5000);
-            Assert.AreEqual (PacketType.Reset, reset.packet.Type);
-            Assert.IsNull (reset.connection);
+            await AssertNoOutboundPacket (harness.Listener.SendQueue, TimeSpan.FromMilliseconds (100));
+            Assert.IsTrue (harness.Listener.IsRegistered (outgoing));
         }
 
         [Test]

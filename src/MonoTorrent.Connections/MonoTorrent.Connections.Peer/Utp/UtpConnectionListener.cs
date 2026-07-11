@@ -41,13 +41,15 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         sealed class RegisteredConnection
         {
-            public RegisteredConnection (UtpPeerConnection connection, uint lastActivityMicroseconds)
+            public RegisteredConnection (UtpPeerConnection connection, uint lastActivityMicroseconds, ushort? incomingSynSequenceNumber = null)
             {
                 Connection = connection;
                 LastActivityMicroseconds = lastActivityMicroseconds;
+                IncomingSynSequenceNumber = incomingSynSequenceNumber;
             }
 
             public UtpPeerConnection Connection { get; }
+            public ushort? IncomingSynSequenceNumber { get; }
             public uint LastActivityMicroseconds { get; set; }
         }
 
@@ -251,18 +253,16 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             var key = (remote, ourConnIdRecv);
 
-            // Idempotent on retransmits – resend the ST_STATE.
+            // Idempotent only for an exact retransmission of the original SYN.
             if (_connections.TryGetValue (key, out var existing)) {
                 if (existing.Connection.IsClosedOrReset) {
                     _connections.TryRemove (key, out _);
-                } else if (existing.Connection.IsIncoming) {
+                } else if (existing.IncomingSynSequenceNumber == syn.SequenceNumber) {
                     existing.LastActivityMicroseconds = Clock.Microseconds;
-                    existing.Connection.ProcessSynTimestamp (syn);
                     await existing.Connection.SendSynAck (syn.SequenceNumber);
                     return;
                 } else {
-                    Logger.Debug ($"Reset uTP SYN colliding with outgoing connection {remote} / {initiatorConnIdRecv}");
-                    SendReset (remote, syn);
+                    Logger.Debug ($"Ignored colliding uTP SYN from {remote} / {initiatorConnIdRecv}");
                     return;
                 }
             }
@@ -282,13 +282,19 @@ namespace MonoTorrent.Connections.Peer.Utp
                 listener: this,
                 transportSettings: TransportSettings);
 
-            if (!_connections.TryAdd (key, new RegisteredConnection (connection, Clock.Microseconds))) {
+            connection.InitializeFromSyn (syn);
+
+            if (!_connections.TryAdd (key, new RegisteredConnection (connection, Clock.Microseconds, syn.SequenceNumber))) {
                 connection.Dispose ();
-                Logger.Debug ($"uTP connection-id collision for {remote} / {initiatorConnIdRecv}");
+                if (_connections.TryGetValue (key, out existing) && existing.IncomingSynSequenceNumber == syn.SequenceNumber) {
+                    existing.LastActivityMicroseconds = Clock.Microseconds;
+                    await existing.Connection.SendSynAck (syn.SequenceNumber);
+                } else {
+                    Logger.Debug ($"Ignored colliding uTP SYN from {remote} / {initiatorConnIdRecv}");
+                }
                 return;
             }
 
-            connection.ProcessSynTimestamp (syn);
             await connection.SendSynAck (syn.SequenceNumber);
 
             ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, null));
