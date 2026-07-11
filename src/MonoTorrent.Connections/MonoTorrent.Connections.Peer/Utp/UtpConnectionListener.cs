@@ -126,6 +126,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 SocketType.Dgram,
                 ProtocolType.Udp);
 
+            ConfigureSocketBuffers (socket, TransportSettings);
+
             // Suppress Windows ICMP port-unreachable errors killing the loop.
             if (OperatingSystem.IsWindows ()) {
                 const int SIO_UDP_CONNRESET = unchecked((int) 0x9800000C);
@@ -145,6 +147,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             TrackBackgroundTask (SendLoopAsync (socket, token));
             TrackBackgroundTask (ReceiveLoopAsync (socket, token));
             TrackBackgroundTask (PruneStaleConnectionsLoopAsync (token));
+        }
+
+        internal static void ConfigureSocketBuffers (Socket socket, UtpTransportSettings settings)
+        {
+            socket.ReceiveBufferSize = settings.SocketReceiveBufferBytes;
+            socket.SendBufferSize = settings.SocketSendBufferBytes;
         }
 
         void TrackBackgroundTask (Task task)

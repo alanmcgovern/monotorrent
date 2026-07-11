@@ -1478,6 +1478,8 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (1024, settings.MaxReorderDistance);
             Assert.AreEqual (1024, settings.MaxIncomingSynConnections);
             Assert.AreEqual (1024 * 1024, settings.MaxReceiveBufferBytes);
+            Assert.AreEqual (2 * 1024 * 1024, settings.SocketReceiveBufferBytes);
+            Assert.AreEqual (1024 * 1024, settings.SocketSendBufferBytes);
             Assert.AreEqual (TimeSpan.FromMilliseconds (10), settings.DelayedAckDelay);
             Assert.AreEqual (TimeSpan.FromMilliseconds (100), settings.CongestionControlTarget);
             Assert.IsTrue (settings.EnableDelayedAcks);
@@ -1494,6 +1496,8 @@ namespace MonoTorrent.Connections.Peer
             AssertInvalidSetting (new UtpTransportSettings { MaxReorderDistance = 2016 });
             AssertInvalidSetting (new UtpTransportSettings { MaxIncomingSynConnections = 0 });
             AssertInvalidSetting (new UtpTransportSettings { MaxReceiveBufferBytes = 0 });
+            AssertInvalidSetting (new UtpTransportSettings { SocketReceiveBufferBytes = 0 });
+            AssertInvalidSetting (new UtpTransportSettings { SocketSendBufferBytes = 0 });
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.Zero });
@@ -1504,6 +1508,21 @@ namespace MonoTorrent.Connections.Peer
             AssertInvalidSetting (new UtpTransportSettings { CongestionControlTarget = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { MtuProbeInterval = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { MtuProbeInterval = TimeSpan.FromTicks (-1) });
+        }
+
+        [Test]
+        public void ListenerConfiguresSocketBufferSizes ()
+        {
+            using var socket = new Socket (AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            var settings = UtpTransportSettings.Create (new UtpTransportSettings {
+                SocketReceiveBufferBytes = 512 * 1024,
+                SocketSendBufferBytes = 256 * 1024
+            });
+
+            UtpPeerConnectionListener.ConfigureSocketBuffers (socket, settings);
+
+            Assert.GreaterOrEqual (socket.ReceiveBufferSize, settings.SocketReceiveBufferBytes);
+            Assert.GreaterOrEqual (socket.SendBufferSize, settings.SocketSendBufferBytes);
         }
 
         [Test]
