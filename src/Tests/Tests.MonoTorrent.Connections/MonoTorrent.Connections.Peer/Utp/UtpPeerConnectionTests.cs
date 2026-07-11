@@ -33,6 +33,32 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task ReceiveFillsBufferAcrossPackets ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+            connection.Receive (CreateDataPacket (2, "ab"));
+            connection.Receive (CreateDataPacket (3, "cd"));
+
+            var buffer = new byte[4];
+            Assert.AreEqual (4, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
+            Assert.AreEqual ("abcd", System.Text.Encoding.ASCII.GetString (buffer));
+        }
+
+        [Test]
+        public async Task ReceiveReturnsPartialBufferAtCleanEof ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+            connection.Receive (CreateDataPacket (2, "ab"));
+            connection.Receive (CreateFinPacket (3));
+
+            var buffer = new byte[4];
+            Assert.AreEqual (2, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
+            Assert.AreEqual ("ab", System.Text.Encoding.ASCII.GetString (buffer, 0, 2));
+        }
+
+        [Test]
         public async Task ReceiveOutOfOrderPacketSendsSelectiveAck ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
