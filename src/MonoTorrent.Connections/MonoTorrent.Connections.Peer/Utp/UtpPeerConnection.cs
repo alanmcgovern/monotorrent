@@ -99,6 +99,24 @@ namespace MonoTorrent.Connections.Peer.Utp
             public ulong? ExtensionBits { get; }
         }
 
+        readonly struct IncomingDatagram
+        {
+            public IncomingDatagram (UtpPacket packet)
+            {
+                Packet = packet;
+                Barrier = null;
+            }
+
+            public IncomingDatagram (TaskCompletionSource<bool> barrier)
+            {
+                Packet = default;
+                Barrier = barrier;
+            }
+
+            public UtpPacket Packet { get; }
+            public TaskCompletionSource<bool>? Barrier { get; }
+        }
+
         sealed class LedbatDelayHistory
         {
             const int BaseDelayBuckets = 2;
@@ -176,6 +194,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly bool ownsScheduler;
         readonly int maxReceiveBufferBytes;
         readonly UtpTransportSettings transportSettings;
+        readonly Task receiveProcessor;
         uint? DelayedAckAt { get; set; }
         int DelayedAckPackets { get; set; }
         bool WaitingForSendWindow { get; set; }
@@ -270,6 +289,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         Channel<ParsedPacket> ReceivedPackets { get; }
 
+        Channel<IncomingDatagram> IncomingPackets { get; }
+
         ConnectionState State { get; set; }
 
         bool CleanReadEof { get; set; }
@@ -312,6 +333,17 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal ulong PeerExtensionBitsForTests => PeerExtensionBits;
 
+        internal Task ReceiveProcessorForTests => receiveProcessor;
+
+        internal Task FlushReceiveQueueForTests ()
+        {
+            if (cts.IsCancellationRequested)
+                return Task.CompletedTask;
+
+            var barrier = new TaskCompletionSource<bool> (TaskCreationOptions.RunContinuationsAsynchronously);
+            return IncomingPackets.Writer.TryWrite (new IncomingDatagram (barrier)) ? barrier.Task : Task.CompletedTask;
+        }
+
         public UtpConnectionDiagnosticSnapshot DiagnosticSnapshot {
             get {
                 lock (locker) {
@@ -351,6 +383,11 @@ namespace MonoTorrent.Connections.Peer.Utp
             EndPoint = remote;
             AddressBytes = EndPoint.Address.GetAddressBytes ();
             ReceivedPackets = Channel.CreateUnbounded<ParsedPacket> ();
+            IncomingPackets = Channel.CreateUnbounded<IncomingDatagram> (new UnboundedChannelOptions {
+                AllowSynchronousContinuations = false,
+                SingleReader = true,
+                SingleWriter = false
+            });
             ConnectionIdSend = connIdSend;
             ConnectionIdReceive = connIdRecv;
             IsIncoming = true;
@@ -371,6 +408,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             scheduler = listener?.Scheduler ?? new UtpConnectionScheduler (clock);
             ownsScheduler = listener == null;
             scheduler.Register (this);
+            receiveProcessor = ProcessReceiveQueueAsync ();
         }
 
         // Constructor for outgoing connections.
@@ -631,14 +669,28 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         // Called by the listener for every packet routed to this connection.
         internal void Receive (UtpPacket pkt)
+            => IncomingPackets.Writer.TryWrite (new IncomingDatagram (pkt));
+
+        async Task ProcessReceiveQueueAsync ()
         {
-            _ = ReceiveAsync (pkt).ContinueWith (task => {
-                if (!task.IsCanceled && task.Exception != null)
-                    Dispose ();
-            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            try {
+                await foreach (var incoming in IncomingPackets.Reader.ReadAllAsync (cts.Token)) {
+                    if (incoming.Barrier != null) {
+                        incoming.Barrier.TrySetResult (true);
+                        continue;
+                    }
+                    await ProcessReceivedPacketAsync (incoming.Packet);
+                }
+            } catch (OperationCanceledException) when (cts.IsCancellationRequested) {
+            } catch {
+                Close (ConnectionState.Reset);
+            } finally {
+                while (IncomingPackets.Reader.TryRead (out var pending))
+                    pending.Barrier?.TrySetResult (true);
+            }
         }
 
-        async Task ReceiveAsync (UtpPacket pkt)
+        async Task ProcessReceivedPacketAsync (UtpPacket pkt)
         {
             if (!IsValidPacketForCurrentState (pkt))
                 return;
@@ -1625,6 +1677,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             State = ConnectionState.Closed;
             CleanReadEof = true;
             ReceivedPackets.Writer.TryComplete ();
+            IncomingPackets.Writer.TryComplete ();
             scheduler.Unregister (this);
             if (ownsScheduler)
                 scheduler.Dispose ();
@@ -1641,6 +1694,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             CancelDelayedAck ();
             State = finalState;
+            IncomingPackets.Writer.TryComplete ();
             if (finalState == ConnectionState.Reset)
                 ReceivedPackets.Writer.TryComplete ();
             scheduler.Unregister (this);

@@ -1029,6 +1029,7 @@ namespace MonoTorrent.Connections.Peer
             var ack = CreateStatePacket (123, sequenceNumber: 7, ackNumber: warmup.packet.SequenceNumber);
             ack.TimestampDiff = 10_000;
             connection.Receive (ack);
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             await connection.SendAsync (new byte[recoveryPayloadSize]).WithTimeout (10_000);
             var acked = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
@@ -1039,6 +1040,7 @@ namespace MonoTorrent.Connections.Peer
             ack = CreateStatePacket (123, sequenceNumber: 8, ackNumber: acked.packet.SequenceNumber);
             ack.TimestampDiff = 10_000;
             connection.Receive (ack);
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             await connection.SendAsync (new byte[recoveryPayloadSize]).WithTimeout (10_000);
             var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
@@ -1403,6 +1405,7 @@ namespace MonoTorrent.Connections.Peer
             var ack = CreateStatePacket (123, sequenceNumber: 7, ackNumber: warmup.packet.SequenceNumber);
             ack.TimestampDiff = 10_000;
             connection.Receive (ack);
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             await connection.SendAsync (new byte[warmupPayloadSize]).WithTimeout (10_000);
             var warmup2 = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
@@ -1412,6 +1415,7 @@ namespace MonoTorrent.Connections.Peer
             ack = CreateStatePacket (123, sequenceNumber: 8, ackNumber: warmup3.packet.SequenceNumber);
             ack.TimestampDiff = 10_000;
             connection.Receive (ack);
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             var initialWindow = connection.MaxWindowForTests;
             connection.NextMtuProbeAtForTests = 0;
@@ -2237,6 +2241,7 @@ namespace MonoTorrent.Connections.Peer
             var fin = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             connection.Receive (CreateResetPacket (connection.ConnectionIdReceive, fin.packet.SequenceNumber));
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             Assert.IsFalse (listener.IsRegistered (connection));
             Assert.IsTrue (connection.IsClosedOrReset);
@@ -2645,7 +2650,21 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public void ReceivedResetUnregistersConnection ()
+        public async Task DisposeStopsReceiveProcessor ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+            var processor = connection.ReceiveProcessorForTests;
+
+            Assert.IsFalse (processor.IsCompleted);
+            connection.Dispose ();
+
+            await processor.WaitAsync (TimeSpan.FromSeconds (5));
+            Assert.IsTrue (processor.IsCompletedSuccessfully);
+        }
+
+        [Test]
+        public async Task ReceivedResetUnregistersConnection ()
         {
             var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
             using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
@@ -2653,12 +2672,13 @@ namespace MonoTorrent.Connections.Peer
             Assert.IsTrue (listener.TryRegisterOutgoing (connection));
 
             connection.Receive (CreateResetPacket (connection.ConnectionIdReceive));
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             Assert.IsFalse (listener.IsRegistered (connection));
         }
 
         [Test]
-        public void ReceivedResetWithSendConnectionIdUnregistersConnection ()
+        public async Task ReceivedResetWithSendConnectionIdUnregistersConnection ()
         {
             var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
             using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
@@ -2666,12 +2686,13 @@ namespace MonoTorrent.Connections.Peer
             Assert.IsTrue (listener.TryRegisterOutgoing (connection));
 
             listener.ProcessDatagram ((IPEndPoint) connection.EndPoint, CreateResetPacket (connection.ConnectionIdSend).AsMemory ().ToArray ());
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             Assert.IsFalse (listener.IsRegistered (connection));
         }
 
         [Test]
-        public void RoutedResetWithReceiveConnectionIdUnregistersConnection ()
+        public async Task RoutedResetWithReceiveConnectionIdUnregistersConnection ()
         {
             var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
             using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
@@ -2679,6 +2700,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.IsTrue (listener.TryRegisterOutgoing (connection));
 
             listener.ProcessDatagram ((IPEndPoint) connection.EndPoint, CreateResetPacket (connection.ConnectionIdReceive).AsMemory ().ToArray ());
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             Assert.IsFalse (listener.IsRegistered (connection));
         }
