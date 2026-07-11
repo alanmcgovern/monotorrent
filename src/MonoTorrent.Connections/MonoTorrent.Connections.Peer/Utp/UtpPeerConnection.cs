@@ -28,7 +28,6 @@
 
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -76,6 +75,8 @@ namespace MonoTorrent.Connections.Peer.Utp
             public bool PendingRetransmit { get; set; }
             public SentPacket? PreviousInFlight { get; set; }
             public SentPacket? NextInFlight { get; set; }
+            public SentPacket? PreviousOutstanding { get; set; }
+            public SentPacket? NextOutstanding { get; set; }
         }
 
         sealed class ParsedPacket
@@ -232,6 +233,10 @@ namespace MonoTorrent.Connections.Peer.Utp
         SentPacket? FirstInFlight { get; set; }
 
         SentPacket? LastInFlight { get; set; }
+
+        SentPacket? FirstOutstanding { get; set; }
+
+        SentPacket? LastOutstanding { get; set; }
 
         uint RttMicroseconds { get; set; }
 
@@ -479,13 +484,16 @@ namespace MonoTorrent.Connections.Peer.Utp
                     LastAckReceived = unchecked((ushort) (packet.SequenceNumber - 1));
                     AckStateInitialized = true;
                 }
-                if (sentPackets.TryGetValue (packet.SequenceNumber, out var existing))
+                if (sentPackets.TryGetValue (packet.SequenceNumber, out var existing)) {
                     RemoveBytesInFlightLocked (existing);
+                    RemoveOutstandingLocked (existing);
+                }
 
                 var sent = new SentPacket (packet, payloadBytes, clock.Microseconds, isMtuProbe);
                 sentPackets[packet.SequenceNumber] = sent;
                 BytesInFlight += PayloadSendCost (sent);
                 AppendInFlightLocked (sent);
+                AppendOutstandingLocked (sent);
 
                 if (isMtuProbe) {
                     MtuProbeSequence = packet.SequenceNumber;
@@ -540,6 +548,41 @@ namespace MonoTorrent.Connections.Peer.Utp
             else
                 LastInFlight.NextInFlight = packet;
             LastInFlight = packet;
+        }
+
+        void AppendOutstandingLocked (SentPacket packet)
+        {
+            packet.PreviousOutstanding = LastOutstanding;
+            packet.NextOutstanding = null;
+            if (LastOutstanding == null)
+                FirstOutstanding = packet;
+            else
+                LastOutstanding.NextOutstanding = packet;
+            LastOutstanding = packet;
+        }
+
+        void RemoveOutstandingLocked (SentPacket packet)
+        {
+            if (packet.PreviousOutstanding == null)
+                FirstOutstanding = packet.NextOutstanding;
+            else
+                packet.PreviousOutstanding.NextOutstanding = packet.NextOutstanding;
+            if (packet.NextOutstanding == null)
+                LastOutstanding = packet.PreviousOutstanding;
+            else
+                packet.NextOutstanding.PreviousOutstanding = packet.PreviousOutstanding;
+            packet.PreviousOutstanding = null;
+            packet.NextOutstanding = null;
+        }
+
+        bool RemoveSentPacketLocked (ushort sequenceNumber, out SentPacket sent)
+        {
+            if (!sentPackets.Remove (sequenceNumber, out sent!))
+                return false;
+
+            RemoveBytesInFlightLocked (sent);
+            RemoveOutstandingLocked (sent);
+            return true;
         }
 
         bool TryBufferReceivedPacket (ParsedPacket packet)
@@ -770,66 +813,40 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (ackAdvanced)
                     LastAckReceived = pkt.AckNumber;
 
-                ushort[]? sequencesToRemove = null;
-                int sequencesToRemoveCount = 0;
-                try {
-                    if (sentPackets.Count > 0) {
-                        sequencesToRemove = ArrayPool<ushort>.Shared.Rent (sentPackets.Count);
-                        foreach (var seq in sentPackets.Keys) {
-                            if (SequenceLessThanOrEqual (seq, pkt.AckNumber))
-                                sequencesToRemove[sequencesToRemoveCount++] = seq;
-                        }
-
-                        for (int i = 0; i < sequencesToRemoveCount; i++) {
-                            var seq = sequencesToRemove[i];
-                            if (sentPackets.Remove (seq, out var sent)) {
-                                acked.Add (sent);
-                                RemoveBytesInFlightLocked (sent);
-                            }
-                        }
-                    }
-                } finally {
-                    if (sequencesToRemove != null)
-                        ArrayPool<ushort>.Shared.Return (sequencesToRemove);
+                while (FirstOutstanding != null && SequenceLessThanOrEqual (FirstOutstanding.Packet.SequenceNumber, pkt.AckNumber)) {
+                    var sequenceNumber = FirstOutstanding.Packet.SequenceNumber;
+                    if (RemoveSentPacketLocked (sequenceNumber, out var sent))
+                        acked.Add (sent);
                 }
 
                 bool pureDuplicateAck = pkt.Type == PacketType.State && receivedSelectiveAcks.Count == 0 && !ackAdvanced && !isStaleAck && acked.Count == 0;
-                bool sackEvidence = false;
-                if (receivedSelectiveAcks.Count > 0) {
-                    foreach (var seq in receivedSelectiveAcks) {
-                        if (IsSelectiveAckInSendWindow (seq, pkt.AckNumber) && sentPackets.ContainsKey (seq)) {
-                            sackEvidence = true;
-                            break;
+                int validSelectiveAckCount = 0;
+                for (int i = 0; i < receivedSelectiveAcks.Count; i++) {
+                    var sequenceNumber = receivedSelectiveAcks[i];
+                    if (IsSelectiveAckInSendWindow (sequenceNumber, pkt.AckNumber) && sentPackets.ContainsKey (sequenceNumber))
+                        receivedSelectiveAcks[validSelectiveAckCount++] = sequenceNumber;
+                }
+
+                if (pureDuplicateAck) {
+                    if (sentPackets.TryGetValue (unchecked((ushort) (pkt.AckNumber + 1)), out var sent))
+                        ApplyDuplicateAckIndicationsLocked (sent, 1, fastRetransmits);
+                } else if (validSelectiveAckCount > 0) {
+                    int firstGreaterSelectiveAck = 0;
+                    for (var sent = FirstOutstanding; sent != null; sent = sent.NextOutstanding) {
+                        while (firstGreaterSelectiveAck < validSelectiveAckCount
+                            && !SequenceGreaterThan (receivedSelectiveAcks[firstGreaterSelectiveAck], sent.Packet.SequenceNumber)) {
+                            firstGreaterSelectiveAck++;
                         }
+
+                        var indications = validSelectiveAckCount - firstGreaterSelectiveAck;
+                        if (indications > 0)
+                            ApplyDuplicateAckIndicationsLocked (sent, indications, fastRetransmits);
                     }
                 }
 
-                if (pureDuplicateAck || sackEvidence) {
-                    foreach (var sent in sentPackets.Values) {
-                        int duplicateAckIndications = CountDuplicateAckIndications (sent.Packet.SequenceNumber, pkt.AckNumber, receivedSelectiveAcks, sentPackets, pureDuplicateAck);
-                        if (duplicateAckIndications == 0)
-                            continue;
-
-                        sent.DuplicateAckIndications += duplicateAckIndications;
-                        if (sent.DuplicateAckIndications >= 3 && !sent.FastRetransmitted) {
-                            fastRetransmits.Add (sent);
-                            sent.FastRetransmitted = true;
-                            if (sent.IsMtuProbe && sent.Packet.SequenceNumber == MtuProbeSequence)
-                                HandleMtuProbeTimeout (sent);
-                            else
-                                ReduceCongestionWindowAfterLoss (sent.Packet.SequenceNumber);
-                        }
-                    }
-                }
-
-                foreach (var seq in receivedSelectiveAcks) {
-                    if (!IsSelectiveAckInSendWindow (seq, pkt.AckNumber))
-                        continue;
-
-                    if (sentPackets.Remove (seq, out var sent)) {
+                for (int i = 0; i < validSelectiveAckCount; i++) {
+                    if (RemoveSentPacketLocked (receivedSelectiveAcks[i], out var sent))
                         acked.Add (sent);
-                        RemoveBytesInFlightLocked (sent);
-                    }
                 }
 
                 if (acked.Count > 0)
@@ -847,9 +864,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                 var packetRtt = UpdateRtt (sent);
                 if (packetRtt != 0 && (minAckedRttMicroseconds == 0 || packetRtt < minAckedRttMicroseconds))
                     minAckedRttMicroseconds = packetRtt;
+
+                ProcessMtuProbeAck (sent);
             }
 
-            ProcessMtuProbeAcks (acked);
             ApplyCongestionControl (bytesNewlyAcked, pkt.TimestampDiff, minAckedRttMicroseconds, wasWindowLimited);
 
             if (finAcked && State == ConnectionState.FinSent)
@@ -870,40 +888,35 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         }
 
-        void ProcessMtuProbeAcks (List<SentPacket> acked)
+        void ProcessMtuProbeAck (SentPacket sent)
         {
-            foreach (var sent in acked) {
-                if (!sent.IsMtuProbe || sent.Packet.SequenceNumber != MtuProbeSequence || sent.Transmissions != 1)
-                    continue;
+            if (!sent.IsMtuProbe || sent.Packet.SequenceNumber != MtuProbeSequence || sent.Transmissions != 1)
+                return;
 
-                MtuFloor = Math.Max (MtuFloor, sent.PayloadBytes);
-                MtuProbeSequence = null;
-                MtuProbeSize = 0;
-                CurrentMtu = MtuFloor;
-                if (MtuCeiling - MtuFloor <= MtuConvergedThreshold)
-                    NextMtuProbeAt = unchecked(clock.Microseconds + (uint) transportSettings.MtuProbeInterval.TotalMicroseconds);
-                else
-                    NextMtuProbeAt = clock.Microseconds;
-            }
+            MtuFloor = Math.Max (MtuFloor, sent.PayloadBytes);
+            MtuProbeSequence = null;
+            MtuProbeSize = 0;
+            CurrentMtu = MtuFloor;
+            if (MtuCeiling - MtuFloor <= MtuConvergedThreshold)
+                NextMtuProbeAt = unchecked(clock.Microseconds + (uint) transportSettings.MtuProbeInterval.TotalMicroseconds);
+            else
+                NextMtuProbeAt = clock.Microseconds;
         }
 
         bool IsSelectiveAckInSendWindow (ushort selectiveAck, ushort ackNumber)
             => SequenceGreaterThan (selectiveAck, ackNumber) && SequenceLessThanOrEqual (selectiveAck, LastSentSequenceNumber);
 
-        static int CountDuplicateAckIndications (ushort sequenceNumber, ushort ackNumber, List<ushort> selectiveAcks, Dictionary<ushort, SentPacket> sentPackets, bool pureDuplicateAck)
+        void ApplyDuplicateAckIndicationsLocked (SentPacket sent, int indications, List<SentPacket> fastRetransmits)
         {
-            if (SequenceLessThanOrEqual (sequenceNumber, ackNumber))
-                return 0;
-
-            if (selectiveAcks.Count == 0)
-                return pureDuplicateAck && sequenceNumber == unchecked((ushort) (ackNumber + 1)) ? 1 : 0;
-
-            int count = 0;
-            foreach (var sack in selectiveAcks) {
-                if (sentPackets.ContainsKey (sack) && SequenceGreaterThan (sack, sequenceNumber))
-                    count++;
+            sent.DuplicateAckIndications += indications;
+            if (sent.DuplicateAckIndications >= 3 && !sent.FastRetransmitted) {
+                fastRetransmits.Add (sent);
+                sent.FastRetransmitted = true;
+                if (sent.IsMtuProbe && sent.Packet.SequenceNumber == MtuProbeSequence)
+                    HandleMtuProbeTimeout (sent);
+                else
+                    ReduceCongestionWindowAfterLoss (sent.Packet.SequenceNumber);
             }
-            return count;
         }
 
         uint UpdateRtt (SentPacket sent)
