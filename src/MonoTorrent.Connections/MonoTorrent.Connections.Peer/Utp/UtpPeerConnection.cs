@@ -156,7 +156,6 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         const byte SelectiveAckExtension = 1;
         const byte ExtensionBitsExtension = 2;
-        const int DefaultMaxReceiveBufferBytes = (int) UtpPeerConnectionListener.INITIAL_WINDOW;
         const uint InitialRetransmitTimeoutMicroseconds = 1_000_000;
         const uint MinimumRetransmitTimeoutMicroseconds = 500_000;
         const uint MaximumRetransmitTimeoutMicroseconds = 60_000_000;
@@ -328,14 +327,14 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
         }
 
-        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock, UtpPeerConnectionListener? listener = null, int maxReceiveBufferBytes = DefaultMaxReceiveBufferBytes, UtpTransportSettings? transportSettings = null)
+        internal UtpPeerConnection (ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> sendingChannel, IPEndPoint remote, ushort connIdSend, ushort connIdRecv, ushort initialAckNumber, IUtpClock clock, UtpPeerConnectionListener? listener = null, int? maxReceiveBufferBytes = null, UtpTransportSettings? transportSettings = null)
         {
             SendingChannel = sendingChannel;
             _listener = listener;
             this.clock = clock;
-            this.maxReceiveBufferBytes = maxReceiveBufferBytes;
             var settings = UtpTransportSettings.Create (transportSettings ?? listener?.TransportSettings);
             this.transportSettings = settings;
+            this.maxReceiveBufferBytes = maxReceiveBufferBytes ?? settings.MaxReceiveBufferBytes;
             EndPoint = remote;
             AddressBytes = EndPoint.Address.GetAddressBytes ();
             ReceivedPackets = Channel.CreateUnbounded<ParsedPacket> ();

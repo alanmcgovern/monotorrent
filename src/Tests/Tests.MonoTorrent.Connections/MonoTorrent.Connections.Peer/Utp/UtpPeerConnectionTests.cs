@@ -245,7 +245,7 @@ namespace MonoTorrent.Connections.Peer
             connection.Receive (CreateDataPacket (3, "abcd"));
 
             var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
-            Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW - 4, ack.packet.WindowSize);
+            Assert.AreEqual (UtpTransportSettings.DefaultMaxReceiveBufferBytes - 4, ack.packet.WindowSize);
         }
 
         [Test]
@@ -638,6 +638,22 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public void ReceiveBufferSizeCanBeConfigured ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                transportSettings: new UtpTransportSettings { MaxReceiveBufferBytes = 512 * 1024 });
+
+            Assert.AreEqual (512 * 1024, connection.DiagnosticSnapshot.ReceiveWindowBytes);
+        }
+
+        [Test]
         public async Task DiagnosticSnapshotReportsConnectionState ()
         {
             var clock = new ManualClock ();
@@ -648,7 +664,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual ("SynReceived", initial.State);
             Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize, initial.SendWindowBytes);
             Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW, initial.PeerWindowBytes);
-            Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW, initial.ReceiveWindowBytes);
+            Assert.AreEqual (UtpTransportSettings.DefaultMaxReceiveBufferBytes, initial.ReceiveWindowBytes);
             Assert.AreEqual (UtpTransportSettings.DefaultInitialPacketSize, initial.CurrentMtuBytes);
 
             await connection.SendAsync (new byte[] { 1, 2, 3 }).WithTimeout (10_000);
@@ -1439,6 +1455,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (TimeSpan.FromSeconds (15), settings.ZeroWindowProbeInterval);
             Assert.AreEqual (1024, settings.MaxReorderDistance);
             Assert.AreEqual (1024, settings.MaxIncomingSynConnections);
+            Assert.AreEqual (1024 * 1024, settings.MaxReceiveBufferBytes);
             Assert.AreEqual (TimeSpan.FromMilliseconds (10), settings.DelayedAckDelay);
             Assert.AreEqual (TimeSpan.FromMilliseconds (100), settings.CongestionControlTarget);
             Assert.IsTrue (settings.EnableDelayedAcks);
@@ -1454,6 +1471,7 @@ namespace MonoTorrent.Connections.Peer
             AssertInvalidSetting (new UtpTransportSettings { MaxReorderDistance = 31 });
             AssertInvalidSetting (new UtpTransportSettings { MaxReorderDistance = 2016 });
             AssertInvalidSetting (new UtpTransportSettings { MaxIncomingSynConnections = 0 });
+            AssertInvalidSetting (new UtpTransportSettings { MaxReceiveBufferBytes = 0 });
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.Zero });

@@ -34,6 +34,7 @@ namespace MonoTorrent.Connections.Peer.Utp
     public sealed record class UtpTransportSettings
     {
         public const int DefaultInitialPacketSize = 1400;
+        public const int DefaultMaxReceiveBufferBytes = 1024 * 1024;
         public const int MinimumRecoveryPacketSize = 150;
 
         public int MaxConnectedTimeouts { get; init; } = 4;
@@ -47,6 +48,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         public int MaxReorderDistance { get; init; } = 1024;
 
         public int MaxIncomingSynConnections { get; init; } = 1024;
+
+        public int MaxReceiveBufferBytes { get; init; } = DefaultMaxReceiveBufferBytes;
 
         public TimeSpan DelayedAckDelay { get; init; } = TimeSpan.FromMilliseconds (10);
 
@@ -76,6 +79,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum reorder distance must not exceed 2015 packets.");
             if (settings.MaxIncomingSynConnections < 1)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum incoming SYN connection count must be at least 1.");
+            if (settings.MaxReceiveBufferBytes < 1)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The maximum receive buffer size must be at least 1 byte.");
             if (settings.KeepAliveInterval <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The keep-alive interval must be positive.");
             if (settings.ZeroWindowProbeInterval <= TimeSpan.Zero)
