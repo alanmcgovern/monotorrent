@@ -654,6 +654,28 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task AcknowledgingOldestPacketPromotesNextRetransmitDeadline ()
+        {
+            var clock = new ManualClock { Microseconds = 100 };
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            clock.Microseconds = 200;
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (10_000);
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (100 + connection.RetransmitTimeoutMicrosecondsForTests, connection.NextScheduledEventMicroseconds);
+
+            clock.Microseconds = 300;
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber));
+            await Task.Delay (50);
+
+            Assert.AreEqual (200 + connection.RetransmitTimeoutMicrosecondsForTests, connection.NextScheduledEventMicroseconds);
+        }
+
+        [Test]
         public async Task RetransmittedDataRefreshesCumulativeAckBeforeSend ()
         {
             var clock = new ManualClock ();

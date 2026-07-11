@@ -74,6 +74,8 @@ namespace MonoTorrent.Connections.Peer.Utp
             public bool FastRetransmitted { get; set; }
             public bool IsInFlight { get; set; } = true;
             public bool PendingRetransmit { get; set; }
+            public SentPacket? PreviousInFlight { get; set; }
+            public SentPacket? NextInFlight { get; set; }
         }
 
         sealed class ParsedPacket
@@ -226,6 +228,10 @@ namespace MonoTorrent.Connections.Peer.Utp
         uint NextMtuProbeAt { get; set; }
 
         uint RetransmitTimeoutMicroseconds { get; set; } = InitialRetransmitTimeoutMicroseconds;
+
+        SentPacket? FirstInFlight { get; set; }
+
+        SentPacket? LastInFlight { get; set; }
 
         uint RttMicroseconds { get; set; }
 
@@ -476,8 +482,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (sentPackets.TryGetValue (packet.SequenceNumber, out var existing))
                     RemoveBytesInFlightLocked (existing);
 
-                sentPackets[packet.SequenceNumber] = new SentPacket (packet, payloadBytes, clock.Microseconds, isMtuProbe);
-                BytesInFlight += PayloadSendCost (sentPackets[packet.SequenceNumber]);
+                var sent = new SentPacket (packet, payloadBytes, clock.Microseconds, isMtuProbe);
+                sentPackets[packet.SequenceNumber] = sent;
+                BytesInFlight += PayloadSendCost (sent);
+                AppendInFlightLocked (sent);
 
                 if (isMtuProbe) {
                     MtuProbeSequence = packet.SequenceNumber;
@@ -511,6 +519,27 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             BytesInFlight -= PayloadSendCost (packet);
             packet.IsInFlight = false;
+            if (packet.PreviousInFlight == null)
+                FirstInFlight = packet.NextInFlight;
+            else
+                packet.PreviousInFlight.NextInFlight = packet.NextInFlight;
+            if (packet.NextInFlight == null)
+                LastInFlight = packet.PreviousInFlight;
+            else
+                packet.NextInFlight.PreviousInFlight = packet.PreviousInFlight;
+            packet.PreviousInFlight = null;
+            packet.NextInFlight = null;
+        }
+
+        void AppendInFlightLocked (SentPacket packet)
+        {
+            packet.PreviousInFlight = LastInFlight;
+            packet.NextInFlight = null;
+            if (LastInFlight == null)
+                FirstInFlight = packet;
+            else
+                LastInFlight.NextInFlight = packet;
+            LastInFlight = packet;
         }
 
         bool TryBufferReceivedPacket (ParsedPacket packet)
@@ -1373,10 +1402,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                     if (DelayedAckAt.HasValue)
                         Add (DelayedAckAt.Value);
 
-                    foreach (var packet in sentPackets.Values) {
-                        if (packet.IsInFlight)
-                            Add (unchecked(packet.SentAtMicroseconds + RetransmitTimeoutMicroseconds));
-                    }
+                    if (FirstInFlight != null)
+                        Add (unchecked(FirstInFlight.SentAtMicroseconds + RetransmitTimeoutMicroseconds));
 
                     if (State == ConnectionState.Connected && HasSentPacket && CurrentWindow == 0)
                         Add (unchecked(LastSentPacketMicroseconds + (uint) transportSettings.KeepAliveInterval.TotalMicroseconds));
@@ -1408,13 +1435,11 @@ namespace MonoTorrent.Connections.Peer.Utp
                         delayedAck = AckNumber;
                     }
 
-                    foreach (var packet in sentPackets.Values) {
-                        if (!packet.IsInFlight)
-                            continue;
-
+                    for (var packet = FirstInFlight; packet != null; packet = packet.NextInFlight) {
                         var age = unchecked(now - packet.SentAtMicroseconds);
-                        if (age >= RetransmitTimeoutMicroseconds)
-                            timedOut.Add (packet);
+                        if (age < RetransmitTimeoutMicroseconds)
+                            break;
+                        timedOut.Add (packet);
                     }
 
                     var mtuProbeOnlyTimedOut = timedOut.Count == 1 && timedOut[0].IsMtuProbe && timedOut[0].Packet.SequenceNumber == MtuProbeSequence && sentPackets.Count == 1;
@@ -1561,6 +1586,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                         sent.DuplicateAckIndications = 0;
                         sent.SentAtMicroseconds = clock.Microseconds;
                         BytesInFlight += payloadBytes;
+                        AppendInFlightLocked (sent);
                         packet = sent.Packet;
                         hasPacket = true;
                         break;
