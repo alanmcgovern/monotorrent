@@ -1459,7 +1459,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         void Reschedule ()
-            => scheduler.Reschedule ();
+            => scheduler.Reschedule (this);
 
         static bool IsDue (uint deadline, uint now)
             => unchecked(now - deadline) < 0x8000_0000u;

@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,7 +7,28 @@ namespace MonoTorrent.Connections.Peer.Utp
 {
     sealed class UtpConnectionScheduler : IDisposable
     {
-        readonly ConcurrentDictionary<UtpPeerConnection, byte> connections = new ();
+        sealed class ScheduledConnection
+        {
+            public uint? Deadline { get; set; }
+            public long Version { get; set; }
+        }
+
+        readonly struct HeapEntry
+        {
+            public HeapEntry (UtpPeerConnection connection, uint deadline, long version)
+            {
+                Connection = connection;
+                Deadline = deadline;
+                Version = version;
+            }
+
+            public UtpPeerConnection Connection { get; }
+            public uint Deadline { get; }
+            public long Version { get; }
+        }
+
+        readonly Dictionary<UtpPeerConnection, ScheduledConnection> connections = new ();
+        readonly List<HeapEntry> deadlines = new ();
         readonly IUtpClock clock;
         readonly bool forceTimerDeadlines;
         readonly Timer timer;
@@ -25,41 +46,35 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public void Register (UtpPeerConnection connection)
         {
-            if (disposed)
-                return;
+            lock (locker) {
+                if (disposed)
+                    return;
 
-            connections[connection] = 0;
-            Reschedule ();
+                var scheduled = new ScheduledConnection ();
+                connections[connection] = scheduled;
+                UpdateDeadlineLocked (connection, scheduled);
+                UpdateTimerLocked ();
+            }
         }
 
         public void Unregister (UtpPeerConnection connection)
         {
-            connections.TryRemove (connection, out _);
-            Reschedule ();
+            lock (locker) {
+                if (connections.Remove (connection, out var scheduled))
+                    scheduled.Version++;
+
+                UpdateTimerLocked ();
+            }
         }
 
-        public void Reschedule ()
+        public void Reschedule (UtpPeerConnection connection)
         {
-            if (disposed)
-                return;
-
-            uint now = clock.Microseconds;
-            uint? next = null;
-            foreach (var connection in connections.Keys) {
-                var deadline = connection.NextScheduledEventMicroseconds;
-                if (!deadline.HasValue)
-                    continue;
-
-                if (!next.HasValue || IsBefore (deadline.Value, next.Value))
-                    next = deadline.Value;
-            }
-
-            var due = next.HasValue ? DueTime (now, next.Value) : Timeout.InfiniteTimeSpan;
             lock (locker) {
-                if (!disposed) {
-                    scheduledDeadline = next;
-                    timer.Change (due, Timeout.InfiniteTimeSpan);
-                }
+                if (disposed || !connections.TryGetValue (connection, out var scheduled))
+                    return;
+
+                UpdateDeadlineLocked (connection, scheduled);
+                UpdateTimerLocked ();
             }
         }
 
@@ -76,24 +91,115 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         async Task ProcessDueEventsAsync (uint? forcedDeadline)
         {
+            List<UtpPeerConnection> dueConnections = new ();
             lock (locker) {
                 if (disposed || running)
                     return;
+
+                var now = clock.Microseconds;
+                while (TryPeekValidDeadlineLocked (out var entry) && (IsDue (entry.Deadline, now) || (forcedDeadline.HasValue && !IsBefore (forcedDeadline.Value, entry.Deadline)))) {
+                    PopHeapLocked ();
+                    if (!connections.TryGetValue (entry.Connection, out var scheduled) || scheduled.Version != entry.Version || scheduled.Deadline != entry.Deadline)
+                        continue;
+
+                    scheduled.Deadline = null;
+                    dueConnections.Add (entry.Connection);
+                }
+
+                if (dueConnections.Count == 0) {
+                    UpdateTimerLocked ();
+                    return;
+                }
+
                 running = true;
             }
 
             try {
-                var now = clock.Microseconds;
-                foreach (var connection in connections.Keys) {
-                    var deadline = connection.NextScheduledEventMicroseconds;
-                    if (deadline.HasValue && (IsDue (deadline.Value, now) || (forcedDeadline.HasValue && !IsBefore (forcedDeadline.Value, deadline.Value))))
-                        await connection.ProcessScheduledEventsAsync (forcedDeadline);
-                }
+                foreach (var connection in dueConnections)
+                    await connection.ProcessScheduledEventsAsync (forcedDeadline);
             } finally {
-                lock (locker)
+                lock (locker) {
                     running = false;
-                Reschedule ();
+                    UpdateTimerLocked ();
+                }
             }
+        }
+
+        void UpdateDeadlineLocked (UtpPeerConnection connection, ScheduledConnection scheduled)
+        {
+            scheduled.Version++;
+            scheduled.Deadline = connection.NextScheduledEventMicroseconds;
+            if (scheduled.Deadline.HasValue)
+                PushHeapLocked (new HeapEntry (connection, scheduled.Deadline.Value, scheduled.Version));
+        }
+
+        void UpdateTimerLocked ()
+        {
+            if (disposed)
+                return;
+
+            if (TryPeekValidDeadlineLocked (out var entry)) {
+                scheduledDeadline = entry.Deadline;
+                timer.Change (DueTime (clock.Microseconds, entry.Deadline), Timeout.InfiniteTimeSpan);
+            } else {
+                scheduledDeadline = null;
+                timer.Change (Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            }
+        }
+
+        bool TryPeekValidDeadlineLocked (out HeapEntry entry)
+        {
+            while (deadlines.Count > 0) {
+                entry = deadlines[0];
+                if (connections.TryGetValue (entry.Connection, out var scheduled) && scheduled.Version == entry.Version && scheduled.Deadline == entry.Deadline)
+                    return true;
+
+                PopHeapLocked ();
+            }
+
+            entry = default;
+            return false;
+        }
+
+        void PushHeapLocked (HeapEntry entry)
+        {
+            deadlines.Add (entry);
+            int index = deadlines.Count - 1;
+            while (index > 0) {
+                int parent = (index - 1) / 2;
+                if (!IsBefore (deadlines[index].Deadline, deadlines[parent].Deadline))
+                    break;
+
+                (deadlines[parent], deadlines[index]) = (deadlines[index], deadlines[parent]);
+                index = parent;
+            }
+        }
+
+        HeapEntry PopHeapLocked ()
+        {
+            var result = deadlines[0];
+            var last = deadlines[^1];
+            deadlines.RemoveAt (deadlines.Count - 1);
+            if (deadlines.Count == 0)
+                return result;
+
+            deadlines[0] = last;
+            int index = 0;
+            while (true) {
+                int left = index * 2 + 1;
+                if (left >= deadlines.Count)
+                    break;
+
+                int right = left + 1;
+                int smallest = right < deadlines.Count && IsBefore (deadlines[right].Deadline, deadlines[left].Deadline) ? right : left;
+                if (!IsBefore (deadlines[smallest].Deadline, deadlines[index].Deadline))
+                    break;
+
+                (deadlines[index], deadlines[smallest]) = (deadlines[smallest], deadlines[index]);
+                index = smallest;
+            }
+
+            return result;
         }
 
         static TimeSpan DueTime (uint now, uint deadline)
@@ -121,6 +227,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
             timer.Dispose ();
             connections.Clear ();
+            deadlines.Clear ();
         }
     }
 }
