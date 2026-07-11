@@ -933,9 +933,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                     return false;
 
                 if (extension == SelectiveAckExtension) {
-                    if (length < 4 || length % 4 != 0)
-                        return false;
-
                     for (int i = 0; i < length; i++) {
                         byte mask = span[offset + i];
                         for (int bit = 0; bit < 8; bit++) {

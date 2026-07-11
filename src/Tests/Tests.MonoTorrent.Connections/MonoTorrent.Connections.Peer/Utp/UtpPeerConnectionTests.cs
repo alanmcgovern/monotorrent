@@ -155,22 +155,27 @@ namespace MonoTorrent.Connections.Peer
             await AssertNoOutboundPacket (sendQueue);
         }
 
-        [TestCase (3)]
-        [TestCase (5)]
-        public async Task MalformedSelectiveAckLengthDropsPacket (int selectiveAckLength)
+        [Test]
+        public async Task OneByteSelectiveAckIsAccepted ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
 
             await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
-            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (10_000);
+            await connection.SendAsync (new byte[] { 3 }).WithTimeout (10_000);
 
-            connection.Receive (CreateStatePacketWithExtensions (123, 9, data.packet.SequenceNumber,
-                new ExtensionBlock (1, new byte[selectiveAckLength])));
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateStatePacketWithExtensions (123, 9, first.packet.SequenceNumber,
+                new ExtensionBlock (1, new byte[] { 0b_0000_0001 })));
             await Task.Delay (50);
 
+            Assert.AreEqual (second.packet.SequenceNumber, unchecked((ushort) (first.packet.SequenceNumber + 1)));
+            Assert.AreEqual (third.packet.SequenceNumber, unchecked((ushort) (first.packet.SequenceNumber + 2)));
             Assert.AreEqual (UtpPacket.HeaderSize + 1, connection.BytesInFlightForTests);
-            await AssertNoOutboundPacket (sendQueue);
         }
 
         [Test]
@@ -204,6 +209,31 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (2, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
             Assert.AreEqual ("ok", System.Text.Encoding.ASCII.GetString (buffer));
             Assert.AreEqual (1UL, connection.PeerExtensionBitsForTests);
+        }
+
+        [Test]
+        public async Task DataPacketWithOneByteSelectiveAckExtensionAdvancesReceiveAck ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                0,
+                new ManualClock (),
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
+
+            connection.Receive (CreateDataPacketWithExtensions (1, "ok",
+                new ExtensionBlock (1, new byte[] { 0b_0100_0000 })));
+
+            var buffer = new byte[2];
+            Assert.AreEqual (2, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
+            Assert.AreEqual ("ok", System.Text.Encoding.ASCII.GetString (buffer));
+
+            var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (PacketType.State, ack.packet.Type);
+            Assert.AreEqual (1, ack.packet.AckNumber);
         }
 
         [Test]
