@@ -146,6 +146,14 @@ namespace MonoTorrent.Connections.Peer.Utp
             TooFarAhead
         }
 
+        enum AckDisposition
+        {
+            Current,
+            Stale,
+            UnrelatedWhileIdle,
+            InvalidFuture
+        }
+
         const byte SelectiveAckExtension = 1;
         const byte ExtensionBitsExtension = 2;
         const int DefaultMaxReceiveBufferBytes = (int) UtpPeerConnectionListener.INITIAL_WINDOW;
@@ -230,6 +238,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         ushort? LossSeqNr { get; set; }
 
         ushort LastAckReceived { get; set; }
+
+        bool AckStateInitialized { get; set; }
 
         uint LastSentPacketMicroseconds { get; set; }
 
@@ -336,7 +346,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             SequenceNumber = InitialSequenceNumber;
             LastSentSequenceNumber = InitialSequenceNumber;
             AckNumber = initialAckNumber;
-            LastAckReceived = unchecked((ushort) (InitialSequenceNumber - 1));
+            LastAckReceived = 0;
             CurrentMtu = settings.InitialPacketSize;
             MtuFloor = CurrentMtu;
             MtuCeiling = Math.Max (CurrentMtu, GetDefaultMtuCeiling (remote.AddressFamily));
@@ -354,6 +364,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             IsIncoming = false;
             LastSentSequenceNumber = 0;
+            LastAckReceived = unchecked((ushort) (InitialSequenceNumber - 1));
+            AckStateInitialized = true;
             State = ConnectionState.SynSent;
         }
 
@@ -453,6 +465,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
 
             lock (locker) {
+                if (!AckStateInitialized) {
+                    LastAckReceived = unchecked((ushort) (packet.SequenceNumber - 1));
+                    AckStateInitialized = true;
+                }
                 if (sentPackets.TryGetValue (packet.SequenceNumber, out var existing))
                     RemoveBytesInFlightLocked (existing);
 
@@ -556,21 +572,18 @@ namespace MonoTorrent.Connections.Peer.Utp
                 PeerExtensionBits = parsed.ExtensionBits.Value;
 
             UpdateDelaySample (pkt);
-            var wasPeerWindowZero = PeerWindowSize == 0;
-            var previousPeerWindow = PeerWindowSize;
-            PeerWindowSize = pkt.WindowSize;
-            if (PeerWindowSize > previousPeerWindow) {
-                sendWindowChanged.Release ();
-                _ = DrainRetransmitQueueAsync ();
-            }
-            if (!wasPeerWindowZero && PeerWindowSize == 0)
-                LastZeroWindowProbeMicroseconds = clock.Microseconds;
-            if (!ProcessAcks (pkt, parsed.SelectiveAcks))
+            var ackDisposition = GetAckDisposition (pkt.AckNumber);
+            if (ackDisposition == AckDisposition.InvalidFuture)
                 return;
+
+            if (ackDisposition == AckDisposition.Current)
+                ApplyPeerWindow (pkt.WindowSize);
+
+            ProcessAcks (pkt, parsed.SelectiveAcks, ackDisposition);
             Reschedule ();
 
             if (pkt.Type == PacketType.Reset) {
-                if (!IsAckNumberValid (pkt.AckNumber))
+                if (ackDisposition == AckDisposition.Stale)
                     return;
                 Close (ConnectionState.Reset);
                 return;
@@ -657,11 +670,28 @@ namespace MonoTorrent.Connections.Peer.Utp
             return !SequenceGreaterThan (pkt.SequenceNumber, AckNumber);
         }
 
-        bool IsAckNumberValid (ushort ackNumber)
+        AckDisposition GetAckDisposition (ushort ackNumber)
         {
             lock (locker) {
-                return sentPackets.Count == 0 || !SequenceGreaterThan (ackNumber, LastSentSequenceNumber);
+                if (sentPackets.Count == 0)
+                    return ackNumber == LastAckReceived ? AckDisposition.Current : AckDisposition.UnrelatedWhileIdle;
+                if (SequenceGreaterThan (ackNumber, LastSentSequenceNumber))
+                    return AckDisposition.InvalidFuture;
+                return SequenceGreaterThan (LastAckReceived, ackNumber) ? AckDisposition.Stale : AckDisposition.Current;
             }
+        }
+
+        void ApplyPeerWindow (uint windowSize)
+        {
+            var wasPeerWindowZero = PeerWindowSize == 0;
+            var previousPeerWindow = PeerWindowSize;
+            PeerWindowSize = windowSize;
+            if (PeerWindowSize > previousPeerWindow) {
+                sendWindowChanged.Release ();
+                _ = DrainRetransmitQueueAsync ();
+            }
+            if (!wasPeerWindowZero && PeerWindowSize == 0)
+                LastZeroWindowProbeMicroseconds = clock.Microseconds;
         }
 
         void UpdateDelaySample (UtpPacket pkt)
@@ -672,16 +702,16 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal void ProcessSynTimestamp (UtpPacket syn)
             => UpdateDelaySample (syn);
 
-        bool ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks)
+        void ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks, AckDisposition ackDisposition)
         {
+            if (ackDisposition == AckDisposition.UnrelatedWhileIdle)
+                return;
+
             List<SentPacket> acked = new ();
             List<SentPacket> fastRetransmits = new ();
             bool wasWindowLimited;
 
             lock (locker) {
-                if (sentPackets.Count > 0 && SequenceGreaterThan (pkt.AckNumber, LastSentSequenceNumber))
-                    return false;
-
                 wasWindowLimited = IsWindowLimited ();
 
                 bool ackAdvanced = SequenceGreaterThan (pkt.AckNumber, LastAckReceived);
@@ -787,7 +817,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                 _ = DrainRetransmitQueueAsync ();
             }
 
-            return true;
         }
 
         void ProcessMtuProbeAcks (List<SentPacket> acked)

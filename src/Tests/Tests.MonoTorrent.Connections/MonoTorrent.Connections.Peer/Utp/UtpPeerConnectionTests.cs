@@ -1781,6 +1781,62 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task FutureAckDoesNotReopenPeerWindow ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[1]).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var forged = CreateStatePacket (123, sequenceNumber: 9, ackNumber: unchecked((ushort) (data.packet.SequenceNumber + 1)));
+            forged.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW * 2;
+            connection.Receive (forged);
+            await Task.Delay (50);
+
+            Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW, connection.DiagnosticSnapshot.PeerWindowBytes);
+            Assert.AreEqual (UtpPacket.HeaderSize + 1, connection.BytesInFlightForTests);
+        }
+
+        [Test]
+        public async Task StaleAckDoesNotReplaceNewerPeerWindow ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[1]).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await connection.SendAsync (new byte[1]).WithTimeout (10_000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var current = CreateStatePacket (123, sequenceNumber: 9, ackNumber: second.packet.SequenceNumber);
+            current.WindowSize = 4096;
+            connection.Receive (current);
+            await Task.Delay (50);
+
+            var stale = CreateStatePacket (123, sequenceNumber: 10, ackNumber: first.packet.SequenceNumber);
+            stale.WindowSize = 0;
+            connection.Receive (stale);
+            await Task.Delay (50);
+
+            Assert.AreEqual (4096, connection.DiagnosticSnapshot.PeerWindowBytes);
+        }
+
+        [Test]
+        public async Task UnrelatedAckWhileIdleDoesNotChangePeerWindow ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            var unrelated = CreateStatePacket (123, sequenceNumber: 9, ackNumber: 1234);
+            unrelated.WindowSize = 0;
+            connection.Receive (unrelated);
+            await Task.Delay (50);
+
+            Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW, connection.DiagnosticSnapshot.PeerWindowBytes);
+        }
+
+        [Test]
         public async Task PureStatePacketDoesNotConsumeSequenceNumber ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
