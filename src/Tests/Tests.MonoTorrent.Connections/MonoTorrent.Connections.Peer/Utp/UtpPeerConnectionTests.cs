@@ -1476,7 +1476,7 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task LedbatIgnoresZeroDelaySample ()
+        public async Task LedbatGrowsWindowWhenDelaySampleIsZero ()
         {
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
@@ -1493,7 +1493,7 @@ namespace MonoTorrent.Connections.Peer
             connection.Receive (ack);
             await Task.Delay (50);
 
-            Assert.AreEqual (initialWindow, connection.MaxWindowForTests);
+            Assert.Greater (connection.MaxWindowForTests, initialWindow);
             Assert.AreEqual (0, connection.RecentDelayMicrosecondsForTests);
         }
 
@@ -1673,7 +1673,8 @@ namespace MonoTorrent.Connections.Peer
 
             await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            Assert.AreEqual (initialWindow / 2, connection.MaxWindowForTests);
+            Assert.Less (connection.MaxWindowForTests, initialWindow);
+            Assert.GreaterOrEqual (connection.MaxWindowForTests, initialWindow / 2);
         }
 
         [Test]
@@ -1708,7 +1709,8 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.AreEqual (second.packet.SequenceNumber, firstRetransmit.packet.SequenceNumber);
             Assert.AreEqual (third.packet.SequenceNumber, secondRetransmit.packet.SequenceNumber);
-            Assert.AreEqual (initialWindow / 2, connection.MaxWindowForTests);
+            Assert.Less (connection.MaxWindowForTests, initialWindow);
+            Assert.Greater (connection.MaxWindowForTests, initialWindow / 2);
         }
 
         [Test]

@@ -897,7 +897,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         void ApplyCongestionControl (int bytesNewlyAcked, uint delayMicroseconds, uint minAckedRttMicroseconds, bool wasWindowLimited)
         {
-            if (bytesNewlyAcked == 0 || delayMicroseconds == 0 || minAckedRttMicroseconds == 0)
+            if (bytesNewlyAcked == 0 || minAckedRttMicroseconds == 0)
                 return;
 
             lock (locker) {
