@@ -1365,6 +1365,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (1024, settings.MaxReorderDistance);
             Assert.AreEqual (1024, settings.MaxIncomingSynConnections);
             Assert.AreEqual (TimeSpan.FromMilliseconds (50), settings.DelayedAckDelay);
+            Assert.AreEqual (TimeSpan.FromMilliseconds (100), settings.CongestionControlTarget);
             Assert.IsTrue (settings.EnableDelayedAcks);
             Assert.IsTrue (settings.EnablePathMtuDiscovery);
             Assert.AreEqual (TimeSpan.FromMinutes (30), settings.MtuProbeInterval);
@@ -1384,6 +1385,8 @@ namespace MonoTorrent.Connections.Peer
             AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { DelayedAckDelay = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { DelayedAckDelay = TimeSpan.FromTicks (-1) });
+            AssertInvalidSetting (new UtpTransportSettings { CongestionControlTarget = TimeSpan.Zero });
+            AssertInvalidSetting (new UtpTransportSettings { CongestionControlTarget = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { MtuProbeInterval = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { MtuProbeInterval = TimeSpan.FromTicks (-1) });
         }
@@ -1537,6 +1540,44 @@ namespace MonoTorrent.Connections.Peer
             var highDelayAck = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
             clock.Microseconds = 280_000;
             highDelayAck.TimestampDiff = 220_000;
+            connection.Receive (highDelayAck);
+            await Task.Delay (50);
+
+            Assert.Less (connection.MaxWindowForTests, afterLowDelay);
+        }
+
+        [Test]
+        public async Task LedbatUsesConfiguredTargetDelay ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                0,
+                clock,
+                transportSettings: new UtpTransportSettings { CongestionControlTarget = TimeSpan.FromMilliseconds (20) });
+
+            await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var lowDelayAck = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
+            clock.Microseconds = 50_000;
+            lowDelayAck.TimestampDiff = 10_000;
+            connection.Receive (lowDelayAck);
+            await Task.Delay (50);
+
+            var afterLowDelay = connection.MaxWindowForTests;
+
+            clock.Microseconds = 60_000;
+            await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var highDelayAck = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
+            clock.Microseconds = 150_000;
+            highDelayAck.TimestampDiff = 90_000;
             connection.Receive (highDelayAck);
             await Task.Delay (50);
 

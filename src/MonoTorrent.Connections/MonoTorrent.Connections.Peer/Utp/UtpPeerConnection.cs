@@ -169,7 +169,6 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         const byte SelectiveAckExtension = 1;
         const byte ExtensionBitsExtension = 2;
-        const uint CControlTargetMicroseconds = 100_000;
         const uint DelaySampleLifetimeMicroseconds = 120_000_000;
         const int DefaultMaxReceiveBufferBytes = (int) UtpPeerConnectionListener.INITIAL_WINDOW;
         const uint InitialRetransmitTimeoutMicroseconds = 1_000_000;
@@ -904,7 +903,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 delayHistory.AddSample (now, clampedDelay, out var recentDelay, out var baseDelay);
                 RecentDelayMicroseconds = recentDelay;
                 uint ourDelay = RecentDelayMicroseconds > baseDelay ? RecentDelayMicroseconds - baseDelay : 0;
-                double offTarget = (long) CControlTargetMicroseconds - ourDelay;
+                double targetDelayMicroseconds = transportSettings.CongestionControlTarget.TotalMicroseconds;
+                double offTarget = targetDelayMicroseconds - ourDelay;
                 if (offTarget > 0 && !wasWindowLimited)
                     return;
 
@@ -917,7 +917,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     SlowStartThreshold = Math.Max ((uint) UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow);
                 }
 
-                double delayFactor = offTarget / CControlTargetMicroseconds;
+                double delayFactor = offTarget / targetDelayMicroseconds;
                 double windowFactor = Math.Min (1, bytesNewlyAcked / Math.Max (1.0, MaxWindow));
                 double gain = CurrentMtu * delayFactor * windowFactor;
                 MaxWindow = (uint) Math.Max (UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow + gain);

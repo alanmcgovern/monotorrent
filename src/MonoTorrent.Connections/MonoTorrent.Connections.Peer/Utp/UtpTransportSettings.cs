@@ -50,6 +50,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public TimeSpan DelayedAckDelay { get; init; } = TimeSpan.FromMilliseconds (50);
 
+        public TimeSpan CongestionControlTarget { get; init; } = TimeSpan.FromMilliseconds (100);
+
         public bool EnableDelayedAcks { get; init; } = true;
 
         public bool EnablePathMtuDiscovery { get; init; } = true;
@@ -80,6 +82,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 throw new ArgumentOutOfRangeException (nameof (settings), "The zero window probe interval must be positive.");
             if (settings.DelayedAckDelay <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The delayed ACK delay must be positive.");
+            if (settings.CongestionControlTarget <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The congestion control target delay must be positive.");
             if (settings.MtuProbeInterval <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The MTU probe interval must be positive.");
 
