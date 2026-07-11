@@ -1084,13 +1084,14 @@ namespace MonoTorrent.Connections.Peer.Utp
                 DelayedAckAt = null;
                 DelayedAckPackets = 0;
             }
-            Reschedule ();
+            // Every caller either sends a packet next (which reschedules) or unregisters
+            // the connection, so rescheduling here would update the scheduler twice.
         }
 
-        async ReusableTask SendImmediateAckAsync ()
+        ReusableTask SendImmediateAckAsync ()
         {
             CancelDelayedAck ();
-            await SendAckAsync (AckNumber);
+            return SendAckAsync (AckNumber);
         }
 
         async ReusableTask SendAckAsync (ushort ackNr)
