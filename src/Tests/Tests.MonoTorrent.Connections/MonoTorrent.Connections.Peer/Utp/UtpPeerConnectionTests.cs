@@ -406,7 +406,7 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task MultipleInOrderDataPacketsProduceOneDelayedAck ()
+        public async Task SecondInOrderDataPacketProducesImmediateAck ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
             using var connection = new UtpPeerConnection (
@@ -419,14 +419,13 @@ namespace MonoTorrent.Connections.Peer
                 transportSettings: new UtpTransportSettings { DelayedAckDelay = TimeSpan.FromMilliseconds (100) });
 
             connection.Receive (CreateDataPacket (2, "a"));
-            connection.Receive (CreateDataPacket (3, "b"));
-            connection.Receive (CreateDataPacket (4, "c"));
-
             await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (50));
+
+            connection.Receive (CreateDataPacket (3, "b"));
 
             var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (PacketType.State, ack.packet.Type);
-            Assert.AreEqual (4, ack.packet.AckNumber);
+            Assert.AreEqual (3, ack.packet.AckNumber);
 
             await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (150));
         }
@@ -1440,7 +1439,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (TimeSpan.FromSeconds (15), settings.ZeroWindowProbeInterval);
             Assert.AreEqual (1024, settings.MaxReorderDistance);
             Assert.AreEqual (1024, settings.MaxIncomingSynConnections);
-            Assert.AreEqual (TimeSpan.FromMilliseconds (50), settings.DelayedAckDelay);
+            Assert.AreEqual (TimeSpan.FromMilliseconds (10), settings.DelayedAckDelay);
             Assert.AreEqual (TimeSpan.FromMilliseconds (100), settings.CongestionControlTarget);
             Assert.IsTrue (settings.EnableDelayedAcks);
             Assert.IsTrue (settings.EnablePathMtuDiscovery);

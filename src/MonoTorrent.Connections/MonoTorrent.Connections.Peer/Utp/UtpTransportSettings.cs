@@ -48,7 +48,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public int MaxIncomingSynConnections { get; init; } = 1024;
 
-        public TimeSpan DelayedAckDelay { get; init; } = TimeSpan.FromMilliseconds (50);
+        public TimeSpan DelayedAckDelay { get; init; } = TimeSpan.FromMilliseconds (10);
 
         public TimeSpan CongestionControlTarget { get; init; } = TimeSpan.FromMilliseconds (100);
 

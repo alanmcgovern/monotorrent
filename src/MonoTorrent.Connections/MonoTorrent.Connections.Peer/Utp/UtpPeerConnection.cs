@@ -175,6 +175,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly int maxReceiveBufferBytes;
         readonly UtpTransportSettings transportSettings;
         uint? DelayedAckAt { get; set; }
+        int DelayedAckPackets { get; set; }
         bool WaitingForSendWindow { get; set; }
 
         ChannelWriter<(UtpPacket, UtpPeerConnection?, IPEndPoint)> SendingChannel { get; }
@@ -627,8 +628,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             if (ShouldAckImmediately (pkt, sequenceStatus, wasNextExpected))
                 await SendImmediateAckAsync ();
-            else if (delivery.AckAdvanced)
-                ScheduleDelayedAck ();
+            else if (delivery.AckAdvanced && ScheduleDelayedAck ())
+                await SendImmediateAckAsync ();
         }
 
         bool ShouldAckImmediately (UtpPacket pkt, ReceiveSequenceStatus sequenceStatus, bool wasNextExpected)
@@ -1052,21 +1053,32 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        void ScheduleDelayedAck ()
+        bool ScheduleDelayedAck ()
         {
             lock (locker) {
-                if (DelayedAckAt.HasValue || cts.IsCancellationRequested)
-                    return;
+                if (cts.IsCancellationRequested)
+                    return false;
+
+                DelayedAckPackets++;
+                if (DelayedAckPackets >= 2) {
+                    DelayedAckAt = null;
+                    return true;
+                }
+
+                if (DelayedAckAt.HasValue)
+                    return false;
 
                 DelayedAckAt = unchecked(clock.Microseconds + (uint) transportSettings.DelayedAckDelay.TotalMicroseconds);
             }
             Reschedule ();
+            return false;
         }
 
         void CancelDelayedAck ()
         {
             lock (locker) {
                 DelayedAckAt = null;
+                DelayedAckPackets = 0;
             }
             Reschedule ();
         }
@@ -1374,6 +1386,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     var now = clock.Microseconds;
                     if (DelayedAckAt.HasValue && (IsDue (DelayedAckAt.Value, now) || IsForcedDue (DelayedAckAt.Value, forcedDeadline))) {
                         DelayedAckAt = null;
+                        DelayedAckPackets = 0;
                         delayedAck = AckNumber;
                     }
 
