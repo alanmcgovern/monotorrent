@@ -265,7 +265,9 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal bool IsClosedOrReset => State == ConnectionState.Closed || State == ConnectionState.Reset;
 
-        internal int BytesInFlightForTests => CurrentWindow;
+        internal int BytesInFlightForTests => WireBytesInFlight;
+
+        internal int PayloadBytesInFlightForTests => CurrentWindow;
 
         internal int PendingRetransmitCountForTests {
             get {
@@ -303,7 +305,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     return new UtpConnectionDiagnosticSnapshot (
                         SendWindowBytes: MaxWindow,
                         PeerWindowBytes: PeerWindowSize,
-                        BytesInFlight: BytesInFlight,
+                        BytesInFlight: WireBytesInFlight,
                         ReceiveWindowBytes: AdvertisedReceiveWindow,
                         RttMicroseconds: RttMicroseconds,
                         RetransmitTimeoutMicroseconds: RetransmitTimeoutMicroseconds,
@@ -473,7 +475,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     RemoveBytesInFlightLocked (existing);
 
                 sentPackets[packet.SequenceNumber] = new SentPacket (packet, payloadBytes, clock.Microseconds, isMtuProbe);
-                BytesInFlight += PacketSendCost (sentPackets[packet.SequenceNumber]);
+                BytesInFlight += PayloadSendCost (sentPackets[packet.SequenceNumber]);
 
                 if (isMtuProbe) {
                     MtuProbeSequence = packet.SequenceNumber;
@@ -495,17 +497,17 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         static int PacketBufferCost (ParsedPacket packet)
-            => packet.Packet.AsMemory ().Length;
+            => packet.PayloadLength;
 
-        static int PacketSendCost (SentPacket packet)
-            => UtpPacket.HeaderSize + packet.PayloadBytes;
+        static int PayloadSendCost (SentPacket packet)
+            => packet.PayloadBytes;
 
         void RemoveBytesInFlightLocked (SentPacket packet)
         {
             if (!packet.IsInFlight)
                 return;
 
-            BytesInFlight -= PacketSendCost (packet);
+            BytesInFlight -= PayloadSendCost (packet);
             packet.IsInFlight = false;
         }
 
@@ -680,6 +682,19 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (SequenceGreaterThan (ackNumber, LastSentSequenceNumber))
                     return AckDisposition.InvalidFuture;
                 return SequenceGreaterThan (LastAckReceived, ackNumber) ? AckDisposition.Stale : AckDisposition.Current;
+            }
+        }
+
+        int WireBytesInFlight {
+            get {
+                lock (locker) {
+                    int result = 0;
+                    foreach (var packet in sentPackets.Values) {
+                        if (packet.IsInFlight)
+                            result += packet.PayloadBytes + UtpPacket.HeaderSize;
+                    }
+                    return result;
+                }
             }
         }
 
@@ -885,16 +900,16 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (allowed == 0)
                 return false;
 
-            return BytesInFlight + CurrentMtu + UtpPacket.HeaderSize > allowed;
+            return BytesInFlight + CurrentMtu > allowed;
         }
 
-        bool CanSendCostLocked (int packetCost)
+        bool CanSendPayloadLocked (int payloadBytes)
         {
             if (PeerWindowSize == 0)
                 return false;
 
             var allowed = Math.Min (MaxWindow, PeerWindowSize);
-            return BytesInFlight + packetCost <= allowed || BytesInFlight == 0 && packetCost <= PeerWindowSize;
+            return BytesInFlight + payloadBytes <= allowed || BytesInFlight == 0 && payloadBytes <= PeerWindowSize;
         }
 
         void MarkForRetransmitLocked (SentPacket packet)
@@ -939,7 +954,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         uint InitialCongestionWindow
-            => (uint) (CurrentMtu + UtpPacket.HeaderSize);
+            => (uint) CurrentMtu;
 
         void ReduceCongestionWindowAfterLoss (ushort lostSequenceNumber)
         {
@@ -1200,7 +1215,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         bool ShouldSendReceiveWindowUpdate (int previousAdvertisedWindow)
         {
             var currentAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
-            var usefulWindow = CurrentMtu + UtpPacket.HeaderSize;
+            var usefulWindow = CurrentMtu;
             return currentAdvertisedWindow > previousAdvertisedWindow
                 && LastAdvertisedReceiveWindow < usefulWindow
                 && currentAdvertisedWindow > LastAdvertisedReceiveWindow;
@@ -1282,9 +1297,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             try {
                 while (!cts.IsCancellationRequested) {
-                    var packetCost = payloadLen + UtpPacket.HeaderSize;
                     var allowed = Math.Min (MaxWindow, PeerWindowSize);
-                    if (PeerWindowSize != 0 && (CurrentWindow + packetCost <= allowed || CurrentWindow == 0 && packetCost <= PeerWindowSize))
+                    if (PeerWindowSize != 0 && (CurrentWindow + payloadLen <= allowed || CurrentWindow == 0 && payloadLen <= PeerWindowSize))
                         return;
 
                     if (PeerWindowSize == 0 && CanSendZeroWindowProbe ())
@@ -1505,8 +1519,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                             continue;
                         }
 
-                        var packetCost = PacketSendCost (sent);
-                        if (!CanSendCostLocked (packetCost))
+                        var payloadBytes = PayloadSendCost (sent);
+                        if (!CanSendPayloadLocked (payloadBytes))
                             break;
 
                         pendingRetransmits.Dequeue ();
@@ -1515,7 +1529,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                         sent.Transmissions++;
                         sent.DuplicateAckIndications = 0;
                         sent.SentAtMicroseconds = clock.Microseconds;
-                        BytesInFlight += packetCost;
+                        BytesInFlight += payloadBytes;
                         packet = sent.Packet;
                         hasPacket = true;
                         break;
