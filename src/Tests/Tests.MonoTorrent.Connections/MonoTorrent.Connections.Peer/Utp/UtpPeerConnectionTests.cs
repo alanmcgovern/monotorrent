@@ -364,6 +364,33 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task AppReadCoalescesWindowUpdatesAcrossQueuedPackets ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                maxReceiveBufferBytes: 5000,
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
+
+            connection.Receive (CreateDataPacket (2, new string ('a', 1400)));
+            connection.Receive (CreateDataPacket (3, new string ('b', 1400)));
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var buffer = new byte[2800];
+            Assert.AreEqual (2800, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
+
+            var windowUpdate = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (5000, windowUpdate.packet.WindowSize);
+            await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (100));
+        }
+
+        [Test]
         public async Task ReceiveCapIncludesQueuedInOrderBytes ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();

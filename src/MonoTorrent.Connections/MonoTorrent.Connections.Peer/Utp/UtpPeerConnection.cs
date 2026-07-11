@@ -1189,18 +1189,30 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return 0;
 
             int totalRead = 0;
+            bool pendingWindowUpdate = false;
             while (!buffer.IsEmpty) {
                 if (CleanReadEof && currentPacket == null)
                     return totalRead;
 
                 if (currentPacket == null) {
-                    try {
-                        currentPacket = await ReceivedPackets.Reader.ReadAsync (cts.Token);
-                    } catch (ChannelClosedException) {
-                        return totalRead;
-                    } catch (OperationCanceledException) when (State == ConnectionState.Reset) {
-                        return totalRead;
+                    if (!ReceivedPackets.Reader.TryRead (out var nextPacket)) {
+                        // Advertise space before waiting for the peer to send more data.
+                        // If packets are already queued, defer the ACK and coalesce their
+                        // window growth into a single update.
+                        if (pendingWindowUpdate) {
+                            await SendImmediateAckAsync ();
+                            pendingWindowUpdate = false;
+                        }
+
+                        try {
+                            nextPacket = await ReceivedPackets.Reader.ReadAsync (cts.Token);
+                        } catch (ChannelClosedException) {
+                            return totalRead;
+                        } catch (OperationCanceledException) when (State == ConnectionState.Reset) {
+                            return totalRead;
+                        }
                     }
+                    currentPacket = nextPacket;
                     currentPayloadRead = 0;
                     lock (locker) {
                         QueuedInOrderBytes -= PacketBufferCost (currentPacket);
@@ -1212,24 +1224,20 @@ namespace MonoTorrent.Connections.Peer.Utp
                 currentPayloadRead += read;
                 totalRead += read;
                 buffer = buffer.Slice (read);
-                bool sendWindowUpdate;
+                bool packetCompleted = currentPayloadRead == currentPacket.PayloadLength;
                 lock (locker) {
                     var previousAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
                     CurrentUnreadPacketBytes = Math.Max (0, CurrentUnreadPacketBytes - read);
-                    sendWindowUpdate = ShouldSendReceiveWindowUpdate (previousAdvertisedWindow);
-                }
-                if (currentPayloadRead == currentPacket.PayloadLength) {
-                    lock (locker) {
-                        var previousAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
+                    if (packetCompleted)
                         CurrentUnreadPacketBytes = 0;
-                        sendWindowUpdate |= ShouldSendReceiveWindowUpdate (previousAdvertisedWindow);
-                    }
-                    currentPacket = null;
+                    pendingWindowUpdate |= ShouldSendReceiveWindowUpdate (previousAdvertisedWindow);
                 }
-
-                if (sendWindowUpdate)
-                    await SendImmediateAckAsync ();
+                if (packetCompleted)
+                    currentPacket = null;
             }
+
+            if (pendingWindowUpdate)
+                await SendImmediateAckAsync ();
 
             return totalRead;
         }
