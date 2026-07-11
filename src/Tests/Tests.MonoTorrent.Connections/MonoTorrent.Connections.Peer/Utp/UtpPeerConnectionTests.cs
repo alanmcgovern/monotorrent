@@ -280,11 +280,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (1, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
             Assert.AreEqual (1, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
 
-            reopened = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
-            Assert.AreEqual (2, reopened.packet.WindowSize);
-
-            reopened = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
-            Assert.AreEqual (3, reopened.packet.WindowSize);
+            await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (100));
         }
 
         [Test]
@@ -313,6 +309,32 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (PacketType.State, windowUpdate.packet.Type);
             Assert.AreEqual (3, windowUpdate.packet.WindowSize);
             Assert.AreEqual (2, windowUpdate.packet.AckNumber);
+        }
+
+        [Test]
+        public async Task AppReadSendsReceiveWindowUpdateAfterWindowExpandsByOneMtu ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                maxReceiveBufferBytes: 5000,
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
+
+            connection.Receive (CreateDataPacket (2, new string ('x', 2800)));
+            var initialAck = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (2200, initialAck.packet.WindowSize);
+
+            Assert.AreEqual (1399, await connection.ReceiveAsync (new byte[1399]).WithTimeout (10_000));
+            await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (100));
+
+            Assert.AreEqual (1, await connection.ReceiveAsync (new byte[1]).WithTimeout (10_000));
+            var windowUpdate = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (3600, windowUpdate.packet.WindowSize);
         }
 
         [Test]

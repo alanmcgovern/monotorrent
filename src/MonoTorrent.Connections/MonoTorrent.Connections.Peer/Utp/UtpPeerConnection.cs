@@ -1231,10 +1231,10 @@ namespace MonoTorrent.Connections.Peer.Utp
         bool ShouldSendReceiveWindowUpdate (int previousAdvertisedWindow)
         {
             var currentAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
-            var usefulWindow = CurrentMtu;
             return currentAdvertisedWindow > previousAdvertisedWindow
-                && LastAdvertisedReceiveWindow < usefulWindow
-                && currentAdvertisedWindow > LastAdvertisedReceiveWindow;
+                && currentAdvertisedWindow > LastAdvertisedReceiveWindow
+                && (LastAdvertisedReceiveWindow == 0
+                    || currentAdvertisedWindow - LastAdvertisedReceiveWindow >= CurrentMtu);
         }
 
         public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
