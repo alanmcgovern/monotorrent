@@ -73,8 +73,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (disposed || !connections.TryGetValue (connection, out var scheduled))
                     return;
 
-                UpdateDeadlineLocked (connection, scheduled);
-                UpdateTimerLocked ();
+                if (UpdateDeadlineLocked (connection, scheduled))
+                    UpdateTimerLocked ();
             }
         }
 
@@ -125,12 +125,24 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        void UpdateDeadlineLocked (UtpPeerConnection connection, ScheduledConnection scheduled)
+        bool UpdateDeadlineLocked (UtpPeerConnection connection, ScheduledConnection scheduled)
         {
+            var deadline = connection.NextScheduledEventMicroseconds;
+            if (scheduled.Deadline == deadline)
+                return false;
+
             scheduled.Version++;
-            scheduled.Deadline = connection.NextScheduledEventMicroseconds;
+            scheduled.Deadline = deadline;
             if (scheduled.Deadline.HasValue)
                 PushHeapLocked (new HeapEntry (connection, scheduled.Deadline.Value, scheduled.Version));
+            return true;
+        }
+
+        internal int HeapEntryCountForTests {
+            get {
+                lock (locker)
+                    return deadlines.Count;
+            }
         }
 
         void UpdateTimerLocked ()

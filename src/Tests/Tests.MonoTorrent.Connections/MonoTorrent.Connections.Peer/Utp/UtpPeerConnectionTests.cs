@@ -696,6 +696,19 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public void UnchangedRescheduleDoesNotGrowSchedulerHeap ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0), new ManualClock ());
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+            var initialEntryCount = listener.Scheduler.HeapEntryCountForTests;
+
+            for (int i = 0; i < 100; i++)
+                listener.Scheduler.Reschedule (connection);
+
+            Assert.AreEqual (initialEntryCount, listener.Scheduler.HeapEntryCountForTests);
+        }
+
+        [Test]
         public async Task RetransmittedDataRefreshesCumulativeAckBeforeSend ()
         {
             var clock = new ManualClock ();
