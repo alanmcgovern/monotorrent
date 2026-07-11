@@ -542,6 +542,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal void PrepareForSend (ref UtpPacket packet)
         {
+            if (packet.Type == PacketType.Data || packet.Type == PacketType.Fin)
+                packet.AckNumber = AckNumber;
             packet.SetTimestamp (clock);
             packet.TimestampDiff = LastReceivedDelayMicroseconds;
 

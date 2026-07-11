@@ -580,6 +580,48 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task RetransmittedDataRefreshesCumulativeAckBeforeSend ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var original = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (1, original.packet.AckNumber);
+
+            connection.AckNumber = 7;
+            clock.Microseconds = connection.RetransmitTimeoutMicrosecondsForTests;
+            await connection.ProcessScheduledEventsAsync ().WaitAsync (TimeSpan.FromSeconds (5));
+            var retransmission = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var packet = retransmission.packet;
+            connection.PrepareForSend (ref packet);
+            Assert.AreEqual (7, packet.AckNumber);
+        }
+
+        [Test]
+        public async Task RetransmittedFinRefreshesCumulativeAckBeforeSend ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
+
+            await connection.SendFinAsync ();
+            var original = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (1, original.packet.AckNumber);
+
+            connection.AckNumber = 9;
+            clock.Microseconds = connection.RetransmitTimeoutMicrosecondsForTests;
+            await connection.ProcessScheduledEventsAsync ().WaitAsync (TimeSpan.FromSeconds (5));
+            var retransmission = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var packet = retransmission.packet;
+            connection.PrepareForSend (ref packet);
+            Assert.AreEqual (9, packet.AckNumber);
+        }
+
+        [Test]
         public async Task CumulativeAckReleasesPacketsAndBytesInFlight ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
