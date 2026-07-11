@@ -628,7 +628,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (0, afterAck.BytesInFlight);
             Assert.AreEqual (50_000, afterAck.RttMicroseconds);
             Assert.AreEqual (500_000, afterAck.RetransmitTimeoutMicroseconds);
-            Assert.AreEqual (10_000, afterAck.RecentDelayMicroseconds);
+            Assert.AreEqual (0, afterAck.RecentDelayMicroseconds);
         }
 
         [Test]
@@ -1476,7 +1476,7 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task LedbatGrowsWindowWhenDelaySampleIsZero ()
+        public async Task LedbatIgnoresZeroDelaySample ()
         {
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
@@ -1493,7 +1493,7 @@ namespace MonoTorrent.Connections.Peer
             connection.Receive (ack);
             await Task.Delay (50);
 
-            Assert.Greater (connection.MaxWindowForTests, initialWindow);
+            Assert.AreEqual (initialWindow, connection.MaxWindowForTests);
             Assert.AreEqual (0, connection.RecentDelayMicrosecondsForTests);
         }
 
@@ -1509,7 +1509,17 @@ namespace MonoTorrent.Connections.Peer
 
             clock.Microseconds = 50_000;
             var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
-            ack.TimestampDiff = 220_000;
+            ack.TimestampDiff = 1_000_000_000;
+            connection.Receive (ack);
+            await Task.Delay (50);
+
+            clock.Microseconds = 60_000;
+            await connection.SendAsync (new byte[1400]).WithTimeout (10_000);
+            data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 110_000;
+            ack = CreateStatePacket (123, sequenceNumber: 10, ackNumber: data.packet.SequenceNumber);
+            ack.TimestampDiff = 1_000_220_000;
             connection.Receive (ack);
             await Task.Delay (50);
 
@@ -1517,7 +1527,7 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task LedbatRecentDelayUsesRollingAverage ()
+        public async Task LedbatUsesCurrentNormalizedDelay ()
         {
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
@@ -1643,8 +1653,8 @@ namespace MonoTorrent.Connections.Peer
             connection.Receive (highDelayAck);
             await Task.Delay (50);
 
-            Assert.AreEqual (afterLowDelay, connection.MaxWindowForTests);
-            Assert.AreEqual (220_000, connection.RecentDelayMicrosecondsForTests);
+            Assert.Greater (connection.MaxWindowForTests, afterLowDelay);
+            Assert.AreEqual (0, connection.RecentDelayMicrosecondsForTests);
         }
 
         [Test]
@@ -1710,7 +1720,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (second.packet.SequenceNumber, firstRetransmit.packet.SequenceNumber);
             Assert.AreEqual (third.packet.SequenceNumber, secondRetransmit.packet.SequenceNumber);
             Assert.Less (connection.MaxWindowForTests, initialWindow);
-            Assert.Greater (connection.MaxWindowForTests, initialWindow / 2);
+            Assert.GreaterOrEqual (connection.MaxWindowForTests, initialWindow / 2);
         }
 
         [Test]

@@ -257,6 +257,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     _connections.TryRemove (key, out _);
                 } else if (existing.Connection.IsIncoming) {
                     existing.LastActivityMicroseconds = Clock.Microseconds;
+                    existing.Connection.ProcessSynTimestamp (syn);
                     await existing.Connection.SendSynAck (syn.SequenceNumber);
                     return;
                 } else {
@@ -287,6 +288,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
             }
 
+            connection.ProcessSynTimestamp (syn);
             await connection.SendSynAck (syn.SequenceNumber);
 
             ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, null));

@@ -98,65 +98,44 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         sealed class LedbatDelayHistory
         {
-            const int RecentSampleCapacity = 256;
-            const int BaseDelayBuckets = 3;
+            const int BaseDelayBuckets = 2;
 
-            readonly uint[] recentReceivedAt = new uint[RecentSampleCapacity];
-            readonly uint[] recentDelays = new uint[RecentSampleCapacity];
-            readonly long[] baseBucketMinutes = new long[BaseDelayBuckets];
             readonly uint[] baseBucketDelays = new uint[BaseDelayBuckets];
 
-            int nextRecentSample;
-            int recentSampleCount;
+            int currentBaseBucket;
+            uint baseBucketStartedAt;
+            uint baseDelay;
+            bool initialized;
 
-            public LedbatDelayHistory ()
+            static bool IsLessWithWrap (uint left, uint right)
+                => unchecked((int) (left - right)) < 0;
+
+            public uint AddSample (uint now, uint rawDelayMicroseconds)
             {
-                for (int i = 0; i < baseBucketMinutes.Length; i++)
-                    baseBucketMinutes[i] = -1;
-            }
-
-            public void AddSample (uint now, uint delayMicroseconds, out uint recentAverageMicroseconds, out uint baseDelayMicroseconds)
-            {
-                recentReceivedAt[nextRecentSample] = now;
-                recentDelays[nextRecentSample] = delayMicroseconds;
-                nextRecentSample = (nextRecentSample + 1) % RecentSampleCapacity;
-                if (recentSampleCount < RecentSampleCapacity)
-                    recentSampleCount++;
-
-                long currentMinute = now / 60_000_000u;
-                int bucket = (int) (currentMinute % BaseDelayBuckets);
-                if (baseBucketMinutes[bucket] != currentMinute) {
-                    baseBucketMinutes[bucket] = currentMinute;
-                    baseBucketDelays[bucket] = delayMicroseconds;
-                } else {
-                    baseBucketDelays[bucket] = Math.Min (baseBucketDelays[bucket], delayMicroseconds);
+                if (!initialized) {
+                    Array.Fill (baseBucketDelays, rawDelayMicroseconds);
+                    baseDelay = rawDelayMicroseconds;
+                    baseBucketStartedAt = now;
+                    initialized = true;
                 }
 
-                uint recentMinimum = uint.MaxValue;
-                ulong recentSum = 0;
-                int activeSamples = 0;
-                for (int i = 0; i < recentSampleCount; i++) {
-                    if (unchecked(now - recentReceivedAt[i]) > DelaySampleLifetimeMicroseconds)
-                        continue;
-
-                    var delay = recentDelays[i];
-                    recentMinimum = Math.Min (recentMinimum, delay);
-                    recentSum += delay;
-                    activeSamples++;
+                while (unchecked(now - baseBucketStartedAt) >= 60_000_000u) {
+                    baseBucketStartedAt = unchecked(baseBucketStartedAt + 60_000_000u);
+                    currentBaseBucket = (currentBaseBucket + 1) % BaseDelayBuckets;
+                    baseBucketDelays[currentBaseBucket] = rawDelayMicroseconds;
+                    baseDelay = baseBucketDelays[0];
+                    for (int i = 1; i < BaseDelayBuckets; i++) {
+                        if (IsLessWithWrap (baseBucketDelays[i], baseDelay))
+                            baseDelay = baseBucketDelays[i];
+                    }
                 }
 
-                recentAverageMicroseconds = activeSamples == 0 ? delayMicroseconds : (uint) (recentSum / (uint) activeSamples);
+                if (IsLessWithWrap (rawDelayMicroseconds, baseBucketDelays[currentBaseBucket]))
+                    baseBucketDelays[currentBaseBucket] = rawDelayMicroseconds;
+                if (IsLessWithWrap (rawDelayMicroseconds, baseDelay))
+                    baseDelay = rawDelayMicroseconds;
 
-                baseDelayMicroseconds = recentMinimum == uint.MaxValue ? delayMicroseconds : recentMinimum;
-                for (int i = 0; i < BaseDelayBuckets; i++) {
-                    if (baseBucketMinutes[i] < 0)
-                        continue;
-
-                    if (currentMinute - baseBucketMinutes[i] >= BaseDelayBuckets - 1)
-                        continue;
-
-                    baseDelayMicroseconds = Math.Min (baseDelayMicroseconds, baseBucketDelays[i]);
-                }
+                return unchecked(rawDelayMicroseconds - baseDelay);
             }
         }
 
@@ -169,7 +148,6 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         const byte SelectiveAckExtension = 1;
         const byte ExtensionBitsExtension = 2;
-        const uint DelaySampleLifetimeMicroseconds = 120_000_000;
         const int DefaultMaxReceiveBufferBytes = (int) UtpPeerConnectionListener.INITIAL_WINDOW;
         const uint InitialRetransmitTimeoutMicroseconds = 1_000_000;
         const uint MinimumRetransmitTimeoutMicroseconds = 500_000;
@@ -691,6 +669,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             LastReceivedDelayMicroseconds = unchecked(clock.Microseconds - pkt.Timestamp);
         }
 
+        internal void ProcessSynTimestamp (UtpPacket syn)
+            => UpdateDelaySample (syn);
+
         bool ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks)
         {
             List<SentPacket> acked = new ();
@@ -778,7 +759,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             int bytesNewlyAcked = 0;
             bool finAcked = false;
             foreach (var sent in acked) {
-                bytesNewlyAcked += PacketSendCost (sent);
+                bytesNewlyAcked += sent.PayloadBytes;
                 if (sent.Packet.Type == PacketType.Fin)
                     finAcked = true;
 
@@ -897,15 +878,14 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         void ApplyCongestionControl (int bytesNewlyAcked, uint delayMicroseconds, uint minAckedRttMicroseconds, bool wasWindowLimited)
         {
-            if (bytesNewlyAcked == 0 || minAckedRttMicroseconds == 0)
+            if (bytesNewlyAcked == 0 || minAckedRttMicroseconds == 0 || delayMicroseconds == 0 || delayMicroseconds == int.MaxValue)
                 return;
 
             lock (locker) {
                 var now = clock.Microseconds;
-                var clampedDelay = Math.Min (delayMicroseconds, minAckedRttMicroseconds);
-                delayHistory.AddSample (now, clampedDelay, out var recentDelay, out var baseDelay);
-                RecentDelayMicroseconds = recentDelay;
-                uint ourDelay = RecentDelayMicroseconds > baseDelay ? RecentDelayMicroseconds - baseDelay : 0;
+                var normalizedDelay = delayHistory.AddSample (now, delayMicroseconds);
+                RecentDelayMicroseconds = Math.Min (normalizedDelay, minAckedRttMicroseconds);
+                uint ourDelay = RecentDelayMicroseconds;
                 double targetDelayMicroseconds = transportSettings.CongestionControlTarget.TotalMicroseconds;
                 double offTarget = targetDelayMicroseconds - ourDelay;
                 if (offTarget > 0 && !wasWindowLimited)
