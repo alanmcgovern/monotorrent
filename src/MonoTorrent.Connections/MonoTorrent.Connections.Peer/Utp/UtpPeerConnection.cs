@@ -460,7 +460,8 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (!_listener.TryRegisterOutgoing (this))
                 return false;
 
-            var buf = new byte[UtpPacket.HeaderSize];
+            var bufferReleaser = UtpMemoryPool.Default.Rent (out Memory<byte> buf);
+            buf = buf.Slice (0, UtpPacket.HeaderSize);
             var syn = new UtpPacket (buf) {
                 Type = PacketType.Syn,
                 Version = UtpPeerConnectionListener.UTP_VERSION,
@@ -471,7 +472,12 @@ namespace MonoTorrent.Connections.Peer.Utp
                 AckNumber = 0
             };
 
-            RegisterSent (syn, 0);
+            try {
+                RegisterSent (syn, 0, bufferReleaser: bufferReleaser);
+            } catch {
+                bufferReleaser.Dispose ();
+                throw;
+            }
             await SendPacketAsync (syn);
 
             try {
@@ -562,7 +568,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             packet.WindowSize = AdvertisedReceiveWindow;
             lock (locker)
                 LastAdvertisedReceiveWindow = packet.WindowSize;
-            await SendingChannel.WriteAsync ((packet, this, EndPoint), cts.Token);
+            try {
+                await SendingChannel.WriteAsync ((packet, this, EndPoint), cts.Token);
+            } catch {
+                packet.Dispose ();
+                throw;
+            }
             LastSentPacketMicroseconds = clock.Microseconds;
             HasSentPacket = true;
             Reschedule ();
@@ -1238,25 +1249,27 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         async ReusableTask SendAckAsync (ushort ackNr)
         {
-            var sack = CreateSelectiveAckExtension (ackNr);
-            var buf = new byte[UtpPacket.HeaderSize + sack.Length];
-            var pkt = new UtpPacket (buf) {
+            int sackLength = GetSelectiveAckExtensionLength (ackNr);
+            var bufferReleaser = UtpMemoryPool.Default.Rent (out Memory<byte> buf);
+            buf = buf.Slice (0, UtpPacket.HeaderSize + sackLength);
+            var pkt = new UtpPacket (buf, bufferReleaser) {
                 Type = PacketType.State,
                 Version = UtpPeerConnectionListener.UTP_VERSION,
-                Extension = sack.Length == 0 ? (byte) 0 : SelectiveAckExtension,
+                Extension = sackLength == 0 ? (byte) 0 : SelectiveAckExtension,
                 ConnectionId = ConnectionIdSend,
                 WindowSize = AdvertisedReceiveWindow,
                 SequenceNumber = SequenceNumber,
                 AckNumber = ackNr
             };
-            sack.CopyTo (buf.AsSpan (UtpPacket.HeaderSize));
+            if (sackLength > 0)
+                WriteSelectiveAckExtension (buf.Span.Slice (UtpPacket.HeaderSize, sackLength), ackNr);
             await SendPacketAsync (pkt);
         }
 
         async Task SendKeepAliveAsync ()
             => await SendAckAsync (unchecked((ushort) (AckNumber - 1)));
 
-        byte[] CreateSelectiveAckExtension (ushort ackNr)
+        int GetSelectiveAckExtensionLength (ushort ackNr)
         {
             int maxBit = -1;
             lock (locker) {
@@ -1268,13 +1281,17 @@ namespace MonoTorrent.Connections.Peer.Utp
                 }
 
                 if (maxBit < 0)
-                    return Array.Empty<byte> ();
+                    return 0;
             }
 
             int length = Math.Max (4, ((maxBit / 8) + 4) / 4 * 4);
-            var result = new byte[2 + length];
-            result[0] = 0;
-            result[1] = (byte) length;
+            return 2 + length;
+        }
+
+        void WriteSelectiveAckExtension (Span<byte> result, ushort ackNr)
+        {
+            result.Clear ();
+            result[1] = (byte) (result.Length - 2);
 
             lock (locker) {
                 foreach (var seq in receiveBuffer.Keys) {
@@ -1282,12 +1299,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                         continue;
 
                     int bit = SequenceDistance (seq, unchecked((ushort) (ackNr + 2)));
-                    if (bit <= maxBit)
+                    if (bit < (result.Length - 2) * 8)
                         result[2 + bit / 8] |= (byte) (1 << (bit % 8));
                 }
             }
-
-            return result;
         }
 
         bool ShouldIncludeInSelectiveAck (ushort sequenceNumber, ushort ackNr)
@@ -1300,8 +1315,9 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal async ReusableTask SendSynAck (ushort peerSeqNr)
         {
-            var buf = new byte[UtpPacket.HeaderSize];
-            var pkt = new UtpPacket (buf) {
+            var bufferReleaser = UtpMemoryPool.Default.Rent (out Memory<byte> buf);
+            buf = buf.Slice (0, UtpPacket.HeaderSize);
+            var pkt = new UtpPacket (buf, bufferReleaser) {
                 Type = PacketType.State,
                 Version = UtpPeerConnectionListener.UTP_VERSION,
                 Extension = 0,
@@ -1457,7 +1473,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             CancelDelayedAck ();
 
-            var pktBuf = new byte[UtpPacket.HeaderSize];
+            var bufferReleaser = UtpMemoryPool.Default.Rent (out Memory<byte> pktBuf);
+            pktBuf = pktBuf.Slice (0, UtpPacket.HeaderSize);
             var pkt = new UtpPacket (pktBuf) {
                 Type = PacketType.Fin,
                 Version = UtpPeerConnectionListener.UTP_VERSION,
@@ -1469,7 +1486,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             };
 
             State = ConnectionState.FinSent;
-            RegisterSent (pkt, 0);
+            try {
+                RegisterSent (pkt, 0, bufferReleaser: bufferReleaser);
+            } catch {
+                bufferReleaser.Dispose ();
+                throw;
+            }
             await SendPacketAsync (pkt);
         }
 

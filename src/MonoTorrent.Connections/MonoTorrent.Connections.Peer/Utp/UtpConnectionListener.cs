@@ -83,6 +83,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         static readonly TimeSpan StaleConnectionPruneInterval = TimeSpan.FromSeconds (10);
         const int MaxRecentResetEntries = 256;
         const uint RecentResetLifetimeMicroseconds = 10_000_000;
+        static readonly byte[] DisableUdpConnectionReset = new byte[] { 0 };
 
         readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), RegisteredConnection> _connections = new ();
         readonly Dictionary<RecentResetKey, uint> recentResets = new ();
@@ -131,7 +132,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             // Suppress Windows ICMP port-unreachable errors killing the loop.
             if (OperatingSystem.IsWindows ()) {
                 const int SIO_UDP_CONNRESET = unchecked((int) 0x9800000C);
-                socket.IOControl (SIO_UDP_CONNRESET, new byte[] { 0 }, null);
+                socket.IOControl (SIO_UDP_CONNRESET, DisableUdpConnectionReset, null);
             }
 
             socket.Bind (PreferredLocalEndPoint);
@@ -193,18 +194,23 @@ namespace MonoTorrent.Connections.Peer.Utp
                         return;
                     } catch (SocketException ex) when (!token.IsCancellationRequested) {
                         Logger.Debug ($"uTP send failed: {ex.SocketErrorCode}");
+                    } finally {
+                        pkt.Dispose ();
                     }
                 }
             } catch (OperationCanceledException) {
             } catch (ObjectDisposedException) {
             } catch (Exception ex) {
                 Logger.Error ($"uTP send loop failed: {ex.Message}");
+            } finally {
+                while (SendQueue.Reader.TryRead (out var pending))
+                    pending.packet.Dispose ();
             }
         }
 
         async Task ReceiveLoopAsync (Socket socket, CancellationToken token)
         {
-            var buffer = new byte[65_536];
+            using var bufferReleaser = MemoryPool.Default.Rent (65_536, out Memory<byte> buffer);
 
             var endpoint = new IPEndPoint (PreferredLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
 
@@ -216,7 +222,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     if (received.ReceivedBytes < UtpPacket.HeaderSize || new UtpPacket (buffer).Version != UTP_VERSION)
                         continue;
 
-                    ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, buffer.AsSpan (0, received.ReceivedBytes));
+                    ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, buffer.Span.Slice (0, received.ReceivedBytes));
                 } catch (OperationCanceledException) {
                     return;
                 } catch (SocketException ex) when (!token.IsCancellationRequested) {
@@ -479,7 +485,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (received.Type == PacketType.Reset)
                 return;
 
-            var reset = new UtpPacket (new byte[UtpPacket.HeaderSize]) {
+            var releaser = UtpMemoryPool.Default.Rent (out Memory<byte> buffer);
+            buffer = buffer.Slice (0, UtpPacket.HeaderSize);
+            var reset = new UtpPacket (buffer, releaser) {
                 Type = PacketType.Reset,
                 Version = UTP_VERSION,
                 Extension = 0,
@@ -488,7 +496,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 SequenceNumber = 0,
                 AckNumber = received.SequenceNumber
             };
-            SendQueue.Writer.TryWrite ((reset, null, remote));
+            if (!SendQueue.Writer.TryWrite ((reset, null, remote)))
+                reset.Dispose ();
         }
     }
 }

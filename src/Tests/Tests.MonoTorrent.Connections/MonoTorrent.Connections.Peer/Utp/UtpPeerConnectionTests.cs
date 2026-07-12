@@ -2064,8 +2064,9 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (connection.ConnectionIdReceive, syn.packet.ConnectionId);
             Assert.AreEqual (connection.InitialSequenceNumber, syn.packet.SequenceNumber);
             Assert.AreEqual (0, syn.packet.AckNumber);
+            var synSequence = syn.packet.SequenceNumber;
 
-            connection.Receive (CreateStatePacket (connection.ConnectionIdReceive, sequenceNumber: 9, ackNumber: syn.packet.SequenceNumber));
+            connection.Receive (CreateStatePacket (connection.ConnectionIdReceive, sequenceNumber: 9, ackNumber: synSequence));
             Assert.IsTrue (await connectTask.WithTimeout (5000));
 
             await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
@@ -2073,7 +2074,7 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.AreEqual (PacketType.Data, data.packet.Type);
             Assert.AreEqual (connection.ConnectionIdSend, data.packet.ConnectionId);
-            Assert.AreEqual (unchecked((ushort) (syn.packet.SequenceNumber + 1)), data.packet.SequenceNumber);
+            Assert.AreEqual (unchecked((ushort) (synSequence + 1)), data.packet.SequenceNumber);
             Assert.AreEqual (8, data.packet.AckNumber);
         }
 

@@ -29,16 +29,33 @@
 
 using System;
 using System.Buffers.Binary;
+using System.Threading;
 
 namespace MonoTorrent.Connections.Peer.Utp
 {
     public readonly struct UtpPacket
     {
+        sealed class BufferOwner
+        {
+            ByteBufferPool.Releaser releaser;
+            int disposed;
+
+            public BufferOwner (ByteBufferPool.Releaser releaser)
+                => this.releaser = releaser;
+
+            public void Dispose ()
+            {
+                if (Interlocked.Exchange (ref disposed, 1) == 0)
+                    releaser.Dispose ();
+            }
+        }
+
         public static int HeaderSize => 20;
 
         // Total size of '_raw' should not exceed MTU size. Roughly 12 udp packets
         // per 16kB piece request for most connections.
         readonly Memory<byte> _raw;
+        readonly BufferOwner? owner;
 
         Span<byte> Span => _raw.Span;
 
@@ -83,7 +100,19 @@ namespace MonoTorrent.Connections.Peer.Utp
         public Span<byte> Payload => _raw.Slice (HeaderSize).Span;
 
         public UtpPacket (Memory<byte> packet)
-            => _raw = packet;
+        {
+            _raw = packet;
+            owner = null;
+        }
+
+        internal UtpPacket (Memory<byte> packet, ByteBufferPool.Releaser releaser)
+        {
+            _raw = packet;
+            owner = new BufferOwner (releaser);
+        }
+
+        internal void Dispose ()
+            => owner?.Dispose ();
 
         public void SetTimestamp ()
             => SetTimestamp (StopwatchUtpClock.Instance);
