@@ -1118,27 +1118,33 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (releaseSendWindow)
                 sendWindowChanged.Release ();
 
-            uint minAckedRttMicroseconds = 0;
             int bytesNewlyAcked = 0;
             bool finAcked = false;
             if (acked != null) {
+                uint minAckedRttMicroseconds = 0;
                 foreach (var sent in acked) {
                     bytesNewlyAcked += sent.PayloadBytes;
                     if (sent.Packet.Type == PacketType.Fin)
                         finAcked = true;
-
-                    var packetRtt = UpdateRtt (sent);
-                    if (packetRtt != 0 && (minAckedRttMicroseconds == 0 || packetRtt < minAckedRttMicroseconds))
-                        minAckedRttMicroseconds = packetRtt;
-
-                    if (sent.PayloadBytes > 0 && !sent.IsMtuProbe)
-                        HasAckedPayloadPacket = true;
-                    ProcessMtuProbeAck (sent);
-                    sent.ReleaseWhenNoSendsOutstanding ();
                 }
-            }
 
-            ApplyCongestionControl (bytesNewlyAcked, pkt.TimestampDiff, minAckedRttMicroseconds, wasWindowLimited);
+                lock (locker) {
+                    foreach (var sent in acked) {
+                        var packetRtt = UpdateRttLocked (sent);
+                        if (packetRtt != 0 && (minAckedRttMicroseconds == 0 || packetRtt < minAckedRttMicroseconds))
+                            minAckedRttMicroseconds = packetRtt;
+
+                        if (sent.PayloadBytes > 0 && !sent.IsMtuProbe)
+                            HasAckedPayloadPacket = true;
+                        ProcessMtuProbeAckLocked (sent);
+                    }
+                }
+
+                ApplyCongestionControl (bytesNewlyAcked, pkt.TimestampDiff, minAckedRttMicroseconds, wasWindowLimited);
+
+                foreach (var sent in acked)
+                    sent.ReleaseWhenNoSendsOutstanding ();
+            }
 
             if (finAcked && State == ConnectionState.FinSent)
                 CloseCleanly ();
@@ -1159,7 +1165,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             return ackDisposition;
         }
 
-        void ProcessMtuProbeAck (SentPacket sent)
+        void ProcessMtuProbeAckLocked (SentPacket sent)
         {
             if (!sent.IsMtuProbe || sent.Packet.SequenceNumber != MtuProbeSequence || sent.Transmissions != 1)
                 return;
@@ -1190,7 +1196,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        uint UpdateRtt (SentPacket sent)
+        uint UpdateRttLocked (SentPacket sent)
         {
             if (sent.Transmissions != 1)
                 return 0;
