@@ -854,16 +854,12 @@ namespace MonoTorrent.Connections.Peer.Utp
                 PeerExtensionBits = parsed.ExtensionBits.Value;
 
             UpdateDelaySample (pkt, receivedAtMicroseconds);
-            var ackDisposition = GetAckDisposition (pkt.AckNumber);
+            var ackDisposition = ProcessAcks (pkt, parsed.SelectiveAcks);
             if (ackDisposition == AckDisposition.InvalidFuture) {
                 parsed.Dispose ();
                 return;
             }
 
-            if (ackDisposition == AckDisposition.Current)
-                ApplyPeerWindow (pkt.WindowSize);
-
-            ProcessAcks (pkt, parsed.SelectiveAcks, ackDisposition);
             Reschedule ();
 
             if (pkt.Type == PacketType.Reset) {
@@ -967,15 +963,13 @@ namespace MonoTorrent.Connections.Peer.Utp
             return !SequenceGreaterThan (pkt.SequenceNumber, AckNumber);
         }
 
-        AckDisposition GetAckDisposition (ushort ackNumber)
+        AckDisposition GetAckDispositionLocked (ushort ackNumber)
         {
-            lock (locker) {
-                if (sentPackets.Count == 0)
-                    return ackNumber == LastAckReceived ? AckDisposition.Current : AckDisposition.UnrelatedWhileIdle;
-                if (SequenceGreaterThan (ackNumber, LastSentSequenceNumber))
-                    return AckDisposition.InvalidFuture;
-                return SequenceGreaterThan (LastAckReceived, ackNumber) ? AckDisposition.Stale : AckDisposition.Current;
-            }
+            if (sentPackets.Count == 0)
+                return ackNumber == LastAckReceived ? AckDisposition.Current : AckDisposition.UnrelatedWhileIdle;
+            if (SequenceGreaterThan (ackNumber, LastSentSequenceNumber))
+                return AckDisposition.InvalidFuture;
+            return SequenceGreaterThan (LastAckReceived, ackNumber) ? AckDisposition.Stale : AckDisposition.Current;
         }
 
         int WireBytesInFlight {
@@ -996,21 +990,29 @@ namespace MonoTorrent.Connections.Peer.Utp
             bool releaseSendWindow = false;
             bool drainRetransmits = false;
             lock (locker) {
-                var wasPeerWindowZero = PeerWindowSize == 0;
-                var previousPeerWindow = PeerWindowSize;
-                PeerWindowSize = windowSize;
-                if (PeerWindowSize > previousPeerWindow) {
-                    releaseSendWindow = TrySignalSendWindowChangedLocked ();
-                    drainRetransmits = true;
-                }
-                if (!wasPeerWindowZero && PeerWindowSize == 0)
-                    LastZeroWindowProbeMicroseconds = clock.Microseconds;
+                ApplyPeerWindowLocked (windowSize, out releaseSendWindow, out drainRetransmits);
             }
 
             if (releaseSendWindow)
                 sendWindowChanged.Release ();
             if (drainRetransmits)
                 _ = DrainRetransmitQueueAsync ();
+        }
+
+        void ApplyPeerWindowLocked (uint windowSize, out bool releaseSendWindow, out bool drainRetransmits)
+        {
+            releaseSendWindow = false;
+            drainRetransmits = false;
+
+            var wasPeerWindowZero = PeerWindowSize == 0;
+            var previousPeerWindow = PeerWindowSize;
+            PeerWindowSize = windowSize;
+            if (PeerWindowSize > previousPeerWindow) {
+                releaseSendWindow = TrySignalSendWindowChangedLocked ();
+                drainRetransmits = true;
+            }
+            if (!wasPeerWindowZero && PeerWindowSize == 0)
+                LastZeroWindowProbeMicroseconds = clock.Microseconds;
         }
 
         void UpdateDelaySample (UtpPacket pkt, uint receivedAtMicroseconds)
@@ -1024,16 +1026,26 @@ namespace MonoTorrent.Connections.Peer.Utp
             UpdateDelaySample (syn, receivedAtMicroseconds);
         }
 
-        void ProcessAcks (UtpPacket pkt, IReadOnlyList<ushort> receivedSelectiveAcks, AckDisposition ackDisposition)
+        AckDisposition ProcessAcks (UtpPacket pkt, IReadOnlyList<ushort> receivedSelectiveAcks)
         {
-            if (ackDisposition == AckDisposition.UnrelatedWhileIdle)
-                return;
-
             List<SentPacket>? acked = null;
             List<SentPacket>? fastRetransmits = null;
-            bool wasWindowLimited;
+            bool wasWindowLimited = false;
+            bool releaseSendWindow = false;
+            bool drainRetransmits = false;
+            AckDisposition ackDisposition;
 
             lock (locker) {
+                ackDisposition = GetAckDispositionLocked (pkt.AckNumber);
+                if (ackDisposition == AckDisposition.InvalidFuture)
+                    return ackDisposition;
+
+                if (ackDisposition == AckDisposition.Current)
+                    ApplyPeerWindowLocked (pkt.WindowSize, out releaseSendWindow, out drainRetransmits);
+
+                if (ackDisposition == AckDisposition.UnrelatedWhileIdle)
+                    return ackDisposition;
+
                 wasWindowLimited = IsWindowLimited ();
 
                 bool ackAdvanced = SequenceGreaterThan (pkt.AckNumber, LastAckReceived);
@@ -1085,6 +1097,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                     ConsecutiveTimeouts = 0;
             }
 
+            if (releaseSendWindow)
+                sendWindowChanged.Release ();
+
             uint minAckedRttMicroseconds = 0;
             int bytesNewlyAcked = 0;
             bool finAcked = false;
@@ -1119,10 +1134,11 @@ namespace MonoTorrent.Connections.Peer.Utp
                         MarkForRetransmitLocked (packet);
                 }
                 _ = DrainRetransmitQueueAsync ();
-            } else if (acked != null) {
+            } else if (acked != null || drainRetransmits) {
                 _ = DrainRetransmitQueueAsync ();
             }
 
+            return ackDisposition;
         }
 
         void ProcessMtuProbeAck (SentPacket sent)
