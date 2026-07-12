@@ -151,8 +151,9 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (1, ack.packet.Extension);
             Assert.AreEqual (0, bytes[UtpPacket.HeaderSize]);
             Assert.AreEqual (4, bytes[UtpPacket.HeaderSize + 1]);
-            Assert.AreEqual (0b_0000_0011, bytes[UtpPacket.HeaderSize + 2]);
-            Assert.AreEqual (0b_0000_0001, bytes[UtpPacket.HeaderSize + 3]);
+            CollectionAssert.AreEqual (
+                new byte[] { 0b_0000_0011, 0b_0000_0001, 0, 0 },
+                bytes.AsSpan (UtpPacket.HeaderSize + 2, 4).ToArray ());
         }
 
         [Test]
@@ -901,7 +902,10 @@ namespace MonoTorrent.Connections.Peer
             var ack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (PacketType.State, ack.packet.Type);
             Assert.AreEqual (1, ack.packet.Extension);
-            Assert.AreEqual (252, ack.packet.AsMemory ().Span[UtpPacket.HeaderSize + 1]);
+            var selectiveAck = ack.packet.AsMemory ().Slice (UtpPacket.HeaderSize + 2).ToArray ();
+            Assert.AreEqual (252, selectiveAck.Length);
+            CollectionAssert.AreEqual (new byte[251], selectiveAck.AsSpan (0, 251).ToArray ());
+            Assert.AreEqual (0b_0100_0000, selectiveAck[251]);
         }
 
         [Test]

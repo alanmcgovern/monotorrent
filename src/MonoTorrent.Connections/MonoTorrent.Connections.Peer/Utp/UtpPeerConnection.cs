@@ -1292,31 +1292,35 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (result.Length < 6)
                 return 0;
 
-            Span<byte> selectiveAckBits = stackalloc byte[252];
-            int maxBit = -1;
+            // Does this really need 252 bytes?
+            using (MemoryPool.Default.Rent (252, out var selectiveAckBitsMem)) {
+                var selectiveAckBits = selectiveAckBitsMem.Span;
+                selectiveAckBits.Clear ();
+                int maxBit = -1;
 
-            lock (locker) {
-                foreach (var seq in receiveBuffer.Keys) {
-                    if (!ShouldIncludeInSelectiveAck (seq, ackNr))
-                        continue;
+                lock (locker) {
+                    foreach (var seq in receiveBuffer.Keys) {
+                        if (!ShouldIncludeInSelectiveAck (seq, ackNr))
+                            continue;
 
-                    int bit = SequenceDistance (seq, unchecked((ushort) (ackNr + 2)));
-                    if ((uint) bit >= selectiveAckBits.Length * 8u)
-                        continue;
+                        int bit = SequenceDistance (seq, unchecked((ushort) (ackNr + 2)));
+                        if ((uint) bit >= selectiveAckBits.Length * 8u)
+                            continue;
 
-                    selectiveAckBits[bit / 8] |= (byte) (1 << (bit % 8));
-                    maxBit = Math.Max (maxBit, bit);
+                        selectiveAckBits[bit / 8] |= (byte) (1 << (bit % 8));
+                        maxBit = Math.Max (maxBit, bit);
+                    }
                 }
+
+                if (maxBit < 0)
+                    return 0;
+
+                int length = Math.Max (4, ((maxBit / 8) + 4) / 4 * 4);
+                result[0] = 0;
+                result[1] = (byte) length;
+                selectiveAckBits.Slice (0, length).CopyTo (result.Slice (2));
+                return 2 + length;
             }
-
-            if (maxBit < 0)
-                return 0;
-
-            int length = Math.Max (4, ((maxBit / 8) + 4) / 4 * 4);
-            result[0] = 0;
-            result[1] = (byte) length;
-            selectiveAckBits.Slice (0, length).CopyTo (result.Slice (2));
-            return 2 + length;
         }
 
         bool ShouldIncludeInSelectiveAck (ushort sequenceNumber, ushort ackNr)
