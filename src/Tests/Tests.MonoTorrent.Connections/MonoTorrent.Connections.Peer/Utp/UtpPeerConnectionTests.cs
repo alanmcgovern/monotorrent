@@ -2095,6 +2095,26 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task AckAndPeerWindowGrowthDoNotAccumulateStaleSendWindowSignals ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[1]).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber));
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            var largerWindow = CreateStatePacket (123, sequenceNumber: 10, ackNumber: data.packet.SequenceNumber);
+            largerWindow.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW * 2;
+            connection.Receive (largerWindow);
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            Assert.AreEqual (0, connection.SendWindowSignalCountForTests);
+        }
+
+        [Test]
         public async Task FutureAckDoesNotReopenPeerWindow ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
