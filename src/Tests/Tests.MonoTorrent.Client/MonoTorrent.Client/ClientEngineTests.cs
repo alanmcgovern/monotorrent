@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
     public class ClientEngineTests
     {
         [Test]
-        public void AllowedPeerTransports_DefaultDoesNotCreateUtpListeners ()
+        public void EnableDht_DefaultDoesNotCreateUdpListenersInTestHelper ()
         {
             var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
                 { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void AllowedPeerTransports_UtpOptInCreatesUdpListeners ()
+        public void EnableUtp_CreatesUdpListeners ()
         {
             var ipv4Listener = new FakeListener (0) {
                 PreferredLocalEndPoint = new IPEndPoint (IPAddress.Loopback, 0)
@@ -72,7 +72,10 @@ namespace MonoTorrent.Client
                 { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) },
                 { "ipv6", new IPEndPoint (IPAddress.IPv6Loopback, 0) }
             }) with {
-                UdpEndPoint = new IPEndPoint (IPAddress.Loopback, 0),
+                EnableUtp = true,
+                UdpListenEndPoints = new Dictionary<string, IPEndPoint> {
+                    { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+                }.ToImmutableDictionary (),
                 AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             };
 
@@ -84,7 +87,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task AllowedPeerTransports_UpdateSettingsRebuildsUtpListeners ()
+        public async Task EnableUtp_UpdateSettingsRebuildsUdpListeners ()
         {
             var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
                 { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
@@ -94,7 +97,10 @@ namespace MonoTorrent.Client
             Assert.AreEqual (0, engine.UtpPeerListeners.Count);
 
             await engine.UpdateSettingsAsync (engine.Settings with {
-                UdpEndPoint = new IPEndPoint (IPAddress.Loopback, 0),
+                EnableUtp = true,
+                UdpListenEndPoints = new Dictionary<string, IPEndPoint> {
+                    { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+                }.ToImmutableDictionary (),
                 AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             });
 
@@ -119,7 +125,10 @@ namespace MonoTorrent.Client
             var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
                 { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
             }) with {
-                UdpEndPoint = new IPEndPoint (IPAddress.Loopback, 0),
+                EnableUtp = true,
+                UdpListenEndPoints = new Dictionary<string, IPEndPoint> {
+                    { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+                }.ToImmutableDictionary (),
                 AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             };
 

@@ -157,10 +157,14 @@ namespace MonoTorrent.Client
         });
 
         /// <summary>
-        /// The shared endpoint used for DHT and uTP communications. Set the port to 0 to choose a random available port.
-        /// Set to null to disable DHT and uTP. Defaults to IPAddress.Any with port 0.
+        /// True if the engine should use DHT to discover peers. Defaults to <see langword="true"/>.
         /// </summary>
-        public IPEndPoint? UdpEndPoint { get; init; } = new IPEndPoint (IPAddress.Any, 0);
+        public bool EnableDht { get; init; } = true;
+
+        /// <summary>
+        /// True if the engine should use uTP for peer connections. Defaults to <see langword="false"/>.
+        /// </summary>
+        public bool EnableUtp { get; init; } = false;
 
         /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
@@ -203,6 +207,15 @@ namespace MonoTorrent.Client
         /// both with port 0.
         /// </summary>
         public ImmutableDictionary<string, IPEndPoint> ListenEndPoints { get; init; } = new Dictionary<string, IPEndPoint> {
+            {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
+            {"ipv6", new IPEndPoint (IPAddress.IPv6Any, 0) }
+        }.ToImmutableDictionary ();
+
+        /// <summary>
+        /// The UDP endpoints shared by DHT and uTP communications. Set the port to 0 to choose a random available port.
+        /// At least one endpoint is required when <see cref="EnableDht"/> or <see cref="EnableUtp"/> is true.
+        /// </summary>
+        public ImmutableDictionary<string, IPEndPoint> UdpListenEndPoints { get; init; } = new Dictionary<string, IPEndPoint> {
             {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
             {"ipv6", new IPEndPoint (IPAddress.IPv6Any, 0) }
         }.ToImmutableDictionary ();
@@ -372,6 +385,8 @@ namespace MonoTorrent.Client
                 throw new ArgumentException ("At least one peer transport must be specified", nameof (AllowedPeerTransports));
             if (settings.AllowedPeerTransports.Distinct ().Count () != settings.AllowedPeerTransports.Length)
                 throw new ArgumentException ("Each peer transport can be specified at most once. Please verify the AllowedPeerTransports list contains no duplicates", nameof (AllowedPeerTransports));
+            if ((settings.EnableDht || settings.EnableUtp) && settings.UdpListenEndPoints.Count == 0)
+                throw new ArgumentException ("At least one UDP listen endpoint must be specified when DHT or uTP is enabled", nameof (UdpListenEndPoints));
 
             if (settings.ConnectionRetryDelays.Any (t => t < TimeSpan.Zero))
                 throw new ArgumentException ("ConnectionRetryDelays cannot be less than zero", nameof (ConnectionRetryDelays));

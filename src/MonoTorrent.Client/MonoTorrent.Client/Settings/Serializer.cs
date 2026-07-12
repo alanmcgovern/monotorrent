@@ -67,11 +67,9 @@ namespace MonoTorrent.Client
                     ? ReadBootstrapRouters ((BEncodedList) v10)
                     : defaults.DhtBootstrapRouters,
 
-                UdpEndPoint = dict.TryGetValue (nameof (EngineSettings.UdpEndPoint), out var v11)
-                    ? ReadNullableEndPoint ((BEncodedList) v11)
-                    : dict.TryGetValue ("DhtEndPoint", out v11)
-                        ? ReadNullableEndPoint ((BEncodedList) v11)
-                    : defaults.UdpEndPoint,
+                EnableDht = dict.TryGetValue (nameof (EngineSettings.EnableDht), out var v11)
+                    ? bool.Parse (v11.ToString ()!)
+                    : defaults.EnableDht,
 
                 DiskCacheBytes = dict.TryGetValue (nameof (EngineSettings.DiskCacheBytes), out var v12)
                     ? (int) ((BEncodedNumber) v12).Number
@@ -80,6 +78,10 @@ namespace MonoTorrent.Client
                 DiskCachePolicy = dict.TryGetValue (nameof (EngineSettings.DiskCachePolicy), out var v13)
                     ? Enum.Parse<CachePolicy> (((BEncodedString) v13).Text)
                     : defaults.DiskCachePolicy,
+
+                EnableUtp = dict.TryGetValue (nameof (EngineSettings.EnableUtp), out var v32)
+                    ? bool.Parse (v32.ToString ()!)
+                    : defaults.EnableUtp,
 
                 FastResumeMode = dict.TryGetValue (nameof (EngineSettings.FastResumeMode), out var v14)
                     ? Enum.Parse<FastResumeMode> (((BEncodedString) v14).Text)
@@ -96,6 +98,10 @@ namespace MonoTorrent.Client
                 ListenEndPoints = dict.TryGetValue (nameof (EngineSettings.ListenEndPoints), out var v17)
                     ? ReadEndPointDictionary ((BEncodedDictionary) v17)
                     : defaults.ListenEndPoints,
+
+                UdpListenEndPoints = dict.TryGetValue (nameof (EngineSettings.UdpListenEndPoints), out var v33)
+                    ? ReadEndPointDictionary ((BEncodedDictionary) v33)
+                    : defaults.UdpListenEndPoints,
 
                 MaximumConnections = dict.TryGetValue (nameof (EngineSettings.MaximumConnections), out var v18)
                     ? (int) ((BEncodedNumber) v18).Number
@@ -227,13 +233,15 @@ namespace MonoTorrent.Client
             dict[nameof (s.ConnectionRetryDelays)] = WriteTimeSpanList (s.ConnectionRetryDelays);
             dict[nameof (s.ConnectionTimeouts)] = WriteTimeSpanList (s.ConnectionTimeouts);
             dict[nameof (s.DhtBootstrapRouters)] = WriteBootstrapRouters (s.DhtBootstrapRouters);
-            dict[nameof (s.UdpEndPoint)] = WriteNullableEndPoint (s.UdpEndPoint);
+            dict[nameof (s.EnableDht)] = new BEncodedString (s.EnableDht.ToString ());
             dict[nameof (s.DiskCacheBytes)] = new BEncodedNumber (s.DiskCacheBytes);
             dict[nameof (s.DiskCachePolicy)] = new BEncodedString (s.DiskCachePolicy.ToString ());
+            dict[nameof (s.EnableUtp)] = new BEncodedString (s.EnableUtp.ToString ());
             dict[nameof (s.FastResumeMode)] = new BEncodedString (s.FastResumeMode.ToString ());
             dict[nameof (s.FileCreationOptions)] = new BEncodedString (s.FileCreationOptions.ToString ());
             dict[nameof (s.HttpStreamingPrefix)] = new BEncodedString (s.HttpStreamingPrefix);
             dict[nameof (s.ListenEndPoints)] = WriteEndPointDictionary (s.ListenEndPoints);
+            dict[nameof (s.UdpListenEndPoints)] = WriteEndPointDictionary (s.UdpListenEndPoints);
             dict[nameof (s.MaximumConnections)] = new BEncodedNumber (s.MaximumConnections);
             dict[nameof (s.MaximumDiskReadRate)] = new BEncodedNumber (s.MaximumDiskReadRate);
             dict[nameof (s.MaximumDiskWriteRate)] = new BEncodedNumber (s.MaximumDiskWriteRate);
@@ -273,15 +281,6 @@ namespace MonoTorrent.Client
             foreach (BEncodedList router in list)
                 result.Add (new BootstrapRouter (((BEncodedString) router[0]).Text, (int) ((BEncodedNumber) router[1]).Number));
             return result.ToImmutableArray ();
-        }
-
-        static IPEndPoint? ReadNullableEndPoint (BEncodedList list)
-        {
-            if (list.Count != 2)
-                return null;
-            var address = IPAddress.Parse (((BEncodedString) list[0]).Text);
-            var port = (int) ((BEncodedNumber) list[1]).Number;
-            return new IPEndPoint (address, port);
         }
 
         static ImmutableDictionary<string, IPEndPoint> ReadEndPointDictionary (BEncodedDictionary dict)

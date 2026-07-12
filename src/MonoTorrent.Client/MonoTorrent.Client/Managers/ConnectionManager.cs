@@ -228,7 +228,7 @@ namespace MonoTorrent.Client
         internal IPeerConnection? CreatePeerConnection (PeerInfo peer, PeerTransport transport)
             => transport switch {
                 PeerTransport.Tcp => Factories.CreatePeerConnection (peer.ConnectionUri),
-                PeerTransport.Utp => UtpPeerConnectionFactory?.CreatePeerConnection (peer),
+                PeerTransport.Utp when Settings.EnableUtp => UtpPeerConnectionFactory?.CreatePeerConnection (peer),
                 _ => null
             };
 

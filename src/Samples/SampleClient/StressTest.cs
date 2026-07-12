@@ -187,7 +187,9 @@ namespace ClientSample
                 new EngineSettings () with {
                     AllowedEncryption = ImmutableArray.Create<EncryptionType> (EncryptionType.PlainText),
                     ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } }.ToImmutableDictionary (),
-                    UdpEndPoint = null,
+                    EnableDht = false,
+                    EnableUtp = false,
+                    UdpListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
                     AllowLocalPeerDiscovery = false,
                 },
                 Factories.Default.WithBlockCacheCreator ((IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer) => {
@@ -208,7 +210,9 @@ namespace ClientSample
                         AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText }.ToImmutableArray (),
                         DiskCacheBytes = DataSize,
                         ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } }.ToImmutableDictionary (),
-                        UdpEndPoint = null,
+                        EnableDht = false,
+                        EnableUtp = false,
+                        UdpListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
                         AllowLocalPeerDiscovery = false,
                         CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")
                     },

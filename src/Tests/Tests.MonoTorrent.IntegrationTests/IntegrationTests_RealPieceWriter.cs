@@ -386,7 +386,11 @@ namespace MonoTorrent.IntegrationTests
                 ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } }.ToImmutableDictionary (),
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
-                UdpEndPoint = null,
+                EnableDht = false,
+                EnableUtp = PeerTransport == PeerTransport.Utp,
+                UdpListenEndPoints = PeerTransport == PeerTransport.Utp
+                    ? new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, 0) } }.ToImmutableDictionary ()
+                    : ImmutableDictionary.Create<string, IPEndPoint> (),
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
                 AllowLocalPeerDiscovery = false,
