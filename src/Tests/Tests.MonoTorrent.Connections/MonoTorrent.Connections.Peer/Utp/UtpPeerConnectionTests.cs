@@ -1216,6 +1216,35 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task ScheduledTimeoutWaitsForRetransmitToEnterSendQueue ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateBounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> (1);
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1, clock);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.IsTrue (sendQueue.Writer.TryWrite ((new UtpPacket (new byte[UtpPacket.HeaderSize]), null, new IPEndPoint (IPAddress.Loopback, 54321), null)));
+
+            clock.Microseconds = connection.RetransmitTimeoutMicrosecondsForTests;
+            var scheduled = connection.ProcessScheduledEventsAsync ();
+
+            await Task.Delay (50);
+            Assert.IsFalse (scheduled.IsCompleted);
+            Assert.IsTrue (connection.RetransmitDrainActiveForTests);
+            Assert.AreEqual (1, connection.PendingRetransmitCountForTests);
+            Assert.AreEqual (0, connection.BytesInFlightForTests);
+
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await scheduled.WaitAsync (TimeSpan.FromSeconds (5));
+
+            var retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (first.packet.SequenceNumber, retransmit.packet.SequenceNumber);
+            Assert.AreEqual (first.packet.Payload.ToArray (), retransmit.packet.Payload.ToArray ());
+        }
+
+        [Test]
         public async Task IdleConnectedConnectionSendsKeepAliveAckForPreviousSequence ()
         {
             var clock = new ManualClock ();

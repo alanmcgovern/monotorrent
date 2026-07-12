@@ -256,6 +256,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         bool RetransmitDrainActive { get; set; }
         bool RetransmitDrainRequested { get; set; }
         int RetransmitDrainStarts { get; set; }
+        TaskCompletionSource<bool>? RetransmitDrainCompletion { get; set; }
 
         ChannelWriter<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> SendingChannel { get; }
 
@@ -1013,7 +1014,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (releaseSendWindow)
                 sendWindowChanged.Release ();
             if (drainRetransmits)
-                StartRetransmitDrain ();
+                _ = StartRetransmitDrain ();
         }
 
         void ApplyPeerWindowLocked (uint windowSize, out bool releaseSendWindow, out bool drainRetransmits)
@@ -1150,9 +1151,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                     foreach (var packet in fastRetransmits)
                         MarkForRetransmitLocked (packet);
                 }
-                StartRetransmitDrain ();
+                _ = StartRetransmitDrain ();
             } else if (acked != null || drainRetransmits) {
-                StartRetransmitDrain ();
+                _ = StartRetransmitDrain ();
             }
 
             return ackDisposition;
@@ -1803,7 +1804,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     await SendAckAsync (delayedAck.Value);
 
                 if (timedOut.Count > 0)
-                    StartRetransmitDrain ();
+                    await StartRetransmitDrain ();
                 else if (sendKeepAlive)
                     await SendKeepAliveAsync ();
 
@@ -1886,24 +1887,29 @@ namespace MonoTorrent.Connections.Peer.Utp
         int MaxConsecutiveTimeouts
             => State == ConnectionState.SynSent ? transportSettings.MaxSynTimeouts : transportSettings.MaxConnectedTimeouts;
 
-        void StartRetransmitDrain ()
+        Task StartRetransmitDrain ()
         {
+            TaskCompletionSource<bool> completion;
             lock (locker) {
                 if (RetransmitDrainActive) {
                     RetransmitDrainRequested = true;
-                    return;
+                    return RetransmitDrainCompletion?.Task ?? Task.CompletedTask;
                 }
 
                 RetransmitDrainActive = true;
                 RetransmitDrainStarts++;
+                RetransmitDrainCompletion = new TaskCompletionSource<bool> (TaskCreationOptions.RunContinuationsAsynchronously);
+                completion = RetransmitDrainCompletion;
             }
 
-            _ = DrainRetransmitQueueAsync ();
+            _ = DrainRetransmitQueueAsync (completion);
+            return completion.Task;
         }
 
-        async Task DrainRetransmitQueueAsync ()
+        async Task DrainRetransmitQueueAsync (TaskCompletionSource<bool> completion)
         {
             bool clearedOwnership = false;
+            Exception? error = null;
             try {
                 while (!cts.IsCancellationRequested) {
                     SentPacket? packet = null;
@@ -1940,13 +1946,29 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                     await SendRetransmitPacketAsync (packet!);
                 }
+            } catch (Exception ex) {
+                error = ex;
             } finally {
                 if (!clearedOwnership) {
                     lock (locker) {
                         RetransmitDrainActive = false;
                         RetransmitDrainRequested = false;
+                        if (ReferenceEquals (RetransmitDrainCompletion, completion))
+                            RetransmitDrainCompletion = null;
+                    }
+                } else {
+                    lock (locker) {
+                        if (ReferenceEquals (RetransmitDrainCompletion, completion))
+                            RetransmitDrainCompletion = null;
                     }
                 }
+
+                if (error is OperationCanceledException operationCanceled)
+                    completion.TrySetCanceled (operationCanceled.CancellationToken);
+                else if (error != null)
+                    completion.TrySetException (error);
+                else
+                    completion.TrySetResult (true);
             }
         }
 
