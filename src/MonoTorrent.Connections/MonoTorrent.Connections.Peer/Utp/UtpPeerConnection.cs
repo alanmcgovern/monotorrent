@@ -1625,16 +1625,18 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         (int PayloadLength, bool IsMtuProbe) SelectPayloadSize (int remainingBytes)
         {
-            if (!transportSettings.EnablePathMtuDiscovery || !HasAckedPayloadPacket || MtuProbeSequence != null || MtuCeiling - MtuFloor <= MtuConvergedThreshold)
+            lock (locker) {
+                if (!transportSettings.EnablePathMtuDiscovery || !HasAckedPayloadPacket || MtuProbeSequence != null || MtuCeiling - MtuFloor <= MtuConvergedThreshold)
+                    return (Math.Min (remainingBytes, CurrentMtu), false);
+
+                if (unchecked(clock.Microseconds - NextMtuProbeAt) < 0x8000_0000u) {
+                    var probeSize = MtuFloor + (MtuCeiling - MtuFloor + 1) / 2;
+                    if (remainingBytes >= probeSize)
+                        return (probeSize, true);
+                }
+
                 return (Math.Min (remainingBytes, CurrentMtu), false);
-
-            if (unchecked(clock.Microseconds - NextMtuProbeAt) < 0x8000_0000u) {
-                var probeSize = MtuFloor + (MtuCeiling - MtuFloor + 1) / 2;
-                if (remainingBytes >= probeSize)
-                    return (probeSize, true);
             }
-
-            return (Math.Min (remainingBytes, CurrentMtu), false);
         }
 
         internal async ReusableTask SendFinAsync ()
