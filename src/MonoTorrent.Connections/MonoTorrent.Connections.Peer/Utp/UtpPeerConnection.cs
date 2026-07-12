@@ -513,7 +513,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Version = UtpPeerConnectionListener.UTP_VERSION,
                 Extension = 0,
                 ConnectionId = ConnectionIdReceive,
-                WindowSize = AdvertisedReceiveWindow,
                 SequenceNumber = NextSequenceNumber (),
                 AckNumber = 0
             };
@@ -625,9 +624,10 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         Task SendPacketAsync (UtpPacket packet, Action? sendCompleted = null)
         {
-            packet.WindowSize = AdvertisedReceiveWindow;
-            lock (locker)
+            lock (locker) {
+                packet.WindowSize = (uint) Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
                 LastAdvertisedReceiveWindow = packet.WindowSize;
+            }
 
             if (!SendingChannel.TryWrite ((packet, this, EndPoint, sendCompleted)))
                 return SendPacketSlowAsync (packet, sendCompleted);
@@ -1380,7 +1380,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Version = UtpPeerConnectionListener.UTP_VERSION,
                 Extension = sackLength == 0 ? (byte) 0 : SelectiveAckExtension,
                 ConnectionId = ConnectionIdSend,
-                WindowSize = AdvertisedReceiveWindow,
                 SequenceNumber = SequenceNumber,
                 AckNumber = ackNr
             };
@@ -1443,7 +1442,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Version = UtpPeerConnectionListener.UTP_VERSION,
                 Extension = 0,
                 ConnectionId = ConnectionIdSend,
-                WindowSize = AdvertisedReceiveWindow,
                 SequenceNumber = StateSequenceNumber,
                 AckNumber = peerSeqNr,
                 TimestampDiff = 0
@@ -1554,7 +1552,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                         Version = UtpPeerConnectionListener.UTP_VERSION,
                         Extension = 0,
                         ConnectionId = ConnectionIdSend,
-                        WindowSize = AdvertisedReceiveWindow,
                         SequenceNumber = NextSequenceNumber (),
                         AckNumber = AckNumber
                     };
@@ -1602,7 +1599,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                 Version = UtpPeerConnectionListener.UTP_VERSION,
                 Extension = 0,
                 ConnectionId = ConnectionIdSend,
-                WindowSize = AdvertisedReceiveWindow,
                 SequenceNumber = NextSequenceNumber (),
                 AckNumber = AckNumber
             };
