@@ -846,22 +846,26 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return;
             }
 
-            if (pkt.Type == PacketType.State && HandshakeCompleted != null && !HandshakeCompleted.Task.IsCompleted) {
+            var handshakeDataPacket = false;
+            if ((pkt.Type == PacketType.State || pkt.Type == PacketType.Data) && HandshakeCompleted != null && !HandshakeCompleted.Task.IsCompleted) {
                 if (pkt.AckNumber == LastSentSequenceNumber) {
                     AckNumber = unchecked((ushort) (pkt.SequenceNumber - 1));
                     State = ConnectionState.Connected;
                     HandshakeCompleted.TrySetResult (true);
                 }
+                handshakeDataPacket = pkt.Type == PacketType.Data && State == ConnectionState.Connected;
+                if (!handshakeDataPacket) {
+                    parsed.Dispose ();
+                    return;
+                }
+            }
+
+            if (!handshakeDataPacket && pkt.Type == PacketType.State) {
                 parsed.Dispose ();
                 return;
             }
 
-            if (pkt.Type == PacketType.State) {
-                parsed.Dispose ();
-                return;
-            }
-
-            if (pkt.Type != PacketType.Data && pkt.Type != PacketType.Fin) {
+            if (!handshakeDataPacket && pkt.Type != PacketType.Data && pkt.Type != PacketType.Fin) {
                 parsed.Dispose ();
                 return;
             }
@@ -915,7 +919,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 return false;
 
             return State switch {
-                ConnectionState.SynSent => pkt.Type == PacketType.State && pkt.AckNumber == LastSentSequenceNumber || pkt.Type == PacketType.Reset,
+                ConnectionState.SynSent => (pkt.Type == PacketType.State || pkt.Type == PacketType.Data) && pkt.AckNumber == LastSentSequenceNumber || pkt.Type == PacketType.Reset,
                 ConnectionState.SynReceived => pkt.Type == PacketType.State || pkt.Type == PacketType.Data || pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset,
                 ConnectionState.Connected => pkt.Type == PacketType.State || pkt.Type == PacketType.Data || pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset,
                 ConnectionState.FinSent => pkt.Type == PacketType.State || pkt.Type == PacketType.Data || pkt.Type == PacketType.Fin || pkt.Type == PacketType.Reset,

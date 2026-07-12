@@ -2165,6 +2165,29 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task OutgoingConnectionAcceptsDataPacketAcknowledgingSyn ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            using var connection = new UtpPeerConnection (listener, new IPEndPoint (IPAddress.Loopback, 12345), 123);
+
+            var connectTask = connection.ConnectAsync ().AsTask ();
+            var syn = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var data = CreateDataPacket (
+                sequenceNumber: 9,
+                payload: "a",
+                connectionId: connection.ConnectionIdReceive,
+                ackNumber: syn.packet.SequenceNumber);
+            connection.Receive (data);
+
+            Assert.IsTrue (await connectTask.WithTimeout (5000));
+
+            var buffer = new byte[1];
+            Assert.AreEqual (1, await connection.ReceiveAsync (buffer).WithTimeout (5000));
+            Assert.AreEqual ((byte) 'a', buffer[0]);
+        }
+
+        [Test]
         public async Task IncomingSynAckUsesLibutpConnectionIdsAndSequenceNumber ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
