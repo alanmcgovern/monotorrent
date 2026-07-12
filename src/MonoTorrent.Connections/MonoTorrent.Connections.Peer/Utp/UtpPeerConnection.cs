@@ -253,6 +253,9 @@ namespace MonoTorrent.Connections.Peer.Utp
         int DelayedAckPackets { get; set; }
         bool WaitingForSendWindow { get; set; }
         bool SendWindowChangePending { get; set; }
+        bool RetransmitDrainActive { get; set; }
+        bool RetransmitDrainRequested { get; set; }
+        int RetransmitDrainStarts { get; set; }
 
         ChannelWriter<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> SendingChannel { get; }
 
@@ -361,6 +364,20 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal int PayloadBytesInFlightForTests => CurrentWindow;
 
         internal int SendWindowSignalCountForTests => sendWindowChanged.CurrentCount;
+
+        internal bool RetransmitDrainActiveForTests {
+            get {
+                lock (locker)
+                    return RetransmitDrainActive;
+            }
+        }
+
+        internal int RetransmitDrainStartsForTests {
+            get {
+                lock (locker)
+                    return RetransmitDrainStarts;
+            }
+        }
 
         internal int PendingRetransmitCountForTests {
             get {
@@ -996,7 +1013,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (releaseSendWindow)
                 sendWindowChanged.Release ();
             if (drainRetransmits)
-                _ = DrainRetransmitQueueAsync ();
+                StartRetransmitDrain ();
         }
 
         void ApplyPeerWindowLocked (uint windowSize, out bool releaseSendWindow, out bool drainRetransmits)
@@ -1133,9 +1150,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                     foreach (var packet in fastRetransmits)
                         MarkForRetransmitLocked (packet);
                 }
-                _ = DrainRetransmitQueueAsync ();
+                StartRetransmitDrain ();
             } else if (acked != null || drainRetransmits) {
-                _ = DrainRetransmitQueueAsync ();
+                StartRetransmitDrain ();
             }
 
             return ackDisposition;
@@ -1786,7 +1803,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     await SendAckAsync (delayedAck.Value);
 
                 if (timedOut.Count > 0)
-                    await DrainRetransmitQueueAsync ();
+                    StartRetransmitDrain ();
                 else if (sendKeepAlive)
                     await SendKeepAliveAsync ();
 
@@ -1869,44 +1886,77 @@ namespace MonoTorrent.Connections.Peer.Utp
         int MaxConsecutiveTimeouts
             => State == ConnectionState.SynSent ? transportSettings.MaxSynTimeouts : transportSettings.MaxConnectedTimeouts;
 
-        async Task DrainRetransmitQueueAsync ()
+        void StartRetransmitDrain ()
         {
-            while (!cts.IsCancellationRequested) {
-                UtpPacket packet = default;
-                Action? sendCompleted = null;
-                bool hasPacket = false;
-
-                lock (locker) {
-                    while (pendingRetransmits.Count > 0) {
-                        var sequence = pendingRetransmits.Peek ();
-                        if (!sentPackets.TryGetValue (sequence, out var sent) || !sent.PendingRetransmit) {
-                            pendingRetransmits.Dequeue ();
-                            continue;
-                        }
-
-                        var payloadBytes = PayloadSendCost (sent);
-                        if (!CanSendPayloadLocked (payloadBytes))
-                            break;
-
-                        pendingRetransmits.Dequeue ();
-                        sent.PendingRetransmit = false;
-                        sent.IsInFlight = true;
-                        sent.Transmissions++;
-                        sent.DuplicateAckIndications = 0;
-                        sent.SentAtMicroseconds = clock.Microseconds;
-                        BytesInFlight += payloadBytes;
-                        AppendInFlightLocked (sent);
-                        packet = sent.Packet;
-                        sendCompleted = sent.TakeSendReference ();
-                        hasPacket = true;
-                        break;
-                    }
-
-                    if (!hasPacket)
-                        return;
+            lock (locker) {
+                if (RetransmitDrainActive) {
+                    RetransmitDrainRequested = true;
+                    return;
                 }
 
-                await SendPacketAsync (packet, sendCompleted);
+                RetransmitDrainActive = true;
+                RetransmitDrainStarts++;
+            }
+
+            _ = DrainRetransmitQueueAsync ();
+        }
+
+        async Task DrainRetransmitQueueAsync ()
+        {
+            bool clearedOwnership = false;
+            try {
+                while (!cts.IsCancellationRequested) {
+                    UtpPacket packet = default;
+                    Action? sendCompleted = null;
+                    bool hasPacket = false;
+
+                    lock (locker) {
+                        while (pendingRetransmits.Count > 0) {
+                            var sequence = pendingRetransmits.Peek ();
+                            if (!sentPackets.TryGetValue (sequence, out var sent) || !sent.PendingRetransmit) {
+                                pendingRetransmits.Dequeue ();
+                                continue;
+                            }
+
+                            var payloadBytes = PayloadSendCost (sent);
+                            if (!CanSendPayloadLocked (payloadBytes))
+                                break;
+
+                            pendingRetransmits.Dequeue ();
+                            sent.PendingRetransmit = false;
+                            sent.IsInFlight = true;
+                            sent.Transmissions++;
+                            sent.DuplicateAckIndications = 0;
+                            sent.SentAtMicroseconds = clock.Microseconds;
+                            BytesInFlight += payloadBytes;
+                            AppendInFlightLocked (sent);
+                            packet = sent.Packet;
+                            sendCompleted = sent.TakeSendReference ();
+                            hasPacket = true;
+                            break;
+                        }
+
+                        if (!hasPacket) {
+                            if (RetransmitDrainRequested) {
+                                RetransmitDrainRequested = false;
+                                continue;
+                            }
+
+                            RetransmitDrainActive = false;
+                            clearedOwnership = true;
+                            return;
+                        }
+                    }
+
+                    await SendPacketAsync (packet, sendCompleted);
+                }
+            } finally {
+                if (!clearedOwnership) {
+                    lock (locker) {
+                        RetransmitDrainActive = false;
+                        RetransmitDrainRequested = false;
+                    }
+                }
             }
         }
 

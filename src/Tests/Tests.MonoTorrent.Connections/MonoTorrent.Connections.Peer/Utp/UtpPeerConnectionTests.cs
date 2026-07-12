@@ -1033,6 +1033,49 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task RetransmitDrainRequestsCoalesceWhileSendQueueIsBackpressured ()
+        {
+            var sendQueue = Channel.CreateBounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> (1);
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 2 }).WithTimeout (10_000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 3 }).WithTimeout (10_000);
+            var third = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 4 }).WithTimeout (10_000);
+            var fourth = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            await connection.SendAsync (new byte[] { 5 }).WithTimeout (10_000);
+            var fifth = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.IsTrue (sendQueue.Writer.TryWrite ((new UtpPacket (new byte[UtpPacket.HeaderSize]), null, new IPEndPoint (IPAddress.Loopback, 54321), null)));
+
+            connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber,
+                third.packet.SequenceNumber,
+                fourth.packet.SequenceNumber,
+                fifth.packet.SequenceNumber));
+            await Task.Delay (50);
+
+            Assert.IsTrue (connection.RetransmitDrainActiveForTests);
+            Assert.AreEqual (1, connection.RetransmitDrainStartsForTests);
+
+            var largerWindow = CreateStatePacket (123, sequenceNumber: 10, ackNumber: first.packet.SequenceNumber);
+            largerWindow.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW * 2;
+            connection.Receive (largerWindow);
+            await Task.Delay (50);
+
+            Assert.IsTrue (connection.RetransmitDrainActiveForTests);
+            Assert.AreEqual (1, connection.RetransmitDrainStartsForTests);
+
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (second.packet.SequenceNumber, retransmit.packet.SequenceNumber);
+            Assert.AreEqual (1, connection.RetransmitDrainStartsForTests);
+        }
+
+        [Test]
         public async Task TimedOutPacketBatchBacksOffOnce ()
         {
             var clock = new ManualClock ();
