@@ -232,6 +232,9 @@ namespace MonoTorrent.Connections.Peer.Utp
         const uint MinimumRetransmitTimeoutMicroseconds = 500_000;
         const uint MaximumRetransmitTimeoutMicroseconds = 60_000_000;
         const int MtuConvergedThreshold = 16;
+        const int UdpHeaderSize = 8;
+        const int Ipv4HeaderSize = 20;
+        const int Ipv6HeaderSize = 40;
 
         readonly object locker = new ();
         readonly Dictionary<ushort, SentPacket> sentPackets = new ();
@@ -566,10 +569,20 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         static int GetDefaultMtuCeiling (AddressFamily addressFamily)
             => addressFamily switch {
-                AddressFamily.InterNetwork => 1452,
-                AddressFamily.InterNetworkV6 => 1432,
+                AddressFamily.InterNetwork => GetPayloadCeilingFromPathMtu (addressFamily, 1500),
+                AddressFamily.InterNetworkV6 => GetPayloadCeilingFromPathMtu (addressFamily, 1500),
                 _ => UtpTransportSettings.DefaultInitialPacketSize
             };
+
+        internal static int GetPayloadCeilingFromPathMtu (AddressFamily addressFamily, int nextHopMtu)
+        {
+            var headerBytes = addressFamily switch {
+                AddressFamily.InterNetwork => Ipv4HeaderSize + UdpHeaderSize + UtpPacket.HeaderSize,
+                AddressFamily.InterNetworkV6 => Ipv6HeaderSize + UdpHeaderSize + UtpPacket.HeaderSize,
+                _ => int.MaxValue
+            };
+            return Math.Max (UtpTransportSettings.MinimumRecoveryPacketSize, nextHopMtu - headerBytes);
+        }
 
         ushort NextSequenceNumber ()
         {
@@ -640,6 +653,14 @@ namespace MonoTorrent.Connections.Peer.Utp
             LastSentPacketMicroseconds = clock.Microseconds;
             HasSentPacket = true;
             Reschedule ();
+        }
+
+        internal bool IsActiveMtuProbe (UtpPacket packet)
+        {
+            lock (locker)
+                return packet.Type == PacketType.Data
+                    && packet.SequenceNumber == MtuProbeSequence
+                    && packet.Payload.Length == MtuProbeSize;
         }
 
         static int PacketBufferCost (ParsedPacket packet)
@@ -1762,9 +1783,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal void ApplyMtuFeedback (int nextHopMtu)
         {
-            var payloadCeiling = nextHopMtu - (EndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? 48 : 28);
-            if (payloadCeiling < UtpTransportSettings.MinimumRecoveryPacketSize)
-                payloadCeiling = UtpTransportSettings.MinimumRecoveryPacketSize;
+            var payloadCeiling = GetPayloadCeilingFromPathMtu (EndPoint.AddressFamily, nextHopMtu);
 
             lock (locker) {
                 if (payloadCeiling >= MtuCeiling)

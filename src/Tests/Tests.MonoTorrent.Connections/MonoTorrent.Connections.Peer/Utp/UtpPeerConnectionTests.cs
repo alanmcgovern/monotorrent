@@ -1397,6 +1397,7 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.Greater (probe.packet.Payload.Length, 512);
             Assert.AreEqual (probe.packet.SequenceNumber, connection.MtuProbeSequenceForTests);
+            Assert.IsTrue (connection.IsActiveMtuProbe (probe.packet));
 
             connection.Receive (CreateStatePacket (123, sequenceNumber: 9, ackNumber: probe.packet.SequenceNumber));
             await Task.Delay (50);
@@ -1405,6 +1406,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (probe.packet.Payload.Length, connection.MtuFloorForTests);
             Assert.AreEqual (probe.packet.Payload.Length, connection.CurrentMtuForTests);
             Assert.IsNull (connection.MtuProbeSequenceForTests);
+            Assert.IsFalse (connection.IsActiveMtuProbe (probe.packet));
         }
 
         [Test]
@@ -1525,7 +1527,8 @@ namespace MonoTorrent.Connections.Peer
             connection.ApplyMtuFeedback (1000);
             connection.NextMtuProbeAtForTests = 0;
 
-            Assert.AreEqual (972, connection.MtuCeilingForTests);
+            Assert.AreEqual (952, connection.MtuCeilingForTests);
+            Assert.AreEqual (1000, connection.MtuCeilingForTests + UtpPacket.HeaderSize + 8 + 20);
             Assert.AreEqual (512, connection.MtuFloorForTests);
             Assert.AreEqual (512, connection.CurrentMtuForTests);
 
@@ -1555,7 +1558,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.IsTrue (listener.TryRegisterOutgoing (connection));
             Assert.IsTrue (listener.ApplyMtuFeedback ((IPEndPoint) connection.EndPoint, connection.ConnectionIdReceive, 1000));
 
-            Assert.AreEqual (972, connection.MtuCeilingForTests);
+            Assert.AreEqual (952, connection.MtuCeilingForTests);
         }
 
         [Test]

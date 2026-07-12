@@ -207,7 +207,12 @@ namespace MonoTorrent.Connections.Peer.Utp
                         } else {
                             connection.PrepareForSend (ref packet);
                         }
-                        await socket.SendToAsync (packet.AsMemory (), SocketFlags.None, remote, token);
+                        await SendPacketAsync (
+                            socket,
+                            packet,
+                            connection?.IsActiveMtuProbe (packet) == true && remote.AddressFamily == AddressFamily.InterNetwork,
+                            remote,
+                            token);
                     } catch (OperationCanceledException) {
                         return;
                     } catch (SocketException ex) when (!token.IsCancellationRequested) {
@@ -225,6 +230,30 @@ namespace MonoTorrent.Connections.Peer.Utp
                 while (SendQueue.Reader.TryRead (out var pending)) {
                     pending.sendCompleted?.Invoke ();
                     pending.packet.Dispose ();
+                }
+            }
+        }
+
+        static async Task SendPacketAsync (Socket socket, UtpPacket packet, bool dontFragment, IPEndPoint remote, CancellationToken token)
+        {
+            if (!dontFragment) {
+                await socket.SendToAsync (packet.AsMemory (), SocketFlags.None, remote, token);
+                return;
+            }
+
+            bool restoreDontFragment = false;
+            try {
+                if (!socket.DontFragment) {
+                    socket.DontFragment = true;
+                    restoreDontFragment = true;
+                }
+                await socket.SendToAsync (packet.AsMemory (), SocketFlags.None, remote, token);
+            } finally {
+                if (restoreDontFragment) {
+                    try {
+                        socket.DontFragment = false;
+                    } catch (ObjectDisposedException) {
+                    }
                 }
             }
         }
