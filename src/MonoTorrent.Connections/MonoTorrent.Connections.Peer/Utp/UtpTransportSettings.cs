@@ -35,6 +35,7 @@ namespace MonoTorrent.Connections.Peer.Utp
     {
         public const int DefaultInitialPacketSize = 1400;
         public const int DefaultMaxReceiveBufferBytes = 1024 * 1024;
+        public const int DefaultMaxSendQueuePackets = 4096;
         public const int DefaultSocketReceiveBufferBytes = 2 * 1024 * 1024;
         public const int DefaultSocketSendBufferBytes = 1024 * 1024;
         public const int MinimumRecoveryPacketSize = 150;
@@ -52,6 +53,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         public int MaxIncomingSynConnections { get; init; } = 1024;
 
         public int MaxReceiveBufferBytes { get; init; } = DefaultMaxReceiveBufferBytes;
+
+        public int MaxSendQueuePackets { get; init; } = DefaultMaxSendQueuePackets;
 
         public int SocketReceiveBufferBytes { get; init; } = DefaultSocketReceiveBufferBytes;
 
@@ -87,6 +90,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum incoming SYN connection count must be at least 1.");
             if (settings.MaxReceiveBufferBytes < 1)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum receive buffer size must be at least 1 byte.");
+            if (settings.MaxSendQueuePackets < 1)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The maximum send queue packet count must be at least 1.");
             if (settings.SocketReceiveBufferBytes < 1)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The socket receive buffer size must be at least 1 byte.");
             if (settings.SocketSendBufferBytes < 1)

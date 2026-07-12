@@ -146,10 +146,11 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         readonly struct IncomingDatagram
         {
-            public IncomingDatagram (UtpPacket packet, ByteBufferPool.Releaser bufferReleaser)
+            public IncomingDatagram (UtpPacket packet, ByteBufferPool.Releaser bufferReleaser, uint receivedAtMicroseconds)
             {
                 Packet = packet;
                 BufferReleaser = bufferReleaser;
+                ReceivedAtMicroseconds = receivedAtMicroseconds;
                 Barrier = null;
             }
 
@@ -157,11 +158,13 @@ namespace MonoTorrent.Connections.Peer.Utp
             {
                 Packet = default;
                 BufferReleaser = default;
+                ReceivedAtMicroseconds = 0;
                 Barrier = barrier;
             }
 
             public UtpPacket Packet { get; }
             public ByteBufferPool.Releaser BufferReleaser { get; }
+            public uint ReceivedAtMicroseconds { get; }
             public TaskCompletionSource<bool>? Barrier { get; }
         }
 
@@ -334,6 +337,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         int QueuedInOrderBytes { get; set; }
 
         int CurrentUnreadPacketBytes { get; set; }
+
+        int IncomingQueuedBytes { get; set; }
 
         Channel<ParsedPacket> ReceivedPackets { get; }
 
@@ -531,6 +536,9 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         int ReceiveBufferBytes
             => OutOfOrderBufferedBytes + QueuedInOrderBytes + CurrentUnreadPacketBytes;
+
+        int ReceiveMemoryBytes
+            => IncomingQueuedBytes + ReceiveBufferBytes;
 
         int CurrentWindow {
             get {
@@ -745,11 +753,34 @@ namespace MonoTorrent.Connections.Peer.Utp
         }
 
         // Called by the listener for every packet routed to this connection.
-        internal bool Receive (UtpPacket pkt, ByteBufferPool.Releaser bufferReleaser)
-            => IncomingPackets.Writer.TryWrite (new IncomingDatagram (pkt, bufferReleaser));
+        internal bool Receive (UtpPacket pkt, ByteBufferPool.Releaser bufferReleaser, uint receivedAtMicroseconds)
+        {
+            var packetBytes = pkt.AsMemory ().Length;
+            lock (locker) {
+                if (ReceiveMemoryBytes + packetBytes > maxReceiveBufferBytes)
+                    return false;
+                IncomingQueuedBytes += packetBytes;
+            }
+
+            if (IncomingPackets.Writer.TryWrite (new IncomingDatagram (pkt, bufferReleaser, receivedAtMicroseconds)))
+                return true;
+
+            lock (locker)
+                IncomingQueuedBytes = Math.Max (0, IncomingQueuedBytes - packetBytes);
+            return false;
+        }
 
         internal void Receive (UtpPacket pkt)
-            => IncomingPackets.Writer.TryWrite (new IncomingDatagram (pkt, default));
+        {
+            var packetBytes = pkt.AsMemory ().Length;
+            lock (locker)
+                IncomingQueuedBytes += packetBytes;
+
+            if (!IncomingPackets.Writer.TryWrite (new IncomingDatagram (pkt, default, clock.Microseconds))) {
+                lock (locker)
+                    IncomingQueuedBytes = Math.Max (0, IncomingQueuedBytes - packetBytes);
+            }
+        }
 
         async Task ProcessReceiveQueueAsync ()
         {
@@ -759,20 +790,26 @@ namespace MonoTorrent.Connections.Peer.Utp
                         incoming.Barrier.TrySetResult (true);
                         continue;
                     }
-                    await ProcessReceivedPacketAsync (incoming.Packet, incoming.BufferReleaser);
+                    lock (locker)
+                        IncomingQueuedBytes = Math.Max (0, IncomingQueuedBytes - incoming.Packet.AsMemory ().Length);
+                    await ProcessReceivedPacketAsync (incoming.Packet, incoming.BufferReleaser, incoming.ReceivedAtMicroseconds);
                 }
             } catch (OperationCanceledException) when (cts.IsCancellationRequested) {
             } catch {
                 Close (ConnectionState.Reset);
             } finally {
                 while (IncomingPackets.Reader.TryRead (out var pending)) {
+                    if (pending.Barrier == null) {
+                        lock (locker)
+                            IncomingQueuedBytes = Math.Max (0, IncomingQueuedBytes - pending.Packet.AsMemory ().Length);
+                    }
                     pending.BufferReleaser.Dispose ();
                     pending.Barrier?.TrySetResult (true);
                 }
             }
         }
 
-        async Task ProcessReceivedPacketAsync (UtpPacket pkt, ByteBufferPool.Releaser bufferReleaser)
+        async Task ProcessReceivedPacketAsync (UtpPacket pkt, ByteBufferPool.Releaser bufferReleaser, uint receivedAtMicroseconds)
         {
             if (!IsValidPacketForCurrentState (pkt)) {
                 bufferReleaser.Dispose ();
@@ -787,7 +824,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (parsed.ExtensionBits.HasValue)
                 PeerExtensionBits = parsed.ExtensionBits.Value;
 
-            UpdateDelaySample (pkt);
+            UpdateDelaySample (pkt, receivedAtMicroseconds);
             var ackDisposition = GetAckDisposition (pkt.AckNumber);
             if (ackDisposition == AckDisposition.InvalidFuture) {
                 parsed.Dispose ();
@@ -934,15 +971,15 @@ namespace MonoTorrent.Connections.Peer.Utp
                 LastZeroWindowProbeMicroseconds = clock.Microseconds;
         }
 
-        void UpdateDelaySample (UtpPacket pkt)
+        void UpdateDelaySample (UtpPacket pkt, uint receivedAtMicroseconds)
         {
-            LastReceivedDelayMicroseconds = unchecked(clock.Microseconds - pkt.Timestamp);
+            LastReceivedDelayMicroseconds = unchecked(receivedAtMicroseconds - pkt.Timestamp);
         }
 
-        internal void InitializeFromSyn (UtpPacket syn)
+        internal void InitializeFromSyn (UtpPacket syn, uint receivedAtMicroseconds)
         {
             ApplyPeerWindow (syn.WindowSize);
-            UpdateDelaySample (syn);
+            UpdateDelaySample (syn, receivedAtMicroseconds);
         }
 
         void ProcessAcks (UtpPacket pkt, IReadOnlyList<ushort> receivedSelectiveAcks, AckDisposition ackDisposition)

@@ -94,7 +94,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly List<Task> backgroundTasks = new ();
         Socket? socket;
 
-        public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection?, IPEndPoint, Action?)> ();
+        public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> SendQueue { get; }
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint)
             : this (preferredLocalEndPoint, null)
@@ -113,6 +113,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             Clock = clock;
             TransportSettings = UtpTransportSettings.Create (transportSettings);
             Scheduler = new UtpConnectionScheduler (clock);
+            SendQueue = Channel.CreateBounded<(UtpPacket, UtpPeerConnection?, IPEndPoint, Action?)> (new BoundedChannelOptions (TransportSettings.MaxSendQueuePackets) {
+                AllowSynchronousContinuations = false,
+                FullMode = BoundedChannelFullMode.Wait,
+                SingleReader = true,
+                SingleWriter = false
+            });
         }
 
         internal IUtpClock Clock { get; }
@@ -232,8 +238,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             while (!token.IsCancellationRequested) {
                 try {
                     var received = await socket.ReceiveFromAsync (buffer, endpoint, token);
+                    var receivedAtMicroseconds = Clock.Microseconds;
 
-                    ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, buffer.Span.Slice (0, received.ReceivedBytes));
+                    ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, buffer.Span.Slice (0, received.ReceivedBytes), receivedAtMicroseconds);
                 } catch (OperationCanceledException) {
                     return;
                 } catch (SocketException ex) when (!token.IsCancellationRequested) {
@@ -260,10 +267,10 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal void ProcessDatagram (IPEndPoint remote, byte[] owned)
         {
-            ProcessDatagram (remote, owned.AsSpan ());
+            ProcessDatagram (remote, owned.AsSpan (), Clock.Microseconds);
         }
 
-        void ProcessDatagram (IPEndPoint remote, ReadOnlySpan<byte> datagram)
+        void ProcessDatagram (IPEndPoint remote, ReadOnlySpan<byte> datagram, uint receivedAtMicroseconds)
         {
             if (!datagram.IsEmpty && datagram[0] == (byte) 'd') {
                 MessageReceived?.Invoke (datagram.ToArray (), new CompactEndPoint (remote.Address, remote.Port));
@@ -290,21 +297,21 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             switch (pkt.Type) {
                 case PacketType.Syn:
-                    TrackBackgroundTask (HandleSynAsync (remote, pkt, releaser));
+                    TrackBackgroundTask (HandleSynAsync (remote, pkt, releaser, receivedAtMicroseconds));
                     return;
 
                 case PacketType.Data:
                 case PacketType.State:
                 case PacketType.Fin:
                 case PacketType.Reset:
-                    RouteToExisting (remote, pkt, releaser);
+                    RouteToExisting (remote, pkt, releaser, receivedAtMicroseconds);
                     return;
             }
 
             releaser.Dispose ();
         }
 
-        async Task HandleSynAsync (IPEndPoint remote, UtpPacket syn, ByteBufferPool.Releaser releaser)
+        async Task HandleSynAsync (IPEndPoint remote, UtpPacket syn, ByteBufferPool.Releaser releaser, uint receivedAtMicroseconds)
         {
             try {
             ushort initiatorConnIdRecv = syn.ConnectionId;
@@ -341,7 +348,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 listener: this,
                 transportSettings: TransportSettings);
 
-            connection.InitializeFromSyn (syn);
+            connection.InitializeFromSyn (syn, receivedAtMicroseconds);
 
             if (!_connections.TryAdd (key, new RegisteredConnection (connection, Clock.Microseconds, syn.SequenceNumber))) {
                 connection.Dispose ();
@@ -362,7 +369,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        void RouteToExisting (IPEndPoint remote, UtpPacket pkt, ByteBufferPool.Releaser releaser)
+        void RouteToExisting (IPEndPoint remote, UtpPacket pkt, ByteBufferPool.Releaser releaser, uint receivedAtMicroseconds)
         {
             var key = pkt.Type == PacketType.Reset
                 ? FindResetKey (remote, pkt.ConnectionId)
@@ -372,7 +379,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 var conn = registration.Connection;
                 if (!conn.IsClosedOrReset && conn.IsValidPacketForCurrentState (pkt)) {
                     registration.LastActivityMicroseconds = Clock.Microseconds;
-                    if (!conn.Receive (pkt, releaser))
+                    if (!conn.Receive (pkt, releaser, receivedAtMicroseconds))
                         releaser.Dispose ();
                     return;
                 }
