@@ -36,6 +36,8 @@ namespace MonoTorrent
     {
         internal sealed class ByteBuffer
         {
+            internal BufferPool Pool { get; }
+
             // Used to prevent double-frees
             internal int Counter { get; set; }
 
@@ -43,8 +45,9 @@ namespace MonoTorrent
 
             public ArraySegment<byte> Segment { get; private set; }
 
-            public ByteBuffer (ArraySegment<byte> segment)
+            public ByteBuffer (BufferPool pool, ArraySegment<byte> segment)
             {
+                Pool = pool;
                 Segment = segment;
             }
         }

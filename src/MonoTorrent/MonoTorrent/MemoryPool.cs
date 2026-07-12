@@ -37,6 +37,7 @@ namespace MonoTorrent
         public static readonly MemoryPool Default = new MemoryPool ();
 
         public MemoryPool ()
+            : base (SmallMessageBufferSize, LargeMessageBufferSize, -1)
         {
         }
 
