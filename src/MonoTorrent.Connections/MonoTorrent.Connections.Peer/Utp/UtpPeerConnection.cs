@@ -284,7 +284,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         uint MaxWindow { get; set; }
 
-        uint SlowStartThreshold { get; set; } = UtpPeerConnectionListener.INITIAL_WINDOW;
+        uint SlowStartThreshold { get; set; }
 
         int CurrentMtu { get; set; }
 
@@ -456,6 +456,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             MtuFloor = CurrentMtu;
             MtuCeiling = Math.Max (CurrentMtu, GetDefaultMtuCeiling (remote.AddressFamily));
             MaxWindow = InitialCongestionWindow;
+            SlowStartThreshold = (uint) Math.Max (UtpTransportSettings.MinimumRecoveryPacketSize, settings.MaxReceiveBufferBytes);
             NextMtuProbeAt = unchecked(clock.Microseconds + (uint) settings.MtuProbeInterval.TotalMicroseconds);
             State = ConnectionState.SynReceived;
             scheduler = listener?.Scheduler ?? new UtpConnectionScheduler (clock);
@@ -1188,7 +1189,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                 double delayFactor = offTarget / targetDelayMicroseconds;
                 double windowFactor = Math.Min (1, bytesNewlyAcked / Math.Max (1.0, MaxWindow));
-                double gain = CurrentMtu * delayFactor * windowFactor;
+                double gain = transportSettings.LinearIncreaseBytesPerRtt * delayFactor * windowFactor;
                 MaxWindow = (uint) Math.Max (UtpTransportSettings.MinimumRecoveryPacketSize, MaxWindow + gain);
             }
         }

@@ -1611,6 +1611,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.IsTrue (settings.EnableDelayedAcks);
             Assert.IsTrue (settings.EnablePathMtuDiscovery);
             Assert.AreEqual (TimeSpan.FromMinutes (30), settings.MtuProbeInterval);
+            Assert.AreEqual (3000, settings.LinearIncreaseBytesPerRtt);
         }
 
         [Test]
@@ -1625,6 +1626,7 @@ namespace MonoTorrent.Connections.Peer
             AssertInvalidSetting (new UtpTransportSettings { MaxSendQueuePackets = 0 });
             AssertInvalidSetting (new UtpTransportSettings { SocketReceiveBufferBytes = 0 });
             AssertInvalidSetting (new UtpTransportSettings { SocketSendBufferBytes = 0 });
+            AssertInvalidSetting (new UtpTransportSettings { LinearIncreaseBytesPerRtt = 0 });
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.Zero });
@@ -1704,6 +1706,57 @@ namespace MonoTorrent.Connections.Peer
             await Task.Delay (50);
 
             Assert.Greater (connection.MaxWindowForTests, initialWindow);
+        }
+
+        [Test]
+        public async Task SlowStartContinuesBeyondInitialReceiveWindowWhenDelayIsBelowTarget ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                0,
+                clock,
+                transportSettings: new UtpTransportSettings {
+                    MaxReceiveBufferBytes = 1024 * 1024,
+                    InitialPacketSize = 1400
+                });
+
+            async Task AckOneFullWindow (int i)
+            {
+                var bytesToSend = Math.Max (1, (int) connection.MaxWindowForTests);
+                var sendTask = connection.SendAsync (new byte[bytesToSend]).AsTask ();
+
+                UtpPacket last = default;
+                var packetsToDrain = Math.Max (1, bytesToSend / 1400);
+                for (int j = 0; j < packetsToDrain; j++) {
+                    var sent = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+                    last = sent.packet;
+                    sent.sendCompleted?.Invoke ();
+                }
+
+                await sendTask.WithTimeout (10_000);
+
+                clock.Microseconds += 50_000;
+                var ack = CreateStatePacket (123, sequenceNumber: (ushort) (9 + i), ackNumber: last.SequenceNumber);
+                ack.TimestampDiff = 10_000;
+                ack.WindowSize = 1024 * 1024;
+                connection.Receive (ack);
+                await Task.Delay (50);
+            }
+
+            int iteration = 0;
+            while (connection.MaxWindowForTests < UtpPeerConnectionListener.INITIAL_WINDOW)
+                await AckOneFullWindow (iteration++);
+
+            var aboveOldThreshold = connection.MaxWindowForTests;
+            await AckOneFullWindow (iteration);
+
+            Assert.Greater (aboveOldThreshold, UtpPeerConnectionListener.INITIAL_WINDOW);
+            Assert.Greater (connection.MaxWindowForTests, aboveOldThreshold);
         }
 
         [Test]

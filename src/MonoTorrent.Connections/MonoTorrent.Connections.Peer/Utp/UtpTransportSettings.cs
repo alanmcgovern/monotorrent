@@ -34,6 +34,7 @@ namespace MonoTorrent.Connections.Peer.Utp
     public sealed record class UtpTransportSettings
     {
         public const int DefaultInitialPacketSize = 1400;
+        public const int DefaultLinearIncreaseBytesPerRtt = 3000;
         public const int DefaultMaxReceiveBufferBytes = 1024 * 1024;
         public const int DefaultMaxSendQueuePackets = 4096;
         public const int DefaultSocketReceiveBufferBytes = 2 * 1024 * 1024;
@@ -72,12 +73,16 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public int InitialPacketSize { get; init; } = DefaultInitialPacketSize;
 
+        public int LinearIncreaseBytesPerRtt { get; init; } = DefaultLinearIncreaseBytesPerRtt;
+
         public static UtpTransportSettings Create (UtpTransportSettings? settings)
         {
             settings ??= new UtpTransportSettings ();
 
             if (settings.InitialPacketSize < MinimumRecoveryPacketSize)
                 throw new ArgumentOutOfRangeException (nameof (settings), $"The initial uTP packet size must be at least {MinimumRecoveryPacketSize} bytes.");
+            if (settings.LinearIncreaseBytesPerRtt < 1)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The linear increase must be at least 1 byte per RTT.");
             if (settings.MaxConnectedTimeouts < 1)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum connected timeout count must be at least 1.");
             if (settings.MaxSynTimeouts < 1)
