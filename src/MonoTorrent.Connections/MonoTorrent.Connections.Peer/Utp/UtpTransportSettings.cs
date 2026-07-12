@@ -33,13 +33,14 @@ namespace MonoTorrent.Connections.Peer.Utp
 {
     public sealed record class UtpTransportSettings
     {
-        public const int DefaultInitialPacketSize = 512;
-        public const int DefaultLinearIncreaseBytesPerRtt = 3000;
-        public const int DefaultMaxReceiveBufferBytes = 1024 * 1024;
-        public const int DefaultMaxSendQueuePackets = 4096;
-        public const int DefaultSocketReceiveBufferBytes = 2 * 1024 * 1024;
-        public const int DefaultSocketSendBufferBytes = 1024 * 1024;
-        public const int MinimumRecoveryPacketSize = 150;
+        public static readonly int DefaultInitialPacketSize = 512;
+        public static readonly int DefaultLinearIncreaseBytesPerRtt = 3000;
+        public static readonly int DefaultMaxReceiveBufferBytes = 1024 * 1024;
+        public static readonly int DefaultMaxSendQueuePackets = 4096;
+        public static readonly int DefaultSocketReceiveBufferBytes = 2 * 1024 * 1024;
+        public static readonly int DefaultSocketSendBufferBytes = 1024 * 1024;
+        public static readonly int MinimumRecoveryPacketSize = 150;
+        public static readonly int MaximumPacketSize = UtpMemoryPool.BufferSize;
 
         public int MaxConnectedTimeouts { get; init; } = 4;
 
@@ -81,6 +82,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             if (settings.InitialPacketSize < MinimumRecoveryPacketSize)
                 throw new ArgumentOutOfRangeException (nameof (settings), $"The initial uTP packet size must be at least {MinimumRecoveryPacketSize} bytes.");
+            if (settings.InitialPacketSize > MaximumPacketSize)
+                throw new ArgumentOutOfRangeException (nameof (settings), $"The initial uTP packet size must be equal to or less than {MaximumPacketSize} bytes.");
             if (settings.LinearIncreaseBytesPerRtt < 1)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The linear increase must be at least 1 byte per RTT.");
             if (settings.MaxConnectedTimeouts < 1)
