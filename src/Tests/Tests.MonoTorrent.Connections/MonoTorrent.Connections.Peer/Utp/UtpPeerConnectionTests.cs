@@ -2693,6 +2693,20 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public void SendCompletesSynchronouslyWhenQueueHasCapacity ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 1);
+
+            var send = connection.SendAsync (new byte[] { 1 });
+
+            Assert.IsTrue (send.IsCompleted);
+            Assert.AreEqual (1, send.GetAwaiter ().GetResult ());
+            Assert.IsTrue (sendQueue.Reader.TryRead (out var queued));
+            Assert.AreEqual (PacketType.Data, queued.packet.Type);
+        }
+
+        [Test]
         public async Task DisposeStopsReceiveProcessor ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();

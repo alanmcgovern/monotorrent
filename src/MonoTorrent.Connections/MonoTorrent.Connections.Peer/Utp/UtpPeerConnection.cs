@@ -42,6 +42,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 {
     public sealed class UtpPeerConnection : IPeerConnection
     {
+        static readonly IReadOnlyList<ushort> EmptySelectiveAcks = Array.Empty<ushort> ();
+
         enum ConnectionState
         {
             SynSent,
@@ -85,7 +87,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             int disposed;
 
-            public ParsedPacket (UtpPacket packet, int extensionStart, int payloadOffset, List<ushort> selectiveAcks, ulong? extensionBits, ByteBufferPool.Releaser bufferReleaser)
+            public ParsedPacket (UtpPacket packet, int extensionStart, int payloadOffset, IReadOnlyList<ushort> selectiveAcks, ulong? extensionBits, ByteBufferPool.Releaser bufferReleaser)
             {
                 Packet = packet;
                 ExtensionStart = extensionStart;
@@ -100,7 +102,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             public int PayloadOffset { get; }
             public int PayloadLength => Packet.AsMemory ().Length - PayloadOffset;
             public Memory<byte> Payload => Packet.AsMemory ().Slice (PayloadOffset, PayloadLength);
-            public List<ushort> SelectiveAcks { get; }
+            public IReadOnlyList<ushort> SelectiveAcks { get; }
             public ulong? ExtensionBits { get; }
             public ByteBufferPool.Releaser BufferReleaser { get; }
 
@@ -560,20 +562,34 @@ namespace MonoTorrent.Connections.Peer.Utp
                     MtuProbeSize = payloadBytes;
                 }
             }
-            Reschedule ();
         }
 
-        async Task SendPacketAsync (UtpPacket packet)
+        Task SendPacketAsync (UtpPacket packet)
         {
             packet.WindowSize = AdvertisedReceiveWindow;
             lock (locker)
                 LastAdvertisedReceiveWindow = packet.WindowSize;
+
+            if (!SendingChannel.TryWrite ((packet, this, EndPoint)))
+                return SendPacketSlowAsync (packet);
+
+            OnPacketQueued ();
+            return Task.CompletedTask;
+        }
+
+        async Task SendPacketSlowAsync (UtpPacket packet)
+        {
             try {
                 await SendingChannel.WriteAsync ((packet, this, EndPoint), cts.Token);
             } catch {
                 packet.Dispose ();
                 throw;
             }
+            OnPacketQueued ();
+        }
+
+        void OnPacketQueued ()
+        {
             LastSentPacketMicroseconds = clock.Microseconds;
             HasSentPacket = true;
             Reschedule ();
@@ -796,7 +812,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (sequenceStatus == ReceiveSequenceStatus.TooFarAhead)
                 return;
 
-            var delivery = await DeliverAvailablePackets ();
+            var delivery = DeliverAvailablePackets ();
 
             if (ShouldAckImmediately (pkt, sequenceStatus, wasNextExpected))
                 await SendImmediateAckAsync ();
@@ -895,13 +911,13 @@ namespace MonoTorrent.Connections.Peer.Utp
             UpdateDelaySample (syn);
         }
 
-        void ProcessAcks (UtpPacket pkt, List<ushort> receivedSelectiveAcks, AckDisposition ackDisposition)
+        void ProcessAcks (UtpPacket pkt, IReadOnlyList<ushort> receivedSelectiveAcks, AckDisposition ackDisposition)
         {
             if (ackDisposition == AckDisposition.UnrelatedWhileIdle)
                 return;
 
-            List<SentPacket> acked = new ();
-            List<SentPacket> fastRetransmits = new ();
+            List<SentPacket>? acked = null;
+            List<SentPacket>? fastRetransmits = null;
             bool wasWindowLimited;
 
             lock (locker) {
@@ -915,57 +931,63 @@ namespace MonoTorrent.Connections.Peer.Utp
                 while (FirstOutstanding != null && SequenceLessThanOrEqual (FirstOutstanding.Packet.SequenceNumber, pkt.AckNumber)) {
                     var sequenceNumber = FirstOutstanding.Packet.SequenceNumber;
                     if (RemoveSentPacketLocked (sequenceNumber, out var sent))
-                        acked.Add (sent);
+                        (acked ??= new List<SentPacket> ()).Add (sent);
                 }
 
-                bool pureDuplicateAck = pkt.Type == PacketType.State && receivedSelectiveAcks.Count == 0 && !ackAdvanced && !isStaleAck && acked.Count == 0;
+                bool pureDuplicateAck = pkt.Type == PacketType.State && receivedSelectiveAcks.Count == 0 && !ackAdvanced && !isStaleAck && acked == null;
                 int validSelectiveAckCount = 0;
                 for (int i = 0; i < receivedSelectiveAcks.Count; i++) {
                     var sequenceNumber = receivedSelectiveAcks[i];
                     if (IsSelectiveAckInSendWindow (sequenceNumber, pkt.AckNumber) && sentPackets.ContainsKey (sequenceNumber))
-                        receivedSelectiveAcks[validSelectiveAckCount++] = sequenceNumber;
+                        validSelectiveAckCount++;
                 }
 
                 if (pureDuplicateAck) {
                     if (sentPackets.TryGetValue (unchecked((ushort) (pkt.AckNumber + 1)), out var sent))
-                        ApplyDuplicateAckIndicationsLocked (sent, 1, fastRetransmits);
+                        ApplyDuplicateAckIndicationsLocked (sent, 1, ref fastRetransmits);
                 } else if (validSelectiveAckCount > 0) {
                     int firstGreaterSelectiveAck = 0;
+                    int remainingSelectiveAcks = validSelectiveAckCount;
                     for (var sent = FirstOutstanding; sent != null; sent = sent.NextOutstanding) {
-                        while (firstGreaterSelectiveAck < validSelectiveAckCount
+                        while (firstGreaterSelectiveAck < receivedSelectiveAcks.Count
                             && !SequenceGreaterThan (receivedSelectiveAcks[firstGreaterSelectiveAck], sent.Packet.SequenceNumber)) {
+                            var sequenceNumber = receivedSelectiveAcks[firstGreaterSelectiveAck];
+                            if (IsSelectiveAckInSendWindow (sequenceNumber, pkt.AckNumber) && sentPackets.ContainsKey (sequenceNumber))
+                                remainingSelectiveAcks--;
                             firstGreaterSelectiveAck++;
                         }
 
-                        var indications = validSelectiveAckCount - firstGreaterSelectiveAck;
-                        if (indications > 0)
-                            ApplyDuplicateAckIndicationsLocked (sent, indications, fastRetransmits);
+                        if (remainingSelectiveAcks > 0)
+                            ApplyDuplicateAckIndicationsLocked (sent, remainingSelectiveAcks, ref fastRetransmits);
                     }
                 }
 
-                for (int i = 0; i < validSelectiveAckCount; i++) {
-                    if (RemoveSentPacketLocked (receivedSelectiveAcks[i], out var sent))
-                        acked.Add (sent);
+                for (int i = 0; i < receivedSelectiveAcks.Count; i++) {
+                    var sequenceNumber = receivedSelectiveAcks[i];
+                    if (IsSelectiveAckInSendWindow (sequenceNumber, pkt.AckNumber) && RemoveSentPacketLocked (sequenceNumber, out var sent))
+                        (acked ??= new List<SentPacket> ()).Add (sent);
                 }
 
-                if (acked.Count > 0)
+                if (acked != null)
                     ConsecutiveTimeouts = 0;
             }
 
             uint minAckedRttMicroseconds = 0;
             int bytesNewlyAcked = 0;
             bool finAcked = false;
-            foreach (var sent in acked) {
-                bytesNewlyAcked += sent.PayloadBytes;
-                if (sent.Packet.Type == PacketType.Fin)
-                    finAcked = true;
+            if (acked != null) {
+                foreach (var sent in acked) {
+                    bytesNewlyAcked += sent.PayloadBytes;
+                    if (sent.Packet.Type == PacketType.Fin)
+                        finAcked = true;
 
-                var packetRtt = UpdateRtt (sent);
-                if (packetRtt != 0 && (minAckedRttMicroseconds == 0 || packetRtt < minAckedRttMicroseconds))
-                    minAckedRttMicroseconds = packetRtt;
+                    var packetRtt = UpdateRtt (sent);
+                    if (packetRtt != 0 && (minAckedRttMicroseconds == 0 || packetRtt < minAckedRttMicroseconds))
+                        minAckedRttMicroseconds = packetRtt;
 
-                ProcessMtuProbeAck (sent);
-                sent.BufferReleaser.Dispose ();
+                    ProcessMtuProbeAck (sent);
+                    sent.BufferReleaser.Dispose ();
+                }
             }
 
             ApplyCongestionControl (bytesNewlyAcked, pkt.TimestampDiff, minAckedRttMicroseconds, wasWindowLimited);
@@ -973,16 +995,16 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (finAcked && State == ConnectionState.FinSent)
                 CloseCleanly ();
 
-            if (acked.Count > 0)
+            if (acked != null)
                 sendWindowChanged.Release ();
 
-            if (fastRetransmits.Count > 0) {
+            if (fastRetransmits != null) {
                 lock (locker) {
                     foreach (var packet in fastRetransmits)
                         MarkForRetransmitLocked (packet);
                 }
                 _ = DrainRetransmitQueueAsync ();
-            } else if (acked.Count > 0) {
+            } else if (acked != null) {
                 _ = DrainRetransmitQueueAsync ();
             }
 
@@ -1006,11 +1028,11 @@ namespace MonoTorrent.Connections.Peer.Utp
         bool IsSelectiveAckInSendWindow (ushort selectiveAck, ushort ackNumber)
             => SequenceGreaterThan (selectiveAck, ackNumber) && SequenceLessThanOrEqual (selectiveAck, LastSentSequenceNumber);
 
-        void ApplyDuplicateAckIndicationsLocked (SentPacket sent, int indications, List<SentPacket> fastRetransmits)
+        void ApplyDuplicateAckIndicationsLocked (SentPacket sent, int indications, ref List<SentPacket>? fastRetransmits)
         {
             sent.DuplicateAckIndications += indications;
             if (sent.DuplicateAckIndications >= 3 && !sent.FastRetransmitted) {
-                fastRetransmits.Add (sent);
+                (fastRetransmits ??= new List<SentPacket> ()).Add (sent);
                 sent.FastRetransmitted = true;
                 if (sent.IsMtuProbe && sent.Packet.SequenceNumber == MtuProbeSequence)
                     HandleMtuProbeTimeout (sent);
@@ -1119,7 +1141,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             var span = pkt.AsMemory ().Span;
             byte extension = pkt.Extension;
             int offset = UtpPacket.HeaderSize;
-            var selectiveAcks = new List<ushort> ();
+            List<ushort>? selectiveAcks = null;
             ulong? extensionBits = null;
 
             while (extension != 0) {
@@ -1138,7 +1160,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                         byte mask = span[offset + i];
                         for (int bit = 0; bit < 8; bit++) {
                             if ((mask & (1 << bit)) != 0)
-                                selectiveAcks.Add (unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit)));
+                                (selectiveAcks ??= new List<ushort> ()).Add (unchecked((ushort) (pkt.AckNumber + 2 + i * 8 + bit)));
                         }
                     }
                 } else if (extension == ExtensionBitsExtension) {
@@ -1155,11 +1177,11 @@ namespace MonoTorrent.Connections.Peer.Utp
                 extension = nextExtension;
             }
 
-            parsed = new ParsedPacket (pkt, UtpPacket.HeaderSize, offset, selectiveAcks, extensionBits, bufferReleaser);
+            parsed = new ParsedPacket (pkt, UtpPacket.HeaderSize, offset, selectiveAcks ?? EmptySelectiveAcks, extensionBits, bufferReleaser);
             return true;
         }
 
-        async Task<(bool AckAdvanced, bool FinDelivered)> DeliverAvailablePackets ()
+        (bool AckAdvanced, bool FinDelivered) DeliverAvailablePackets ()
         {
             bool ackAdvanced = false;
             while (true) {
@@ -1184,13 +1206,11 @@ namespace MonoTorrent.Connections.Peer.Utp
                 }
 
                 if (pkt.PayloadLength > 0) {
-                    try {
-                        await ReceivedPackets.Writer.WriteAsync (pkt, cts.Token);
-                    } catch {
+                    if (!ReceivedPackets.Writer.TryWrite (pkt)) {
                         lock (locker)
                             QueuedInOrderBytes -= PacketBufferCost (pkt);
                         pkt.Dispose ();
-                        throw;
+                        return (ackAdvanced, false);
                     }
                 } else {
                     pkt.Dispose ();
@@ -1249,8 +1269,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         async ReusableTask SendAckAsync (ushort ackNr)
         {
-            int sackLength = GetSelectiveAckExtensionLength (ackNr);
             var bufferReleaser = UtpMemoryPool.Default.Rent (out Memory<byte> buf);
+            int sackLength = WriteSelectiveAckExtension (buf.Span.Slice (UtpPacket.HeaderSize), ackNr);
             buf = buf.Slice (0, UtpPacket.HeaderSize + sackLength);
             var pkt = new UtpPacket (buf, bufferReleaser) {
                 Type = PacketType.State,
@@ -1261,37 +1281,19 @@ namespace MonoTorrent.Connections.Peer.Utp
                 SequenceNumber = SequenceNumber,
                 AckNumber = ackNr
             };
-            if (sackLength > 0)
-                WriteSelectiveAckExtension (buf.Span.Slice (UtpPacket.HeaderSize, sackLength), ackNr);
             await SendPacketAsync (pkt);
         }
 
         async Task SendKeepAliveAsync ()
             => await SendAckAsync (unchecked((ushort) (AckNumber - 1)));
 
-        int GetSelectiveAckExtensionLength (ushort ackNr)
+        int WriteSelectiveAckExtension (Span<byte> result, ushort ackNr)
         {
+            if (result.Length < 6)
+                return 0;
+
+            Span<byte> selectiveAckBits = stackalloc byte[252];
             int maxBit = -1;
-            lock (locker) {
-                foreach (var seq in receiveBuffer.Keys) {
-                    if (!ShouldIncludeInSelectiveAck (seq, ackNr))
-                        continue;
-
-                    maxBit = Math.Max (maxBit, SequenceDistance (seq, unchecked((ushort) (ackNr + 2))));
-                }
-
-                if (maxBit < 0)
-                    return 0;
-            }
-
-            int length = Math.Max (4, ((maxBit / 8) + 4) / 4 * 4);
-            return 2 + length;
-        }
-
-        void WriteSelectiveAckExtension (Span<byte> result, ushort ackNr)
-        {
-            result.Clear ();
-            result[1] = (byte) (result.Length - 2);
 
             lock (locker) {
                 foreach (var seq in receiveBuffer.Keys) {
@@ -1299,10 +1301,22 @@ namespace MonoTorrent.Connections.Peer.Utp
                         continue;
 
                     int bit = SequenceDistance (seq, unchecked((ushort) (ackNr + 2)));
-                    if (bit < (result.Length - 2) * 8)
-                        result[2 + bit / 8] |= (byte) (1 << (bit % 8));
+                    if ((uint) bit >= selectiveAckBits.Length * 8u)
+                        continue;
+
+                    selectiveAckBits[bit / 8] |= (byte) (1 << (bit % 8));
+                    maxBit = Math.Max (maxBit, bit);
                 }
             }
+
+            if (maxBit < 0)
+                return 0;
+
+            int length = Math.Max (4, ((maxBit / 8) + 4) / 4 * 4);
+            result[0] = 0;
+            result[1] = (byte) length;
+            selectiveAckBits.Slice (0, length).CopyTo (result.Slice (2));
+            return 2 + length;
         }
 
         bool ShouldIncludeInSelectiveAck (ushort sequenceNumber, ushort ackNr)
