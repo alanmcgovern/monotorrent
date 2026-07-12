@@ -488,7 +488,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             var now = Clock.Microseconds;
             var staleAfter = (uint) StaleConnectionTimeout.TotalMicroseconds;
-            foreach (var pair in _connections.ToArray ()) {
+            foreach (var pair in _connections) {
                 var connection = pair.Value.Connection;
                 if (connection.IsClosedOrReset || unchecked(now - pair.Value.LastActivityMicroseconds) >= staleAfter) {
                     if (_connections.TryRemove (pair.Key, out _)) {
