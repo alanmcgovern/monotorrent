@@ -298,6 +298,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         uint NextMtuProbeAt { get; set; }
 
+        bool HasAckedPayloadPacket { get; set; }
+
         uint RetransmitTimeoutMicroseconds { get; set; } = InitialRetransmitTimeoutMicroseconds;
 
         SentPacket? FirstInFlight { get; set; }
@@ -457,7 +459,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             MtuCeiling = Math.Max (CurrentMtu, GetDefaultMtuCeiling (remote.AddressFamily));
             MaxWindow = InitialCongestionWindow;
             SlowStartThreshold = (uint) Math.Max (UtpTransportSettings.MinimumRecoveryPacketSize, settings.MaxReceiveBufferBytes);
-            NextMtuProbeAt = unchecked(clock.Microseconds + (uint) settings.MtuProbeInterval.TotalMicroseconds);
+            NextMtuProbeAt = MtuCeiling - MtuFloor <= MtuConvergedThreshold
+                ? unchecked(clock.Microseconds + (uint) settings.MtuProbeInterval.TotalMicroseconds)
+                : clock.Microseconds;
             State = ConnectionState.SynReceived;
             scheduler = listener?.Scheduler ?? new UtpConnectionScheduler (clock);
             ownsScheduler = listener == null;
@@ -1061,6 +1065,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                     if (packetRtt != 0 && (minAckedRttMicroseconds == 0 || packetRtt < minAckedRttMicroseconds))
                         minAckedRttMicroseconds = packetRtt;
 
+                    if (sent.PayloadBytes > 0 && !sent.IsMtuProbe)
+                        HasAckedPayloadPacket = true;
                     ProcessMtuProbeAck (sent);
                     sent.ReleaseWhenNoSendsOutstanding ();
                 }
@@ -1549,7 +1555,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         (int PayloadLength, bool IsMtuProbe) SelectPayloadSize (int remainingBytes)
         {
-            if (!transportSettings.EnablePathMtuDiscovery || MtuProbeSequence != null || MtuCeiling - MtuFloor <= MtuConvergedThreshold)
+            if (!transportSettings.EnablePathMtuDiscovery || !HasAckedPayloadPacket || MtuProbeSequence != null || MtuCeiling - MtuFloor <= MtuConvergedThreshold)
                 return (Math.Min (remainingBytes, CurrentMtu), false);
 
             if (unchecked(clock.Microseconds - NextMtuProbeAt) < 0x8000_0000u) {
@@ -1649,9 +1655,6 @@ namespace MonoTorrent.Connections.Peer.Utp
 
                     if (WaitingForSendWindow && PeerWindowSize == 0)
                         Add (unchecked(LastZeroWindowProbeMicroseconds + (uint) transportSettings.ZeroWindowProbeInterval.TotalMicroseconds));
-
-                    if (transportSettings.EnablePathMtuDiscovery && MtuProbeSequence == null && MtuCeiling - MtuFloor > MtuConvergedThreshold)
-                        Add (NextMtuProbeAt);
 
                     return result;
                 }

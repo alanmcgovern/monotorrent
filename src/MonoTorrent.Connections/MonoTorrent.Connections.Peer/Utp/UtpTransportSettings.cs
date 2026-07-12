@@ -33,7 +33,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 {
     public sealed record class UtpTransportSettings
     {
-        public const int DefaultInitialPacketSize = 1400;
+        public const int DefaultInitialPacketSize = 512;
         public const int DefaultLinearIncreaseBytesPerRtt = 3000;
         public const int DefaultMaxReceiveBufferBytes = 1024 * 1024;
         public const int DefaultMaxSendQueuePackets = 4096;
