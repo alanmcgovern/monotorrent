@@ -44,6 +44,7 @@ using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Utp;
 using MonoTorrent.Dht;
 using MonoTorrent.Logging;
 using MonoTorrent.PieceWriter;
@@ -342,8 +343,8 @@ namespace MonoTorrent.Client
             ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (Factories, UtpPeerListeners.AsReadOnly ());
             listenManager.SetListeners (AllPeerListeners ());
 
-            DhtListener = (settings.DhtEndPoint == null ? null : Factories.CreateDhtListener (settings.DhtEndPoint)) ?? new NullDhtListener ();
-            var engine = (settings.DhtEndPoint == null ? null : Factories.CreateDht ()) ?? new NullDhtEngine ();
+            DhtListener = UtpPeerListeners.OfType<IDhtListener> ().SingleOrDefault () ?? new NullDhtListener ();
+            var engine = (settings.UdpEndPoint == null ? null : Factories.CreateDht ()) ?? new NullDhtEngine ();
             engine.SetBootstrapRoutersAsync (settings.DhtBootstrapRouters).AsTask ().GetAwaiter ().GetResult ();
 
             DhtEngine = new DhtEngineWrapper (engine);
@@ -597,7 +598,6 @@ namespace MonoTorrent.Client
                     listener.Stop ();
                 listenManager.SetListeners (Array.Empty<IPeerConnectionListener> ());
 
-                DhtListener.Stop ();
                 DhtEngine.Dispose ();
 
                 DiskManager.Dispose ();
@@ -834,8 +834,6 @@ namespace MonoTorrent.Client
 
                 await StartAndPortMapPeerListeners ();
 
-                if (DhtListener.LocalEndPoint != null)
-                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
             }
         }
 
@@ -854,9 +852,6 @@ namespace MonoTorrent.Client
             IsRunning = anyRunning;
             if (!IsRunning) {
                 await UnmapAndStopPeerListeners ();
-
-                if (DhtListener.LocalEndPoint != null)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port), CancellationToken.None);
 
                 LocalPeerDiscovery.Stop ();
 
@@ -995,38 +990,27 @@ namespace MonoTorrent.Client
                     await PortForwarder.StopAsync (removeExistingMappings: true, CancellationToken.None);
             }
 
-            if (oldSettings.DhtEndPoint != newSettings.DhtEndPoint) {
-                if (DhtListener.LocalEndPoint != null)
-                    await PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port), CancellationToken.None);
-                DhtListener.Stop ();
-
-                if (newSettings.DhtEndPoint == null) {
+            if (oldSettings.UdpEndPoint != newSettings.UdpEndPoint) {
+                if (newSettings.UdpEndPoint == null) {
                     DhtListener = new NullDhtListener ();
                     await RegisterDht (new NullDhtEngine ());
                 } else {
-                    DhtListener = (Settings.DhtEndPoint is null ? null : Factories.CreateDhtListener (Settings.DhtEndPoint)) ?? new NullDhtListener ();
-                    if (IsRunning)
-                        DhtListener.Start ();
-
-                    if (oldSettings.DhtEndPoint == null) {
+                    if (oldSettings.UdpEndPoint == null) {
                         var dht = Factories.CreateDht ();
-                        await dht.SetListenerAsync (DhtListener);
                         await RegisterDht (dht);
-
-                    } else {
-                        await DhtEngine.SetListenerAsync (DhtListener);
                     }
                 }
-
-                if (DhtListener.LocalEndPoint != null)
-                    await PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, DhtListener.LocalEndPoint.Port));
             }
 
-            if (!oldSettings.ListenEndPoints.SequenceEqual (newSettings.ListenEndPoints) || !oldSettings.AllowedPeerTransports.SequenceEqual (newSettings.AllowedPeerTransports)) {
+            if (!oldSettings.ListenEndPoints.SequenceEqual (newSettings.ListenEndPoints)
+                || oldSettings.UdpEndPoint != newSettings.UdpEndPoint
+                || !oldSettings.AllowedPeerTransports.SequenceEqual (newSettings.AllowedPeerTransports)) {
                 await UnmapAndStopPeerListeners ();
 
                 PeerListeners = CreatePeerListeners (newSettings);
                 UtpPeerListeners = CreateUtpPeerListeners (newSettings);
+                DhtListener = UtpPeerListeners.OfType<IDhtListener> ().SingleOrDefault () ?? new NullDhtListener ();
+                await DhtEngine.SetListenerAsync (DhtListener);
                 ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (Factories, UtpPeerListeners.AsReadOnly ());
                 listenManager.SetListeners (AllPeerListeners ());
 
@@ -1040,17 +1024,24 @@ namespace MonoTorrent.Client
         }
 
         IList<IPeerConnectionListener> AllPeerListeners ()
-            => PeerListeners.Concat<IPeerConnectionListener> (UtpPeerListeners).ToArray ();
+            => Settings.AllowedPeerTransports.Contains (PeerTransport.Utp)
+                ? PeerListeners.Concat<IPeerConnectionListener> (UtpPeerListeners).ToArray ()
+                : PeerListeners;
 
         IList<IPeerConnectionListener> CreatePeerListeners (EngineSettings settings)
             => Array.AsReadOnly (settings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)).ToArray ());
 
         IList<IPeerConnectionListener> CreateUtpPeerListeners (EngineSettings settings)
         {
-            if (!settings.AllowedPeerTransports.Contains (PeerTransport.Utp))
+            if (settings.UdpEndPoint == null)
                 return Array.Empty<IPeerConnectionListener> ();
 
-            return Array.AsReadOnly (settings.ListenEndPoints.Values.Select (t => Factories.CreateUtpPeerConnectionListener (t)).ToArray ());
+            var listener = Factories.CreateUtpPeerConnectionListener (settings.UdpEndPoint);
+            if (listener is not IDhtListener)
+                throw new InvalidOperationException ("The uTP listener must also implement IDhtListener so DHT and uTP can share one UDP socket.");
+            if (listener is UtpPeerConnectionListener utpListener)
+                utpListener.UtpEnabled = settings.AllowedPeerTransports.Contains (PeerTransport.Utp);
+            return Array.AsReadOnly (new[] { listener });
         }
 
         static BEncodedString GeneratePeerId ()

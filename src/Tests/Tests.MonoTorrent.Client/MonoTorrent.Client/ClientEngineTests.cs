@@ -67,23 +67,20 @@ namespace MonoTorrent.Client
             var ipv4Listener = new FakeListener (0) {
                 PreferredLocalEndPoint = new IPEndPoint (IPAddress.Loopback, 0)
             };
-            var ipv6Listener = new FakeListener (0) {
-                PreferredLocalEndPoint = new IPEndPoint (IPAddress.IPv6Loopback, 0)
-            };
-            var listeners = new Queue<IPeerConnectionListener> (new[] { ipv4Listener, ipv6Listener });
-            var factories = EngineHelpers.Factories.WithUtpPeerConnectionListenerCreator (_ => listeners.Dequeue ());
+            var factories = EngineHelpers.Factories.WithUtpPeerConnectionListenerCreator (_ => ipv4Listener);
             var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
                 { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) },
                 { "ipv6", new IPEndPoint (IPAddress.IPv6Loopback, 0) }
             }) with {
+                UdpEndPoint = new IPEndPoint (IPAddress.Loopback, 0),
                 AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             };
 
             using var engine = new ClientEngine (settings, factories);
 
             Assert.AreEqual (2, engine.PeerListeners.Count);
-            Assert.AreEqual (2, engine.UtpPeerListeners.Count);
-            CollectionAssert.AreEqual (new IPeerConnectionListener[] { ipv4Listener, ipv6Listener }, engine.UtpPeerListeners);
+            Assert.AreEqual (1, engine.UtpPeerListeners.Count);
+            CollectionAssert.AreEqual (new IPeerConnectionListener[] { ipv4Listener }, engine.UtpPeerListeners);
         }
 
         [Test]
@@ -97,6 +94,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (0, engine.UtpPeerListeners.Count);
 
             await engine.UpdateSettingsAsync (engine.Settings with {
+                UdpEndPoint = new IPEndPoint (IPAddress.Loopback, 0),
                 AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             });
 
@@ -121,6 +119,7 @@ namespace MonoTorrent.Client
             var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
                 { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
             }) with {
+                UdpEndPoint = new IPEndPoint (IPAddress.Loopback, 0),
                 AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             };
 
@@ -435,7 +434,7 @@ namespace MonoTorrent.Client
             Assert.ThrowsAsync<TorrentException> (() => engine.DownloadMetadataAsync (link, CancellationToken.None));
         }
 
-        class FakeListener : IPeerConnectionListener
+        class FakeListener : IPeerConnectionListener, MonoTorrent.Connections.Dht.IDhtListener
         {
             public IPEndPoint LocalEndPoint { get; set; }
             public IPEndPoint PreferredLocalEndPoint { get; set; }
@@ -444,6 +443,7 @@ namespace MonoTorrent.Client
 #pragma warning disable 0067
             public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
             public event EventHandler<EventArgs> StatusChanged;
+            public event Action<ReadOnlyMemory<byte>, CompactEndPoint> MessageReceived;
 #pragma warning restore 0067
 
             public FakeListener (int port)
@@ -456,6 +456,9 @@ namespace MonoTorrent.Client
             public void Stop ()
             {
             }
+
+            public ReusableTasks.ReusableTask SendAsync (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint)
+                => ReusableTasks.ReusableTask.CompletedTask;
         }
 
         [Test]

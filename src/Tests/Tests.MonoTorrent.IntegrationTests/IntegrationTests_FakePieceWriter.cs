@@ -354,7 +354,7 @@ namespace MonoTorrent.IntegrationTests
                 ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } }.ToImmutableDictionary (),
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
-                DhtEndPoint = null,
+                UdpEndPoint = null,
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
                 AllowedPeerTransports = ImmutableArray.Create (PeerTransport),

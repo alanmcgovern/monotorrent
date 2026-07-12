@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -67,9 +67,11 @@ namespace MonoTorrent.Client
                     ? ReadBootstrapRouters ((BEncodedList) v10)
                     : defaults.DhtBootstrapRouters,
 
-                DhtEndPoint = dict.TryGetValue (nameof (EngineSettings.DhtEndPoint), out var v11)
+                UdpEndPoint = dict.TryGetValue (nameof (EngineSettings.UdpEndPoint), out var v11)
                     ? ReadNullableEndPoint ((BEncodedList) v11)
-                    : defaults.DhtEndPoint,
+                    : dict.TryGetValue ("DhtEndPoint", out v11)
+                        ? ReadNullableEndPoint ((BEncodedList) v11)
+                    : defaults.UdpEndPoint,
 
                 DiskCacheBytes = dict.TryGetValue (nameof (EngineSettings.DiskCacheBytes), out var v12)
                     ? (int) ((BEncodedNumber) v12).Number
@@ -225,7 +227,7 @@ namespace MonoTorrent.Client
             dict[nameof (s.ConnectionRetryDelays)] = WriteTimeSpanList (s.ConnectionRetryDelays);
             dict[nameof (s.ConnectionTimeouts)] = WriteTimeSpanList (s.ConnectionTimeouts);
             dict[nameof (s.DhtBootstrapRouters)] = WriteBootstrapRouters (s.DhtBootstrapRouters);
-            dict[nameof (s.DhtEndPoint)] = WriteNullableEndPoint (s.DhtEndPoint);
+            dict[nameof (s.UdpEndPoint)] = WriteNullableEndPoint (s.UdpEndPoint);
             dict[nameof (s.DiskCacheBytes)] = new BEncodedNumber (s.DiskCacheBytes);
             dict[nameof (s.DiskCachePolicy)] = new BEncodedString (s.DiskCachePolicy.ToString ());
             dict[nameof (s.FastResumeMode)] = new BEncodedString (s.FastResumeMode.ToString ());

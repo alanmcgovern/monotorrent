@@ -18,6 +18,20 @@ namespace MonoTorrent.Connections.Peer
     public class UtpPeerConnectionTests
     {
         [Test]
+        public void SharedListenerRoutesBencodedDictionaryToDht ()
+        {
+            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            ReadOnlyMemory<byte> received = default;
+            listener.MessageReceived += (packet, _) => received = packet;
+            var datagram = new byte[] { (byte) 'd', (byte) 'e' };
+
+            listener.ProcessDatagram (new IPEndPoint (IPAddress.Loopback, 12345), datagram);
+            datagram[0] = 0;
+
+            CollectionAssert.AreEqual (new byte[] { (byte) 'd', (byte) 'e' }, received.ToArray ());
+        }
+
+        [Test]
         public async Task ReceiveOutOfOrderPackets ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();

@@ -9,6 +9,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.Logging;
+using MonoTorrent.Connections.Dht;
 
 using ReusableTasks;
 
@@ -32,8 +33,9 @@ namespace MonoTorrent.Connections.Peer.Utp
     //   Initiator side – keyed by the random conn_id_recv we chose for the SYN.
     // =========================================================================
 
-    public sealed class UtpPeerConnectionListener : SocketListener, IPeerConnectionListener
+    public sealed class UtpPeerConnectionListener : SocketListener, IPeerConnectionListener, IDhtListener
     {
+        public event Action<ReadOnlyMemory<byte>, CompactEndPoint>? MessageReceived;
         internal const byte UTP_VERSION = 1;
         internal const uint INITIAL_WINDOW = 1 << 18;   // 256 kB
 
@@ -90,6 +92,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly object recentResetsLocker = new ();
         readonly object backgroundTasksLocker = new ();
         readonly List<Task> backgroundTasks = new ();
+        Socket? socket;
 
         public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection?, IPEndPoint)> ();
 
@@ -116,13 +119,15 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal UtpTransportSettings TransportSettings { get; }
 
+        public bool UtpEnabled { get; set; } = true;
+
         internal UtpConnectionScheduler Scheduler { get; }
 
         protected override void Start (CancellationToken token)
         {
             base.Start (token);
 
-            var socket = new Socket (
+            socket = new Socket (
                 PreferredLocalEndPoint.AddressFamily,
                 SocketType.Dgram,
                 ProtocolType.Udp);
@@ -148,6 +153,13 @@ namespace MonoTorrent.Connections.Peer.Utp
             TrackBackgroundTask (SendLoopAsync (socket, token));
             TrackBackgroundTask (ReceiveLoopAsync (socket, token));
             TrackBackgroundTask (PruneStaleConnectionsLoopAsync (token));
+        }
+
+        public async ReusableTask SendAsync (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint)
+        {
+            var client = socket ?? throw new InvalidOperationException ("The UDP listener is not running.");
+            var remote = new IPEndPoint (new IPAddress (endpoint.Address), endpoint.Port);
+            await client.SendToAsync (buffer, SocketFlags.None, remote).ConfigureAwait (false);
         }
 
         internal static void ConfigureSocketBuffers (Socket socket, UtpTransportSettings settings)
@@ -218,10 +230,6 @@ namespace MonoTorrent.Connections.Peer.Utp
                 try {
                     var received = await socket.ReceiveFromAsync (buffer, endpoint, token);
 
-                    // If the packet is too small *or* if the version header doesn't match, drop the packet immediately.
-                    if (received.ReceivedBytes < UtpPacket.HeaderSize || new UtpPacket (buffer).Version != UTP_VERSION)
-                        continue;
-
                     ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, buffer.Span.Slice (0, received.ReceivedBytes));
                 } catch (OperationCanceledException) {
                     return;
@@ -254,7 +262,17 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         void ProcessDatagram (IPEndPoint remote, ReadOnlySpan<byte> datagram)
         {
-            if (datagram.Length < UtpPacket.HeaderSize || datagram.Length > UtpMemoryPool.BufferSize)
+            if (!datagram.IsEmpty && datagram[0] == (byte) 'd') {
+                MessageReceived?.Invoke (datagram.ToArray (), new CompactEndPoint (remote.Address, remote.Port));
+                return;
+            }
+
+            if (!UtpEnabled)
+                return;
+
+            if (datagram.Length < UtpPacket.HeaderSize
+                || datagram.Length > UtpMemoryPool.BufferSize
+                || (datagram[0] & 0x0f) != UTP_VERSION)
                 return;
 
             var releaser = UtpMemoryPool.Default.Rent (out Memory<byte> memory);

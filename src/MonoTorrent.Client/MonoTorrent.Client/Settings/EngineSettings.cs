@@ -157,10 +157,10 @@ namespace MonoTorrent.Client
         });
 
         /// <summary>
-        /// The endpoint used for DHT communications. Set the port to 0 to choose a random available port.
-        /// Set to null to disable DHT. Defaults to IPAddress.Any with port 0.
+        /// The shared endpoint used for DHT and uTP communications. Set the port to 0 to choose a random available port.
+        /// Set to null to disable DHT and uTP. Defaults to IPAddress.Any with port 0.
         /// </summary>
-        public IPEndPoint? DhtEndPoint { get; init; } = new IPEndPoint (IPAddress.Any, 0);
+        public IPEndPoint? UdpEndPoint { get; init; } = new IPEndPoint (IPAddress.Any, 0);
 
         /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.

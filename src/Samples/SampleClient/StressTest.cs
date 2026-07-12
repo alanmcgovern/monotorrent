@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -187,7 +187,7 @@ namespace ClientSample
                 new EngineSettings () with {
                     AllowedEncryption = ImmutableArray.Create<EncryptionType> (EncryptionType.PlainText),
                     ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } }.ToImmutableDictionary (),
-                    DhtEndPoint = null,
+                    UdpEndPoint = null,
                     AllowLocalPeerDiscovery = false,
                 },
                 Factories.Default.WithBlockCacheCreator ((IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer) => {
@@ -208,7 +208,7 @@ namespace ClientSample
                         AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText }.ToImmutableArray (),
                         DiskCacheBytes = DataSize,
                         ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } }.ToImmutableDictionary (),
-                        DhtEndPoint = null,
+                        UdpEndPoint = null,
                         AllowLocalPeerDiscovery = false,
                         CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")
                     },
