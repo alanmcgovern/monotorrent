@@ -62,17 +62,8 @@ namespace MonoTorrent
 #if DEBUG
                 Buffer.Memory.Span.Fill (255);
 #endif
-                var size = Buffer.Segment.Count;
-                if (size == ByteBufferPool.SmallMessageBufferSize) {
-                    using (Pool.SmallMessageBuffers.Enter (out var buffers))
-                        buffers.Push (Buffer);
-                } else if (size == ByteBufferPool.LargeMessageBufferSize) {
-                    using (Pool.LargeMessageBuffers.Enter (out var buffers))
-                        buffers.Push (Buffer);
-                } else {
-                    using (Pool.MassiveBuffers.Enter (out var buffers))
-                        buffers.Enqueue (Buffer);
-                }
+                using (Pool.Buffers.Enter (out var buffers))
+                    buffers.Enqueue (Buffer);
             }
         }
     }

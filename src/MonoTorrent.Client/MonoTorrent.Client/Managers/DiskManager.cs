@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
 
             int v2BytesRemaining = 0;
             readonly IncrementalHash SHA256Hasher;
-            MemoryPool.Releaser BlockHashesReleaser { get; set; }
+            ByteBufferPool.Releaser BlockHashesReleaser { get; set; }
             Memory<byte> BlockHashes { get; set; }
 
             ITorrentManagerInfo? Manager { get; set; }

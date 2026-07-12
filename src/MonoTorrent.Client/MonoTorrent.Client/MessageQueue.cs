@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
 
         public bool ProcessingQueue { get; private set; } = true;
         public int QueueLength => SendQueue.Count;
-        List<(Memory<byte> message, MemoryPool.Releaser releaser)> SendQueue { get; } = new List<(Memory<byte> message, MemoryPool.Releaser releaser)> ();
+        List<(Memory<byte> message, ByteBufferPool.Releaser releaser)> SendQueue { get; } = new List<(Memory<byte> message, ByteBufferPool.Releaser releaser)> ();
 
         internal bool BeginProcessing (bool force = false)
         {
