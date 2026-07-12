@@ -94,7 +94,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly List<Task> backgroundTasks = new ();
         Socket? socket;
 
-        public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection?, IPEndPoint)> ();
+        public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> SendQueue = Channel.CreateUnbounded<(UtpPacket, UtpPeerConnection?, IPEndPoint, Action?)> ();
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint)
             : this (preferredLocalEndPoint, null)
@@ -192,7 +192,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         async Task SendLoopAsync (Socket socket, CancellationToken token)
         {
             try {
-                await foreach (var (pkt, connection, remote) in SendQueue.Reader.ReadAllAsync (token)) {
+                await foreach (var (pkt, connection, remote, sendCompleted) in SendQueue.Reader.ReadAllAsync (token)) {
                     try {
                         var packet = pkt;
                         if (connection == null) {
@@ -207,6 +207,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     } catch (SocketException ex) when (!token.IsCancellationRequested) {
                         Logger.Debug ($"uTP send failed: {ex.SocketErrorCode}");
                     } finally {
+                        sendCompleted?.Invoke ();
                         pkt.Dispose ();
                     }
                 }
@@ -215,8 +216,10 @@ namespace MonoTorrent.Connections.Peer.Utp
             } catch (Exception ex) {
                 Logger.Error ($"uTP send loop failed: {ex.Message}");
             } finally {
-                while (SendQueue.Reader.TryRead (out var pending))
+                while (SendQueue.Reader.TryRead (out var pending)) {
+                    pending.sendCompleted?.Invoke ();
                     pending.packet.Dispose ();
+                }
             }
         }
 
@@ -514,7 +517,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 SequenceNumber = 0,
                 AckNumber = received.SequenceNumber
             };
-            if (!SendQueue.Writer.TryWrite ((reset, null, remote)))
+            if (!SendQueue.Writer.TryWrite ((reset, null, remote, null)))
                 reset.Dispose ();
         }
     }

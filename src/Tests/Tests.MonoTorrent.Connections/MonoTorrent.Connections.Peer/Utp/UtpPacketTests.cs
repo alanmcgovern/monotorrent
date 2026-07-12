@@ -90,7 +90,7 @@ namespace MonoTorrent.Connections.Peer
         public async Task OutgoingPacketsUseLatestReceivedDelaySample ()
         {
             var clock = new ManualClock ();
-            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint)> ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
             using var connection = new UtpPeerConnection (
                 sendQueue.Writer,
                 new IPEndPoint (IPAddress.Loopback, 12345),
