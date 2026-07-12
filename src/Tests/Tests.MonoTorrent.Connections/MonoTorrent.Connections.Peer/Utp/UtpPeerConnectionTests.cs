@@ -1059,6 +1059,8 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.IsTrue (connection.RetransmitDrainActiveForTests);
             Assert.AreEqual (1, connection.RetransmitDrainStartsForTests);
+            Assert.AreEqual (1, connection.PendingRetransmitCountForTests);
+            Assert.AreEqual (0, connection.BytesInFlightForTests);
 
             var largerWindow = CreateStatePacket (123, sequenceNumber: 10, ackNumber: first.packet.SequenceNumber);
             largerWindow.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW * 2;
@@ -1067,6 +1069,8 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.IsTrue (connection.RetransmitDrainActiveForTests);
             Assert.AreEqual (1, connection.RetransmitDrainStartsForTests);
+            Assert.AreEqual (1, connection.PendingRetransmitCountForTests);
+            Assert.AreEqual (0, connection.BytesInFlightForTests);
 
             await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             var retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);

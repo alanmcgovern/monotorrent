@@ -1906,8 +1906,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             bool clearedOwnership = false;
             try {
                 while (!cts.IsCancellationRequested) {
-                    UtpPacket packet = default;
-                    Action? sendCompleted = null;
+                    SentPacket? packet = null;
                     bool hasPacket = false;
 
                     lock (locker) {
@@ -1922,16 +1921,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                             if (!CanSendPayloadLocked (payloadBytes))
                                 break;
 
-                            pendingRetransmits.Dequeue ();
-                            sent.PendingRetransmit = false;
-                            sent.IsInFlight = true;
-                            sent.Transmissions++;
-                            sent.DuplicateAckIndications = 0;
-                            sent.SentAtMicroseconds = clock.Microseconds;
-                            BytesInFlight += payloadBytes;
-                            AppendInFlightLocked (sent);
-                            packet = sent.Packet;
-                            sendCompleted = sent.TakeSendReference ();
+                            packet = sent;
                             hasPacket = true;
                             break;
                         }
@@ -1948,7 +1938,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                         }
                     }
 
-                    await SendPacketAsync (packet, sendCompleted);
+                    await SendRetransmitPacketAsync (packet!);
                 }
             } finally {
                 if (!clearedOwnership) {
@@ -1958,6 +1948,38 @@ namespace MonoTorrent.Connections.Peer.Utp
                     }
                 }
             }
+        }
+
+        async Task SendRetransmitPacketAsync (SentPacket sent)
+        {
+            var packet = sent.Packet;
+            var sendCompleted = sent.TakeSendReference ();
+            try {
+                lock (locker) {
+                    packet.WindowSize = (uint) Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
+                    LastAdvertisedReceiveWindow = packet.WindowSize;
+                }
+
+                if (!SendingChannel.TryWrite ((packet, this, EndPoint, sendCompleted)))
+                    await SendingChannel.WriteAsync ((packet, this, EndPoint, sendCompleted), cts.Token);
+            } catch {
+                sendCompleted ();
+                throw;
+            }
+
+            lock (locker) {
+                if (sentPackets.TryGetValue (packet.SequenceNumber, out var current) && ReferenceEquals (current, sent) && sent.PendingRetransmit) {
+                    sent.PendingRetransmit = false;
+                    sent.IsInFlight = true;
+                    sent.Transmissions++;
+                    sent.DuplicateAckIndications = 0;
+                    sent.SentAtMicroseconds = clock.Microseconds;
+                    BytesInFlight += PayloadSendCost (sent);
+                    AppendInFlightLocked (sent);
+                }
+            }
+
+            OnPacketQueued ();
         }
 
         public void Dispose ()
