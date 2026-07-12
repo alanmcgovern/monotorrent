@@ -216,9 +216,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                     if (received.ReceivedBytes < UtpPacket.HeaderSize || new UtpPacket (buffer).Version != UTP_VERSION)
                         continue;
 
-                    var owned = new byte[received.ReceivedBytes];
-                    buffer.AsSpan (0, owned.Length).CopyTo (owned);
-                    ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, owned);
+                    ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, buffer.AsSpan (0, received.ReceivedBytes));
                 } catch (OperationCanceledException) {
                     return;
                 } catch (SocketException ex) when (!token.IsCancellationRequested) {
@@ -245,27 +243,43 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal void ProcessDatagram (IPEndPoint remote, byte[] owned)
         {
-            var pkt = new UtpPacket (owned);
+            ProcessDatagram (remote, owned.AsSpan ());
+        }
 
-            if (pkt.Version != UTP_VERSION)
+        void ProcessDatagram (IPEndPoint remote, ReadOnlySpan<byte> datagram)
+        {
+            if (datagram.Length < UtpPacket.HeaderSize || datagram.Length > UtpMemoryPool.BufferSize)
                 return;
+
+            var releaser = UtpMemoryPool.Default.Rent (out Memory<byte> memory);
+            memory = memory.Slice (0, datagram.Length);
+            datagram.CopyTo (memory.Span);
+            var pkt = new UtpPacket (memory);
+
+            if (pkt.Version != UTP_VERSION) {
+                releaser.Dispose ();
+                return;
+            }
 
             switch (pkt.Type) {
                 case PacketType.Syn:
-                    TrackBackgroundTask (HandleSynAsync (remote, pkt));
-                    break;
+                    TrackBackgroundTask (HandleSynAsync (remote, pkt, releaser));
+                    return;
 
                 case PacketType.Data:
                 case PacketType.State:
                 case PacketType.Fin:
                 case PacketType.Reset:
-                    RouteToExisting (remote, pkt);
-                    break;
+                    RouteToExisting (remote, pkt, releaser);
+                    return;
             }
+
+            releaser.Dispose ();
         }
 
-        async Task HandleSynAsync (IPEndPoint remote, UtpPacket syn)
+        async Task HandleSynAsync (IPEndPoint remote, UtpPacket syn, ByteBufferPool.Releaser releaser)
         {
+            try {
             ushort initiatorConnIdRecv = syn.ConnectionId;
             ushort ourConnIdRecv = (ushort) (initiatorConnIdRecv + 1);
 
@@ -316,9 +330,12 @@ namespace MonoTorrent.Connections.Peer.Utp
             await connection.SendSynAck (syn.SequenceNumber);
 
             ConnectionReceived?.Invoke (this, new PeerConnectionEventArgs (connection, null));
+            } finally {
+                releaser.Dispose ();
+            }
         }
 
-        void RouteToExisting (IPEndPoint remote, UtpPacket pkt)
+        void RouteToExisting (IPEndPoint remote, UtpPacket pkt, ByteBufferPool.Releaser releaser)
         {
             var key = pkt.Type == PacketType.Reset
                 ? FindResetKey (remote, pkt.ConnectionId)
@@ -328,12 +345,14 @@ namespace MonoTorrent.Connections.Peer.Utp
                 var conn = registration.Connection;
                 if (!conn.IsClosedOrReset && conn.IsValidPacketForCurrentState (pkt)) {
                     registration.LastActivityMicroseconds = Clock.Microseconds;
-                    conn.Receive (pkt);
+                    if (!conn.Receive (pkt, releaser))
+                        releaser.Dispose ();
                     return;
                 }
 
                 if (!conn.IsClosedOrReset && conn.IsHarmlessStalePacket (pkt)) {
                     registration.LastActivityMicroseconds = Clock.Microseconds;
+                    releaser.Dispose ();
                     return;
                 }
 
@@ -342,6 +361,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
 
             SendResetForUnknownNonSyn (remote, pkt);
+            releaser.Dispose ();
         }
 
         (EndPoint remote, ushort connectionIdReceive) FindResetKey (IPEndPoint remote, ushort connectionId)
