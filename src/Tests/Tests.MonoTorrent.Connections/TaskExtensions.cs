@@ -9,6 +9,15 @@ namespace MonoTorrent
     {
         public static Task<T> WithTimeout<T> (this ReusableTask<T> task, int timeout)
             => task.AsTask ().WithTimeout (timeout);
+        public static async Task WithTimeout (this Task task, int timeout)
+        {
+            var delayTask = Task.Delay (timeout);
+            var result = await Task.WhenAny (task, delayTask).ConfigureAwait (false);
+            if (result == task)
+                await task.ConfigureAwait (false);
+            else
+                throw new TimeoutException ($"The task did not complete within {timeout}ms.");
+        }
 
         public static async Task<T> WithTimeout<T> (this Task<T> task, int timeout)
         {

@@ -691,10 +691,13 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal bool IsActiveMtuProbe (UtpPacket packet)
         {
             lock (locker)
-                return packet.Type == PacketType.Data
-                    && packet.SequenceNumber == MtuProbeSequence
-                    && packet.Payload.Length == MtuProbeSize;
+                return IsActiveMtuProbeLocked (packet);
         }
+
+        bool IsActiveMtuProbeLocked (UtpPacket packet)
+            => packet.Type == PacketType.Data
+                && packet.SequenceNumber == MtuProbeSequence
+                && packet.Payload.Length == MtuProbeSize;
 
         static int PacketBufferCost (ParsedPacket packet)
             => packet.PayloadLength;
@@ -1643,6 +1646,9 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (!transportSettings.EnablePathMtuDiscovery || !HasAckedPayloadPacket || MtuProbeSequence != null || MtuCeiling - MtuFloor <= MtuConvergedThreshold)
                     return (Math.Min (remainingBytes, CurrentMtu), false);
 
+                if (MaxWindow <= MtuFloor * 3)
+                    return (Math.Min (remainingBytes, CurrentMtu), false);
+
                 if (unchecked(clock.Microseconds - NextMtuProbeAt) < 0x8000_0000u) {
                     var probeSize = MtuFloor + (MtuCeiling - MtuFloor + 1) / 2;
                     if (remainingBytes >= probeSize)
@@ -1892,6 +1898,26 @@ namespace MonoTorrent.Connections.Peer.Utp
                     NextMtuProbeAt = clock.Microseconds;
             }
             Reschedule ();
+        }
+
+        internal void HandleLocalSendMessageSize (UtpPacket packet)
+        {
+            bool retransmit = false;
+
+            lock (locker) {
+                if (!IsActiveMtuProbeLocked (packet))
+                    return;
+
+                if (!sentPackets.TryGetValue (packet.SequenceNumber, out var sent) || !sent.IsMtuProbe)
+                    return;
+
+                HandleMtuProbeTimeout (sent);
+                MarkForRetransmitLocked (sent);
+                retransmit = true;
+            }
+
+            if (retransmit)
+                _ = StartRetransmitDrain ();
         }
 
         void Reschedule ()

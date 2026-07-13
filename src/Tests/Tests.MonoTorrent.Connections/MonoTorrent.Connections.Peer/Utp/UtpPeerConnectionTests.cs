@@ -1576,13 +1576,7 @@ namespace MonoTorrent.Connections.Peer
                 clock,
                 transportSettings: new UtpTransportSettings { InitialPacketSize = 512 });
 
-            await connection.SendAsync (new byte[512]).WithTimeout (10_000);
-            var warmup = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
-            clock.Microseconds = 50_000;
-            var warmupAck = CreateStatePacket (123, sequenceNumber: 7, ackNumber: warmup.packet.SequenceNumber);
-            warmupAck.TimestampDiff = 10_000;
-            connection.Receive (warmupAck);
-            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+            await GrowCwndForMtuProbe (connection, sendQueue, clock);
 
             connection.NextMtuProbeAtForTests = 0;
             var expectedProbeSize = connection.MtuFloorForTests + (connection.MtuCeilingForTests - connection.MtuFloorForTests + 1) / 2;
@@ -1605,7 +1599,7 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task MtuProbeTimeoutLowersCeilingWithoutCongestionLoss ()
+        public async Task MtuProbeRequiresCwndAboveThreeConservativePackets ()
         {
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
@@ -1626,6 +1620,38 @@ namespace MonoTorrent.Connections.Peer
             connection.Receive (warmupAck);
             await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
+            Assert.LessOrEqual (connection.MaxWindowForTests, connection.MtuFloorForTests * 3);
+
+            connection.NextMtuProbeAtForTests = 0;
+            var expectedProbeSize = connection.MtuFloorForTests + (connection.MtuCeilingForTests - connection.MtuFloorForTests + 1) / 2;
+
+            await connection.SendAsync (new byte[expectedProbeSize]).WithTimeout (10_000);
+            var first = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (512, first.packet.Payload.Length);
+            Assert.AreEqual (expectedProbeSize - 512, second.packet.Payload.Length);
+            Assert.IsNull (connection.MtuProbeSequenceForTests);
+            Assert.IsFalse (connection.IsActiveMtuProbe (first.packet));
+            Assert.IsFalse (connection.IsActiveMtuProbe (second.packet));
+        }
+
+        [Test]
+        public async Task MtuProbeTimeoutLowersCeilingWithoutCongestionLoss ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                transportSettings: new UtpTransportSettings { InitialPacketSize = 512 });
+
+            await GrowCwndForMtuProbe (connection, sendQueue, clock);
+
             connection.NextMtuProbeAtForTests = 0;
             var initialWindow = connection.MaxWindowForTests;
             var expectedProbeSize = connection.MtuFloorForTests + (connection.MtuCeilingForTests - connection.MtuFloorForTests + 1) / 2;
@@ -1641,6 +1667,41 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (512, connection.CurrentMtuForTests);
             Assert.AreEqual (initialWindow, connection.MaxWindowForTests);
             Assert.IsNull (connection.MtuProbeSequenceForTests);
+        }
+
+        [Test]
+        public async Task LocalMessageSizeOnMtuProbeLowersCeilingAndRetransmitsWithoutProbeState ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                transportSettings: new UtpTransportSettings { InitialPacketSize = 512 });
+
+            await GrowCwndForMtuProbe (connection, sendQueue, clock).WithTimeout (5000);
+
+            connection.NextMtuProbeAtForTests = 0;
+            var expectedProbeSize = connection.MtuFloorForTests + (connection.MtuCeilingForTests - connection.MtuFloorForTests + 1) / 2;
+
+            await connection.SendAsync (new byte[expectedProbeSize]).WithTimeout (10_000);
+            var probe = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.IsTrue (connection.IsActiveMtuProbe (probe.packet));
+
+            connection.HandleLocalSendMessageSize (probe.packet);
+            var retransmit = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.AreEqual (probe.packet.SequenceNumber, retransmit.packet.SequenceNumber);
+            Assert.AreEqual (probe.packet.Payload.Length, retransmit.packet.Payload.Length);
+            Assert.AreEqual (probe.packet.Payload.Length - 1, connection.MtuCeilingForTests);
+            Assert.AreEqual (512, connection.CurrentMtuForTests);
+            Assert.IsNull (connection.MtuProbeSequenceForTests);
+            Assert.IsFalse (connection.IsActiveMtuProbe (retransmit.packet));
         }
 
         [Test]
@@ -1720,21 +1781,15 @@ namespace MonoTorrent.Connections.Peer
                 transportSettings: new UtpTransportSettings { InitialPacketSize = 512 });
 
             connection.ApplyMtuFeedback (1000);
-            connection.NextMtuProbeAtForTests = 0;
 
             Assert.AreEqual (952, connection.MtuCeilingForTests);
             Assert.AreEqual (1000, connection.MtuCeilingForTests + UtpPacket.HeaderSize + 8 + 20);
             Assert.AreEqual (512, connection.MtuFloorForTests);
             Assert.AreEqual (512, connection.CurrentMtuForTests);
 
-            await connection.SendAsync (new byte[512]).WithTimeout (10_000);
-            var warmup = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
-            clock.Microseconds = 50_000;
-            var warmupAck = CreateStatePacket (123, sequenceNumber: 7, ackNumber: warmup.packet.SequenceNumber);
-            warmupAck.TimestampDiff = 10_000;
-            connection.Receive (warmupAck);
-            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+            await GrowCwndForMtuProbe (connection, sendQueue, clock).WithTimeout (5000);
 
+            connection.NextMtuProbeAtForTests = 0;
             var expectedProbeSize = connection.MtuFloorForTests + (connection.MtuCeilingForTests - connection.MtuFloorForTests + 1) / 2;
             await connection.SendAsync (new byte[expectedProbeSize]).WithTimeout (10_000);
             var probe = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
@@ -3220,6 +3275,28 @@ namespace MonoTorrent.Connections.Peer
         {
             await Task.Delay (delay);
             Assert.IsFalse (sendQueue.Reader.TryRead (out _));
+        }
+
+        static async Task GrowCwndForMtuProbe (
+            UtpPeerConnection connection,
+            Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> sendQueue,
+            ManualClock clock)
+        {
+            ushort remoteSequence = 7;
+            while (connection.MaxWindowForTests <= connection.MtuFloorForTests * 3) {
+                var bytesToSend = (int) connection.MaxWindowForTests;
+                await connection.SendAsync (new byte[bytesToSend]).WithTimeout (10_000);
+
+                UtpPacket warmup = default;
+                for (int bytesRead = 0; bytesRead < bytesToSend; bytesRead += warmup.Payload.Length)
+                    warmup = (await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000)).packet;
+
+                clock.Microseconds += 50_000;
+                var ack = CreateStatePacket (123, sequenceNumber: remoteSequence++, ackNumber: warmup.SequenceNumber);
+                ack.TimestampDiff = 10_000;
+                connection.Receive (ack);
+                await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+            }
         }
 
         static byte SelectiveAckByte (UtpPacket packet)

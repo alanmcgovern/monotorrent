@@ -199,8 +199,8 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             try {
                 await foreach (var (pkt, connection, remote, sendCompleted) in SendQueue.Reader.ReadAllAsync (token)) {
+                    var packet = pkt;
                     try {
-                        var packet = pkt;
                         if (connection == null) {
                             packet.SetTimestamp (Clock);
                             packet.TimestampDiff = 0;
@@ -215,11 +215,14 @@ namespace MonoTorrent.Connections.Peer.Utp
                             token);
                     } catch (OperationCanceledException) {
                         return;
+                    } catch (SocketException ex) when (!token.IsCancellationRequested && ex.SocketErrorCode == SocketError.MessageSize && connection != null) {
+                        Logger.Debug ($"uTP send failed: {ex.SocketErrorCode}");
+                        connection.HandleLocalSendMessageSize (packet);
                     } catch (SocketException ex) when (!token.IsCancellationRequested) {
                         Logger.Debug ($"uTP send failed: {ex.SocketErrorCode}");
                     } finally {
                         sendCompleted?.Invoke ();
-                        pkt.Dispose ();
+                        packet.Dispose ();
                     }
                 }
             } catch (OperationCanceledException) {
