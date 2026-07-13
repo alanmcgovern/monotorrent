@@ -455,6 +455,125 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task FullReceiveBufferStillProcessesAckForOutboundData ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                maxReceiveBufferBytes: 1,
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
+
+            connection.Receive (CreateDataPacket (2, "a"));
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var outbound = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (UtpPacket.HeaderSize + 1, connection.BytesInFlightForTests);
+
+            var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: outbound.packet.SequenceNumber);
+            Assert.IsTrue (connection.Receive (ack, default, clock.Microseconds));
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            Assert.AreEqual (0, connection.BytesInFlightForTests);
+        }
+
+        [Test]
+        public async Task FullReceiveBufferStillProcessesPeerWindowUpdate ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                maxReceiveBufferBytes: 1,
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
+            var idleAckNumber = unchecked((ushort) (connection.InitialSequenceNumber - 1));
+
+            connection.Receive (CreateDataPacket (2, "a"));
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var zeroWindow = CreateStatePacket (123, sequenceNumber: 9, ackNumber: idleAckNumber);
+            zeroWindow.WindowSize = 0;
+            Assert.IsTrue (connection.Receive (zeroWindow, default, clock.Microseconds));
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            var sendTask = connection.SendAsync (new byte[] { 1 }).AsTask ();
+            await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (100));
+            Assert.IsFalse (sendTask.IsCompleted);
+
+            var openWindow = CreateStatePacket (123, sequenceNumber: 10, ackNumber: idleAckNumber);
+            openWindow.WindowSize = 1;
+            Assert.IsTrue (connection.Receive (openWindow, default, clock.Microseconds));
+
+            var outbound = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (1, await sendTask.WithTimeout (5000));
+            Assert.AreEqual (PacketType.Data, outbound.packet.Type);
+        }
+
+        [Test]
+        public async Task FullReceiveBufferStillProcessesReset ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                maxReceiveBufferBytes: 1,
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
+
+            connection.Receive (CreateDataPacket (2, "a"));
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.IsTrue (connection.Receive (CreateResetPacket (123), default, clock.Microseconds));
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            Assert.IsTrue (connection.IsClosedOrReset);
+        }
+
+        [Test]
+        public async Task FullReceiveBufferStillProcessesFin ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                clock,
+                maxReceiveBufferBytes: 1,
+                transportSettings: new UtpTransportSettings { EnableDelayedAcks = false });
+
+            connection.Receive (CreateDataPacket (2, "a"));
+            await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            Assert.IsTrue (connection.Receive (CreateFinPacket (3), default, clock.Microseconds));
+            var finAck = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (3, finAck.packet.AckNumber);
+            Assert.AreEqual (0, finAck.packet.WindowSize);
+
+            var buffer = new byte[1];
+            Assert.AreEqual (1, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
+            Assert.AreEqual ((byte) 'a', buffer[0]);
+            Assert.AreEqual (0, await connection.ReceiveAsync (buffer).WithTimeout (10_000));
+        }
+
+        [Test]
         public async Task ReorderBufferDropsPacketsBeyondLimit ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();

@@ -232,6 +232,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         const uint MinimumRetransmitTimeoutMicroseconds = 500_000;
         const uint MaximumRetransmitTimeoutMicroseconds = 60_000_000;
         const int MtuConvergedThreshold = 16;
+        const int ReceiveControlHeadroomBytes = 64 * 1024;
         const int UdpHeaderSize = 8;
         const int Ipv4HeaderSize = 20;
         const int Ipv6HeaderSize = 40;
@@ -557,16 +558,27 @@ namespace MonoTorrent.Connections.Peer.Utp
         uint AdvertisedReceiveWindow {
             get {
                 lock (locker) {
-                    return (uint) Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
+                    return AdvertisedReceiveWindowLocked ();
                 }
             }
         }
+
+        uint AdvertisedReceiveWindowLocked ()
+            => (uint) Math.Max (0, maxReceiveBufferBytes - ReceiveMemoryBytes);
 
         int ReceiveBufferBytes
             => OutOfOrderBufferedBytes + QueuedInOrderBytes + CurrentUnreadPacketBytes;
 
         int ReceiveMemoryBytes
             => IncomingQueuedBytes + ReceiveBufferBytes;
+
+        bool CanQueueIncomingPacketLocked (int packetBytes)
+        {
+            if (ReceiveMemoryBytes + packetBytes <= maxReceiveBufferBytes)
+                return true;
+
+            return IncomingQueuedBytes + packetBytes <= ReceiveControlHeadroomBytes;
+        }
 
         int CurrentWindow {
             get {
@@ -646,7 +658,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         Task SendPacketAsync (UtpPacket packet, Action? sendCompleted = null)
         {
             lock (locker) {
-                packet.WindowSize = (uint) Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
+                packet.WindowSize = AdvertisedReceiveWindowLocked ();
                 LastAdvertisedReceiveWindow = packet.WindowSize;
             }
 
@@ -804,7 +816,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         {
             var packetBytes = pkt.AsMemory ().Length;
             lock (locker) {
-                if (ReceiveMemoryBytes + packetBytes > maxReceiveBufferBytes)
+                if (!CanQueueIncomingPacketLocked (packetBytes))
                     return false;
                 IncomingQueuedBytes += packetBytes;
             }
@@ -820,8 +832,11 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal void Receive (UtpPacket pkt)
         {
             var packetBytes = pkt.AsMemory ().Length;
-            lock (locker)
+            lock (locker) {
+                if (!CanQueueIncomingPacketLocked (packetBytes))
+                    return;
                 IncomingQueuedBytes += packetBytes;
+            }
 
             if (!IncomingPackets.Writer.TryWrite (new IncomingDatagram (pkt, default, clock.Microseconds))) {
                 lock (locker)
@@ -1555,7 +1570,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 buffer = buffer.Slice (read);
                 bool packetCompleted = currentPayloadRead == currentPacket.PayloadLength;
                 lock (locker) {
-                    var previousAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
+                    var previousAdvertisedWindow = AdvertisedReceiveWindowLocked ();
                     CurrentUnreadPacketBytes = Math.Max (0, CurrentUnreadPacketBytes - read);
                     if (packetCompleted)
                         CurrentUnreadPacketBytes = 0;
@@ -1573,9 +1588,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             return totalRead;
         }
 
-        bool ShouldSendReceiveWindowUpdate (int previousAdvertisedWindow)
+        bool ShouldSendReceiveWindowUpdate (uint previousAdvertisedWindow)
         {
-            var currentAdvertisedWindow = Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
+            var currentAdvertisedWindow = AdvertisedReceiveWindowLocked ();
             return currentAdvertisedWindow > previousAdvertisedWindow
                 && currentAdvertisedWindow > LastAdvertisedReceiveWindow
                 && (LastAdvertisedReceiveWindow == 0
@@ -1986,7 +2001,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             var sendCompleted = sent.TakeSendReference ();
             try {
                 lock (locker) {
-                    packet.WindowSize = (uint) Math.Max (0, maxReceiveBufferBytes - ReceiveBufferBytes);
+                    packet.WindowSize = AdvertisedReceiveWindowLocked ();
                     LastAdvertisedReceiveWindow = packet.WindowSize;
                 }
 
