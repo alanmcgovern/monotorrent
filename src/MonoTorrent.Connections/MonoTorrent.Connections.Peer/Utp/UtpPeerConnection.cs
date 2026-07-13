@@ -477,7 +477,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             SequenceNumber = InitialSequenceNumber;
             LastSentSequenceNumber = InitialSequenceNumber;
             AckNumber = initialAckNumber;
-            LastAckReceived = 0;
+            LastAckReceived = unchecked((ushort) (InitialSequenceNumber - 1));
             CurrentMtu = settings.InitialPacketSize;
             MtuFloor = CurrentMtu;
             MtuCeiling = Math.Max (CurrentMtu, GetDefaultMtuCeiling (remote.AddressFamily));

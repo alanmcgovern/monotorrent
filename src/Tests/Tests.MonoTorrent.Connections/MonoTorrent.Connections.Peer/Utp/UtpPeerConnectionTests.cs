@@ -1285,7 +1285,7 @@ namespace MonoTorrent.Connections.Peer
                 clock,
                 transportSettings: new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.FromMilliseconds (100) });
 
-            var zeroWindow = CreateStatePacket (123, sequenceNumber: 9, ackNumber: 0);
+            var zeroWindow = CreateStatePacket (123, sequenceNumber: 9, ackNumber: unchecked((ushort) (connection.InitialSequenceNumber - 1)));
             zeroWindow.WindowSize = 0;
             connection.Receive (zeroWindow);
             await Task.Delay (50);
@@ -2150,8 +2150,9 @@ namespace MonoTorrent.Connections.Peer
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+            var idleAckNumber = unchecked((ushort) (connection.InitialSequenceNumber - 1));
 
-            var tinyWindow = CreateStatePacket (123, sequenceNumber: 9, ackNumber: 0);
+            var tinyWindow = CreateStatePacket (123, sequenceNumber: 9, ackNumber: idleAckNumber);
             tinyWindow.WindowSize = 0;
             connection.Receive (tinyWindow);
             await Task.Delay (50);
@@ -2160,7 +2161,7 @@ namespace MonoTorrent.Connections.Peer
             await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (100));
             Assert.IsFalse (sendTask.IsCompleted);
 
-            var openWindow = CreateStatePacket (123, sequenceNumber: 10, ackNumber: 0);
+            var openWindow = CreateStatePacket (123, sequenceNumber: 10, ackNumber: idleAckNumber);
             openWindow.WindowSize = 1;
             connection.Receive (openWindow);
 
@@ -2168,6 +2169,32 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (1, await sendTask.WithTimeout (5000));
             Assert.AreEqual (PacketType.Data, data.packet.Type);
             Assert.AreEqual (1, data.packet.Payload.Length);
+        }
+
+        [Test]
+        public async Task InboundLibtorrentDataWindowUpdateReleasesZeroWindowBeforeProbe ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 7);
+            var idleAckNumber = unchecked((ushort) (connection.InitialSequenceNumber - 1));
+
+            var syn = CreateStatePacket (123, sequenceNumber: 7, ackNumber: 0);
+            syn.Type = PacketType.Syn;
+            syn.WindowSize = 0;
+            connection.InitializeFromSyn (syn, 0);
+
+            var sendTask = connection.SendAsync (new byte[] { 1 }).AsTask ();
+            await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (100));
+            Assert.IsFalse (sendTask.IsCompleted);
+
+            var firstData = CreateDataPacket (8, "a", ackNumber: idleAckNumber);
+            firstData.WindowSize = 1;
+            connection.Receive (firstData);
+
+            var outbound = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            Assert.AreEqual (1, await sendTask.WithTimeout (5000));
+            Assert.AreEqual (PacketType.Data, outbound.packet.Type);
+            Assert.AreEqual (1, outbound.packet.Payload.Length);
         }
 
         [Test]
@@ -2233,14 +2260,14 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public async Task UnrelatedAckWhileIdleDoesNotChangePeerWindow ()
+        public async Task ForgedFutureAckWhileIdleDoesNotChangePeerWindow ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
             using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0);
 
-            var unrelated = CreateStatePacket (123, sequenceNumber: 9, ackNumber: 1234);
-            unrelated.WindowSize = 0;
-            connection.Receive (unrelated);
+            var forged = CreateStatePacket (123, sequenceNumber: 9, ackNumber: connection.InitialSequenceNumber);
+            forged.WindowSize = UtpPeerConnectionListener.INITIAL_WINDOW * 2;
+            connection.Receive (forged);
             await Task.Delay (50);
 
             Assert.AreEqual (UtpPeerConnectionListener.INITIAL_WINDOW, connection.DiagnosticSnapshot.PeerWindowBytes);
