@@ -1464,12 +1464,15 @@ namespace MonoTorrent.Connections.Peer
             var connectTask = connection.ConnectAsync ().AsTask ();
             var syn = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
-            clock.Microseconds = 1_000_000;
+            Assert.AreEqual (3_000_000, connection.RetransmitTimeoutMicrosecondsForTests);
+
+            clock.Microseconds = 3_000_000;
             var retransmit = await listener.SendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             Assert.AreEqual (syn.packet.SequenceNumber, retransmit.packet.SequenceNumber);
 
-            clock.Microseconds = 3_000_000;
+            clock.Microseconds = 9_000_000;
+            await listener.ProcessScheduledEventsForTests ().WaitAsync (TimeSpan.FromSeconds (5));
 
             Assert.IsFalse (await connectTask.WithTimeout (5000));
             Assert.IsTrue (connection.IsClosedOrReset);
@@ -1898,6 +1901,17 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public void InitialPacketSizeCannotExceedPoolPayloadCapacity ()
+        {
+            var ex = Assert.Throws<ArgumentOutOfRangeException> (() => UtpTransportSettings.Create (new UtpTransportSettings {
+                InitialPacketSize = UtpTransportSettings.MaximumPacketSize + 1
+            }));
+
+            Assert.AreEqual ("settings", ex!.ParamName);
+            Assert.AreEqual (UtpMemoryPool.BufferSize - UtpPacket.HeaderSize, UtpTransportSettings.MaximumPacketSize);
+        }
+
+        [Test]
         public void TransportSettingsUseLibutpCompatibleDefaults ()
         {
             var settings = UtpTransportSettings.Create (null);
@@ -1915,7 +1929,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (4096, settings.MaxSendQueuePackets);
             Assert.AreEqual (2 * 1024 * 1024, settings.SocketReceiveBufferBytes);
             Assert.AreEqual (1024 * 1024, settings.SocketSendBufferBytes);
-            Assert.AreEqual (TimeSpan.FromMilliseconds (10), settings.DelayedAckDelay);
+            Assert.AreEqual (TimeSpan.Zero, settings.DelayedAckDelay);
             Assert.AreEqual (TimeSpan.FromMilliseconds (100), settings.CongestionControlTarget);
             Assert.IsTrue (settings.EnableDelayedAcks);
             Assert.IsTrue (settings.EnablePathMtuDiscovery);
@@ -1940,7 +1954,6 @@ namespace MonoTorrent.Connections.Peer
             AssertInvalidSetting (new UtpTransportSettings { KeepAliveInterval = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { ZeroWindowProbeInterval = TimeSpan.FromTicks (-1) });
-            AssertInvalidSetting (new UtpTransportSettings { DelayedAckDelay = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { DelayedAckDelay = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { CongestionControlTarget = TimeSpan.Zero });
             AssertInvalidSetting (new UtpTransportSettings { CongestionControlTarget = TimeSpan.FromTicks (-1) });
@@ -2116,6 +2129,25 @@ namespace MonoTorrent.Connections.Peer
 
             Assert.AreEqual (initialWindow, connection.MaxWindowForTests);
             Assert.AreEqual (0, connection.RecentDelayMicrosecondsForTests);
+        }
+
+        [Test]
+        public async Task PeerTimestampZeroDoesNotUpdateReceiveDelay ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            clock.Microseconds = 50_000;
+            var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
+            ack.SetTimestamp (0);
+            connection.Receive (ack);
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            Assert.AreEqual (0, connection.LastReceivedDelayMicrosecondsForTests);
         }
 
         [Test]

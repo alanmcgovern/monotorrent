@@ -40,7 +40,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         public static readonly int DefaultSocketReceiveBufferBytes = 2 * 1024 * 1024;
         public static readonly int DefaultSocketSendBufferBytes = 1024 * 1024;
         public static readonly int MinimumRecoveryPacketSize = 150;
-        public static readonly int MaximumPacketSize = UtpMemoryPool.BufferSize;
+        public static readonly int MaximumPacketSize = UtpMemoryPool.BufferSize - UtpPacket.HeaderSize;
 
         public int MaxConnectedTimeouts { get; init; } = 4;
 
@@ -62,7 +62,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public int SocketSendBufferBytes { get; init; } = DefaultSocketSendBufferBytes;
 
-        public TimeSpan DelayedAckDelay { get; init; } = TimeSpan.FromMilliseconds (10);
+        public TimeSpan DelayedAckDelay { get; init; } = TimeSpan.Zero;
 
         public TimeSpan CongestionControlTarget { get; init; } = TimeSpan.FromMilliseconds (100);
 
@@ -108,8 +108,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 throw new ArgumentOutOfRangeException (nameof (settings), "The keep-alive interval must be positive.");
             if (settings.ZeroWindowProbeInterval <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The zero window probe interval must be positive.");
-            if (settings.DelayedAckDelay <= TimeSpan.Zero)
-                throw new ArgumentOutOfRangeException (nameof (settings), "The delayed ACK delay must be positive.");
+            if (settings.DelayedAckDelay < TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The delayed ACK delay must be non-negative.");
             if (settings.CongestionControlTarget <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The congestion control target delay must be positive.");
             if (settings.MtuProbeInterval <= TimeSpan.Zero)
