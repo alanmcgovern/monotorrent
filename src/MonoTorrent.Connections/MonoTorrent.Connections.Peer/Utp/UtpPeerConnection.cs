@@ -1235,11 +1235,10 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         bool IsWindowLimited ()
         {
-            var allowed = Math.Min (MaxWindow, PeerWindowSize);
-            if (allowed == 0)
+            if (MaxWindow == 0)
                 return false;
 
-            return BytesInFlight + CurrentMtu > allowed;
+            return WireBytesInFlight >= MaxWindow;
         }
 
         bool CanSendPayloadLocked (int payloadBytes)

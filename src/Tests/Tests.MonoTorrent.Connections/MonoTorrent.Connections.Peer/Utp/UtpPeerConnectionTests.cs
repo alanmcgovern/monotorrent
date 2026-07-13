@@ -1933,6 +1933,33 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task LedbatDoesNotGrowWindowWhenOnlyPeerWindowLimited ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+            var idleAckNumber = unchecked((ushort) (connection.InitialSequenceNumber - 1));
+
+            var tinyPeerWindow = CreateStatePacket (123, sequenceNumber: 9, ackNumber: idleAckNumber);
+            tinyPeerWindow.WindowSize = 1;
+            connection.Receive (tinyPeerWindow);
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            var initialWindow = connection.MaxWindowForTests;
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+            var ack = CreateStatePacket (123, sequenceNumber: 10, ackNumber: data.packet.SequenceNumber);
+            clock.Microseconds = 50_000;
+            ack.TimestampDiff = 10_000;
+            ack.WindowSize = 1;
+            connection.Receive (ack);
+            await connection.FlushReceiveQueueForTests ().WaitAsync (TimeSpan.FromSeconds (5));
+
+            Assert.AreEqual (initialWindow, connection.MaxWindowForTests);
+        }
+
+        [Test]
         public async Task SlowStartContinuesBeyondInitialReceiveWindowWhenDelayIsBelowTarget ()
         {
             var clock = new ManualClock ();
