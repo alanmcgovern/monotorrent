@@ -671,6 +671,36 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
+        public async Task OutboundDataPiggybacksSelectiveAckWhenReorderBufferIsNonEmpty ()
+        {
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (
+                sendQueue.Writer,
+                new IPEndPoint (IPAddress.Loopback, 12345),
+                124,
+                123,
+                1,
+                new ManualClock (),
+                transportSettings: new UtpTransportSettings { DelayedAckDelay = TimeSpan.FromSeconds (30) });
+
+            connection.Receive (CreateDataPacket (2, "a"));
+            connection.Receive (CreateDataPacket (4, "c"));
+            var standaloneSack = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (500);
+
+            await connection.SendAsync (new byte[] { 1 }).WithTimeout (10_000);
+
+            var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (500);
+            Assert.AreEqual (PacketType.State, standaloneSack.packet.Type);
+            Assert.AreEqual (PacketType.Data, data.packet.Type);
+            Assert.AreEqual (2, data.packet.AckNumber);
+            Assert.AreEqual (1, data.packet.Extension);
+            Assert.AreEqual (0b_0000_0001, data.packet.AsMemory ().Span[UtpPacket.HeaderSize + 2]);
+            CollectionAssert.AreEqual (new byte[] { 1 }, data.packet.AsMemory ().Slice (UtpPacket.HeaderSize + 6).ToArray ());
+
+            await AssertNoOutboundPacket (sendQueue, TimeSpan.FromMilliseconds (100));
+        }
+
+        [Test]
         public async Task StaleDataPacketSendsAck ()
         {
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();

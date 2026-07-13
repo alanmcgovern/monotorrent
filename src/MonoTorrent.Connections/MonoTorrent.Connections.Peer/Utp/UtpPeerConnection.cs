@@ -697,7 +697,9 @@ namespace MonoTorrent.Connections.Peer.Utp
         bool IsActiveMtuProbeLocked (UtpPacket packet)
             => packet.Type == PacketType.Data
                 && packet.SequenceNumber == MtuProbeSequence
-                && packet.Payload.Length == MtuProbeSize;
+                && sentPackets.TryGetValue (packet.SequenceNumber, out var sent)
+                && sent.IsMtuProbe
+                && sent.PayloadBytes == MtuProbeSize;
 
         static int PacketBufferCost (ParsedPacket packet)
             => packet.PayloadLength;
@@ -803,8 +805,10 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal void PrepareForSend (ref UtpPacket packet)
         {
-            if (packet.Type == PacketType.Data || packet.Type == PacketType.Fin)
+            if (packet.Type == PacketType.Data || packet.Type == PacketType.Fin) {
                 packet.AckNumber = AckNumber;
+                RefreshSelectiveAckExtension (packet, AckNumber);
+            }
             packet.SetTimestamp (clock);
             packet.TimestampDiff = LastReceivedDelayMicroseconds;
 
@@ -1459,6 +1463,9 @@ namespace MonoTorrent.Connections.Peer.Utp
             => await SendAckAsync (unchecked((ushort) (AckNumber - 1)));
 
         int WriteSelectiveAckExtension (Span<byte> result, ushort ackNr)
+            => WriteSelectiveAckExtension (result, ackNr, null);
+
+        int WriteSelectiveAckExtension (Span<byte> result, ushort ackNr, int? fixedPayloadLength)
         {
             if (result.Length < 6)
                 return 0;
@@ -1468,6 +1475,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                 var selectiveAckBits = selectiveAckBitsMem.Span;
                 selectiveAckBits.Clear ();
                 int maxBit = -1;
+                int maxLength = Math.Min (fixedPayloadLength ?? selectiveAckBits.Length, selectiveAckBits.Length);
 
                 lock (locker) {
                     foreach (var seq in receiveBuffer.Keys) {
@@ -1475,7 +1483,7 @@ namespace MonoTorrent.Connections.Peer.Utp
                             continue;
 
                         int bit = SequenceDistance (seq, unchecked((ushort) (ackNr + 2)));
-                        if ((uint) bit >= selectiveAckBits.Length * 8u)
+                        if ((uint) bit >= maxLength * 8u)
                             continue;
 
                         selectiveAckBits[bit / 8] |= (byte) (1 << (bit % 8));
@@ -1484,14 +1492,39 @@ namespace MonoTorrent.Connections.Peer.Utp
                 }
 
                 if (maxBit < 0)
-                    return 0;
+                    return fixedPayloadLength.HasValue ? WriteEmptySelectiveAckExtension (result, fixedPayloadLength.Value) : 0;
 
-                int length = Math.Max (4, ((maxBit / 8) + 4) / 4 * 4);
+                int length = Math.Min (fixedPayloadLength ?? Math.Max (4, ((maxBit / 8) + 4) / 4 * 4), selectiveAckBits.Length);
+                if (result.Length < 2 + length)
+                    return 0;
                 result[0] = 0;
                 result[1] = (byte) length;
                 selectiveAckBits.Slice (0, length).CopyTo (result.Slice (2));
                 return 2 + length;
             }
+        }
+
+        static int WriteEmptySelectiveAckExtension (Span<byte> result, int length)
+        {
+            if (result.Length < 2 + length)
+                return 0;
+
+            result[0] = 0;
+            result[1] = (byte) length;
+            result.Slice (2, length).Clear ();
+            return 2 + length;
+        }
+
+        void RefreshSelectiveAckExtension (UtpPacket packet, ushort ackNr)
+        {
+            if (packet.Extension != SelectiveAckExtension)
+                return;
+
+            var extension = packet.AsMemory ().Span.Slice (UtpPacket.HeaderSize);
+            if (extension.Length < 2)
+                return;
+
+            WriteSelectiveAckExtension (extension, ackNr, extension[1]);
         }
 
         bool ShouldIncludeInSelectiveAck (ushort sequenceNumber, ushort ackNr)
@@ -1607,7 +1640,13 @@ namespace MonoTorrent.Connections.Peer.Utp
             int totalSent = 0;
 
             while (!buffer.IsEmpty) {
-                var (payloadLen, isMtuProbe) = SelectPayloadSize (buffer.Length);
+                var ackNr = AckNumber;
+                var selectiveAckBuffer = new byte[254];
+                var sackLength = WriteSelectiveAckExtension (selectiveAckBuffer, ackNr);
+                var (payloadLen, isMtuProbe) = SelectPayloadSize (buffer.Length, sackLength);
+                if (isMtuProbe)
+                    sackLength = 0;
+
                 await WaitForSendWindow (payloadLen);
                 CancelDelayedAck ();
 
@@ -1615,17 +1654,19 @@ namespace MonoTorrent.Connections.Peer.Utp
                 UtpPacket pkt;
                 SentPacket sent;
                 try {
-                    pktBuf = pktBuf.Slice (0, UtpPacket.HeaderSize + payloadLen);
+                    pktBuf = pktBuf.Slice (0, UtpPacket.HeaderSize + sackLength + payloadLen);
                     pkt = new UtpPacket (pktBuf) {
                         Type = PacketType.Data,
                         Version = UtpPeerConnectionListener.UTP_VERSION,
-                        Extension = 0,
+                        Extension = sackLength == 0 ? (byte) 0 : SelectiveAckExtension,
                         ConnectionId = ConnectionIdSend,
                         SequenceNumber = NextSequenceNumber (),
-                        AckNumber = AckNumber
+                        AckNumber = ackNr
                     };
 
-                    buffer.Span.Slice (0, payloadLen).CopyTo (pkt.Payload);
+                    if (sackLength != 0)
+                        selectiveAckBuffer.AsSpan (0, sackLength).CopyTo (pkt.Payload);
+                    buffer.Span.Slice (0, payloadLen).CopyTo (pkt.AsMemory ().Span.Slice (UtpPacket.HeaderSize + sackLength));
                     sent = RegisterSent (pkt, payloadLen, isMtuProbe, bufferReleaser);
                 } catch {
                     bufferReleaser.Dispose ();
@@ -1640,22 +1681,23 @@ namespace MonoTorrent.Connections.Peer.Utp
             return totalSent;
         }
 
-        (int PayloadLength, bool IsMtuProbe) SelectPayloadSize (int remainingBytes)
+        (int PayloadLength, bool IsMtuProbe) SelectPayloadSize (int remainingBytes, int extensionBytes = 0)
         {
             lock (locker) {
+                var currentPayloadSize = Math.Max (1, CurrentMtu - extensionBytes);
                 if (!transportSettings.EnablePathMtuDiscovery || !HasAckedPayloadPacket || MtuProbeSequence != null || MtuCeiling - MtuFloor <= MtuConvergedThreshold)
-                    return (Math.Min (remainingBytes, CurrentMtu), false);
+                    return (Math.Min (remainingBytes, currentPayloadSize), false);
 
                 if (MaxWindow <= MtuFloor * 3)
-                    return (Math.Min (remainingBytes, CurrentMtu), false);
+                    return (Math.Min (remainingBytes, currentPayloadSize), false);
 
-                if (unchecked(clock.Microseconds - NextMtuProbeAt) < 0x8000_0000u) {
+                if (extensionBytes == 0 && unchecked(clock.Microseconds - NextMtuProbeAt) < 0x8000_0000u) {
                     var probeSize = MtuFloor + (MtuCeiling - MtuFloor + 1) / 2;
                     if (remainingBytes >= probeSize)
                         return (probeSize, true);
                 }
 
-                return (Math.Min (remainingBytes, CurrentMtu), false);
+                return (Math.Min (remainingBytes, currentPayloadSize), false);
             }
         }
 
