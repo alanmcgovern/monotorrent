@@ -1921,6 +1921,7 @@ namespace MonoTorrent.Connections.Peer
             Assert.AreEqual (150, UtpTransportSettings.MinimumRecoveryPacketSize);
             Assert.AreEqual (4, settings.MaxConnectedTimeouts);
             Assert.AreEqual (2, settings.MaxSynTimeouts);
+            Assert.AreEqual (TimeSpan.FromSeconds (3), settings.InitialSynRetransmitTimeout);
             Assert.AreEqual (TimeSpan.FromSeconds (29), settings.KeepAliveInterval);
             Assert.AreEqual (TimeSpan.FromSeconds (15), settings.ZeroWindowProbeInterval);
             Assert.AreEqual (1024, settings.MaxReorderDistance);
@@ -1942,6 +1943,8 @@ namespace MonoTorrent.Connections.Peer
         {
             AssertInvalidSetting (new UtpTransportSettings { MaxConnectedTimeouts = 0 });
             AssertInvalidSetting (new UtpTransportSettings { MaxSynTimeouts = 0 });
+            AssertInvalidSetting (new UtpTransportSettings { InitialSynRetransmitTimeout = TimeSpan.Zero });
+            AssertInvalidSetting (new UtpTransportSettings { InitialSynRetransmitTimeout = TimeSpan.FromTicks (-1) });
             AssertInvalidSetting (new UtpTransportSettings { MaxReorderDistance = 31 });
             AssertInvalidSetting (new UtpTransportSettings { MaxReorderDistance = 2016 });
             AssertInvalidSetting (new UtpTransportSettings { MaxIncomingSynConnections = 0 });

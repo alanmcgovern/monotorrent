@@ -255,7 +255,6 @@ namespace MonoTorrent.Connections.Peer.Utp
         const byte SelectiveAckExtension = 1;
         const byte ExtensionBitsExtension = 2;
         const uint InitialRetransmitTimeoutMicroseconds = 1_000_000;
-        const uint InitialSynRetransmitTimeoutMicroseconds = 3_000_000;
         const uint MinimumRetransmitTimeoutMicroseconds = 500_000;
         const uint MaximumRetransmitTimeoutMicroseconds = 60_000_000;
         const int MtuConvergedThreshold = 16;
@@ -569,7 +568,7 @@ namespace MonoTorrent.Connections.Peer.Utp
 
             SentPacket sent;
             try {
-                RetransmitTimeoutMicroseconds = InitialSynRetransmitTimeoutMicroseconds;
+                RetransmitTimeoutMicroseconds = (uint) transportSettings.InitialSynRetransmitTimeout.TotalMicroseconds;
                 sent = RegisterSent (syn, 0, bufferReleaser: bufferReleaser);
             } catch {
                 bufferReleaser.Dispose ();

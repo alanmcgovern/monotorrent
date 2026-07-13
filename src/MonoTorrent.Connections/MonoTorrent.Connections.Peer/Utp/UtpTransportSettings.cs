@@ -46,6 +46,8 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         public int MaxSynTimeouts { get; init; } = 2;
 
+        public TimeSpan InitialSynRetransmitTimeout { get; init; } = TimeSpan.FromSeconds (3);
+
         public TimeSpan KeepAliveInterval { get; init; } = TimeSpan.FromSeconds (29);
 
         public TimeSpan ZeroWindowProbeInterval { get; init; } = TimeSpan.FromSeconds (15);
@@ -90,6 +92,8 @@ namespace MonoTorrent.Connections.Peer.Utp
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum connected timeout count must be at least 1.");
             if (settings.MaxSynTimeouts < 1)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum SYN timeout count must be at least 1.");
+            if (settings.InitialSynRetransmitTimeout <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException (nameof (settings), "The initial SYN retransmit timeout must be positive.");
             if (settings.MaxReorderDistance < 32)
                 throw new ArgumentOutOfRangeException (nameof (settings), "The maximum reorder distance must be at least 32 packets.");
             if (settings.MaxReorderDistance > 2015)

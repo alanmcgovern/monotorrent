@@ -53,8 +53,7 @@ namespace MonoTorrent.Client
         UtpPeerConnectionListener OutgoingListener;
         static readonly object UcatOutputLocker = new object ();
 
-        [SetUp]
-        public async Task Setup ()
+        async Task SetupPeerPair ()
         {
             var tcs = new TaskCompletionSource<UtpPeerConnection> ();
             IncomingListener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
@@ -81,6 +80,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task SendRandomBytes ([Values (1, 1399, 1401, 3000, 60_000, 100_000, 1024_000)] int size)
         {
+            await SetupPeerPair ();
+
             for (int i = 0; i < 10; i++) {
                 var sendBuffer = new byte[size];
                 var receiveBuffer = new byte[size];
@@ -114,7 +115,9 @@ namespace MonoTorrent.Client
         {
             var port = GetFreeUdpPort ();
             var server = StartUcatListener (port);
-            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var listener = new UtpPeerConnectionListener (
+                new IPEndPoint (IPAddress.Loopback, 0),
+                new UtpTransportSettings { InitialSynRetransmitTimeout = TimeSpan.FromMilliseconds (100) });
             UtpPeerConnection connection = null;
 
             try {
@@ -136,23 +139,12 @@ namespace MonoTorrent.Client
                 var receiveBuffer = new byte[size];
                 Random.Shared.NextBytes (sendBuffer);
 
-                const int chunkSize = 1400;
-                for (int transferred = 0; transferred != size;) {
-                    int chunk = Math.Min (chunkSize, size - transferred);
-
-                    try {
-                        Assert.AreEqual (chunk, await connection.SendAsync (sendBuffer.AsMemory (transferred, chunk)).WithTimeout (10_000), "Did not send the full payload.");
-                    } catch (Exception ex) {
-                        Assert.Fail ($"Did not send the full payload. Process exited: {server.Process.HasExited}. Log: {server.OutputPath}. {ex}. Output: {server.ErrorOutput}");
-                    }
-
-                    try {
-                        await ReceiveExactlyAsync (connection, receiveBuffer.AsMemory (transferred, chunk)).WithTimeout (10_000);
-                    } catch (Exception ex) {
-                        Assert.Fail ($"ucat.exe did not echo the full payload. Process exited: {server.Process.HasExited}. Log: {server.OutputPath}. {ex}. Output: {server.ErrorOutput}");
-                    }
-
-                    transferred += chunk;
+                try {
+                    var receiveTask = ReceiveExactlyAsync (connection, receiveBuffer).WithTimeout (10_000);
+                    Assert.AreEqual (size, await connection.SendAsync (sendBuffer).WithTimeout (10_000), "Did not send the full payload.");
+                    await receiveTask;
+                } catch (Exception ex) {
+                    Assert.Fail ($"ucat.exe did not echo the full payload. Process exited: {server.Process.HasExited}. Log: {server.OutputPath}. {ex}. Output: {server.ErrorOutput}");
                 }
 
                 Assert.IsTrue (sendBuffer.AsSpan ().SequenceEqual (receiveBuffer));
@@ -194,7 +186,7 @@ namespace MonoTorrent.Client
             var process = new Process {
                 StartInfo = new ProcessStartInfo {
                     FileName = ucat,
-                    Arguments = $"-d -d -d -d -d -e -l -p {port}",
+                    Arguments = $"-e -l -p {port}",
                     CreateNoWindow = true,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
