@@ -2124,6 +2124,7 @@ namespace MonoTorrent.Connections.Peer
             clock.Microseconds = 50_000;
             var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
             ack.TimestampDiff = 0;
+            ack.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (ack);
             await Task.Delay (50);
 
@@ -2163,6 +2164,7 @@ namespace MonoTorrent.Connections.Peer
             clock.Microseconds = 50_000;
             var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: data.packet.SequenceNumber);
             ack.TimestampDiff = 1_000_000_000;
+            ack.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (ack);
             await Task.Delay (50);
 
@@ -2173,14 +2175,28 @@ namespace MonoTorrent.Connections.Peer
             clock.Microseconds = 110_000;
             ack = CreateStatePacket (123, sequenceNumber: 10, ackNumber: data.packet.SequenceNumber);
             ack.TimestampDiff = 1_000_220_000;
+            ack.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (ack);
             await Task.Delay (50);
+
+            for (int i = 0; i < 2; i++) {
+                clock.Microseconds += 10_000;
+                await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+                data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+                clock.Microseconds += 50_000;
+                ack = CreateStatePacket (123, sequenceNumber: (ushort) (11 + i), ackNumber: data.packet.SequenceNumber);
+                ack.TimestampDiff = 1_000_220_000;
+                ack.SetTimestamp (unchecked(clock.Microseconds - 10_000));
+                connection.Receive (ack);
+                await Task.Delay (50);
+            }
 
             Assert.AreEqual (50_000, connection.RecentDelayMicrosecondsForTests);
         }
 
         [Test]
-        public async Task LedbatUsesCurrentNormalizedDelay ()
+        public async Task LedbatUsesMinimumOfThreeRecentNormalizedDelays ()
         {
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
@@ -2192,6 +2208,7 @@ namespace MonoTorrent.Connections.Peer
             clock.Microseconds = 50_000;
             var ack = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             ack.TimestampDiff = 10_000;
+            ack.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (ack);
             await Task.Delay (50);
 
@@ -2202,8 +2219,53 @@ namespace MonoTorrent.Connections.Peer
             clock.Microseconds = 110_000;
             ack = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
             ack.TimestampDiff = 30_000;
+            ack.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (ack);
             await Task.Delay (50);
+
+            Assert.AreEqual (0, connection.RecentDelayMicrosecondsForTests);
+
+            for (int i = 0; i < 2; i++) {
+                clock.Microseconds += 10_000;
+                await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+                var next = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+                clock.Microseconds += 50_000;
+                ack = CreateStatePacket (123, sequenceNumber: (ushort) (11 + i), ackNumber: next.packet.SequenceNumber);
+                ack.TimestampDiff = 30_000;
+                ack.SetTimestamp (unchecked(clock.Microseconds - 10_000));
+                connection.Receive (ack);
+                await Task.Delay (50);
+            }
+
+            Assert.AreEqual (20_000, connection.RecentDelayMicrosecondsForTests);
+        }
+
+        [Test]
+        public async Task LedbatCompensatesSendDelayBaseWhenPeerDelayBaseDriftsDown ()
+        {
+            var clock = new ManualClock ();
+            var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
+            using var connection = new UtpPeerConnection (sendQueue.Writer, new IPEndPoint (IPAddress.Loopback, 12345), 124, 123, 0, clock);
+
+            async Task AckPayload (ushort remoteSequence, uint peerDelay, uint sendDelay)
+            {
+                await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+                var data = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+                clock.Microseconds += 50_000;
+                var ack = CreateStatePacket (123, sequenceNumber: remoteSequence, ackNumber: data.packet.SequenceNumber);
+                ack.TimestampDiff = sendDelay;
+                ack.SetTimestamp (unchecked(clock.Microseconds - peerDelay));
+                connection.Receive (ack);
+                await Task.Delay (50);
+            }
+
+            await AckPayload (9, 10_000, 100_000);
+            await AckPayload (10, 5_000, 105_000);
+            await AckPayload (11, 5_000, 125_000);
+            await AckPayload (12, 5_000, 125_000);
+            await AckPayload (13, 5_000, 125_000);
 
             Assert.AreEqual (20_000, connection.RecentDelayMicrosecondsForTests);
         }
@@ -2221,6 +2283,7 @@ namespace MonoTorrent.Connections.Peer
             var lowDelayAck = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             clock.Microseconds = 50_000;
             lowDelayAck.TimestampDiff = 10_000;
+            lowDelayAck.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (lowDelayAck);
             await Task.Delay (50);
 
@@ -2233,8 +2296,22 @@ namespace MonoTorrent.Connections.Peer
             var highDelayAck = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
             clock.Microseconds = 280_000;
             highDelayAck.TimestampDiff = 220_000;
+            highDelayAck.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (highDelayAck);
             await Task.Delay (50);
+
+            for (int i = 0; i < 2; i++) {
+                clock.Microseconds += 10_000;
+                await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+                var next = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+                clock.Microseconds += 220_000;
+                highDelayAck = CreateStatePacket (123, sequenceNumber: (ushort) (11 + i), ackNumber: next.packet.SequenceNumber);
+                highDelayAck.TimestampDiff = 220_000;
+                highDelayAck.SetTimestamp (unchecked(clock.Microseconds - 10_000));
+                connection.Receive (highDelayAck);
+                await Task.Delay (50);
+            }
 
             Assert.Less (connection.MaxWindowForTests, afterLowDelay);
         }
@@ -2259,6 +2336,7 @@ namespace MonoTorrent.Connections.Peer
             var lowDelayAck = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             clock.Microseconds = 50_000;
             lowDelayAck.TimestampDiff = 10_000;
+            lowDelayAck.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (lowDelayAck);
             await Task.Delay (50);
 
@@ -2271,14 +2349,28 @@ namespace MonoTorrent.Connections.Peer
             var highDelayAck = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
             clock.Microseconds = 150_000;
             highDelayAck.TimestampDiff = 90_000;
+            highDelayAck.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (highDelayAck);
             await Task.Delay (50);
+
+            for (int i = 0; i < 2; i++) {
+                clock.Microseconds += 10_000;
+                await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
+                var next = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+
+                clock.Microseconds += 90_000;
+                highDelayAck = CreateStatePacket (123, sequenceNumber: (ushort) (11 + i), ackNumber: next.packet.SequenceNumber);
+                highDelayAck.TimestampDiff = 90_000;
+                highDelayAck.SetTimestamp (unchecked(clock.Microseconds - 10_000));
+                connection.Receive (highDelayAck);
+                await Task.Delay (50);
+            }
 
             Assert.Less (connection.MaxWindowForTests, afterLowDelay);
         }
 
         [Test]
-        public async Task LedbatBaseDelayExpiresAfterTwoMinutes ()
+        public async Task LedbatBaseDelayExpiresAfterThirteenMinutes ()
         {
             var clock = new ManualClock ();
             var sendQueue = Channel.CreateUnbounded<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> ();
@@ -2290,19 +2382,21 @@ namespace MonoTorrent.Connections.Peer
             var lowDelayAck = CreateStatePacket (123, sequenceNumber: 9, ackNumber: first.packet.SequenceNumber);
             clock.Microseconds = 50_000;
             lowDelayAck.TimestampDiff = 10_000;
+            lowDelayAck.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (lowDelayAck);
             await Task.Delay (50);
 
             var afterLowDelay = connection.MaxWindowForTests;
 
-            clock.Microseconds = 120_000_001;
+            clock.Microseconds = 780_000_001;
 
             await connection.SendAsync (new byte[UtpTransportSettings.DefaultInitialPacketSize]).WithTimeout (10_000);
             var second = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
 
             var highDelayAck = CreateStatePacket (123, sequenceNumber: 10, ackNumber: second.packet.SequenceNumber);
-            clock.Microseconds = 120_220_001;
+            clock.Microseconds = 780_220_001;
             highDelayAck.TimestampDiff = 220_000;
+            highDelayAck.SetTimestamp (unchecked(clock.Microseconds - 10_000));
             connection.Receive (highDelayAck);
             await Task.Delay (50);
 

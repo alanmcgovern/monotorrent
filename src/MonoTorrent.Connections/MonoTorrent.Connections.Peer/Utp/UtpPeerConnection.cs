@@ -170,14 +170,22 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         sealed class LedbatDelayHistory
         {
-            const int BaseDelayBuckets = 2;
+            const int BaseDelayBuckets = 13;
+            const int CurrentDelaySamples = 3;
+            const uint BucketMicroseconds = 60_000_000;
 
             readonly uint[] baseBucketDelays = new uint[BaseDelayBuckets];
+            readonly uint[] currentDelays = new uint[CurrentDelaySamples];
 
             int currentBaseBucket;
+            int currentDelayIndex;
             uint baseBucketStartedAt;
             uint baseDelay;
             bool initialized;
+
+            public uint BaseDelay => baseDelay;
+
+            public bool Initialized => initialized;
 
             static bool IsLessWithWrap (uint left, uint right)
                 => unchecked((int) (left - right)) < 0;
@@ -186,13 +194,14 @@ namespace MonoTorrent.Connections.Peer.Utp
             {
                 if (!initialized) {
                     Array.Fill (baseBucketDelays, rawDelayMicroseconds);
+                    Array.Fill (currentDelays, uint.MaxValue);
                     baseDelay = rawDelayMicroseconds;
                     baseBucketStartedAt = now;
                     initialized = true;
                 }
 
-                while (unchecked(now - baseBucketStartedAt) >= 60_000_000u) {
-                    baseBucketStartedAt = unchecked(baseBucketStartedAt + 60_000_000u);
+                while (unchecked(now - baseBucketStartedAt) >= BucketMicroseconds) {
+                    baseBucketStartedAt = unchecked(baseBucketStartedAt + BucketMicroseconds);
                     currentBaseBucket = (currentBaseBucket + 1) % BaseDelayBuckets;
                     baseBucketDelays[currentBaseBucket] = rawDelayMicroseconds;
                     baseDelay = baseBucketDelays[0];
@@ -207,7 +216,24 @@ namespace MonoTorrent.Connections.Peer.Utp
                 if (IsLessWithWrap (rawDelayMicroseconds, baseDelay))
                     baseDelay = rawDelayMicroseconds;
 
-                return unchecked(rawDelayMicroseconds - baseDelay);
+                var normalizedDelay = unchecked(rawDelayMicroseconds - baseDelay);
+                currentDelays[currentDelayIndex] = normalizedDelay;
+                currentDelayIndex = (currentDelayIndex + 1) % CurrentDelaySamples;
+
+                var result = currentDelays[0];
+                for (int i = 1; i < CurrentDelaySamples; i++)
+                    result = Math.Min (result, currentDelays[i]);
+                return result;
+            }
+
+            public void AdjustBase (uint offset)
+            {
+                if (!initialized)
+                    return;
+
+                for (int i = 0; i < baseBucketDelays.Length; i++)
+                    baseBucketDelays[i] = unchecked(baseBucketDelays[i] + offset);
+                baseDelay = unchecked(baseDelay + offset);
             }
         }
 
@@ -243,6 +269,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         readonly Queue<ushort> pendingRetransmits = new ();
         readonly Dictionary<ushort, ParsedPacket> receiveBuffer = new ();
         readonly LedbatDelayHistory delayHistory = new ();
+        readonly LedbatDelayHistory peerDelayHistory = new ();
         readonly SemaphoreSlim sendWindowChanged = new (0);
         readonly CancellationTokenSource cts = new ();
         readonly IUtpClock clock;
@@ -1064,7 +1091,19 @@ namespace MonoTorrent.Connections.Peer.Utp
             if (pkt.Timestamp == 0)
                 return;
 
-            LastReceivedDelayMicroseconds = unchecked(receivedAtMicroseconds - pkt.Timestamp);
+            var rawDelay = unchecked(receivedAtMicroseconds - pkt.Timestamp);
+            LastReceivedDelayMicroseconds = rawDelay;
+
+            var previousBaseDelay = peerDelayHistory.BaseDelay;
+            var hadPreviousBaseDelay = peerDelayHistory.Initialized;
+            peerDelayHistory.AddSample (receivedAtMicroseconds, rawDelay);
+
+            if (!hadPreviousBaseDelay || !delayHistory.Initialized)
+                return;
+
+            var baseDelayChange = unchecked((int) (peerDelayHistory.BaseDelay - previousBaseDelay));
+            if (baseDelayChange < 0 && baseDelayChange > -10_000)
+                delayHistory.AdjustBase ((uint) -baseDelayChange);
         }
 
         internal void InitializeFromSyn (UtpPacket syn, uint receivedAtMicroseconds)
