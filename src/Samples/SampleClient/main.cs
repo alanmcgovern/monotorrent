@@ -59,8 +59,8 @@ namespace ClientSample
 
                 // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
                 UdpListenEndPoints = new Dictionary<string, IPEndPoint> {
-                    { "ipv4", new IPEndPoint (IPAddress.Any, 55124) },
-                    { "ipv6", new IPEndPoint (IPAddress.IPv6Any, 55124) }
+                    { "ipv4", new IPEndPoint (IPAddress.Any, 55123) },
+                    { "ipv6", new IPEndPoint (IPAddress.IPv6Any, 55123) }
                 }.ToImmutableDictionary (),
 
 

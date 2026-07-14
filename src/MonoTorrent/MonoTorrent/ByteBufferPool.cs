@@ -37,7 +37,6 @@ namespace MonoTorrent
     {
         const int AllocateDelta = 8;
 
-
         int FixedBufferSize { get; }
         SpinLocked<Queue<ByteBuffer>> Buffers { get; }
 

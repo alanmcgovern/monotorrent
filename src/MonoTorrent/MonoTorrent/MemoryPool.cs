@@ -57,7 +57,6 @@ namespace MonoTorrent
                 : capacity <= LargeMessageBufferSize
                     ? LargeMessageBuffers
                     : MassiveBuffers;
-
             var releaser = pool.Rent (capacity, out memory);
             memory = memory.Slice (0, capacity);
 #if DEBUG
