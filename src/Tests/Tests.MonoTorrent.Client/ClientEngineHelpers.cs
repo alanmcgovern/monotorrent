@@ -43,6 +43,7 @@ namespace MonoTorrent.Client
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
                 AllowPortForwarding = allowPortForwarding,
                 AllowedEncryption = (allowedEncryption ?? EncryptionTypes.All).ToImmutableArray (),
+                AllowedTransports = dhtEndPoint == null ? ImmutableArray.Create (PeerTransport.Tcp) : ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp),
                 AutoSaveLoadFastResume = automaticFastResume,
                 AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata,
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettings).Assembly.Location)!, "test_cache_dir"),

@@ -63,9 +63,9 @@ namespace MonoTorrent.Client
         public ImmutableArray<EncryptionType> AllowedEncryption { get; init; } = EncryptionTypes.All;
 
         /// <summary>
-        /// The peer transports which can be used for outgoing connections, in priority order. Defaults to TCP only.
+        /// The peer transports which can be used for outgoing connections, in priority order. Defaults to enabling all transports.
         /// </summary>
-        public ImmutableArray<PeerTransport> AllowedPeerTransports { get; init; } = ImmutableArray.Create (PeerTransport.Tcp);
+        public ImmutableArray<PeerTransport> AllowedTransports { get; init; } = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp);
 
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
@@ -160,11 +160,6 @@ namespace MonoTorrent.Client
         /// True if the engine should use DHT to discover peers. Defaults to <see langword="true"/>.
         /// </summary>
         public bool EnableDht { get; init; } = true;
-
-        /// <summary>
-        /// True if the engine should use uTP for peer connections. Defaults to <see langword="false"/>.
-        /// </summary>
-        public bool EnableUtp { get; init; } = false;
 
         /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
@@ -381,11 +376,11 @@ namespace MonoTorrent.Client
                 throw new ArgumentException ("At least one encryption type must be specified");
             if (settings.AllowedEncryption.Distinct ().Count () != settings.AllowedEncryption.Length)
                 throw new ArgumentException ("Each encryption type can be specified at most once. Please verify the AllowedEncryption list contains no duplicates", "AllowedEncryption");
-            if (settings.AllowedPeerTransports.Length == 0)
-                throw new ArgumentException ("At least one peer transport must be specified", nameof (AllowedPeerTransports));
-            if (settings.AllowedPeerTransports.Distinct ().Count () != settings.AllowedPeerTransports.Length)
-                throw new ArgumentException ("Each peer transport can be specified at most once. Please verify the AllowedPeerTransports list contains no duplicates", nameof (AllowedPeerTransports));
-            if ((settings.EnableDht || settings.EnableUtp) && settings.UdpListenEndPoints.Count == 0)
+            if (settings.AllowedTransports.Length == 0)
+                throw new ArgumentException ("At least one peer transport must be specified", nameof (AllowedTransports));
+            if (settings.AllowedTransports.Distinct ().Count () != settings.AllowedTransports.Length)
+                throw new ArgumentException ("Each peer transport can be specified at most once. Please verify the AllowedPeerTransports list contains no duplicates", nameof (AllowedTransports));
+            if ((settings.EnableDht || settings.AllowedTransports.Contains (PeerTransport.Utp)) && settings.UdpListenEndPoints.Count == 0)
                 throw new ArgumentException ("At least one UDP listen endpoint must be specified when DHT or uTP is enabled", nameof (UdpListenEndPoints));
 
             if (settings.ConnectionRetryDelays.Any (t => t < TimeSpan.Zero))

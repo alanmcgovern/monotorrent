@@ -992,9 +992,8 @@ namespace MonoTorrent.Client
 
             if (!oldSettings.ListenEndPoints.SequenceEqual (newSettings.ListenEndPoints)
                 || oldSettings.EnableDht != newSettings.EnableDht
-                || oldSettings.EnableUtp != newSettings.EnableUtp
                 || !oldSettings.UdpListenEndPoints.SequenceEqual (newSettings.UdpListenEndPoints)
-                || !oldSettings.AllowedPeerTransports.SequenceEqual (newSettings.AllowedPeerTransports)) {
+                || !oldSettings.AllowedTransports.SequenceEqual (newSettings.AllowedTransports)) {
                 await UnmapAndStopPeerListeners ();
 
                 PeerListeners = CreatePeerListeners (newSettings);
@@ -1017,16 +1016,14 @@ namespace MonoTorrent.Client
         }
 
         IList<IPeerConnectionListener> AllPeerListeners ()
-            => Settings.EnableUtp
-                ? PeerListeners.Concat<IPeerConnectionListener> (UtpPeerListeners).ToArray ()
-                : PeerListeners;
+            => PeerListeners.Concat<IPeerConnectionListener> (UtpPeerListeners).ToArray ();
 
         IList<IPeerConnectionListener> CreatePeerListeners (EngineSettings settings)
             => Array.AsReadOnly (settings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)).ToArray ());
 
         IList<IPeerConnectionListener> CreateUtpPeerListeners (EngineSettings settings)
         {
-            if (!settings.EnableDht && !settings.EnableUtp)
+            if (!settings.AllowedTransports.Contains (PeerTransport.Utp))
                 return Array.Empty<IPeerConnectionListener> ();
 
             var listeners = settings.UdpListenEndPoints.Values.Select (endpoint => {
@@ -1034,7 +1031,7 @@ namespace MonoTorrent.Client
                 if (listener is not IDhtListener)
                     throw new InvalidOperationException ("The UDP listener must also implement IDhtListener so DHT and uTP can share one UDP socket.");
                 if (listener is UtpPeerConnectionListener utpListener)
-                    utpListener.UtpEnabled = settings.EnableUtp;
+                    utpListener.UtpEnabled = true;
                 return listener;
             }).ToArray ();
             return Array.AsReadOnly (listeners);

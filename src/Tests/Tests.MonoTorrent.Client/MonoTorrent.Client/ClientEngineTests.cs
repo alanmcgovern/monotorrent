@@ -72,11 +72,10 @@ namespace MonoTorrent.Client
                 { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) },
                 { "ipv6", new IPEndPoint (IPAddress.IPv6Loopback, 0) }
             }) with {
-                EnableUtp = true,
                 UdpListenEndPoints = new Dictionary<string, IPEndPoint> {
                     { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
                 }.ToImmutableDictionary (),
-                AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             };
 
             using var engine = new ClientEngine (settings, factories);
@@ -97,11 +96,10 @@ namespace MonoTorrent.Client
             Assert.AreEqual (0, engine.UtpPeerListeners.Count);
 
             await engine.UpdateSettingsAsync (engine.Settings with {
-                EnableUtp = true,
                 UdpListenEndPoints = new Dictionary<string, IPEndPoint> {
                     { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
                 }.ToImmutableDictionary (),
-                AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             });
 
             Assert.AreEqual (1, engine.UtpPeerListeners.Count);
@@ -125,11 +123,10 @@ namespace MonoTorrent.Client
             var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
                 { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
             }) with {
-                EnableUtp = true,
                 UdpListenEndPoints = new Dictionary<string, IPEndPoint> {
                     { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
                 }.ToImmutableDictionary (),
-                AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             };
 
             using var engine = new ClientEngine (settings, factories);

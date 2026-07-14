@@ -176,7 +176,7 @@ namespace MonoTorrent.Client
         {
             ConnectionFailureReason? latestResult = ConnectionFailureReason.Unknown;
             var attemptedConnection = false;
-            foreach (var transport in Settings.AllowedPeerTransports) {
+            foreach (var transport in Settings.AllowedTransports) {
                 var retryEncryptionTier = true;
                 foreach (var allowedEncryption in Settings.OutgoingConnectionEncryptionTiers) {
                     if (!retryEncryptionTier)
@@ -228,7 +228,7 @@ namespace MonoTorrent.Client
         internal IPeerConnection? CreatePeerConnection (PeerInfo peer, PeerTransport transport)
             => transport switch {
                 PeerTransport.Tcp => Factories.CreatePeerConnection (peer.ConnectionUri),
-                PeerTransport.Utp when Settings.EnableUtp => UtpPeerConnectionFactory?.CreatePeerConnection (peer),
+                PeerTransport.Utp => UtpPeerConnectionFactory?.CreatePeerConnection (peer),
                 _ => null
             };
 

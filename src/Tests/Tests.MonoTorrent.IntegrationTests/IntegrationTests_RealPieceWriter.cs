@@ -387,14 +387,13 @@ namespace MonoTorrent.IntegrationTests
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
                 EnableDht = false,
-                EnableUtp = PeerTransport == PeerTransport.Utp,
                 UdpListenEndPoints = PeerTransport == PeerTransport.Utp
                     ? new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, 0) } }.ToImmutableDictionary ()
                     : ImmutableDictionary.Create<string, IPEndPoint> (),
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
                 AllowLocalPeerDiscovery = false,
-                AllowedPeerTransports = ImmutableArray.Create (PeerTransport),
+                AllowedTransports = ImmutableArray.Create (PeerTransport),
             };
             var engine = new ClientEngine (settingBuilder, factories);
             return engine;

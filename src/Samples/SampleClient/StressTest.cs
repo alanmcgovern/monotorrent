@@ -186,9 +186,9 @@ namespace ClientSample
             var seeder = new ClientEngine (
                 new EngineSettings () with {
                     AllowedEncryption = ImmutableArray.Create<EncryptionType> (EncryptionType.PlainText),
+                    AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp),
                     ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } }.ToImmutableDictionary (),
                     EnableDht = false,
-                    EnableUtp = false,
                     UdpListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
                     AllowLocalPeerDiscovery = false,
                 },
@@ -211,7 +211,7 @@ namespace ClientSample
                         DiskCacheBytes = DataSize,
                         ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } }.ToImmutableDictionary (),
                         EnableDht = false,
-                        EnableUtp = false,
+                        AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp),
                         UdpListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
                         AllowLocalPeerDiscovery = false,
                         CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")

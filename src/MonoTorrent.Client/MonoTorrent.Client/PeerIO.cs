@@ -37,7 +37,6 @@ using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages;
 
 using ReusableTasks;
 

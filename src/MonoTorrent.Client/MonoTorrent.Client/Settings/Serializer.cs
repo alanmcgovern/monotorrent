@@ -23,9 +23,9 @@ namespace MonoTorrent.Client
                     ? ReadEncryptionList ((BEncodedList) v0)
                     : defaults.AllowedEncryption,
 
-                AllowedPeerTransports = dict.TryGetValue (nameof (EngineSettings.AllowedPeerTransports), out var v31)
+                AllowedTransports = dict.TryGetValue (nameof (EngineSettings.AllowedTransports), out var v31)
                     ? ReadPeerTransportList ((BEncodedList) v31)
-                    : defaults.AllowedPeerTransports,
+                    : defaults.AllowedTransports,
 
                 AllowHaveSuppression = dict.TryGetValue (nameof (EngineSettings.AllowHaveSuppression), out var v1)
                     ? bool.Parse (v1.ToString ()!)
@@ -78,10 +78,6 @@ namespace MonoTorrent.Client
                 DiskCachePolicy = dict.TryGetValue (nameof (EngineSettings.DiskCachePolicy), out var v13)
                     ? Enum.Parse<CachePolicy> (((BEncodedString) v13).Text)
                     : defaults.DiskCachePolicy,
-
-                EnableUtp = dict.TryGetValue (nameof (EngineSettings.EnableUtp), out var v32)
-                    ? bool.Parse (v32.ToString ()!)
-                    : defaults.EnableUtp,
 
                 FastResumeMode = dict.TryGetValue (nameof (EngineSettings.FastResumeMode), out var v14)
                     ? Enum.Parse<FastResumeMode> (((BEncodedString) v14).Text)
@@ -222,7 +218,7 @@ namespace MonoTorrent.Client
             var dict = new BEncodedDictionary ();
 
             dict[nameof (s.AllowedEncryption)] = WriteEncryptionList (s.AllowedEncryption);
-            dict[nameof (s.AllowedPeerTransports)] = WritePeerTransportList (s.AllowedPeerTransports);
+            dict[nameof (s.AllowedTransports)] = WritePeerTransportList (s.AllowedTransports);
             dict[nameof (s.AllowHaveSuppression)] = new BEncodedString (s.AllowHaveSuppression.ToString ());
             dict[nameof (s.AllowLocalPeerDiscovery)] = new BEncodedString (s.AllowLocalPeerDiscovery.ToString ());
             dict[nameof (s.AllowPortForwarding)] = new BEncodedString (s.AllowPortForwarding.ToString ());
@@ -236,7 +232,6 @@ namespace MonoTorrent.Client
             dict[nameof (s.EnableDht)] = new BEncodedString (s.EnableDht.ToString ());
             dict[nameof (s.DiskCacheBytes)] = new BEncodedNumber (s.DiskCacheBytes);
             dict[nameof (s.DiskCachePolicy)] = new BEncodedString (s.DiskCachePolicy.ToString ());
-            dict[nameof (s.EnableUtp)] = new BEncodedString (s.EnableUtp.ToString ());
             dict[nameof (s.FastResumeMode)] = new BEncodedString (s.FastResumeMode.ToString ());
             dict[nameof (s.FileCreationOptions)] = new BEncodedString (s.FileCreationOptions.ToString ());
             dict[nameof (s.HttpStreamingPrefix)] = new BEncodedString (s.HttpStreamingPrefix);

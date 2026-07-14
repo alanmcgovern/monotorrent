@@ -64,19 +64,19 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void AllowedPeerTransports_DefaultsToTcpOnly ()
+        public void AllowedPeerTransports_DefaultsToTcpThenUtp ()
         {
-            CollectionAssert.AreEqual (new[] { PeerTransport.Tcp }, new EngineSettings ().AllowedPeerTransports);
+            CollectionAssert.AreEqual (new[] { PeerTransport.Tcp, PeerTransport.Utp }, new EngineSettings ().AllowedTransports);
         }
 
         [Test]
         public void AllowedPeerTransports_InvalidValues ()
         {
             Assert.Throws<ArgumentException> (() => EngineSettings.Create (new EngineSettings () with {
-                AllowedPeerTransports = ImmutableArray<PeerTransport>.Empty
+                AllowedTransports = ImmutableArray<PeerTransport>.Empty
             }));
             Assert.Throws<ArgumentException> (() => EngineSettings.Create (new EngineSettings () with {
-                AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Tcp)
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Tcp)
             }));
         }
 
@@ -121,12 +121,12 @@ namespace MonoTorrent.Client
         public void WithAllowedPeerTransports ()
         {
             var settings = new EngineSettings () with {
-                AllowedPeerTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
             };
 
             var deserialised = Serializer.DeserializeEngineSettings (Serializer.Serialize (settings));
             Assert.AreEqual (Serializer.Serialize (deserialised), Serializer.Serialize (settings));
-            CollectionAssert.AreEqual (settings.AllowedPeerTransports, deserialised.AllowedPeerTransports);
+            CollectionAssert.AreEqual (settings.AllowedTransports, deserialised.AllowedTransports);
         }
     }
 }
