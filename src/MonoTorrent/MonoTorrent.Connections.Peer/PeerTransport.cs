@@ -27,7 +27,7 @@
 //
 
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Connections.Peer
 {
     public enum PeerTransport
     {

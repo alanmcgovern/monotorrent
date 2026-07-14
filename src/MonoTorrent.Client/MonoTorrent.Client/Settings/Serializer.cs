@@ -6,6 +6,7 @@ using System.Net;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 using MonoTorrent.Dht;
 using MonoTorrent.PieceWriter;
 

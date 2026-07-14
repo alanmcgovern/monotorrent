@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -237,9 +238,7 @@ namespace MonoTorrent.Client
         /// A readonly list of the listeners which the engine is using to receive incoming connections from other peers.
         /// This are created by passing <see cref="EngineSettings.ListenEndPoints"/> to the <see cref="Factories.CreatePeerConnectionListener(IPEndPoint)"/> factory method.
         /// </summary>
-        public IList<IPeerConnectionListener> PeerListeners { get; private set; } = Array.Empty<IPeerConnectionListener> ();
-
-        public IList<IPeerConnectionListener> UtpPeerListeners { get; private set; } = Array.Empty<IPeerConnectionListener> ();
+        public ImmutableArray<IPeerConnectionListener> PeerListeners { get; private set; } = ImmutableArray.Create<IPeerConnectionListener> ();
 
         internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
@@ -338,10 +337,11 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            PeerListeners = CreatePeerListeners (settings);
-            UtpPeerListeners = CreateUtpPeerListeners (settings);
-            ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (Factories, UtpPeerListeners.AsReadOnly ());
-            listenManager.SetListeners (AllPeerListeners ());
+            var utpListeners = CreateUtpPeerListeners (settings);
+            PeerListeners = ImmutableArray.CreateRange (CreateTcpPeerListeners (settings).Concat (utpListeners));
+
+            ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (Factories, utpListeners);
+            listenManager.SetListeners (PeerListeners);
 
             DhtListener = CreateDhtListener (settings);
             var engine = settings.EnableDht ? Factories.CreateDht () : new NullDhtEngine ();
@@ -593,8 +593,6 @@ namespace MonoTorrent.Client
             Disposed = true;
             MainLoop.QueueWait (() => {
                 foreach (var listener in PeerListeners)
-                    listener.Stop ();
-                foreach (var listener in UtpPeerListeners)
                     listener.Stop ();
                 listenManager.SetListeners (Array.Empty<IPeerConnectionListener> ());
 
@@ -863,44 +861,38 @@ namespace MonoTorrent.Client
             }
         }
 
+
+        static Protocol ConvertProtocol (PeerTransport transport)
+        {
+            return transport switch {
+                PeerTransport.Tcp => Protocol.Tcp,
+                PeerTransport.Utp => Protocol.Udp,
+                _ => throw new NotSupportedException ()
+            };
+        }
+
         async ReusableTask StartAndPortMapPeerListeners ()
         {
             foreach (var v in PeerListeners)
                 v.Start ();
-            foreach (var v in UtpPeerListeners)
-                v.Start ();
 
             // The settings could say to listen at port 0, which means 'choose one dynamically'
-            var tcpMaps = PeerListeners
-                .Select (t => t.LocalEndPoint!)
-                .Where (t => t != null)
-                .Select (endpoint => PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port)))
-                .ToArray ();
-            var udpMaps = UtpPeerListeners
-                .Select (t => t.LocalEndPoint!)
-                .Where (t => t != null)
-                .Select (endpoint => PortForwarder.RegisterMappingAsync (new Mapping (Protocol.Udp, endpoint.Port)))
-                .ToArray ();
-            await Task.WhenAll (tcpMaps.Concat (udpMaps));
+            var maps = PeerListeners
+                .Select (t => ((int port, Protocol protocol)) (t.LocalEndPoint?.Port ?? 0, ConvertProtocol (t.Protocol)))
+                .Where (t => t.Item1 != 0)
+                .Select (endpoint => PortForwarder.RegisterMappingAsync (new Mapping (endpoint.protocol, endpoint.port)));
+            await Task.WhenAll (maps);
         }
 
-        async ReusableTask UnmapAndStopPeerListeners()
+        async ReusableTask UnmapAndStopPeerListeners ()
         {
-            var tcpUnmaps = PeerListeners
-                    .Select (t => t.LocalEndPoint!)
-                    .Where (t => t != null)
-                    .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Tcp, endpoint.Port), CancellationToken.None))
-                    .ToArray ();
-            var udpUnmaps = UtpPeerListeners
-                    .Select (t => t.LocalEndPoint!)
-                    .Where (t => t != null)
-                    .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (Protocol.Udp, endpoint.Port), CancellationToken.None))
-                    .ToArray ();
-            await Task.WhenAll (tcpUnmaps.Concat (udpUnmaps));
+            var unmaps = PeerListeners
+                .Select (t => ((int port, Protocol protocol)) (t.LocalEndPoint?.Port ?? 0, ConvertProtocol (t.Protocol)))
+                .Where (t => t.Item1 != 0)
+                .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (endpoint.protocol, endpoint.port), CancellationToken.None));
+            await Task.WhenAll (unmaps);
 
             foreach (var listener in PeerListeners)
-                listener.Stop ();
-            foreach (var listener in UtpPeerListeners)
                 listener.Stop ();
         }
 
@@ -996,15 +988,15 @@ namespace MonoTorrent.Client
                 || !oldSettings.AllowedTransports.SequenceEqual (newSettings.AllowedTransports)) {
                 await UnmapAndStopPeerListeners ();
 
-                PeerListeners = CreatePeerListeners (newSettings);
-                UtpPeerListeners = CreateUtpPeerListeners (newSettings);
+                var utpPeerListeners = CreateUtpPeerListeners (newSettings);
+                PeerListeners = ImmutableArray.CreateRange (CreateTcpPeerListeners (newSettings).Concat (utpPeerListeners));
                 DhtListener = CreateDhtListener (newSettings);
                 if (oldSettings.EnableDht != newSettings.EnableDht)
                     await RegisterDht (newSettings.EnableDht ? Factories.CreateDht () : new NullDhtEngine ());
                 await DhtEngine.SetBootstrapRoutersAsync (newSettings.DhtBootstrapRouters);
                 await DhtEngine.SetListenerAsync (DhtListener);
-                ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (Factories, UtpPeerListeners.AsReadOnly ());
-                listenManager.SetListeners (AllPeerListeners ());
+                ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (Factories, utpPeerListeners);
+                listenManager.SetListeners (PeerListeners);
 
                 if (IsRunning)
                     await StartAndPortMapPeerListeners ();
@@ -1015,16 +1007,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        IList<IPeerConnectionListener> AllPeerListeners ()
-            => PeerListeners.Concat<IPeerConnectionListener> (UtpPeerListeners).ToArray ();
+        ImmutableArray<IPeerConnectionListener> CreateTcpPeerListeners (EngineSettings settings)
+            => ImmutableArray.CreateRange (settings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)));
 
-        IList<IPeerConnectionListener> CreatePeerListeners (EngineSettings settings)
-            => Array.AsReadOnly (settings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)).ToArray ());
-
-        IList<IPeerConnectionListener> CreateUtpPeerListeners (EngineSettings settings)
+        ImmutableArray<IPeerConnectionListener> CreateUtpPeerListeners (EngineSettings settings)
         {
             if (!settings.AllowedTransports.Contains (PeerTransport.Utp))
-                return Array.Empty<IPeerConnectionListener> ();
+                return ImmutableArray.Create<IPeerConnectionListener> ();
 
             var listeners = settings.UdpListenEndPoints.Values.Select (endpoint => {
                 var listener = Factories.CreateUtpPeerConnectionListener (endpoint);
@@ -1034,7 +1023,7 @@ namespace MonoTorrent.Client
                     utpListener.UtpEnabled = true;
                 return listener;
             }).ToArray ();
-            return Array.AsReadOnly (listeners);
+            return ImmutableArray.CreateRange (listeners);
         }
 
         IDhtListener CreateDhtListener (EngineSettings settings)
@@ -1042,7 +1031,7 @@ namespace MonoTorrent.Client
             if (!settings.EnableDht)
                 return new NullDhtListener ();
 
-            var listeners = UtpPeerListeners.OfType<IDhtListener> ().ToArray ();
+            var listeners = PeerListeners.OfType<IDhtListener> ().ToArray ();
             return listeners.Length switch {
                 0 => new NullDhtListener (),
                 1 => listeners[0],
@@ -1075,7 +1064,7 @@ namespace MonoTorrent.Client
                 return reportedEndPoint.Port;
 
             // Try to get the actual port first.
-            foreach (var endPoint in AllPeerListeners ().Select (t => t.LocalEndPoint!).Where (t => t != null)) {
+            foreach (var endPoint in PeerListeners.Select (t => t.LocalEndPoint!).Where (t => t != null)) {
                 if (scheme == "ipv4" && endPoint.AddressFamily == AddressFamily.InterNetwork)
                     return endPoint.Port;
                 if (scheme == "ipv6" && endPoint.AddressFamily == AddressFamily.InterNetworkV6)
@@ -1083,7 +1072,7 @@ namespace MonoTorrent.Client
             }
 
             // If there was a listener but it hadn't successfully bound to a port, return the preferred port port... if it's non-zero.
-            foreach (var endPoint in AllPeerListeners ().Select (t => t.PreferredLocalEndPoint!).Where (t => t != null)) {
+            foreach (var endPoint in PeerListeners.Select (t => t.PreferredLocalEndPoint!).Where (t => t != null)) {
                 if (scheme == "ipv4" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetwork)
                     return endPoint.Port;
                 if (scheme == "ipv6" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetworkV6)

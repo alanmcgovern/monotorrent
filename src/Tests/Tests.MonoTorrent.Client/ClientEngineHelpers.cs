@@ -8,6 +8,7 @@ using System.Net;
 using System.Threading;
 
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 
 namespace MonoTorrent.Client
 {

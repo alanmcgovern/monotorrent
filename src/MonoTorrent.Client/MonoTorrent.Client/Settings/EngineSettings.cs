@@ -37,6 +37,7 @@ using System.Linq;
 using System.Net;
 
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 using MonoTorrent.Dht;
 using MonoTorrent.PieceWriter;
 

@@ -41,6 +41,8 @@ namespace MonoTorrent.Connections.Peer
     {
         public event EventHandler<PeerConnectionEventArgs>? ConnectionReceived;
 
+        public PeerTransport Protocol => PeerTransport.Tcp;
+
         public PeerConnectionListener (IPEndPoint endpoint)
             : base (endpoint)
         {

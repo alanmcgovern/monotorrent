@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 
@@ -41,10 +42,10 @@ namespace MonoTorrent.Client
         readonly Factories factories;
         readonly IReadOnlyList<IPeerConnectionListener> listeners;
 
-        public UtpPeerConnectionFactory (Factories factories, IReadOnlyList<IPeerConnectionListener> listeners)
+        public UtpPeerConnectionFactory (Factories factories, ImmutableArray<IPeerConnectionListener> listeners)
         {
             this.factories = factories ?? throw new ArgumentNullException (nameof (factories));
-            this.listeners = listeners ?? throw new ArgumentNullException (nameof (listeners));
+            this.listeners = listeners;
         }
 
         internal IPeerConnection? CreatePeerConnection (PeerInfo peer)

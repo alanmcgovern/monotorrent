@@ -298,6 +298,7 @@ namespace MonoTorrent.Client
 
         public IPEndPoint LocalEndPoint => null;
         public IPEndPoint PreferredLocalEndPoint { get; } = new IPEndPoint (IPAddress.None, 0);
+        public PeerTransport Protocol => PeerTransport.Tcp;
 
         public ListenerStatus Status { get; private set; }
 

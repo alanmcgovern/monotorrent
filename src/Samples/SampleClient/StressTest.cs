@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using MonoTorrent;
 using MonoTorrent.Client;
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.TrackerServer;
 using MonoTorrent.PieceWriter;
 using MonoTorrent.TrackerServer;

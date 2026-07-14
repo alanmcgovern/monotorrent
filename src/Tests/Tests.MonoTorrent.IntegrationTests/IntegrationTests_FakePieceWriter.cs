@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent;
 using MonoTorrent.Client;
+using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.TrackerServer;
 using MonoTorrent.Logging;
 using MonoTorrent.PieceWriter;
@@ -368,9 +369,7 @@ namespace MonoTorrent.IntegrationTests
 
         private Task AddPeerAsync (ClientEngine source, ClientEngine target)
         {
-            var listener = PeerTransport == PeerTransport.Utp
-                ? target.UtpPeerListeners.Single ()
-                : target.PeerListeners.Single ();
+            var listener = target.PeerListeners.Single (t => t.Protocol == PeerTransport);
             var ipAddress = new IPEndPoint (LoopbackAddress, listener.LocalEndPoint.Port);
             return source.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{PeerUriScheme}://{ipAddress}")));
         }

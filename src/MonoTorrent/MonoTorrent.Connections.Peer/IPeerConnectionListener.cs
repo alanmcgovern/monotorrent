@@ -30,6 +30,8 @@
 using System;
 using System.Net;
 
+using MonoTorrent.PortForwarding;
+
 namespace MonoTorrent.Connections.Peer
 {
     public interface IPeerConnectionListener : IListener
@@ -38,6 +40,8 @@ namespace MonoTorrent.Connections.Peer
         /// The EndPoint to which the Listener is bound. This is null when the listener is not in the <see cref="ListenerStatus.Listening"/> state.
         /// </summary>
         IPEndPoint? LocalEndPoint { get; }
+
+        PeerTransport Protocol { get; }
 
         /// <summary>
         /// The EndPoint to which the Listener will attempt to be bound. If the preferred endpoint has it's port set to 0, then

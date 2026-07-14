@@ -40,6 +40,7 @@ namespace MonoTorrent.Connections.Peer.Utp
         internal const uint INITIAL_WINDOW = 1 << 18;   // 256 kB
 
         public event EventHandler<PeerConnectionEventArgs>? ConnectionReceived;
+        public PeerTransport Protocol => PeerTransport.Utp;
 
         sealed class RegisteredConnection
         {

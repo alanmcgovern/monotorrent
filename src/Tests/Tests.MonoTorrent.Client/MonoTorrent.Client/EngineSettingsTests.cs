@@ -31,6 +31,8 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
+using MonoTorrent.Connections.Peer;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Client
