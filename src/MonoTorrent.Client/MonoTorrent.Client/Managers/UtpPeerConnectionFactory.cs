@@ -40,13 +40,11 @@ namespace MonoTorrent.Client
     {
         readonly Factories factories;
         readonly IReadOnlyList<IPeerConnectionListener> listeners;
-        readonly Random random;
 
         public UtpPeerConnectionFactory (Factories factories, IReadOnlyList<IPeerConnectionListener> listeners)
         {
             this.factories = factories ?? throw new ArgumentNullException (nameof (factories));
             this.listeners = listeners ?? throw new ArgumentNullException (nameof (listeners));
-            random = new Random ();
         }
 
         internal IPeerConnection? CreatePeerConnection (PeerInfo peer)
@@ -58,10 +56,7 @@ namespace MonoTorrent.Client
             if (listener == null)
                 return null;
 
-            ushort connectionIdReceive;
-            lock (random)
-                connectionIdReceive = (ushort) random.Next (1, ushort.MaxValue);
-
+            var connectionIdReceive = (ushort) Random.Shared.NextInt64 (1, ushort.MaxValue);
             return factories.CreateUtpPeerConnection (listener, new IPEndPoint (address, peer.ConnectionUri.Port), connectionIdReceive);
         }
     }
