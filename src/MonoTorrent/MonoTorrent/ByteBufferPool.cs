@@ -35,14 +35,11 @@ namespace MonoTorrent
 {
     public partial class ByteBufferPool
     {
-        public static int SmallMessageBufferSize => 256;
-        public static int LargeMessageBufferSize => Constants.BlockSize + 32;
-
         const int AllocateDelta = 8;
 
 
-        internal int FixedBufferSize { get; }
-        internal SpinLocked<Queue<ByteBuffer>> Buffers { get; }
+        int FixedBufferSize { get; }
+        SpinLocked<Queue<ByteBuffer>> Buffers { get; }
 
 
         /// <summary>
@@ -55,6 +52,7 @@ namespace MonoTorrent
 
             FixedBufferSize = bufferSize;
             Buffers = SpinLocked.Create (new Queue<ByteBuffer> (128));
+
             if (FixedBufferSize != -1) {
                 using (Buffers.Enter (out var buffers))
                     AllocateBuffers (AllocateDelta * 4, buffers, FixedBufferSize);

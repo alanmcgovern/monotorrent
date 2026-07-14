@@ -32,23 +32,32 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MonoTorrent
 {
-    public partial class MemoryPool
+    public sealed class MemoryPool
     {
+        public static int SmallMessageBufferSize => 256;
+        public static int LargeMessageBufferSize => Constants.BlockSize + 32;
+
         public static readonly MemoryPool Default = new MemoryPool ();
 
-        readonly ByteBufferPool LargeMessageBuffers = new ByteBufferPool (ByteBufferPool.LargeMessageBufferSize);
-        readonly ByteBufferPool MassiveBuffers = new ByteBufferPool (-1);
-        readonly ByteBufferPool SmallMessageBuffers = new ByteBufferPool (ByteBufferPool.SmallMessageBufferSize);
+        readonly ByteBufferPool LargeMessageBuffers;
+        readonly ByteBufferPool MassiveBuffers;
+        readonly ByteBufferPool SmallMessageBuffers;
 
         public MemoryPool ()
         {
+            SmallMessageBuffers = new ByteBufferPool (SmallMessageBufferSize);
+            LargeMessageBuffers = new ByteBufferPool (LargeMessageBufferSize);
+            MassiveBuffers = new ByteBufferPool (-1);
         }
 
         public ByteBufferPool.Releaser Rent (int capacity, out Memory<byte> memory)
         {
-            var pool = capacity <= ByteBufferPool.SmallMessageBufferSize
+            ByteBufferPool pool = capacity <= SmallMessageBufferSize
                 ? SmallMessageBuffers
-                : capacity <= ByteBufferPool.LargeMessageBufferSize ? LargeMessageBuffers : MassiveBuffers;
+                : capacity <= LargeMessageBufferSize
+                    ? LargeMessageBuffers
+                    : MassiveBuffers;
+
             var releaser = pool.Rent (capacity, out memory);
             memory = memory.Slice (0, capacity);
 #if DEBUG

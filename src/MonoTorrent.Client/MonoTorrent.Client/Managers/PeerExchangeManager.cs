@@ -38,7 +38,7 @@ using MonoTorrent.Messages;
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// This class is used to send each minute a peer excahnge message to peer who have enable this protocol
+    /// This class is used to send each minute a peer exchange message to peer who have enable this protocol
     /// </summary>
     class PeerExchangeManager
     {
@@ -53,7 +53,7 @@ namespace MonoTorrent.Client
 
         // Peers are about 7 bytes each (if you include the 'dotf' data)
         // Calculate the max peers we can fit in the buffer.
-        static readonly int BufferSize = ByteBufferPool.SmallMessageBufferSize;
+        static readonly int BufferSize = MemoryPool.SmallMessageBufferSize;
         static readonly int MAX_PEERS = BufferSize / (4 + 2 + 1); // ipv4 bytes, port bytes, 'dotf' byte 
         static readonly int MAX_PEERS6 = BufferSize / (16 + 2 + 1); // ipv6 bytes, port bytes, 'dotf' byte
 

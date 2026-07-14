@@ -56,7 +56,7 @@ namespace MonoTorrent
                     return;
 
                 if (Counter != Buffer.Counter)
-                    throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
+                    throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previous free.");
 
                 Buffer.Counter++;
 #if DEBUG
