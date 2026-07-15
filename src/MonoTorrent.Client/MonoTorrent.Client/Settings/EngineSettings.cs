@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The peer transports which can be used for outgoing connections, in priority order. Defaults to enabling all transports.
         /// </summary>
-        public ImmutableArray<PeerTransport> AllowedTransports { get; init; } = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp);
+        public ImmutableArray<PeerTransport> AllowedTransports { get; init; } = ImmutableArray.Create (PeerTransport.Tcp);
 
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// The UDP endpoints shared by DHT and uTP communications. Set the port to 0 to choose a random available port.
-        /// At least one endpoint is required when <see cref="EnableDht"/> or <see cref="EnableUtp"/> is true.
+        /// At least one endpoint is required when <see cref="EnableDht"/> or if <see cref="AllowedTransports"/> contains <see cref="PeerTransport.Utp"/>
         /// </summary>
         public ImmutableDictionary<string, IPEndPoint> UdpListenEndPoints { get; init; } = new Dictionary<string, IPEndPoint> {
             {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
@@ -227,7 +227,7 @@ namespace MonoTorrent.Client
         public int MaximumDownloadRate { get; init; } = 0;
 
         /// <summary>
-        /// The maximum number of concurrent connection attempts overall. Defaults to 20.
+        /// The maximum number of concurrent TCP connection attempts overall. Defaults to 20.
         /// </summary>
         public int MaximumHalfOpenConnections { get; init; } = 20;
 
