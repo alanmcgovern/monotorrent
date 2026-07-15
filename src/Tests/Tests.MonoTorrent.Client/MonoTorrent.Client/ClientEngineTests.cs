@@ -88,6 +88,27 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void EnableDht_CreatesUdpListeners ()
+        {
+            var ipv4Listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var factories = EngineHelpers.Factories.WithUtpPeerConnectionListenerCreator (_ => ipv4Listener);
+            var settings = EngineHelpers.CreateSettings (
+                dhtEndPoint: new IPEndPoint (IPAddress.Loopback, 0),
+                listenEndPoints: new Dictionary<string, IPEndPoint> {
+                    { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+                }) with {
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp)
+            };
+
+            using var engine = new ClientEngine (settings, factories);
+
+            Assert.AreEqual (2, engine.PeerListeners.Length);
+            Assert.AreEqual (1, engine.PeerListeners.Where (t => t.Protocol == PeerTransport.Utp).Count ());
+            Assert.AreEqual (ipv4Listener, engine.PeerListeners.Where (t => t.Protocol == PeerTransport.Utp).Single ());
+            Assert.IsFalse (ipv4Listener.UtpEnabled);
+        }
+
+        [Test]
         public async Task EnableUtp_UpdateSettingsRebuildsUdpListeners ()
         {
             var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {

@@ -1012,7 +1012,8 @@ namespace MonoTorrent.Client
 
         ImmutableArray<IPeerConnectionListener> CreateUtpPeerListeners (EngineSettings settings)
         {
-            if (!settings.AllowedTransports.Contains (PeerTransport.Utp))
+            var enableUtp = settings.AllowedTransports.Contains (PeerTransport.Utp);
+            if (!settings.EnableDht && !enableUtp)
                 return ImmutableArray.Create<IPeerConnectionListener> ();
 
             var listeners = settings.UdpListenEndPoints.Values.Select (endpoint => {
@@ -1020,7 +1021,7 @@ namespace MonoTorrent.Client
                 if (listener is not IDhtListener)
                     throw new InvalidOperationException ("The UDP listener must also implement IDhtListener so DHT and uTP can share one UDP socket.");
                 if (listener is UtpPeerConnectionListener utpListener)
-                    utpListener.UtpEnabled = true;
+                    utpListener.UtpEnabled = enableUtp;
                 return listener;
             }).ToArray ();
             return ImmutableArray.CreateRange (listeners);
