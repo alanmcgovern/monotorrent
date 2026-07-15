@@ -66,9 +66,9 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void AllowedPeerTransports_DefaultsToTcpThenUtp ()
+        public void AllowedPeerTransports_DefaultsToTcp ()
         {
-            CollectionAssert.AreEqual (new[] { PeerTransport.Tcp, PeerTransport.Utp }, new EngineSettings ().AllowedTransports);
+            CollectionAssert.AreEqual (new[] { PeerTransport.Tcp }, new EngineSettings ().AllowedTransports);
         }
 
         [Test]

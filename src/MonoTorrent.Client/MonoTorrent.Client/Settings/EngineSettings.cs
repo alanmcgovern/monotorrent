@@ -193,25 +193,18 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of HTTP(s) endpoints which the engine should bind to when a <see cref="TorrentManager"/> is set up
         /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
-        /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
+        /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555/'.
         /// </summary>
         public string HttpStreamingPrefix { get; init; } = "http://127.0.0.1:5555/";
 
         /// <summary>
-        /// The TCP port the engine should listen on for incoming connections. Set the port to 0 to use a random
-        /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any and IPAddress.AnyIPv6,
-        /// both with port 0.
+        /// The EndPoint the engine should listen on for incoming connections. If <see cref="AllowedTransports"/>
+        /// contains <see cref="PeerTransport.Tcp"/> then a TCP socket will be bound to this port. If either <see cref="AllowedTransports"/>
+        /// contains <see cref="PeerTransport.Utp"/> or <see cref="EnableDht"/> is true then a UDP socket will be bound to
+        /// this port. Set the port to 0 to use a random available port, set to null to disable incoming connections.
+        /// Defaults to IPAddress.Any and IPAddress.AnyIPv6, both with port 0.
         /// </summary>
         public ImmutableDictionary<string, IPEndPoint> ListenEndPoints { get; init; } = new Dictionary<string, IPEndPoint> {
-            {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
-            {"ipv6", new IPEndPoint (IPAddress.IPv6Any, 0) }
-        }.ToImmutableDictionary ();
-
-        /// <summary>
-        /// The UDP endpoints shared by DHT and uTP communications. Set the port to 0 to choose a random available port.
-        /// At least one endpoint is required when <see cref="EnableDht"/> or if <see cref="AllowedTransports"/> contains <see cref="PeerTransport.Utp"/>
-        /// </summary>
-        public ImmutableDictionary<string, IPEndPoint> UdpListenEndPoints { get; init; } = new Dictionary<string, IPEndPoint> {
             {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
             {"ipv6", new IPEndPoint (IPAddress.IPv6Any, 0) }
         }.ToImmutableDictionary ();
@@ -381,8 +374,8 @@ namespace MonoTorrent.Client
                 throw new ArgumentException ("At least one peer transport must be specified", nameof (AllowedTransports));
             if (settings.AllowedTransports.Distinct ().Count () != settings.AllowedTransports.Length)
                 throw new ArgumentException ("Each peer transport can be specified at most once. Please verify the AllowedPeerTransports list contains no duplicates", nameof (AllowedTransports));
-            if ((settings.EnableDht || settings.AllowedTransports.Contains (PeerTransport.Utp)) && settings.UdpListenEndPoints.Count == 0)
-                throw new ArgumentException ("At least one UDP listen endpoint must be specified when DHT or uTP is enabled", nameof (UdpListenEndPoints));
+            if ((settings.EnableDht || settings.AllowedTransports.Contains (PeerTransport.Utp)) && settings.ListenEndPoints.Count == 0)
+                throw new ArgumentException ("At least one UDP listen endpoint must be specified when DHT or uTP is enabled", nameof (ListenEndPoints));
 
             if (settings.ConnectionRetryDelays.Any (t => t < TimeSpan.Zero))
                 throw new ArgumentException ("ConnectionRetryDelays cannot be less than zero", nameof (ConnectionRetryDelays));

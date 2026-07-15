@@ -28,9 +28,6 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Net;
 
 using MonoTorrent.Connections.Peer;
@@ -39,13 +36,11 @@ namespace MonoTorrent.Client
 {
     sealed class UtpPeerConnectionFactory
     {
-        readonly Factories factories;
-        readonly IReadOnlyList<IPeerConnectionListener> listeners;
+        readonly EngineListenerBundle listeners;
 
-        public UtpPeerConnectionFactory (Factories factories, ImmutableArray<IPeerConnectionListener> listeners)
+        public UtpPeerConnectionFactory (EngineListenerBundle listeners)
         {
-            this.factories = factories ?? throw new ArgumentNullException (nameof (factories));
-            this.listeners = listeners;
+            this.listeners = listeners ?? throw new ArgumentNullException (nameof (listeners));
         }
 
         internal IPeerConnection? CreatePeerConnection (PeerInfo peer)
@@ -53,12 +48,8 @@ namespace MonoTorrent.Client
             if (!IPAddress.TryParse (peer.ConnectionUri.Host, out var address))
                 return null;
 
-            var listener = listeners.FirstOrDefault (t => t.PreferredLocalEndPoint.AddressFamily == address.AddressFamily);
-            if (listener == null)
-                return null;
-
             var connectionIdReceive = (ushort) Random.Shared.NextInt64 (1, ushort.MaxValue);
-            return factories.CreateUtpPeerConnection (listener, new IPEndPoint (address, peer.ConnectionUri.Port), connectionIdReceive);
+            return listeners.CreateUtpPeerConnection (address, peer.ConnectionUri.Port, connectionIdReceive);
         }
     }
 }

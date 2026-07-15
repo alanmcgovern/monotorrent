@@ -3,14 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.Logging;
-using MonoTorrent.Connections.Dht;
-
 using ReusableTasks;
 
 namespace MonoTorrent.Connections.Peer.Utp
@@ -18,7 +15,7 @@ namespace MonoTorrent.Connections.Peer.Utp
     // =========================================================================
     // UtpPeerConnectionListener
     //
-    // Listens on a single UDP socket for incoming uTP connections (BEP 29).
+    // Consumes datagrams from a shared UDP socket for incoming uTP connections (BEP 29).
     // When a ST_SYN is received it completes the handshake (replies ST_STATE)
     // then raises ConnectionReceived with a UtpPeerConnection.
     //
@@ -33,14 +30,21 @@ namespace MonoTorrent.Connections.Peer.Utp
     //   Initiator side – keyed by the random conn_id_recv we chose for the SYN.
     // =========================================================================
 
-    public sealed class UtpPeerConnectionListener : SocketListener, IPeerConnectionListener, IDhtListener
+    public sealed class UtpPeerConnectionListener : IPeerConnectionListener
     {
-        public event Action<ReadOnlyMemory<byte>, CompactEndPoint>? MessageReceived;
         internal const byte UTP_VERSION = 1;
         internal const uint INITIAL_WINDOW = 1 << 18;   // 256 kB
 
         public event EventHandler<PeerConnectionEventArgs>? ConnectionReceived;
+        public event EventHandler<EventArgs>? StatusChanged {
+            add => listener.StatusChanged += value;
+            remove => listener.StatusChanged -= value;
+        }
+
+        public IPEndPoint? LocalEndPoint => listener.LocalEndPoint;
         public PeerTransport Protocol => PeerTransport.Utp;
+        public IPEndPoint PreferredLocalEndPoint => listener.PreferredLocalEndPoint;
+        public ListenerStatus Status => listener.Status;
 
         sealed class RegisteredConnection
         {
@@ -86,33 +90,50 @@ namespace MonoTorrent.Connections.Peer.Utp
         static readonly TimeSpan StaleConnectionPruneInterval = TimeSpan.FromSeconds (10);
         const int MaxRecentResetEntries = 256;
         const uint RecentResetLifetimeMicroseconds = 10_000_000;
-        static readonly byte[] DisableUdpConnectionReset = new byte[] { 0 };
 
         readonly ConcurrentDictionary<(EndPoint remoteEndpoint, ushort remoteConnectionReceiveId), RegisteredConnection> _connections = new ();
         readonly Dictionary<RecentResetKey, uint> recentResets = new ();
         readonly object recentResetsLocker = new ();
         readonly object backgroundTasksLocker = new ();
         readonly List<Task> backgroundTasks = new ();
-        Socket? socket;
+        readonly UdpListener listener;
+        CancellationTokenSource? backgroundTasksCancellation;
+        bool backgroundTasksStarted;
 
         public Channel<(UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted)> SendQueue { get; }
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint)
-            : this (preferredLocalEndPoint, null)
+            : this (new UdpListener (preferredLocalEndPoint), null)
         {
         }
 
         public UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint, UtpTransportSettings? transportSettings)
-            : this (preferredLocalEndPoint, StopwatchUtpClock.Instance, transportSettings)
+            : this (new UdpListener (preferredLocalEndPoint), transportSettings)
         {
         }
 
         internal UtpPeerConnectionListener (IPEndPoint preferredLocalEndPoint, IUtpClock clock, UtpTransportSettings? transportSettings = null)
-            : base (preferredLocalEndPoint)
+            : this (new UdpListener (preferredLocalEndPoint), clock, transportSettings)
         {
-            PreferredLocalEndPoint = preferredLocalEndPoint;
+        }
+
+        public UtpPeerConnectionListener (UdpListener listener)
+            : this (listener, null)
+        {
+        }
+
+        public UtpPeerConnectionListener (UdpListener listener, UtpTransportSettings? transportSettings)
+            : this (listener, StopwatchUtpClock.Instance, transportSettings)
+        {
+        }
+
+        internal UtpPeerConnectionListener (UdpListener listener, IUtpClock clock, UtpTransportSettings? transportSettings = null)
+        {
+            this.listener = listener ?? throw new ArgumentNullException (nameof (listener));
             Clock = clock;
             TransportSettings = UtpTransportSettings.Create (transportSettings);
+            listener.ReceiveBufferSize = TransportSettings.SocketReceiveBufferBytes;
+            listener.SendBufferSize = TransportSettings.SocketSendBufferBytes;
             Scheduler = new UtpConnectionScheduler (clock);
             SendQueue = Channel.CreateBounded<(UtpPacket, UtpPeerConnection?, IPEndPoint, Action?)> (new BoundedChannelOptions (TransportSettings.MaxSendQueuePackets) {
                 AllowSynchronousContinuations = false,
@@ -120,59 +141,33 @@ namespace MonoTorrent.Connections.Peer.Utp
                 SingleReader = true,
                 SingleWriter = false
             });
+            listener.MessageReceived += ListenerMessageReceived;
         }
 
         internal IUtpClock Clock { get; }
 
         internal UtpTransportSettings TransportSettings { get; }
 
-        public bool UtpEnabled { get; set; } = true;
-
         internal UtpConnectionScheduler Scheduler { get; }
 
-        protected override void Start (CancellationToken token)
+        public void Start ()
         {
-            base.Start (token);
+            listener.Start ();
+            if (listener.Status != ListenerStatus.Listening || backgroundTasksStarted)
+                return;
 
-            socket = new Socket (
-                PreferredLocalEndPoint.AddressFamily,
-                SocketType.Dgram,
-                ProtocolType.Udp);
-
-            ConfigureSocketBuffers (socket, TransportSettings);
-
-            // Suppress Windows ICMP port-unreachable errors killing the loop.
-            if (OperatingSystem.IsWindows ()) {
-                const int SIO_UDP_CONNRESET = unchecked((int) 0x9800000C);
-                socket.IOControl (SIO_UDP_CONNRESET, DisableUdpConnectionReset, null);
-            }
-
-            socket.Bind (PreferredLocalEndPoint);
-            LocalEndPoint = (IPEndPoint?) socket.LocalEndPoint;
-
-            token.Register (() => {
-                try {
-                    socket.Close ();
-                } catch {
-                }
-            });
-
-            TrackBackgroundTask (SendLoopAsync (socket, token));
-            TrackBackgroundTask (ReceiveLoopAsync (socket, token));
-            TrackBackgroundTask (PruneStaleConnectionsLoopAsync (token));
+            backgroundTasksStarted = true;
+            backgroundTasksCancellation = new CancellationTokenSource ();
+            TrackBackgroundTask (SendLoopAsync (backgroundTasksCancellation.Token));
+            TrackBackgroundTask (PruneStaleConnectionsLoopAsync (backgroundTasksCancellation.Token));
         }
 
-        public async ReusableTask SendAsync (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint)
+        public void Stop ()
         {
-            var client = socket ?? throw new InvalidOperationException ("The UDP listener is not running.");
-            var remote = new IPEndPoint (new IPAddress (endpoint.Address), endpoint.Port);
-            await client.SendToAsync (buffer, SocketFlags.None, remote).ConfigureAwait (false);
-        }
-
-        internal static void ConfigureSocketBuffers (Socket socket, UtpTransportSettings settings)
-        {
-            socket.ReceiveBufferSize = settings.SocketReceiveBufferBytes;
-            socket.SendBufferSize = settings.SocketSendBufferBytes;
+            backgroundTasksCancellation?.Cancel ();
+            backgroundTasksCancellation = null;
+            backgroundTasksStarted = false;
+            listener.Stop ();
         }
 
         void TrackBackgroundTask (Task task)
@@ -196,7 +191,7 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        async Task SendLoopAsync (Socket socket, CancellationToken token)
+        async Task SendLoopAsync (CancellationToken token)
         {
             try {
                 await foreach (var (pkt, connection, remote, sendCompleted) in SendQueue.Reader.ReadAllAsync (token)) {
@@ -208,12 +203,10 @@ namespace MonoTorrent.Connections.Peer.Utp
                         } else {
                             connection.PrepareForSend (ref packet);
                         }
-                        await SendPacketAsync (
-                            socket,
-                            packet,
-                            connection?.IsActiveMtuProbe (packet) == true && remote.AddressFamily == AddressFamily.InterNetwork,
-                            remote,
-                            token);
+                        await listener.SendAsync (
+                            packet.AsMemory (),
+                            new CompactEndPoint (remote.Address, remote.Port),
+                            connection?.IsActiveMtuProbe (packet) == true && remote.AddressFamily == AddressFamily.InterNetwork);
                     } catch (OperationCanceledException) {
                         return;
                     } catch (SocketException ex) when (!token.IsCancellationRequested && ex.SocketErrorCode == SocketError.MessageSize && connection != null) {
@@ -238,56 +231,6 @@ namespace MonoTorrent.Connections.Peer.Utp
             }
         }
 
-        static async Task SendPacketAsync (Socket socket, UtpPacket packet, bool dontFragment, IPEndPoint remote, CancellationToken token)
-        {
-            if (!dontFragment) {
-                await socket.SendToAsync (packet.AsMemory (), SocketFlags.None, remote, token);
-                return;
-            }
-
-            bool restoreDontFragment = false;
-            try {
-                if (!socket.DontFragment) {
-                    socket.DontFragment = true;
-                    restoreDontFragment = true;
-                }
-                await socket.SendToAsync (packet.AsMemory (), SocketFlags.None, remote, token);
-            } finally {
-                if (restoreDontFragment) {
-                    try {
-                        socket.DontFragment = false;
-                    } catch (ObjectDisposedException) {
-                    }
-                }
-            }
-        }
-
-        async Task ReceiveLoopAsync (Socket socket, CancellationToken token)
-        {
-            using var bufferReleaser = MemoryPool.Default.Rent (65_536, out Memory<byte> buffer);
-
-            var endpoint = new IPEndPoint (PreferredLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
-
-            while (!token.IsCancellationRequested) {
-                try {
-                    var received = await socket.ReceiveFromAsync (buffer, endpoint, token);
-                    var receivedAtMicroseconds = Clock.Microseconds;
-
-                    ProcessDatagram ((IPEndPoint) received.RemoteEndPoint, buffer.Span.Slice (0, received.ReceivedBytes), receivedAtMicroseconds);
-                } catch (OperationCanceledException) {
-                    return;
-                } catch (SocketException ex) when (!token.IsCancellationRequested) {
-                    Logger.Debug ($"uTP receive failed: {ex.SocketErrorCode}");
-                    continue;
-                } catch (ObjectDisposedException) {
-                    return;
-                } catch (Exception ex) {
-                    Logger.Error ($"uTP receive loop failed: {ex.Message}");
-                    return;
-                }
-            }
-        }
-
         async Task PruneStaleConnectionsLoopAsync (CancellationToken token)
         {
             using var timer = new PeriodicTimer (StaleConnectionPruneInterval);
@@ -300,24 +243,30 @@ namespace MonoTorrent.Connections.Peer.Utp
 
         internal void ProcessDatagram (IPEndPoint remote, byte[] owned)
         {
+            if (!IsUtpDatagram (owned))
+                return;
+
             ProcessDatagram (remote, owned.AsSpan (), Clock.Microseconds);
         }
 
+        void ListenerMessageReceived (ReadOnlyMemory<byte> datagram, CompactEndPoint endpoint)
+        {
+            if (!IsUtpDatagram (datagram.Span))
+                return;
+
+            ProcessDatagram (
+                new IPEndPoint (new IPAddress (endpoint.Address), endpoint.Port),
+                datagram.Span,
+                Clock.Microseconds);
+        }
+
+        static bool IsUtpDatagram (ReadOnlySpan<byte> datagram)
+            => datagram.Length >= UtpPacket.HeaderSize
+                && datagram.Length <= UtpMemoryPool.BufferSize
+                && (datagram[0] & 0x0f) == UTP_VERSION;
+
         void ProcessDatagram (IPEndPoint remote, ReadOnlySpan<byte> datagram, uint receivedAtMicroseconds)
         {
-            if (!datagram.IsEmpty && datagram[0] == (byte) 'd') {
-                MessageReceived?.Invoke (datagram.ToArray (), new CompactEndPoint (remote.Address, remote.Port));
-                return;
-            }
-
-            if (!UtpEnabled)
-                return;
-
-            if (datagram.Length < UtpPacket.HeaderSize
-                || datagram.Length > UtpMemoryPool.BufferSize
-                || (datagram[0] & 0x0f) != UTP_VERSION)
-                return;
-
             var releaser = UtpMemoryPool.Default.Rent (out Memory<byte> memory);
             memory = memory.Slice (0, datagram.Length);
             datagram.CopyTo (memory.Span);

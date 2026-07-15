@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
+using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer.Utp;
 
 using NUnit.Framework;
@@ -20,12 +21,13 @@ namespace MonoTorrent.Connections.Peer
         [Test]
         public void SharedListenerRoutesBencodedDictionaryToDht ()
         {
-            var listener = new UtpPeerConnectionListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var udpListener = new UdpListener (new IPEndPoint (IPAddress.Loopback, 0));
+            var listener = new DhtListener (udpListener);
             ReadOnlyMemory<byte> received = default;
             listener.MessageReceived += (packet, _) => received = packet;
             var datagram = new byte[] { (byte) 'd', (byte) 'e' };
 
-            listener.ProcessDatagram (new IPEndPoint (IPAddress.Loopback, 12345), datagram);
+            udpListener.ProcessDatagram (datagram, new CompactEndPoint (IPAddress.Loopback, 12345));
             datagram[0] = 0;
 
             CollectionAssert.AreEqual (new byte[] { (byte) 'd', (byte) 'e' }, received.ToArray ());
@@ -1965,18 +1967,35 @@ namespace MonoTorrent.Connections.Peer
         }
 
         [Test]
-        public void ListenerConfiguresSocketBufferSizes ()
+        public void ListenerConfiguresSharedUdpSocketBufferSizes ()
         {
-            using var socket = new Socket (AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             var settings = UtpTransportSettings.Create (new UtpTransportSettings {
                 SocketReceiveBufferBytes = 512 * 1024,
                 SocketSendBufferBytes = 256 * 1024
             });
+            var udpListener = new UdpListener (new IPEndPoint (IPAddress.Loopback, 0));
 
-            UtpPeerConnectionListener.ConfigureSocketBuffers (socket, settings);
+            _ = new UtpPeerConnectionListener (udpListener, settings);
 
-            Assert.GreaterOrEqual (socket.ReceiveBufferSize, settings.SocketReceiveBufferBytes);
-            Assert.GreaterOrEqual (socket.SendBufferSize, settings.SocketSendBufferBytes);
+            Assert.AreEqual (settings.SocketReceiveBufferBytes, udpListener.ReceiveBufferSize);
+            Assert.AreEqual (settings.SocketSendBufferBytes, udpListener.SendBufferSize);
+        }
+
+        [Test]
+        public void ListenerDoesNotStartBackgroundTasksWhenTheUdpPortIsUnavailable ()
+        {
+            using var blocker = new Socket (AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            blocker.Bind (new IPEndPoint (IPAddress.Loopback, 0));
+
+            var listener = new UtpPeerConnectionListener ((IPEndPoint) blocker.LocalEndPoint!);
+            try {
+                listener.Start ();
+
+                Assert.AreEqual (ListenerStatus.PortNotFree, listener.Status);
+                Assert.IsEmpty (listener.BackgroundTasksForTests);
+            } finally {
+                listener.Stop ();
+            }
         }
 
         [Test]

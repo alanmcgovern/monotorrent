@@ -96,10 +96,6 @@ namespace MonoTorrent.Client
                     ? ReadEndPointDictionary ((BEncodedDictionary) v17)
                     : defaults.ListenEndPoints,
 
-                UdpListenEndPoints = dict.TryGetValue (nameof (EngineSettings.UdpListenEndPoints), out var v33)
-                    ? ReadEndPointDictionary ((BEncodedDictionary) v33)
-                    : defaults.UdpListenEndPoints,
-
                 MaximumConnections = dict.TryGetValue (nameof (EngineSettings.MaximumConnections), out var v18)
                     ? (int) ((BEncodedNumber) v18).Number
                     : defaults.MaximumConnections,
@@ -237,7 +233,6 @@ namespace MonoTorrent.Client
             dict[nameof (s.FileCreationOptions)] = new BEncodedString (s.FileCreationOptions.ToString ());
             dict[nameof (s.HttpStreamingPrefix)] = new BEncodedString (s.HttpStreamingPrefix);
             dict[nameof (s.ListenEndPoints)] = WriteEndPointDictionary (s.ListenEndPoints);
-            dict[nameof (s.UdpListenEndPoints)] = WriteEndPointDictionary (s.UdpListenEndPoints);
             dict[nameof (s.MaximumConnections)] = new BEncodedNumber (s.MaximumConnections);
             dict[nameof (s.MaximumDiskReadRate)] = new BEncodedNumber (s.MaximumDiskReadRate);
             dict[nameof (s.MaximumDiskWriteRate)] = new BEncodedNumber (s.MaximumDiskWriteRate);

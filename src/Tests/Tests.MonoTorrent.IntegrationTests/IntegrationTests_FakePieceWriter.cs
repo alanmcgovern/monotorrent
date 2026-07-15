@@ -356,9 +356,6 @@ namespace MonoTorrent.IntegrationTests
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
                 EnableDht = false,
-                UdpListenEndPoints = PeerTransport == PeerTransport.Utp
-                    ? new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, 0) } }.ToImmutableDictionary ()
-                    : ImmutableDictionary.Create<string, IPEndPoint> (),
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
                 AllowedTransports = ImmutableArray.Create (PeerTransport),
@@ -369,8 +366,9 @@ namespace MonoTorrent.IntegrationTests
 
         private Task AddPeerAsync (ClientEngine source, ClientEngine target)
         {
-            var listener = target.PeerListeners.Single (t => t.Protocol == PeerTransport);
-            var ipAddress = new IPEndPoint (LoopbackAddress, listener.LocalEndPoint.Port);
+            var protocol = PeerTransport == PeerTransport.Tcp ? PortForwarding.Protocol.Tcp : PortForwarding.Protocol.Udp;
+            var endPoint = target.ListenerBundle.BoundEndPoints.Single (t => t.Protocol == protocol).EndPoint;
+            var ipAddress = new IPEndPoint (LoopbackAddress, endPoint.Port);
             return source.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{PeerUriScheme}://{ipAddress}")));
         }
 

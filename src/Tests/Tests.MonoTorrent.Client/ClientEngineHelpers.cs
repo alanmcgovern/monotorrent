@@ -49,10 +49,9 @@ namespace MonoTorrent.Client
                 AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata,
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettings).Assembly.Location)!, "test_cache_dir"),
                 EnableDht = dhtEndPoint != null,
-                UdpListenEndPoints = dhtEndPoint == null
-                    ? ImmutableDictionary.Create<string, IPEndPoint> ()
-                    : new Dictionary<string, IPEndPoint> { { "ipv4", dhtEndPoint } }.ToImmutableDictionary (),
-                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? new Dictionary<string, IPEndPoint> ()).ToImmutableDictionary (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? (dhtEndPoint is null
+                    ? new Dictionary<string, IPEndPoint> ()
+                    : new Dictionary<string, IPEndPoint> { { "ipv4", dhtEndPoint } })).ToImmutableDictionary (),
                 UsePartialFiles = usePartialFiles,
             };
         }

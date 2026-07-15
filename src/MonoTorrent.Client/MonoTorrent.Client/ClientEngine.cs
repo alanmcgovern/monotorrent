@@ -43,6 +43,7 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Listeners;
 using MonoTorrent.Client.RateLimiters;
+using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.Peer.Utp;
@@ -197,6 +198,7 @@ namespace MonoTorrent.Client
         readonly SemaphoreSlim dhtNodeLocker;
 
         readonly ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
+        Task portMappingTask = Task.CompletedTask;
         int tickCount;
         /// <summary>
         /// The <see cref="TorrentManager"/> instances registered by the user.
@@ -225,8 +227,6 @@ namespace MonoTorrent.Client
 
         internal DhtEngineWrapper DhtEngine { get; private set; }
 
-        IDhtListener DhtListener { get; set; }
-
         public DiskManager DiskManager { get; }
 
         public bool Disposed { get; private set; }
@@ -235,10 +235,9 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// A readonly list of the listeners which the engine is using to receive incoming connections from other peers.
-        /// This are created by passing <see cref="EngineSettings.ListenEndPoints"/> to the <see cref="Factories.CreatePeerConnectionListener(IPEndPoint)"/> factory method.
+        /// The stable listener façade created from <see cref="EngineSettings.ListenEndPoints"/>.
         /// </summary>
-        public ImmutableArray<IPeerConnectionListener> PeerListeners { get; private set; } = ImmutableArray.Create<IPeerConnectionListener> ();
+        public EngineListenerBundle ListenerBundle { get; }
 
         internal ILocalPeerDiscovery LocalPeerDiscovery { get; private set; }
 
@@ -317,8 +316,10 @@ namespace MonoTorrent.Client
             DiskManager = new DiskManager (Settings, Factories);
 
             ConnectionManager = new ConnectionManager (PeerId, Settings, Factories, DiskManager);
-            listenManager = new ListenManager (this);
+            ListenerBundle = CreateListenerBundle (Settings);
+            listenManager = new ListenManager (this, ListenerBundle);
             PortForwarder = Factories.CreatePortForwarder ();
+            ListenerBundle.BoundEndPointsChanged += ListenerBundleBoundEndPointsChanged;
 
             MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (TickLength), delegate {
                 if (IsRunning && !Disposed)
@@ -337,25 +338,19 @@ namespace MonoTorrent.Client
                 uploadLimiter
             };
 
-            var utpListeners = CreateUtpPeerListeners (settings);
-            PeerListeners = ImmutableArray.CreateRange (CreateTcpPeerListeners (settings).Concat (utpListeners));
-
-            ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (Factories, utpListeners);
-            listenManager.SetListeners (PeerListeners);
-
-            DhtListener = CreateDhtListener (settings);
-            var engine = settings.EnableDht ? Factories.CreateDht () : new NullDhtEngine ();
-            engine.SetBootstrapRoutersAsync (settings.DhtBootstrapRouters).AsTask ().GetAwaiter ().GetResult ();
+            ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (ListenerBundle);
+            var engine = Settings.EnableDht ? Factories.CreateDht () : new NullDhtEngine ();
+            engine.SetBootstrapRoutersAsync (Settings.DhtBootstrapRouters).AsTask ().GetAwaiter ().GetResult ();
 
             DhtEngine = new DhtEngineWrapper (engine);
-            DhtEngine.SetListenerAsync (DhtListener).AsTask ().GetAwaiter ().GetResult ();
+            DhtEngine.SetListenerAsync (ListenerBundle).AsTask ().GetAwaiter ().GetResult ();
 
             DhtEngine.PeersFound += DhtEnginePeersFound;
             LocalPeerDiscovery = new NullLocalPeerDiscovery ();
 
             TrackerAnnounceLimiter = new ReusableSemaphore (15);
 
-            RegisterLocalPeerDiscovery (settings.AllowLocalPeerDiscovery ? Factories.CreateLocalPeerDiscovery () : null);
+            RegisterLocalPeerDiscovery (Settings.AllowLocalPeerDiscovery ? Factories.CreateLocalPeerDiscovery () : null);
         }
 
         #endregion
@@ -592,9 +587,7 @@ namespace MonoTorrent.Client
 
             Disposed = true;
             MainLoop.QueueWait (() => {
-                foreach (var listener in PeerListeners)
-                    listener.Stop ();
-                listenManager.SetListeners (Array.Empty<IPeerConnectionListener> ());
+                ListenerBundle.Stop ();
 
                 DhtEngine.Dispose ();
 
@@ -704,6 +697,7 @@ namespace MonoTorrent.Client
             DhtEngine = new DhtEngineWrapper (engine ?? new NullDhtEngine ());
 
             DhtEngine.PeersFound += DhtEnginePeersFound;
+            await DhtEngine.SetListenerAsync (ListenerBundle);
             if (IsRunning)
                 await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
         }
@@ -830,7 +824,7 @@ namespace MonoTorrent.Client
                 LocalPeerDiscovery.Start ();
                 await DhtEngine.StartAsync (await MaybeLoadDhtNodes ());
 
-                await StartAndPortMapPeerListeners ();
+                await StartListeners ();
 
             }
         }
@@ -849,7 +843,7 @@ namespace MonoTorrent.Client
 
             IsRunning = anyRunning;
             if (!IsRunning) {
-                await UnmapAndStopPeerListeners ();
+                await StopListeners ();
 
                 LocalPeerDiscovery.Stop ();
 
@@ -862,38 +856,16 @@ namespace MonoTorrent.Client
         }
 
 
-        static Protocol ConvertProtocol (PeerTransport transport)
+        async ReusableTask StartListeners ()
         {
-            return transport switch {
-                PeerTransport.Tcp => Protocol.Tcp,
-                PeerTransport.Utp => Protocol.Udp,
-                _ => throw new NotSupportedException ()
-            };
+            ListenerBundle.Start ();
+            await portMappingTask;
         }
 
-        async ReusableTask StartAndPortMapPeerListeners ()
+        async ReusableTask StopListeners ()
         {
-            foreach (var v in PeerListeners)
-                v.Start ();
-
-            // The settings could say to listen at port 0, which means 'choose one dynamically'
-            var maps = PeerListeners
-                .Select (t => ((int port, Protocol protocol)) (t.LocalEndPoint?.Port ?? 0, ConvertProtocol (t.Protocol)))
-                .Where (t => t.Item1 != 0)
-                .Select (endpoint => PortForwarder.RegisterMappingAsync (new Mapping (endpoint.protocol, endpoint.port)));
-            await Task.WhenAll (maps);
-        }
-
-        async ReusableTask UnmapAndStopPeerListeners ()
-        {
-            var unmaps = PeerListeners
-                .Select (t => ((int port, Protocol protocol)) (t.LocalEndPoint?.Port ?? 0, ConvertProtocol (t.Protocol)))
-                .Where (t => t.Item1 != 0)
-                .Select (endpoint => PortForwarder.UnregisterMappingAsync (new Mapping (endpoint.protocol, endpoint.port), CancellationToken.None));
-            await Task.WhenAll (unmaps);
-
-            foreach (var listener in PeerListeners)
-                listener.Stop ();
+            ListenerBundle.Stop ();
+            await portMappingTask;
         }
 
         async ReusableTask<ReadOnlyMemory<byte>> MaybeLoadDhtNodes ()
@@ -976,30 +948,28 @@ namespace MonoTorrent.Client
                     await manager.UpdateUsePartialFiles (newSettings.UsePartialFiles);
             }
             if (oldSettings.AllowPortForwarding != newSettings.AllowPortForwarding) {
-                if (newSettings.AllowPortForwarding)
+                if (newSettings.AllowPortForwarding) {
                     await PortForwarder.StartAsync (CancellationToken.None);
-                else
+                    ListenerBundleBoundEndPointsChanged (ListenerBundle, new BoundEndPointsChangedEventArgs (ImmutableArray<(Protocol Protocol, IPEndPoint EndPoint)>.Empty, ListenerBundle.BoundEndPoints));
+                    await portMappingTask;
+                } else
                     await PortForwarder.StopAsync (removeExistingMappings: true, CancellationToken.None);
             }
 
             if (!oldSettings.ListenEndPoints.SequenceEqual (newSettings.ListenEndPoints)
                 || oldSettings.EnableDht != newSettings.EnableDht
-                || !oldSettings.UdpListenEndPoints.SequenceEqual (newSettings.UdpListenEndPoints)
                 || !oldSettings.AllowedTransports.SequenceEqual (newSettings.AllowedTransports)) {
-                await UnmapAndStopPeerListeners ();
+                ListenerBundle.Update (
+                    newSettings.ListenEndPoints.Values,
+                    newSettings.AllowedTransports.Contains (PeerTransport.Tcp),
+                    newSettings.AllowedTransports.Contains (PeerTransport.Utp),
+                    newSettings.EnableDht);
 
-                var utpPeerListeners = CreateUtpPeerListeners (newSettings);
-                PeerListeners = ImmutableArray.CreateRange (CreateTcpPeerListeners (newSettings).Concat (utpPeerListeners));
-                DhtListener = CreateDhtListener (newSettings);
                 if (oldSettings.EnableDht != newSettings.EnableDht)
                     await RegisterDht (newSettings.EnableDht ? Factories.CreateDht () : new NullDhtEngine ());
                 await DhtEngine.SetBootstrapRoutersAsync (newSettings.DhtBootstrapRouters);
-                await DhtEngine.SetListenerAsync (DhtListener);
-                ConnectionManager.UtpPeerConnectionFactory = new UtpPeerConnectionFactory (Factories, utpPeerListeners);
-                listenManager.SetListeners (PeerListeners);
 
-                if (IsRunning)
-                    await StartAndPortMapPeerListeners ();
+                await portMappingTask;
             }
 
             if (oldSettings.AllowLocalPeerDiscovery != newSettings.AllowLocalPeerDiscovery) {
@@ -1007,37 +977,43 @@ namespace MonoTorrent.Client
             }
         }
 
-        ImmutableArray<IPeerConnectionListener> CreateTcpPeerListeners (EngineSettings settings)
-            => ImmutableArray.CreateRange (settings.ListenEndPoints.Values.Select (t => Factories.CreatePeerConnectionListener (t)));
+        EngineListenerBundle CreateListenerBundle (EngineSettings settings)
+            => Factories.CreateListenerBundle (
+                settings.ListenEndPoints.Values,
+                settings.AllowedTransports.Contains (PeerTransport.Tcp),
+                settings.AllowedTransports.Contains (PeerTransport.Utp),
+                settings.EnableDht);
 
-        ImmutableArray<IPeerConnectionListener> CreateUtpPeerListeners (EngineSettings settings)
+        internal IEnumerable<IPEndPoint> BoundPeerEndPoints
+            => ListenerBundle.BoundEndPoints
+                .Where (t => (t.Protocol == Protocol.Tcp && Settings.AllowedTransports.Contains (PeerTransport.Tcp))
+                    || (t.Protocol == Protocol.Udp && Settings.AllowedTransports.Contains (PeerTransport.Utp)))
+                .Select (t => t.EndPoint)
+                .Distinct ();
+
+        void ListenerBundleBoundEndPointsChanged (object? sender, BoundEndPointsChangedEventArgs e)
         {
-            var enableUtp = settings.AllowedTransports.Contains (PeerTransport.Utp);
-            if (!settings.EnableDht && !enableUtp)
-                return ImmutableArray.Create<IPeerConnectionListener> ();
+            if (!IsRunning || !Settings.AllowPortForwarding)
+                return;
 
-            var listeners = settings.UdpListenEndPoints.Values.Select (endpoint => {
-                var listener = Factories.CreateUtpPeerConnectionListener (endpoint);
-                if (listener is not IDhtListener)
-                    throw new InvalidOperationException ("The UDP listener must also implement IDhtListener so DHT and uTP can share one UDP socket.");
-                if (listener is UtpPeerConnectionListener utpListener)
-                    utpListener.UtpEnabled = enableUtp;
-                return listener;
-            }).ToArray ();
-            return ImmutableArray.CreateRange (listeners);
+            portMappingTask = portMappingTask.ContinueWith (
+                _ => UpdatePortMappingsAsync (e.OldEndPoints, e.NewEndPoints),
+                CancellationToken.None,
+                TaskContinuationOptions.None,
+                TaskScheduler.Default).Unwrap ();
         }
 
-        IDhtListener CreateDhtListener (EngineSettings settings)
+        async Task UpdatePortMappingsAsync (
+            ImmutableArray<(Protocol Protocol, IPEndPoint EndPoint)> oldEndPoints,
+            ImmutableArray<(Protocol Protocol, IPEndPoint EndPoint)> newEndPoints)
         {
-            if (!settings.EnableDht)
-                return new NullDhtListener ();
-
-            var listeners = PeerListeners.OfType<IDhtListener> ().ToArray ();
-            return listeners.Length switch {
-                0 => new NullDhtListener (),
-                1 => listeners[0],
-                _ => new AggregateDhtListener (listeners),
-            };
+            var oldMappings = oldEndPoints.Select (t => (t.Protocol, t.EndPoint.Port)).Distinct ();
+            var newMappings = newEndPoints.Select (t => (t.Protocol, t.EndPoint.Port)).Distinct ();
+            var unmaps = oldMappings.Except (newMappings)
+                .Select (t => PortForwarder.UnregisterMappingAsync (new Mapping (t.Protocol, t.Port), CancellationToken.None));
+            var maps = newMappings.Except (oldMappings)
+                .Select (t => PortForwarder.RegisterMappingAsync (new Mapping (t.Protocol, t.Port)));
+            await Task.WhenAll (unmaps.Concat (maps));
         }
 
         static BEncodedString GeneratePeerId ()
@@ -1065,7 +1041,7 @@ namespace MonoTorrent.Client
                 return reportedEndPoint.Port;
 
             // Try to get the actual port first.
-            foreach (var endPoint in PeerListeners.Select (t => t.LocalEndPoint!).Where (t => t != null)) {
+            foreach (var endPoint in BoundPeerEndPoints) {
                 if (scheme == "ipv4" && endPoint.AddressFamily == AddressFamily.InterNetwork)
                     return endPoint.Port;
                 if (scheme == "ipv6" && endPoint.AddressFamily == AddressFamily.InterNetworkV6)
@@ -1073,7 +1049,7 @@ namespace MonoTorrent.Client
             }
 
             // If there was a listener but it hadn't successfully bound to a port, return the preferred port port... if it's non-zero.
-            foreach (var endPoint in PeerListeners.Select (t => t.PreferredLocalEndPoint!).Where (t => t != null)) {
+            foreach (var endPoint in Settings.ListenEndPoints.Values) {
                 if (scheme == "ipv4" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetwork)
                     return endPoint.Port;
                 if (scheme == "ipv6" && endPoint.Port != 0 && endPoint.AddressFamily == AddressFamily.InterNetworkV6)

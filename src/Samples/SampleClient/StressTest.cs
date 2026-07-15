@@ -190,7 +190,6 @@ namespace ClientSample
                     AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp),
                     ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } }.ToImmutableDictionary (),
                     EnableDht = false,
-                    UdpListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
                     AllowLocalPeerDiscovery = false,
                 },
                 Factories.Default.WithBlockCacheCreator ((IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer) => {
@@ -213,7 +212,6 @@ namespace ClientSample
                         ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } }.ToImmutableDictionary (),
                         EnableDht = false,
                         AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp),
-                        UdpListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
                         AllowLocalPeerDiscovery = false,
                         CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")
                     },

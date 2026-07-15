@@ -382,15 +382,11 @@ namespace MonoTorrent.IntegrationTests
             var type = AnyAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
             var listenPort = PeerTransport == PeerTransport.Utp ? 0 : port;
             var settingBuilder = new EngineSettings () with {
-                // TCP tests use a preselected port. uTP binds the actual UDP listener to port 0 so the OS chooses a free UDP port.
                 ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, listenPort) } }.ToImmutableDictionary (),
                 ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } }.ToImmutableDictionary (),
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
                 EnableDht = false,
-                UdpListenEndPoints = PeerTransport == PeerTransport.Utp
-                    ? new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, 0) } }.ToImmutableDictionary ()
-                    : ImmutableDictionary.Create<string, IPEndPoint> (),
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
                 AllowLocalPeerDiscovery = false,
@@ -402,8 +398,9 @@ namespace MonoTorrent.IntegrationTests
 
         private Task AddPeerAsync (ClientEngine source, ClientEngine target)
         {
-            var listener = target.PeerListeners.Single (t => PeerTransport == t.Protocol);
-            var ipAddress = new IPEndPoint (LoopbackAddress, listener.LocalEndPoint.Port);
+            var protocol = PeerTransport == PeerTransport.Tcp ? PortForwarding.Protocol.Tcp : PortForwarding.Protocol.Udp;
+            var endPoint = target.ListenerBundle.BoundEndPoints.Single (t => t.Protocol == protocol).EndPoint;
+            var ipAddress = new IPEndPoint (LoopbackAddress, endPoint.Port);
             return source.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{PeerUriScheme}://{ipAddress}")));
         }
 

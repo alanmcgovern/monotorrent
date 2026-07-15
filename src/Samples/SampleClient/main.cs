@@ -57,13 +57,6 @@ namespace ClientSample
                     { "ipv6", new IPEndPoint (IPAddress.IPv6Any, 55123) }
                 }.ToImmutableDictionary (),
 
-                // Use a fixed port for DHT communications for testing purposes. Production usages should use a random port, 0, if possible.
-                UdpListenEndPoints = new Dictionary<string, IPEndPoint> {
-                    { "ipv4", new IPEndPoint (IPAddress.Any, 55123) },
-                    { "ipv6", new IPEndPoint (IPAddress.IPv6Any, 55123) }
-                }.ToImmutableDictionary (),
-
-
                 // Wildcards such as these are supported as long as the underlying .NET framework version, and the operating system, supports them:
                 //HttpStreamingPrefix = $"http://+:{httpListeningPort}/"
                 //HttpStreamingPrefix = $"http://*.mydomain.com:{httpListeningPort}/"

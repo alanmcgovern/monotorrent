@@ -11,6 +11,7 @@ using MonoTorrent.Connections;
 using MonoTorrent.Connections.Peer;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.Messages;
+using MonoTorrent.PortForwarding;
 
 using NUnit.Framework;
 
@@ -22,6 +23,9 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class ConnectionManagerTests
     {
+        static int GetBoundTcpPort (ClientEngine engine)
+            => engine.ListenerBundle.BoundEndPoints.Single (t => t.Protocol == Protocol.Tcp).EndPoint.Port;
+
         [Test]
         public async Task SortByLeastConnections ()
         {
@@ -184,7 +188,7 @@ namespace MonoTorrent.Client
             seederManager.ConnectionAttemptFailed += (o, e) => failedPeer.SetResult (e);
 
             // Connect to self
-            await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{seeder.PeerListeners[0].LocalEndPoint.Port}")));
+            await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{GetBoundTcpPort (seeder)}")));
 
             var failedConnection = await failedPeer.Task;
             Assert.AreEqual (ConnectionFailureReason.ConnectedToSelf, failedConnection.Reason);
@@ -226,9 +230,9 @@ namespace MonoTorrent.Client
             leecherManager.ConnectionAttemptFailed += (o, e) => failedCount++;
 
             if (addToSeeder)
-                await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{leecher.PeerListeners[0].LocalEndPoint.Port}")));
+                await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{GetBoundTcpPort (leecher)}")));
             else
-                await leecherManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{seeder.PeerListeners[0].LocalEndPoint.Port}")));
+                await leecherManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{GetBoundTcpPort (seeder)}")));
             await seederConnected.Task.WithTimeout ();
             await leecherConnected.Task.WithTimeout ();
 
@@ -285,9 +289,9 @@ namespace MonoTorrent.Client
             leecherManager.ConnectionAttemptFailed += handler;
 
             if (addToSeeder)
-                await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{leecher.PeerListeners[0].LocalEndPoint.Port}")));
+                await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{GetBoundTcpPort (leecher)}")));
             else
-                await leecherManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{seeder.PeerListeners[0].LocalEndPoint.Port}")));
+                await leecherManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{GetBoundTcpPort (seeder)}")));
             await peerFailedTask.Task.WithTimeout ();
 
             Assert.AreEqual (0, (await seederManager.GetPeersAsync ()).Count);
@@ -341,7 +345,7 @@ namespace MonoTorrent.Client
             seederManager.ConnectionAttemptFailed += (o, e) => failedCount++;
             leecherManager.ConnectionAttemptFailed += (o, e) => failedCount++;
 
-            await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{leecher.PeerListeners[0].LocalEndPoint.Port}")));
+            await seederManager.AddPeerAsync (new PeerInfo (new Uri ($"ipv4://127.0.0.1:{GetBoundTcpPort (leecher)}")));
 
             var seederPeer = await seederConnected.Task.WithTimeout ();
             var leecherPeer = await leecherConnected.Task.WithTimeout ();
