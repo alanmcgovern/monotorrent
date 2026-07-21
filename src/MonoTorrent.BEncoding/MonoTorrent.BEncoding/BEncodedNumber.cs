@@ -66,39 +66,12 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int Encode (Span<byte> buffer)
         {
-#if NETSTANDARD2_0 || NET472
-
-            // exclude the 'i' and 'e'
-            var totalCharacters = LengthInBytes () - 2;
-            int written = 0;
-            buffer[written++] = (byte) 'i';
-
-            long number = Number;
-            if (number < 0) {
-                buffer[written++] = (byte) '-';
-                totalCharacters--;
-            }
-
-            for (int i = 0; i < totalCharacters; i++) {
-                buffer[(written + totalCharacters) - i - 1] = (byte) (Math.Abs (number % 10) + '0');
-                number /= 10;
-            }
-
-            written += totalCharacters;
-            buffer[written++] = (byte) 'e';
-            return written;
-#else
-            // int64.MinValue has at most 20 characters
-            Span<char> bytes = stackalloc char[20];
-            if (!Number.TryFormat (bytes, out int written))
-                throw new ArgumentException ("Could not format the BEncodedNumber");
             buffer[0] = (byte) 'i';
-            for (int i = 0; i < written; i ++)
-                buffer[1 + i] = (byte) bytes[i];
+            if (!Number.TryFormat (buffer.Slice(1), out int written))
+                throw new ArgumentException ("Could not format the BEncodedNumber");
             buffer[1 + written] = (byte) 'e';
 
             return 2 + written;
-#endif
         }
 
         /// <summary>

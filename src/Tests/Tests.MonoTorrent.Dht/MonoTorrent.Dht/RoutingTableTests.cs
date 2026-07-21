@@ -26,7 +26,7 @@ namespace MonoTorrent.Dht
             table.Clear ();
             for (int i = 0; i < Bucket.MaxCapacity; i++) {
                 byte[] id = (byte[]) this.id.Clone ();
-                table.Add (new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0)));
+                table.Add (new Node (new NodeId (id), new CompactEndPoint (IPAddress.Any, 0)));
             }
 
             Assert.AreEqual (1, table.CountNodes (), "#a");
@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht
             for (int i = 0; i < Bucket.MaxCapacity * 3; i++) {
                 byte[] id = (byte[]) this.id.Clone ();
                 id[0] += (byte) i;
-                table.Add (new Node (new NodeId (id), new IPEndPoint (IPAddress.Any, 0)));
+                table.Add (new Node (new NodeId (id), new CompactEndPoint (IPAddress.Any, 0)));
             }
 
             Assert.AreEqual (Bucket.MaxCapacity * 3, table.CountNodes (), "#1");
@@ -66,6 +66,15 @@ namespace MonoTorrent.Dht
             Assert.AreEqual (8, closest.Count, "#1");
             for (int i = 0; i < 8; i++)
                 Assert.IsTrue (closest.Exists (node => nodes[i].Equals (closest[i].Id)));
+        }
+
+        [Test]
+        public void DiscardBootstrapRouters ()
+        {
+            var ep = new CompactEndPoint (IPAddress.Parse ("12.23.34.45"), 1415);
+            table.AddIgnoredEndpoint (ep);
+            Assert.IsFalse (table.Add (new Node (NodeId.Create (), ep)));
+            Assert.AreEqual (0, table.CountNodes ());
         }
 
         private void CheckBuckets ()

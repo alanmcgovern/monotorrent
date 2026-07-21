@@ -27,9 +27,12 @@
 //
 
 
+using System;
 using System.Collections.Generic;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
+using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
@@ -41,7 +44,7 @@ namespace MonoTorrent.Dht.Tasks
         readonly int port;
 
         public AnnounceTask (DhtEngine engine, InfoHash infoHash, int port)
-            : this (engine, new NodeId (infoHash), port)
+            : this (engine, new NodeId (infoHash.Span), port)
         {
 
         }
@@ -60,14 +63,25 @@ namespace MonoTorrent.Dht.Tasks
             var getpeers = new GetPeersTask (engine, infoHash);
             IEnumerable<Node> nodes = await getpeers.ExecuteAsync ();
 
-            var announceTasks = new List<Task> ();
+            var pending = 0;
+            var channel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
+
             foreach (Node n in nodes) {
                 if (n.Token != null) {
-                    var query = new AnnouncePeer (engine.LocalId, infoHash, port, n.Token);
-                    announceTasks.Add (engine.SendQueryAsync (query, n));
+                    var id = TransactionId.NextId ();
+                    var query = KrpcMessageEncoder.EncodeAnnouncePeer (id, engine.LocalId, infoHash.Span, ((BEncodedString) n.Token).Span, port, false);
+                    engine.SendQueryAsync (query, n, channel.Writer);
+                    pending++;
                 }
             }
-            await Task.WhenAll (announceTasks);
+
+            while (pending > 0) {
+                await channel.Reader.ReadAsync ().ConfigureAwait (false);
+                pending--;
+            }
         }
     }
 }

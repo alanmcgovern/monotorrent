@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
@@ -55,7 +56,8 @@ namespace MonoTorrent
         public static InfoHashes FromV2 (InfoHash infoHash)
             => new InfoHashes (null, infoHash);
 
-        public bool IsHybrid => !(V1 is null) && !(V2 is null);
+        [MemberNotNullWhen(true, nameof (V1), nameof (V2))]
+        public bool IsHybrid => V1 is not null && V2 is not null;
 
         /// <summary>
         /// The SHA1 hash of the torrent's 'info' dictionary. Used by V1 torrents and hybrid v1/v2 torrents.
@@ -101,17 +103,25 @@ namespace MonoTorrent
             V2 = sha256InfoHash;
         }
 
-        public bool Contains (InfoHash infoHash)
+        public bool Contains (InfoHash? infoHash)
+            => infoHash != null && Contains (infoHash.Span);
+
+        public bool Contains (ReadOnlySpan<byte> infoHash)
+        {
             // For V1 torrents we need a direct match.
+            if (V1 is not null && V1.Span.SequenceEqual (infoHash))
+                return true;
+
             // For V2 torrents we need a direct match *or* a substring match. It's 'normal' to send truncated versions
             // of a V2 infohash.
-            => V1 == infoHash || (!(V2 is null) && V2.Span.Slice (0, infoHash.Span.Length).SequenceEqual (infoHash.Span));
+            return V2 is not null && V2.Span.Slice (0, infoHash.Length).SequenceEqual (infoHash);
+        }
 
         public override bool Equals (object? obj)
             => Equals (obj as InfoHashes);
 
         public bool Equals (InfoHashes? other)
-            => !(other is null)
+            => other is not null
             && other.V1 == V1
             && other.V2 == V2;
 
@@ -122,12 +132,15 @@ namespace MonoTorrent
             => (V1 is null ? 0 : 20) + (V2 is null ? 0 : 32);
 
         public InfoHash Expand (InfoHash infoHash)
+            => Expand (infoHash.Span);
+
+        public InfoHash Expand (ReadOnlySpan<byte> infoHash)
         {
-            if (infoHash == V1)
+            if (V1 is not null && V1.Span.SequenceEqual (infoHash))
                 return V1;
-            if (V2 != null && infoHash.Span.SequenceEqual (V2.Span.Slice (0, infoHash.Span.Length)))
+            if (V2 is not null && V2.Span.Slice (0, infoHash.Length).SequenceEqual (infoHash))
                 return V2;
-            throw new ArgumentException("The supplied infohash does not match the V1 or V2 infohash in this object");
+            throw new ArgumentException ("The supplied infohash does not match the V1 or V2 infohash in this object");
         }
 
         public static bool operator == (InfoHashes? left, InfoHashes? right)

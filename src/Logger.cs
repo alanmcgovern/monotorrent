@@ -29,6 +29,7 @@
 #nullable enable
 
 using System;
+using System.Xml;
 
 using MonoTorrent.Connections.Peer;
 
@@ -119,6 +120,32 @@ namespace MonoTorrent.Logging
                 Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {string.Format (formatString, p1, p2)}");
         }
 
+
+        internal void InfoFormatted (IPeerConnection connection, string formatString, ReadOnlySpan<byte> peerId, ReadOnlySpan<byte> infoHash)
+        {
+            if (Writer != null) {
+                var p1 = System.Text.Encoding.UTF8.GetString (peerId);
+                var p2 = System.Text.Encoding.UTF8.GetString (infoHash);
+                Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {string.Format (formatString, p1, p2)}");
+            }
+        }
+
+        internal void InfoFormatted (IPeerConnection connection, string formatString, ReadOnlySpan<byte> peerId, ReadOnlySpan<byte> infoHash, bool p3)
+        {
+            if (Writer != null) {
+                var p1 = System.Text.Encoding.UTF8.GetString (peerId);
+                var p2 = System.Text.Encoding.UTF8.GetString (infoHash);
+                Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {string.Format (formatString, p1, p2, p3)}");
+            }
+        }
+
+        internal void InfoFormatted (IPeerConnection connection, string formatString, ReadOnlySpan<byte> p1Span, bool p2)
+        {
+            if (Writer != null) {
+                var p1 = System.Text.Encoding.UTF8.GetString (p1Span);
+                Writer.Info ($"{connection.Uri} ({(connection.IsIncoming ? "incoming" : "outgoing")}): {string.Format (formatString, p1, p2)}");
+            }
+        }
         internal void Error (string message)
         {
             if (Writer != null)
@@ -126,6 +153,12 @@ namespace MonoTorrent.Logging
         }
 
         internal void ErrorFormatted (string format, object p1)
+        {
+            if (Writer != null)
+                Writer.Error (string.Format (format, p1));
+        }
+
+        internal void ErrorFormatted (string format, int p1)
         {
             if (Writer != null)
                 Writer.Error (string.Format (format, p1));
@@ -148,5 +181,6 @@ namespace MonoTorrent.Logging
             if (Writer != null)
                 Writer.Error (string.Format ("{0}{1}{2}", string.Format (formatString, p1), Environment.NewLine, ex));
         }
+
     }
 }

@@ -38,8 +38,6 @@ namespace MonoTorrent.PiecePicking
         [DebuggerDisplay ("{" + nameof (ToDebuggerString) + " ()}")]
         class Piece : IComparable<Piece>, ICacheable
         {
-            public Block this[int index] => Blocks[index];
-
             /// <summary>
             /// Set to true when the original peer times out sending a piece, disconnects, or chokes us.
             /// This allows other peers to immediately begin downloading blocks from this piece to complete
@@ -47,7 +45,9 @@ namespace MonoTorrent.PiecePicking
             /// </summary>
             internal bool Abandoned { get; set; }
 
-            internal Block[] Blocks { get; set; }
+            Block[] blocks;
+
+            internal Span<Block> Blocks => blocks.AsSpan (0, BlockCount);
 
             public bool AllBlocksRequested => TotalRequested == Blocks.Length;
 
@@ -55,7 +55,7 @@ namespace MonoTorrent.PiecePicking
 
             public bool AllBlocksWritten => TotalWritten == Blocks.Length;
 
-            public int BlockCount => Blocks.Length;
+            public int BlockCount{ get; private set; }
 
             public int Index { get; private set; }
 
@@ -70,7 +70,8 @@ namespace MonoTorrent.PiecePicking
 
             internal Piece ()
             {
-                Blocks = Array.Empty<Block> ();
+                blocks = Array.Empty<Block> ();
+                BlockCount = 0;
             }
 
             public int CompareTo (Piece? other)
@@ -79,33 +80,30 @@ namespace MonoTorrent.PiecePicking
             public override bool Equals (object? obj)
                 => obj is Piece p && Index.Equals (p.Index);
 
-            public System.Collections.IEnumerator GetEnumerator ()
-            {
-                return Blocks.GetEnumerator ();
-            }
-
             public override int GetHashCode ()
             {
                 return Index;
             }
 
             public void Initialise ()
-                => Initialise (-1, -1);
+                => Initialise (-1, 0);
 
             public Piece Initialise (int pieceIndex, int blockCount)
             {
                 Index = pieceIndex;
 
                 Abandoned = false;
+                BlockCount = blockCount;
                 TotalReceived = 0;
                 TotalRequested = 0;
                 TotalWritten = 0;
 
-                if (blockCount != -1 && Blocks.Length != blockCount)
-                    Blocks = new Block[blockCount];
+                if (blockCount > 0 && blocks.Length < BlockCount)
+                    blocks = new Block[blockCount];
 
-                for (int i = 0; i < Blocks.Length; i++)
-                    Blocks[i] = new Block (this, i);
+                int blockIndex = 0;
+                foreach (ref var b in Blocks)
+                    b = new Block (this, blockIndex++);
 
                 return this;
             }

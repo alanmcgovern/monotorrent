@@ -4,7 +4,6 @@
   <ItemGroup>
     <PackageReference Include="Mono.Nat" />
     <PackageReference Include="ReusableTasks" />
-    <PackageReference Include="System.Memory" Condition="$(TargetFramework) == 'netstandard2.0' Or $(TargetFramework) == 'net472'" />
   </ItemGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />

@@ -181,14 +181,14 @@ namespace MonoTorrent.Client
             for (int i = 0; i < fileData.Files.Count; i++)
                 writer.Data.Add (fileData.Files[i], fileData.Data[i]);
 
-            diskManager = new DiskManager (new EngineSettingsBuilder { DiskCacheBytes = 0 }.ToSettings (), Factories.Default, writer);
+            diskManager = new DiskManager (new EngineSettings () with { DiskCacheBytes = 0 }, Factories.Default, writer);
         }
 
         [Test]
         public async Task ExceedReadRate ()
         {
             // Ensure the read rate is smaller than a block
-            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { MaximumDiskReadRate = 1 }.ToSettings ());
+            await diskManager.UpdateSettingsAsync (new EngineSettings () with { MaximumDiskReadRate = 1 });
             await diskManager.Tick (1000).WithTimeout ();
 
             // Queue up 7 reads, 1 should process.
@@ -213,7 +213,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (buffer.Length * tasks.Count, diskManager.PendingReadBytes, "#2");
 
             // Give a max read rate which allows at least 2 blocks to read.
-            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { MaximumDiskReadRate = (int)(Constants.BlockSize * 1.8) }.ToSettings ());
+            await diskManager.UpdateSettingsAsync (new EngineSettings () with { MaximumDiskReadRate = (int)(Constants.BlockSize * 1.8) });
             for (int i = 0; i < 2; i++) {
                 await diskManager.Tick (1000).WithTimeout ();
 
@@ -250,7 +250,7 @@ namespace MonoTorrent.Client
         public async Task ExceedWriteRate ()
         {
             // Ensure the read rate is smaller than a block
-            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { MaximumDiskWriteRate = 1, DiskCacheBytes = 0 }.ToSettings ());
+            await diskManager.UpdateSettingsAsync (new EngineSettings () with { MaximumDiskWriteRate = 1, DiskCacheBytes = 0 });
             await diskManager.Tick (1000);
 
             // Queue up 6 reads, 1 should process.
@@ -275,7 +275,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual (buffer.Length * tasks.Count, diskManager.PendingWriteBytes, "#2");
 
             // Give a proper max read rate.
-            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { MaximumDiskWriteRate = Constants.BlockSize * 2, DiskCacheBytes = 0 }.ToSettings ());
+            await diskManager.UpdateSettingsAsync (new EngineSettings () with { MaximumDiskWriteRate = Constants.BlockSize * 2, DiskCacheBytes = 0 });
             for (int i = 0; i < 2; i++) {
                 await diskManager.Tick (1000);
 
@@ -501,7 +501,7 @@ namespace MonoTorrent.Client
         public async Task ReadRate ()
         {
             var buffer = new byte[Constants.BlockSize];
-            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { MaximumDiskReadRate = 1, DiskCacheBytes = 0 }.ToSettings ());
+            await diskManager.UpdateSettingsAsync (new EngineSettings () with { MaximumDiskReadRate = 1, DiskCacheBytes = 0 });
             await diskManager.Tick (1000);
 
             var tasks = new List<Task> ();
@@ -608,7 +608,7 @@ namespace MonoTorrent.Client
         [Test]
         public async Task WritePiece_FirstTwoSwapped ([Values (0, Constants.BlockSize, Constants.BlockSize * 3)] int cacheSize)
         {
-            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { DiskCacheBytes = cacheSize }.ToSettings ());
+            await diskManager.UpdateSettingsAsync (new EngineSettings () with { DiskCacheBytes = cacheSize });
             writer.Data = null;
 
             var blocks = fileData.Data
@@ -730,7 +730,7 @@ namespace MonoTorrent.Client
         public async Task WriteRate ()
         {
             var buffer = new byte[Constants.BlockSize];
-            await diskManager.UpdateSettingsAsync (new EngineSettingsBuilder { MaximumDiskWriteRate = 1, DiskCacheBytes = 0 }.ToSettings ());
+            await diskManager.UpdateSettingsAsync (new EngineSettings () with { MaximumDiskWriteRate = 1, DiskCacheBytes = 0 });
             await diskManager.Tick (1000);
 
             var tasks = new List<Task> ();

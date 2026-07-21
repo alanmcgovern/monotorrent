@@ -35,12 +35,14 @@ using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht.Messages;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Dht
 {
     class TestListener : IDhtListener
     {
-        public event Action<ReadOnlyMemory<byte>, IPEndPoint> MessageSent;
-        public event Action<ReadOnlyMemory<byte>, IPEndPoint> MessageReceived;
+        public event Action<ReadOnlyMemory<byte>, CompactEndPoint> MessageSent;
+        public event Action<ReadOnlyMemory<byte>, CompactEndPoint> MessageReceived;
         public event EventHandler<EventArgs> StatusChanged;
 
         public bool SendAsynchronously { get; set; }
@@ -48,10 +50,10 @@ namespace MonoTorrent.Dht
         public IPEndPoint LocalEndPoint { get; private set; } = new IPEndPoint (IPAddress.Loopback, 0);
         public ListenerStatus Status { get; private set; }
 
-        public void RaiseMessageReceived (DhtMessage message, IPEndPoint endpoint)
-            => MessageReceived?.Invoke (message.Encode (), endpoint);
+        public void RaiseMessageReceived (ReadOnlyMemory<byte> message, CompactEndPoint endpoint)
+            => MessageReceived?.Invoke (message, endpoint);
 
-        public async Task SendAsync (ReadOnlyMemory<byte> buffer, IPEndPoint endpoint)
+        public async ReusableTask SendAsync (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint)
         {
             if (SendAsynchronously)
                 await Task.Yield ();

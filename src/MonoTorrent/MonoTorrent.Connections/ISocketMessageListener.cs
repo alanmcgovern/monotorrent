@@ -31,12 +31,14 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Connections
 {
     public interface ISocketMessageListener : ISocketListener
     {
-        event Action<ReadOnlyMemory<byte>, IPEndPoint> MessageReceived;
+        event Action<ReadOnlyMemory<byte>, CompactEndPoint> MessageReceived;
 
-        Task SendAsync (ReadOnlyMemory<byte> buffer, IPEndPoint endpoint);
+        ReusableTask SendAsync (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint);
     }
 }

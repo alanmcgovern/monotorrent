@@ -40,6 +40,7 @@ using MonoTorrent.Client.RateLimiters;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.PiecePicking;
 using MonoTorrent.Streaming;
+using MonoTorrent.Messages;
 using MonoTorrent.Trackers;
 
 using ReusableTasks;
@@ -82,59 +83,75 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<PeersAddedEventArgs>? PeersFound;
 
-        public async Task SetFilePriorityAsync (ITorrentManagerFile file, Priority priority)
+        public async ReusableTask SetFilePriorityAsync (ITorrentManagerFile file, Priority priority)
         {
-            if (!Files.Contains (file))
-                throw new ArgumentNullException (nameof (file), "The file is not part of this torrent");
-
             // No change - bail out
             if (priority == file.Priority)
                 return;
 
             await ClientEngine.MainLoop;
+            await SetFilePriority ((TorrentFileInfo) file, priority);
+        }
 
+        async ReusableTask SetFilePriority (TorrentFileInfo file, Priority newPriority)
+        {
             if (Engine == null)
                 throw new InvalidOperationException ("This torrent manager has been removed from it's ClientEngine");
 
+            var indexOfFile = Files.IndexOf (file);
+            if (indexOfFile < 0)
+                throw new ArgumentNullException (nameof (file), "The file is not part of this torrent");
+
             // If the old priority, or new priority, is 'DoNotDownload' then the selector needs to be refreshed
-            bool needsToUpdateSelector = file.Priority == Priority.DoNotDownload || priority == Priority.DoNotDownload;
             var oldPriority = file.Priority;
+            bool needsToUpdateSelector = oldPriority == Priority.DoNotDownload || newPriority == Priority.DoNotDownload;
 
-            if (oldPriority == Priority.DoNotDownload && !(await Engine.DiskManager.CheckFileExistsAsync (file))) {
-                // Always create the file the user requested to download
-                await Engine.DiskManager.CreateAsync (file, Engine.Settings.FileCreationOptions);
+            if (oldPriority == Priority.DoNotDownload) {
+                if (!file.CachedActualLength.HasValue)
+                    file.CachedActualLength = await Engine.DiskManager.GetLengthAsync (file);
 
-                if (file.Length == 0)
-                    ((TorrentFileInfo) file).BitField[0] = await Engine.DiskManager.CheckFileExistsAsync (file);
+                // If the file does not exist *and* it's a zero length file, create it immediately.
+                if (!file.CachedActualLength.HasValue) {
+                    if (file.Length == 0) {
+                        await Engine.DiskManager.CreateAsync (file, Engine.Settings.FileCreationOptions);
+                        ((TorrentFileInfo) file).BitField[0] = true;
+                    }
+                }
+
+                // The file already exists but is too large - time to truncate
+                if (file.CachedActualLength.HasValue && file.CachedActualLength.Value > file.Length)
+                    await Engine.DiskManager.SetLengthAsync (file, file.Length);
             }
 
             // Update the priority for the file itself now that we've successfully created it!
-            ((TorrentFileInfo) file).Priority = priority;
-
-            if (oldPriority == Priority.DoNotDownload && file.Length > 0) {
-                // Look for any file which are still marked DoNotDownload but also overlap this file.
-                // We need to create those ones too because if there are three 400kB files and the
-                // piece length is 512kB, and the first file is set to 'DoNotDownload', then we still
-                // need to create it as we'll download the first 512kB under bittorrent v1.
-                foreach (var maybeCreateFile in Files.Where (t => t.Priority == Priority.DoNotDownload && t.Length > 0)) {
-                    // If this file overlaps, create it!
-                    if (maybeCreateFile.Overlaps(file) && !(await Engine.DiskManager.CheckFileExistsAsync (maybeCreateFile)))
-                        await Engine.DiskManager.CreateAsync (maybeCreateFile, Engine.Settings.FileCreationOptions);
-                }
-            }
-;
+            ((TorrentFileInfo) file).Priority = newPriority;
 
             // With the new priority, calculate which files we're actively downloading!
             if (needsToUpdateSelector) {
-                // If we change the priority of a file we need to figure out which files are marked
-                // as 'DoNotDownload' and which ones are downloadable.
-                PartialProgressSelector.SetAll (false);
-                if (Files.All (t => t.Priority != Priority.DoNotDownload)) {
-                    PartialProgressSelector.SetAll (true);
-                } else {
-                    PartialProgressSelector.SetAll (false);
-                    foreach (var f in Files.Where (t => t.Priority != Priority.DoNotDownload))
-                        PartialProgressSelector.SetTrue ((f.StartPieceIndex, f.EndPieceIndex));
+                if (oldPriority == Priority.DoNotDownload) {
+                    // a non-downloadable file has been marked as downloadable. Just OR in it's values
+                    for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
+                        PartialProgressSelector.Set (i, true);
+                } else if (newPriority == Priority.DoNotDownload) {
+                    // A downloadable file is not downloadable anymore. Ensure none of it's piece indices are shared with a file still marked as 'downloadable', then set those to false.
+                    for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
+                        PartialProgressSelector.Set (i, false);
+
+                    // If any other file is marked as downloadable and shares 'StartPieceIndex', set it to true.
+                    for (int down = indexOfFile - 1; down >= 0 && Files[down].EndPieceIndex == file.StartPieceIndex; down--) {
+                        if (Files[down].Priority != Priority.DoNotDownload) {
+                            PartialProgressSelector.Set (file.StartPieceIndex, true);
+                            break;
+                        }
+                    }
+
+                    // If any other file is marked as downloadable and shares 'EndPieceIndex', set it to true.
+                    for (int up = indexOfFile + 1; up < Files.Count && Files[up].StartPieceIndex == file.EndPieceIndex; up++) {
+                        if (Files[up].Priority != Priority.DoNotDownload) {
+                            PartialProgressSelector.Set (file.EndPieceIndex, true);
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -170,7 +187,7 @@ namespace MonoTorrent.Client
 
         public ReadOnlyBitField Bitfield => MutableBitField;
 
-        private BitField MutableBitField { get; set; }
+        BitField MutableBitField;
 
         public bool CanUseDht => Settings.AllowDht && (Torrent == null || !Torrent.IsPrivate);
 
@@ -181,7 +198,7 @@ namespace MonoTorrent.Client
         /// all files have the correct length. If some files are marked as 'DoNotDownload' then the
         /// torrent will not be considered to be Complete until they are downloaded.
         /// </summary>
-        public bool Complete => Bitfield.AllTrue && AllFilesCorrectLength;
+        public bool Complete => Bitfield.AllTrue && FilesAreNotMissingOrTooLarge;
 
         internal bool Disposed { get; private set; }
 
@@ -231,7 +248,7 @@ namespace MonoTorrent.Client
         internal void SetNeedsHashCheck ()
         {
             HashChecked = false;
-            AllFilesCorrectLength = false;
+            FilesAreNotMissingOrTooLarge = false;
             if (Engine != null && Engine.Settings.AutoSaveLoadFastResume) {
                 var path = Engine.Settings.GetFastResumePath (InfoHashes);
                 if (File.Exists (path))
@@ -244,11 +261,14 @@ namespace MonoTorrent.Client
         /// associated with that <see cref="TorrentFile"/> will not be hash checked. An IgnoringPicker is used
         /// to ensure pieces which have not been hash checked are never downloaded.
         /// </summary>
-        internal BitField UnhashedPieces { get; set; }
+        internal BitField UnhashedPieces;
 
         public bool HashChecked { get; private set; }
 
-        internal bool AllFilesCorrectLength { get; private set; }
+        /// <summary>
+        /// True if there are no files marked with priority 'DoNotDownload'
+        /// </summary>
+        internal bool FilesAreNotMissingOrTooLarge { get; private set; }
 
         /// <summary>
         /// The number of times a piece is downloaded, but is corrupt and fails the hashcheck and must be re-downloaded.
@@ -448,7 +468,7 @@ namespace MonoTorrent.Client
         {
             Engine = engine;
             Files = Array.Empty<ITorrentManagerFile> ();
-            MagnetLink = magnetLink ?? new MagnetLink (torrent!.InfoHashes, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), null, torrent.Size);
+            MagnetLink = magnetLink ?? new MagnetLink (torrent!.InfoHashes, torrent.Name, torrent.AnnounceUrls.SelectMany (t => t).ToArray (), torrent.HttpSeeds.Select(x => x.OriginalString), torrent.Size);
             PieceHashes = new PieceHashes (null, null);
             Settings = settings;
             Torrent = torrent;
@@ -464,7 +484,7 @@ namespace MonoTorrent.Client
                 if (magnetLink?.AnnounceUrls != null)
                     announces.Add (magnetLink.AnnounceUrls);
             }
-            TrackerManager = new TrackerManager (engine.Factories, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false);
+            TrackerManager = new TrackerManager (engine.Factories, engine.TrackerAnnounceLimiter, new TrackerRequestFactory (this), announces, torrent?.IsPrivate ?? false);
             SetTrackerManager (TrackerManager);
 
             PendingV2PieceHashes = new BitField (Torrent != null ? Torrent.PieceCount : 1).SetAll (true);
@@ -685,30 +705,40 @@ namespace MonoTorrent.Client
                 ContainingDirectory = SavePath;
             else {
                 PathValidator.Validate (Torrent.Name);
-                ContainingDirectory = Path.GetFullPath (Path.Combine (SavePath, TorrentFileInfo.PathEscape (Torrent.Name)));
+                ContainingDirectory = Path.GetFullPath (Path.Combine (SavePath, TorrentFilePathEscaper.PathEscape (Torrent.Name)));
             }
 
             if (!ContainingDirectory.StartsWith (SavePath))
                 throw new InvalidOperationException ($"The containing directory path '{ContainingDirectory}' must be a subdirectory of '{SavePath}'.");
 
+            // No need to check each individual file if the containing directory doesn't even exist.
+            bool anyExists = Directory.Exists (ContainingDirectory);
+
             // All files marked as 'Normal' priority by default so 'PartialProgressSelector'
             // should be set to 'true' for each piece as all files are being downloaded.
             Files = Torrent.Files.Select (file => {
-
                 // Generate the paths when 'UsePartialFiles' is enabled.
-                var paths = TorrentFileInfo.GetNewPaths (Path.Combine (ContainingDirectory, TorrentFileInfo.PathAndFileNameEscape (file.Path)), usePartialFiles: true, isComplete: true);
+                var paths = TorrentFileInfo.GetNewPaths (Path.Combine (ContainingDirectory, TorrentFilePathEscaper.PathAndFileNameEscape (file.Path)), usePartialFiles: true, isComplete: true);
                 var downloadCompleteFullPath = paths.completePath;
                 var downloadIncompleteFullPath = paths.incompletePath;
 
+                bool completeExists = anyExists && File.Exists (downloadCompleteFullPath);
+                bool incompleteExists = anyExists && File.Exists (downloadIncompleteFullPath);
+
                 // FIXME: Is this the best place to futz with actually moving files?
                 if (!Engine!.Settings.UsePartialFiles) {
-                    if (File.Exists (downloadIncompleteFullPath) && !File.Exists (downloadCompleteFullPath))
+                    if (incompleteExists && !completeExists)
                         File.Move (downloadIncompleteFullPath, downloadCompleteFullPath);
 
                     downloadIncompleteFullPath = downloadCompleteFullPath;
                 }
 
-                var currentPath = File.Exists (downloadCompleteFullPath) ? downloadCompleteFullPath : downloadIncompleteFullPath;
+                var currentPath = Engine!.Settings.UsePartialFiles ? downloadIncompleteFullPath : downloadCompleteFullPath;
+                if (completeExists)
+                    currentPath = downloadCompleteFullPath;
+                else if (incompleteExists)
+                    currentPath = downloadIncompleteFullPath;
+
                 var torrentFileInfo = new TorrentFileInfo (file, currentPath);
                 torrentFileInfo.UpdatePaths ((currentPath, downloadCompleteFullPath, downloadIncompleteFullPath));
                 return torrentFileInfo;
@@ -790,13 +820,13 @@ namespace MonoTorrent.Client
         {
             await ClientEngine.MainLoop;
 
-            if (CanUseDht && Engine != null && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Engine.DhtEngine.MinimumAnnounceInterval)) {
-                LastDhtAnnounce = DateTime.UtcNow;
-                LastDhtAnnounceTimer.Restart ();
-                if (InfoHashes.V2 != null)
-                    Engine.DhtEngine.GetPeers (InfoHashes.V2.Truncate ());
-                if (InfoHashes.V1 != null)
-                    Engine.DhtEngine.GetPeers (InfoHashes.V1);
+            if (CanUseDht && Engine != null && Engine.Dht.State == Dht.DhtState.Ready && (!LastDhtAnnounceTimer.IsRunning || LastDhtAnnounceTimer.Elapsed > Engine.DhtEngine.MinimumAnnounceInterval)) {
+                // There's a concurrency limit on querying DHT so only mark the torrent as 'announcing' to DHT
+                // if we get a slot. Otherwise it'll be attempted again during the next iteration.
+                if (Engine.DhtEngine.TryEnqueueGetPeers (InfoHashes, Mode.Token)) {
+                    LastDhtAnnounce = DateTime.UtcNow;
+                    LastDhtAnnounceTimer.Restart ();
+                }
             }
         }
 
@@ -837,6 +867,9 @@ namespace MonoTorrent.Client
 
         public async Task UpdateSettingsAsync (TorrentSettings settings)
         {
+            // Validate all settings
+            settings = TorrentSettings.Create (settings);
+
             await ClientEngine.MainLoop;
             Settings = settings;
         }
@@ -991,7 +1024,7 @@ namespace MonoTorrent.Client
                     InvokePieceHashedAsync ();
             }
 
-            if (Mode is DownloadMode downloadMode && Bitfield.AllTrue)
+            if (Mode is DownloadMode downloadMode && Complete)
                 _ = downloadMode.UpdateSeedingDownloadingState ();
         }
 
@@ -1023,19 +1056,24 @@ namespace MonoTorrent.Client
 
         internal async ReusableTask RefreshPartialDownloadFilePaths (int fileStartIndex, int count, bool usePartialFiles)
         {
-            var files = Files;
             List<Task>? tasks = null;
             for (int i = fileStartIndex; i < fileStartIndex + count; i++) {
-                var current = files[i].FullPath;
-                var completePath = files[i].DownloadCompleteFullPath;
-                var incompletePath = files[i].DownloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "");
+                (string path, string completePath, string incompletePath) newPaths = (
+                    "",
+                    Files[i].DownloadCompleteFullPath,
+                    Files[i].DownloadCompleteFullPath + (usePartialFiles ? TorrentFileInfo.IncompleteFileSuffix : "")
+                );
+                newPaths.path = Files[i].BitField.AllTrue ? newPaths.completePath : newPaths.incompletePath;
 
-                if (files[i].BitField.AllTrue && files[i].FullPath != completePath) {
+                // When initially loading a torrent we might discover a file on disk with either the regular filename
+                // or the !mt suffix indicating a partial file. At this point we don't necessarily know if the file is
+                // complete or not as we may not have fastresume data and the file may not have been hashed. We load the
+                // file from that location regardless of the 'UsePartialFile' setting and so will always need to move files
+                // whenever this API is called as we can't assume the three properties are correctly set. No filesystem
+                // move will happen if it is in the correct place already.
+                if (Files[i].FullPath != newPaths.path || Files[i].DownloadCompleteFullPath != newPaths.completePath || Files[i].DownloadIncompleteFullPath != newPaths.incompletePath) {
                     tasks ??= new List<Task> ();
-                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (completePath, completePath, incompletePath)));
-                } else if (!files[i].BitField.AllTrue && files[i].FullPath != incompletePath) {
-                    tasks ??= new List<Task> ();
-                    tasks.Add (Engine!.DiskManager.MoveFileAsync (files[i], (incompletePath, completePath, incompletePath)));
+                    tasks.Add (Engine!.DiskManager.MoveFileAsync (Files[i], newPaths).AsTask ());
                 }
             }
             if (tasks != null)
@@ -1112,29 +1150,40 @@ namespace MonoTorrent.Client
             for (int i = 0; i < Torrent.PieceCount; i++)
                 OnPieceHashed (i, data.Bitfield[i], i + 1, Torrent.PieceCount);
 
-            UnhashedPieces.From (data.UnhashedPieces);
+            // Zero length files aren't in fast resume, so just check them here.
+            foreach (TorrentFileInfo file in Files) {
+                var maybeLength = await Engine!.DiskManager.GetLengthAsync (file);
+                file.CachedActualLength = maybeLength;
+                if (file.Length == 0)
+                    file.BitField[0] = maybeLength.HasValue && maybeLength.Value == 0;
+            }
 
-            await RefreshAllFilesCorrectLengthAsync ();
+            // Now refresh the state to see if the torrent is actually complete.
+            // We don't re-check file lengths in this codepath as we assume that if
+            // the fast resume data says "all good" then the user hasn't broken the
+            // underlying files by appending data to them.
+            RefreshAllFilesDownloadableOrDownloaded ();
+            UnhashedPieces.From (data.UnhashedPieces);
             HashChecked = true;
         }
 
-        internal async ReusableTask RefreshAllFilesCorrectLengthAsync ()
+        internal void RefreshAllFilesDownloadableOrDownloaded ()
         {
-            var allFilesCorrectLength = true;
-            foreach (TorrentFileInfo file in Files) {
-                var maybeLength = await Engine!.DiskManager.GetLengthAsync (file);
+            FilesAreNotMissingOrTooLarge = Files.All (static t => {
+                // If any zero length files are missing then this torrent cannot be considered complete even if all non-zero length files have been downloaded.
+                // You have to start downloading the torrent to create these.
+                var file = (TorrentFileInfo) t;
+                if (file.Length == 0 && !file.CachedActualLength.HasValue)
+                    return false;
 
-                // Empty files aren't stored in fast resume data because it's as easy to just check if they exist on disk.
-                if (file.Length == 0)
-                    file.BitField[0] = maybeLength.HasValue;
+                // If any of the files are larger than they should be, the torrent cannot be considered incomplete.
+                // You have to start downloading to truncate this files.
+                if (file.CachedActualLength.GetValueOrDefault (0) > file.Length)
+                    return false;
 
-                // If any file doesn't exist, or any file is too large, indicate that something is wrong.
-                // If files exist but are too short, then we can assume everything is fine and the torrent just
-                // needs to be downloaded.
-                if (file.Priority != Priority.DoNotDownload && (!maybeLength.HasValue || maybeLength > file.Length))
-                    allFilesCorrectLength = false;
-            }
-            AllFilesCorrectLength = allFilesCorrectLength;
+                // Otherwise there's no reason to block this torrent from being considered complete.
+                return true;
+            });
         }
 
         public async Task<FastResume> SaveFastResumeAsync ()
@@ -1243,17 +1292,22 @@ namespace MonoTorrent.Client
             => ((IMessageEnqueuer) this).EnqueueRequests (peer, stackalloc PieceSegment[] { block });
         void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> segments)
         {
-            (var bundle, var releaser) = RequestBundle.Rent<RequestBundle> ();
-            bundle.Initialize (segments.ToBlockInfo (stackalloc BlockInfo[segments.Length], this));
-            ((PeerId) peer).MessageQueue.Enqueue (bundle, releaser);
+            if (segments.Length == 0)
+                return;
+
+            var releaser = MemoryPool.Default.Rent (segments.Length * RequestMessage.EncodedLength, out var buffer);
+            var b = buffer;
+            foreach (ref var segment in segments){
+                var block = segment.ToBlockInfo (this);
+                b = b.Slice (MessageEncoder.WriteRequest (b.Span, block.PieceIndex, block.StartOffset, block.RequestLength));
+            }
+            ((PeerId) peer).MessageQueue.Enqueue (buffer, releaser);
         }
 
         void IMessageEnqueuer.EnqueueCancellation (IRequester peer, PieceSegment segment)
         {
-            (var msg, var releaser) = PeerMessage.Rent<CancelMessage> ();
             var blockInfo = segment.ToBlockInfo (this);
-            msg.Initialize (blockInfo.PieceIndex, blockInfo.StartOffset, blockInfo.RequestLength);
-            ((PeerId) peer).MessageQueue.Enqueue (msg, releaser);
+            ((PeerId) peer).MessageQueue.Enqueue (MessageEncoder.WriteCancel (blockInfo.PieceIndex, blockInfo.StartOffset, blockInfo.RequestLength));
         }
 
         void IMessageEnqueuer.EnqueueCancellations (IRequester peer, Span<PieceSegment> segments)

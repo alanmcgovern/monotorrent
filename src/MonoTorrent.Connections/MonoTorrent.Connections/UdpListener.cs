@@ -28,58 +28,83 @@
 
 
 using System;
+using System.Buffers.Binary;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Connections
 {
     public abstract class UdpListener : SocketListener, ISocketMessageListener
     {
-        public event Action<ReadOnlyMemory<byte>, IPEndPoint>? MessageReceived;
+        public event Action<ReadOnlyMemory<byte>, CompactEndPoint>? MessageReceived;
 
-        UdpClient? Client { get; set; }
+        Socket? Client { get; set; }
+        SocketAddress? sendAddress;
+        SocketAddress? receiveAddress;
 
         protected UdpListener (IPEndPoint endpoint)
             : base (endpoint)
         {
         }
 
-        public async Task SendAsync (ReadOnlyMemory<byte> buffer, IPEndPoint endpoint)
+        public async ReusableTask SendAsync (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint)
         {
             if (Status == ListenerStatus.PortNotFree)
                 throw new InvalidOperationException ($"The listener could not bind to ${LocalEndPoint}. Choose a new listening endpoint.");
             if (Status == ListenerStatus.NotListening || Client == null)
                 throw new InvalidOperationException ("You must invoke StartAsync before sending or receiving a message with this listener.");
-            await Client.SendAsync (buffer, buffer.Length, endpoint).ConfigureAwait (false);
+
+            if (!endpoint.TryWriteBytes (sendAddress!))
+                throw new InvalidOperationException ("Couldn't write compact endpoint to socketaddress");
+            await Client.SendToAsync (buffer, SocketFlags.None, sendAddress!).ConfigureAwait (false);
         }
 
         protected override void Start (CancellationToken token)
         {
             base.Start (token);
 
-            UdpClient client = Client = new UdpClient (PreferredLocalEndPoint);
-            LocalEndPoint = (IPEndPoint?) client.Client.LocalEndPoint;
+            sendAddress = new SocketAddress (PreferredLocalEndPoint.AddressFamily);
+            receiveAddress = new SocketAddress (PreferredLocalEndPoint.AddressFamily);
+            var socket = new Socket (
+                PreferredLocalEndPoint.AddressFamily,
+                SocketType.Dgram,
+                ProtocolType.Udp);
+
+            socket.Bind (PreferredLocalEndPoint);
+
+            Client = socket;
+            LocalEndPoint = (IPEndPoint?) socket.LocalEndPoint;
             token.Register (() => {
-                client.Dispose ();
+                Client.Dispose ();
                 Client = null;
             });
 
-            ReceiveAsync (client, token);
+            ReceiveAsync (Client, token);
         }
 
-        async void ReceiveAsync (UdpClient client, CancellationToken token)
+        async void ReceiveAsync (Socket client, CancellationToken token)
         {
-            while (!token.IsCancellationRequested) {
+            Memory<byte> buffer = new byte[8 * 1024];
+            while (!token.IsCancellationRequested && receiveAddress is not null) {
                 try {
-#if NET6_0
-                    UdpReceiveResult result = await client.ReceiveAsync (token).ConfigureAwait (false);
-#else
-                    UdpReceiveResult result = await client.ReceiveAsync ().ConfigureAwait (false);
-#endif
+                    var bytesReceived = await client.ReceiveFromAsync (
+                        buffer,
+                        SocketFlags.None,
+                        receiveAddress).ConfigureAwait (false);
+
+                    if (bytesReceived == 0)
+                        continue;
+
+                    var msg = buffer.Slice (0, bytesReceived).ToArray ();
+                    var endPoint = new CompactEndPoint (receiveAddress);
                     if (!token.IsCancellationRequested)
-                        MessageReceived?.Invoke (result.Buffer, result.RemoteEndPoint);
+                        MessageReceived?.Invoke (msg, endPoint);
                 } catch (SocketException ex) {
                     // If the destination computer closes the connection
                     // we get error code 10054. We need to keep receiving on

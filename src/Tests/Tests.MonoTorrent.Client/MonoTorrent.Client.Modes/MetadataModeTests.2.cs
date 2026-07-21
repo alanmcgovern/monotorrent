@@ -38,8 +38,8 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
 using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -60,16 +60,24 @@ namespace MonoTorrent.Client.Modes
             var metadataMode = new MetadataMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, "blarp", true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
 
-            metadataMode.HandleMessage (peer, new ExtendedHandshakeMessage (false, torrent.InfoMetadata.Length, 12345), default);
-            while (manager.Torrent is null) {
-                metadataMode.Tick (0);
-                PeerMessage message;
-                while (peer.IsConnected && (message = peer.MessageQueue.TryDequeue ()) != null) {
-                    if (message is LTMetadata metadata) {
-                        if (metadata.MetadataMessageType == LTMetadata.MessageType.Request) {
-                            var data = torrent.InfoMetadata.Slice (metadata.Piece * Constants.BlockSize);
-                            data = data.Slice (0, Math.Min (Constants.BlockSize, data.Length));
-                            metadataMode.HandleMessage (peer, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, metadata.Piece, data), default);
+            Test ();
+            void Test ()
+            {
+                (var handshakeMsg, var handshakeMsgReleaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
+                metadataMode.HandleMessage (peer, new Extended.HandshakeMessage (handshakeMsg));
+                while (manager.Torrent is null) {
+                    metadataMode.Tick (0);
+                    ReadOnlyMemory<byte> msg;
+                    while (peer.IsConnected && (msg = peer.MessageQueue.TryDequeue ()).Length > 0) {
+                        var msgType = (MessageType) msg.Span[4];
+                        var exType = (ExtendedMessageType) msg.Span[5];
+                        if (MessageDispatcher.GetType (msg) == MessageType.Extended && MessageDispatcher.GetExtendedMessageType (msg) == ExtendedMessageType.Metadata) {
+                            var metadata = new Extended.MetadataMessage (msg);
+                            if (metadata.MessageType == Extended.MetadataMessage.MetadataMessageType.Request) {
+                                (var response, var releaser) = MessageEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, metadata.Piece, torrent.InfoMetadata.Span);
+                                metadataMode.HandleMessage (peer, new Extended.MetadataMessage(response));
+                            }
+
                         }
                     }
                 }
@@ -87,24 +95,32 @@ namespace MonoTorrent.Client.Modes
             manager.Mode = new MetadataMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, "blarp", true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
 
-            manager.Mode.HandleMessage (peer, new ExtendedHandshakeMessage (false, torrent.InfoMetadata.Length, 12345), default);
+            (var handshakeMsg, var releaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
+            ((IMessageHandler) manager.Mode).HandleMessage (peer, new Extended.HandshakeMessage (handshakeMsg));
             Assert.AreNotEqual (0, peer.AmRequestingPiecesCount);
 
             engine.ConnectionManager.CleanupSocket (manager, peer);
             Assert.AreEqual (0, peer.AmRequestingPiecesCount);
 
             peer = manager.AddConnectedPeer (supportsLTMetdata: true);
-            manager.Mode.HandleMessage (peer, new ExtendedHandshakeMessage (false, torrent.InfoMetadata.Length, 12345), default);
 
-            while (manager.Torrent is null) {
-                manager.Mode.Tick (0);
-                PeerMessage message;
-                while (peer.IsConnected && (message = peer.MessageQueue.TryDequeue ()) != null) {
-                    if (message is LTMetadata metadata) {
-                        if (metadata.MetadataMessageType == LTMetadata.MessageType.Request) {
-                            var data = torrent.InfoMetadata.Slice (metadata.Piece * Constants.BlockSize);
-                            data = data.Slice (0, Math.Min (Constants.BlockSize, data.Length));
-                            manager.Mode.HandleMessage (peer, new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.MessageType.Data, metadata.Piece, data), default);
+            (handshakeMsg, releaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, torrent.InfoMetadata.Length, 12345);
+            ((IMessageHandler) manager.Mode).HandleMessage (peer, new Extended.HandshakeMessage (handshakeMsg));
+
+            Test ();
+            void Test ()
+            {
+                while (manager.Torrent is null) {
+                    manager.Mode.Tick (0);
+                    while (peer.IsConnected) {
+                        var msg = peer.MessageQueue.TryDequeue ();
+                        if (MessageDispatcher.GetType (msg) != MessageType.Extended || MessageDispatcher.GetExtendedMessageType (msg) != ExtendedMessageType.Metadata)
+                            continue;
+
+                        var metadata = new Extended.MetadataMessage (msg);
+                        if (metadata.MessageType == Extended.MetadataMessage.MetadataMessageType.Request) {
+                            (var response, var releaser) = MessageEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Data, metadata.Piece, torrent.InfoMetadata.Span);
+                            ((IMessageHandler) manager.Mode).HandleMessage (peer, new Extended.MetadataMessage (response));
                         }
                     }
                 }

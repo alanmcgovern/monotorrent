@@ -27,8 +27,10 @@
 //
 
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
@@ -46,7 +48,7 @@ namespace MonoTorrent.Dht.Tasks
         NodeId InfoHash { get; }
 
         public GetPeersTask (DhtEngine engine, InfoHash infohash)
-            : this (engine, new NodeId (infohash))
+            : this (engine, new NodeId (infohash.Span))
         {
 
         }
@@ -62,40 +64,51 @@ namespace MonoTorrent.Dht.Tasks
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            var activeQueries = new List<Task<SendQueryEventArgs>> ();
-            var closestNodes = new ClosestNodesCollection (InfoHash);
-            var closestActiveNodes = new ClosestNodesCollection (InfoHash);
+            var pendingGetPeers = 0;
+            var getPeersChannel = Channel.CreateUnbounded<SendQueryEventArgs> (new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = true
+            });
 
-            foreach (Node node in Engine.RoutingTable.GetClosest (InfoHash)) {
-                if (closestNodes.Add (node))
-                    activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
+            var closestNodes = Engine.RoutingTable.GetClosest (InfoHash);
+            foreach (Node node in closestNodes) {
+                var transactionId = TransactionId.NextId ();
+                var query = KrpcMessageEncoder.EncodeGetPeers (transactionId, Engine.LocalId, InfoHash.Span);
+                Engine.SendQueryAsync (query, node, getPeersChannel.Writer);
+                pendingGetPeers++;
             }
 
-            while (activeQueries.Count > 0) {
-                var completed = await Task.WhenAny (activeQueries);
-                activeQueries.Remove (completed);
-
+            var closestActiveNodes = new ClosestNodesCollection (InfoHash);
+            while (pendingGetPeers > 0) {
                 // If it timed out or failed just move to the next query.
-                SendQueryEventArgs query = await completed;
-                if (query.Response == null)
+                SendQueryEventArgs query = await getPeersChannel.Reader.ReadAsync ();
+                pendingGetPeers--;
+
+                if (query.Response.IsEmpty)
                     continue;
 
-                var response = (GetPeersResponse) query.Response;
-                // The response had some actual peers
-                if (response.Values != null) {
-                    // We have actual peers!
-                    var peers = response.Values.OfType<BEncodedString> ().SelectMany (t => PeerInfo.FromCompact (t.Span, Engine.AddressFamily)).ToArray ();
-                    Engine.RaisePeersFound (InfoHash, peers);
-                    foreach (var peer in peers)
-                        FoundPeers.Add (peer);
-                }
+                var response = KrpcMessage.Parse (query.Response);
 
+                // Values is a bencoded list: l <peer> <peer> ... e
+                if (!response.Response.Values.IsEmpty && FoundPeers.Count < MaxPeers) {
+
+                    var peerArray = ParseValues (response.Response.Values);
+                    if (peerArray.Count > 0) {
+                        foreach (var peer in peerArray)
+                            FoundPeers.Add (peer);
+                        Engine.RaisePeersFound (InfoHash, peerArray);
+                    }
+                }
                 // The response contains nodes which should be closer to our target. If they are closer than nodes
                 // we've already checked, then let's query them!
-                if (response.Nodes != null && FoundPeers.Count < MaxPeers) {
-                    foreach (Node node in Node.FromCompactNode (response.Nodes))
-                        if (closestNodes.Add (node))
-                            activeQueries.Add (Engine.SendQueryAsync (new GetPeers (Engine.LocalId, InfoHash), node));
+                if (!response.Response.Nodes.IsEmpty && FoundPeers.Count < MaxPeers) {
+                    foreach (Node node in Node.FromCompactNodes (response.Response.Nodes))
+                        if (closestNodes.Add (node)) {
+                            var transactionId = TransactionId.NextId ();
+                            var getPeers = KrpcMessageEncoder.EncodeGetPeers (transactionId, Engine.LocalId, InfoHash.Span);
+                            Engine.SendQueryAsync (getPeers, node, getPeersChannel.Writer);
+                            pendingGetPeers++;
+                        }
                 }
 
                 closestActiveNodes.Add (query.Node);
@@ -104,6 +117,32 @@ namespace MonoTorrent.Dht.Tasks
             // Finally, return the 8 closest nodes we discovered during this phase. These are the nodes we should
             // announce to later.
             return closestActiveNodes;
+        }
+
+        List<PeerInfo> ParseValues (ReadOnlySpan<byte> peersSpan)
+        {
+            var reader = new BEncodeReader (peersSpan);
+            var peers = new List<PeerInfo> (peersSpan.Length % 6);
+
+            // first token must be ListBegin
+            if (!reader.Read () || reader.Token != BEncodeToken.ListBegin)
+                return peers;
+
+            while (true) {
+                if (!reader.Read ())
+                    break;
+
+                if (reader.Token == BEncodeToken.ListEnd)
+                    break;
+
+                if (reader.Token != BEncodeToken.String)
+                    throw new BEncodingException ("Expected compact peer string in values list.");
+
+                var parsed = PeerInfo.FromCompact (reader.Span, Engine.AddressFamily);
+                peers.AddRange (parsed);
+            }
+
+            return peers;
         }
     }
 }

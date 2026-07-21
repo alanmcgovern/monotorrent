@@ -57,7 +57,7 @@ namespace MonoTorrent
         [Test]
         public void Constructor_Null ()
         {
-            Assert.Throws<ArgumentNullException> (() => new ReadOnlyBitField ((ReadOnlyBitField) null));
+            Assert.Throws<ArgumentNullException> (() => new ReadOnlyBitField (default));
             Assert.Throws<ArgumentNullException> (() => new ReadOnlyBitField ((bool[]) null));
             Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (null, 2));
 
@@ -66,8 +66,6 @@ namespace MonoTorrent
         public void Constructor_TooSmall ()
         {
             Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (Array.Empty<bool> ()));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (0));
-            Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (-1));
             Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (Array.Empty<byte> (), 1));
             Assert.Throws<ArgumentOutOfRangeException> (() => new ReadOnlyBitField (new byte[1], 0));
         }
@@ -282,7 +280,7 @@ namespace MonoTorrent
         [Test]
         public void Clone ()
         {
-            ReadOnlyBitField clone = new ReadOnlyBitField (bf);
+            ReadOnlyBitField clone = bf;
             Assert.IsTrue (bf.SequenceEqual (clone));
             Assert.IsTrue (bf.SequenceEqual (clone));
         }
@@ -290,8 +288,8 @@ namespace MonoTorrent
         [Test]
         public void Get_OutOfRange ()
         {
-            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new ReadOnlyBitField (10)[-1]));
-            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new ReadOnlyBitField (10)[10]));
+            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new BitField (10)[-1]));
+            Assert.Throws<ArgumentOutOfRangeException> (() => GC.KeepAlive (new BitField (10)[10]));
         }
 
         [Test]
@@ -311,12 +309,12 @@ namespace MonoTorrent
         [Test]
         public void LengthInBytes ()
         {
-            Assert.AreEqual (1, new ReadOnlyBitField (1).LengthInBytes, "#1");
-            Assert.AreEqual (1, new ReadOnlyBitField (8).LengthInBytes, "#2");
-            Assert.AreEqual (2, new ReadOnlyBitField (9).LengthInBytes, "#3");
-            Assert.AreEqual (2, new ReadOnlyBitField (15).LengthInBytes, "#4");
-            Assert.AreEqual (2, new ReadOnlyBitField (16).LengthInBytes, "#5");
-            Assert.AreEqual (3, new ReadOnlyBitField (17).LengthInBytes, "#6");
+            Assert.AreEqual (1, new BitField (1).LengthInBytes, "#1");
+            Assert.AreEqual (1, new BitField (8).LengthInBytes, "#2");
+            Assert.AreEqual (2, new BitField (9).LengthInBytes, "#3");
+            Assert.AreEqual (2, new BitField (15).LengthInBytes, "#4");
+            Assert.AreEqual (2, new BitField (16).LengthInBytes, "#5");
+            Assert.AreEqual (3, new BitField (17).LengthInBytes, "#6");
         }
 
         [Test]
@@ -364,8 +362,8 @@ namespace MonoTorrent
         [Test]
         public void CountTrue_InvalidSelector ()
         {
-            Assert.Throws<ArgumentNullException> (() => new ReadOnlyBitField (10).CountTrue (null));
-            Assert.Throws<ArgumentException> (() => new ReadOnlyBitField (10).CountTrue (new ReadOnlyBitField (5)));
+            Assert.Throws<ArgumentException> (() => new BitField (10).CountTrue (default));
+            Assert.Throws<ArgumentException> (() => new BitField (10).CountTrue (new BitField (5)));
         }
 
         [Test]
@@ -378,10 +376,14 @@ namespace MonoTorrent
         public void Equals_False ()
         {
             var bf = new BitField (10).SetAll (true);
+            Assert.IsTrue (bf.Equals (bf));
+            Assert.IsTrue (((ReadOnlyBitField) bf).Equals ((ReadOnlyBitField) bf));
+            Assert.IsFalse (bf.Equals ((ReadOnlyBitField) bf));
+
             var other = new BitField (bf).Set (5, false);
             Assert.IsFalse (bf.Equals (other));
             Assert.IsFalse (bf.Equals (null));
-            Assert.IsFalse (bf.Equals (new ReadOnlyBitField (5)));
+            Assert.IsFalse (bf.Equals (new BitField (5)));
 
             bf.Set (6, false);
             Assert.AreEqual (bf.TrueCount, other.TrueCount);

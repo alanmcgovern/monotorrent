@@ -46,29 +46,36 @@ namespace MonoTorrent.Common
         [Test]
         public void ExactLength ()
         {
-            var link = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C&xl=12345");
-            Assert.AreEqual (12345, link.Size, "#1");
+            var orig = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C&xl=12345");
+            var dupe = MagnetLink.Parse (orig.ToV1String ());
+            foreach (var link in new[] { orig, dupe })
+                Assert.AreEqual (12345, link.Size, "#1");
 
-            link = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
-            Assert.IsNull (link.Size, "#2");
+            orig = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
+            Assert.IsNull (orig.Size, "#2");
+
         }
 
         [Test]
         public void InfoHashTest ()
         {
-            MagnetLink link = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
-            Assert.AreEqual (InfoHash.FromBase32 ("YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C"), link.InfoHashes.V1, "#1");
+            var magnet = MagnetLink.Parse ("magnet:?xt.1=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
+            var dupe = MagnetLink.Parse (magnet.ToV1String ());
+            foreach (var link in new[] { magnet, dupe }) {
+                Assert.AreEqual (InfoHash.FromBase32 ("YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C"), link.InfoHashes.V1, "#1");
+                Assert.AreEqual (link.ToV1String (), MagnetLink.Parse (link.ToV1String ()).ToV1String ());
+            }
 
             //base32
             InfoHash initial = new InfoHash (System.Text.Encoding.ASCII.GetBytes ("foobafoobafoobafooba"));
-            link = MagnetLink.Parse ("magnet:?xt=urn:sha1:MZXW6YTBMZXW6YTBMZXW6YTBMZXW6YTB");
-            Assert.AreEqual (initial, link.InfoHashes.V1, "#2");
+            magnet = MagnetLink.Parse ("magnet:?xt=urn:sha1:MZXW6YTBMZXW6YTBMZXW6YTBMZXW6YTB");
+            Assert.AreEqual (initial, magnet.InfoHashes.V1, "#2");
 
             //base40 = hex
             InfoHash hash = Create ();
             string hex = hash.ToHex ();
-            link = MagnetLink.Parse ($"magnet:?xt=urn:btih:{hex}");
-            Assert.AreEqual (hash, link.InfoHashes.V1, "#3");
+            magnet = MagnetLink.Parse ($"magnet:?xt=urn:btih:{hex}");
+            Assert.AreEqual (hash, magnet.InfoHashes.V1, "#3");
         }
 
         [Test]
@@ -124,11 +131,14 @@ namespace MonoTorrent.Common
         {
             var rawUrl = "magnet:?xt=urn:btih:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&dn=B%201.0%20C%2060.torrent&tr=https://www.a.org/announce&trhttp://b.com:80/announce&tr=http%3A%2F%2Fwww.c.org/announce";
             var magnet = MagnetLink.Parse (rawUrl);
+            var dupe = MagnetLink.Parse (magnet.ToV1String ());
 
-            Assert.AreEqual ("B 1.0 C 60.torrent", magnet.Name);
-            CollectionAssert.Contains (magnet.AnnounceUrls, "https://www.a.org/announce");
-            CollectionAssert.DoesNotContain (magnet.AnnounceUrls, "http://b.com:80/announce");
-            CollectionAssert.Contains (magnet.AnnounceUrls, "http://www.c.org/announce");
+            foreach (var link in new[] { magnet, dupe }) {
+                Assert.AreEqual ("B 1.0 C 60.torrent", link.Name);
+                CollectionAssert.Contains (link.AnnounceUrls, "https://www.a.org/announce");
+                CollectionAssert.DoesNotContain (link.AnnounceUrls, "http://b.com:80/announce");
+                CollectionAssert.Contains (link.AnnounceUrls, "http://www.c.org/announce");
+            }
         }
 
         [Test]

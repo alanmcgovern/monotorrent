@@ -58,8 +58,8 @@ namespace MonoTorrent.Client
         public FastResume (InfoHashes infoHashes, ReadOnlyBitField bitfield, ReadOnlyBitField unhashedPieces)
         {
             InfoHashes = infoHashes ?? throw new ArgumentNullException (nameof (infoHashes));
-            Bitfield = new ReadOnlyBitField (bitfield);
-            UnhashedPieces = new ReadOnlyBitField (unhashedPieces);
+            Bitfield = ReadOnlyBitField.Snapshot (bitfield);
+            UnhashedPieces = ReadOnlyBitField.Snapshot (unhashedPieces);
 
             for (int i = 0; i < Bitfield.Length; i++) {
                 if (bitfield[i] && unhashedPieces[i])
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
                 data = ((BEncodedString) dict[UnhashedPiecesKey]).Span;
                 UnhashedPieces = new ReadOnlyBitField (data, Bitfield.Length);
             } else {
-                UnhashedPieces = new ReadOnlyBitField (Bitfield.Length);
+                UnhashedPieces = new BitField (Bitfield.Length);
             }
         }
 

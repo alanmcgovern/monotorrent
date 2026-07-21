@@ -29,20 +29,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace MonoTorrent.Connections
 {
     static class EncryptionTypes
     {
-        internal static IList<EncryptionType> All { get; } = MakeReadOnly (new[] { EncryptionType.RC4Header, EncryptionType.RC4Full, EncryptionType.PlainText });
-        internal static IList<EncryptionType> PlainText { get; } = MakeReadOnly (new[] { EncryptionType.PlainText });
-        internal static IList<EncryptionType> None { get; } = MakeReadOnly (Array.Empty<EncryptionType> ());
+        internal static ImmutableArray<EncryptionType> All { get; } = ImmutableArray.Create (new[] { EncryptionType.RC4Header, EncryptionType.RC4Full, EncryptionType.PlainText });
+        internal static ImmutableArray<EncryptionType> PlainText { get; } = ImmutableArray.Create (new[] { EncryptionType.PlainText });
+        internal static ImmutableArray<EncryptionType> None { get; } = ImmutableArray.Create (Array.Empty<EncryptionType> ());
 
-        static IList<EncryptionType> RC4Full { get; } = Array.AsReadOnly (new[] { EncryptionType.RC4Full });
-        static IList<EncryptionType> RC4Header { get; } = Array.AsReadOnly (new[] { EncryptionType.RC4Header });
-        static IList<EncryptionType> RC4FullHeader { get; } = Array.AsReadOnly (new[] { EncryptionType.RC4Full, EncryptionType.RC4Header });
-        static IList<EncryptionType> RC4HeaderFull { get; } = Array.AsReadOnly (new[] { EncryptionType.RC4Header, EncryptionType.RC4Full });
+        static ImmutableArray<EncryptionType> RC4Full { get; } = ImmutableArray.Create (new[] { EncryptionType.RC4Full });
+        static ImmutableArray<EncryptionType> RC4Header { get; } = ImmutableArray.Create (new[] { EncryptionType.RC4Header });
+        static ImmutableArray<EncryptionType> RC4FullHeader { get; } = ImmutableArray.Create (new[] { EncryptionType.RC4Full, EncryptionType.RC4Header });
+        static ImmutableArray<EncryptionType> RC4HeaderFull { get; } = ImmutableArray.Create (new[] { EncryptionType.RC4Header, EncryptionType.RC4Full });
 
         internal static IList<EncryptionType> MakeReadOnly (IEnumerable<EncryptionType> types)
             => Array.AsReadOnly (types.ToArray ());
@@ -77,19 +78,30 @@ namespace MonoTorrent.Connections
 
         internal static IList<EncryptionType> GetPreferredEncryption (IList<EncryptionType> peerEncryption, IList<EncryptionType> allowedEncryption)
         {
-            var supported = GetSupportedEncryption (peerEncryption, allowedEncryption);
-            if (supported == None)
+            var supported = GetFirstSupportedEncryption (peerEncryption, allowedEncryption);
+            if (!supported.HasValue)
                 return None;
 
-            if (supported[0] == EncryptionType.PlainText)
+            if (supported.Value == EncryptionType.PlainText)
                 return PlainText;
-            else if (supported[0] == EncryptionType.RC4Full)
+            else if (supported.Value == EncryptionType.RC4Full)
                 return RC4Full;
             else
                 return RC4Header;
         }
 
-        internal static IList<EncryptionType> GetSupportedEncryption (IList<EncryptionType> peerEncryption, IList<EncryptionType> allowedEncryption)
+        internal static EncryptionType? GetFirstSupportedEncryption (IList<EncryptionType> peerEncryption, IList<EncryptionType> allowedEncryption)
+        {
+            for (int i = 0; i < allowedEncryption.Count; i++) {
+                if (peerEncryption.Contains (allowedEncryption[i])) {
+                    return allowedEncryption[i];
+                }
+            }
+            return null;
+        }
+
+
+        internal static ImmutableArray<EncryptionType> GetSupportedEncryption (IList<EncryptionType> peerEncryption, IList<EncryptionType> allowedEncryption)
         {
             List<EncryptionType>? result = null;
             for (int i = 0; i < allowedEncryption.Count; i++) {
@@ -99,7 +111,7 @@ namespace MonoTorrent.Connections
                 }
             }
 
-            return result == null ? None : result.AsReadOnly ();
+            return result == null ? None : ImmutableArray.CreateRange (result);
         }
     }
 }

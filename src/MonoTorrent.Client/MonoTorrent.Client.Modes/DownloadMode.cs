@@ -60,7 +60,14 @@ namespace MonoTorrent.Client.Modes
         }
 
         public override void HandleFilePriorityChanged (ITorrentManagerFile file, Priority oldPriority)
-            => RefreshAmInterestedStatusForAllPeers ();
+        {
+            base.HandleFilePriorityChanged (file, oldPriority);
+            RefreshAmInterestedStatusForAllPeers ();
+
+            // If large files were truncated *or* zero-length missing files were created the torrent may be eligible to move to Seeding mode now.
+            if (Manager.Complete)
+                _ = UpdateSeedingDownloadingState ();
+        }
 
         public override bool ShouldConnect (Peer peer)
         {
@@ -92,6 +99,7 @@ namespace MonoTorrent.Client.Modes
             //If download is fully complete, set state to 'Seeding' and send an announce to the tracker.
             if (Manager.Complete && state == TorrentState.Downloading) {
                 state = TorrentState.Seeding;
+                Manager.PieceManager.Initialise ();
                 await Task.WhenAll (
                     Manager.TrackerManager.AnnounceAsync (TorrentEvent.Completed, CancellationToken.None).AsTask (),
                     Manager.MaybeWriteFastResumeAsync ().AsTask (),

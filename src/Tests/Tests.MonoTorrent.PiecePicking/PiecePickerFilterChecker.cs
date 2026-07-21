@@ -65,7 +65,7 @@ namespace MonoTorrent.PiecePicking
 
         public override int PickPiece (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
-            Picks.Add ((peer, new ReadOnlyBitField (available), new List<ReadOnlyBitField> (otherPeers.ToArray ()).AsReadOnly (), requests.Length, startIndex, endIndex));
+            Picks.Add ((peer, ReadOnlyBitField.Snapshot (available), new List<ReadOnlyBitField> (otherPeers.ToArray ()).AsReadOnly (), requests.Length, startIndex, endIndex));
             return Next == null ? 0 : Next.PickPiece (peer, available, otherPeers, startIndex, endIndex, requests);
         }
     }

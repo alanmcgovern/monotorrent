@@ -1,32 +1,25 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mono.Nat.Logging;
-
-using MonoTorrent;
 using MonoTorrent.Client;
 using MonoTorrent.Connections.TrackerServer;
 using MonoTorrent.Logging;
-using MonoTorrent.PiecePicking;
 using MonoTorrent.PieceWriter;
 
 using NUnit.Framework;
 
-using ReusableTasks;
-
 namespace MonoTorrent.IntegrationTests
 {
     [TestFixture]
+    [Platform (Include ="Win")]
     public class IPv4IntegrationTests : IntegrationTestsBase
     {
         public IPv4IntegrationTests ()
@@ -37,6 +30,7 @@ namespace MonoTorrent.IntegrationTests
     }
 
     [TestFixture]
+    [Platform (Include ="Win")]
     public class IPv6IntegrationTests : IntegrationTestsBase
     {
         public IPv6IntegrationTests ()
@@ -215,6 +209,7 @@ namespace MonoTorrent.IntegrationTests
 
         public async Task CreateAndDownloadTorrent (TorrentType torrentType, bool createEmptyFile, bool explitlyHashCheck, int nonEmptyFileCount = 2, bool useWebSeedDownload = false, long fileSize = 5, IPieceWriter writer = null, bool magnetLinkLeecher = false, Direction? seederConnectionDirection = null)
         {
+            LoggerFactory.Register (new TextWriterLogger (TestContext.Out));
             var emptyFile = new FileInfo (Path.Combine (_seederDir.FullName, "Empty.file"));
             if (createEmptyFile)
                 File.WriteAllText (emptyFile.FullName, "");
@@ -283,14 +278,15 @@ namespace MonoTorrent.IntegrationTests
             if (seederConnectionDirection.HasValue) {
                 var engine = seederConnectionDirection == Direction.Incoming ? leecherEngine : seederEngine;
 
-                var settings = new EngineSettingsBuilder (engine.Settings);
-                settings.ListenEndPoints.Clear ();
-                settings.ReportedListenEndPoints = new Dictionary<string, IPEndPoint> {
+                var settings = engine.Settings with {
+                    ListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
+                    ReportedListenEndPoints = new Dictionary<string, IPEndPoint> {
                         // report two fake non-routable addresses.
                         { "ipv4", new IPEndPoint (IPAddress.Parse ("127.0.0.153"), 12345) },
                         { "ipv6", new IPEndPoint (IPAddress.Parse ("127.0.0.153"), 12345) },
-                    };
-                await engine.UpdateSettingsAsync (settings.ToSettings ());
+                    }.ToImmutableDictionary ()
+                };
+                await engine.UpdateSettingsAsync (settings);
             }
 
             var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
@@ -301,6 +297,10 @@ namespace MonoTorrent.IntegrationTests
             var leecherManager = magnetLinkLeecher
                 ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
                 : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+
+            Assert.AreEqual (leecherManager.Torrent.HttpSeeds.Count, leecherManager.MagnetLink.Webseeds.Count);
+            if (leecherManager.Torrent.HttpSeeds.Count > 0)
+                Assert.AreEqual (leecherManager.Torrent.HttpSeeds[0], leecherManager.MagnetLink.Webseeds[0]);
 
             // Wait for both managers to finish hashing/prepping!
             await seederIsSeeding.Task;
@@ -357,10 +357,10 @@ namespace MonoTorrent.IntegrationTests
         {
             // Give an example of how settings can be modified for the engine.
             var type = AnyAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
-            var settingBuilder = new EngineSettingsBuilder {
+            var settingBuilder = new EngineSettings () with {
                 // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, port) } },
-                ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } },
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, port) } }.ToImmutableDictionary (),
+                ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } }.ToImmutableDictionary (),
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
                 DhtEndPoint = null,
@@ -368,7 +368,7 @@ namespace MonoTorrent.IntegrationTests
                 WebSeedDelay = TimeSpan.Zero,
                 AllowLocalPeerDiscovery = false,
             };
-            var engine = new ClientEngine (settingBuilder.ToSettings (), factories);
+            var engine = new ClientEngine (settingBuilder, factories);
             return engine;
         }
 
@@ -453,13 +453,13 @@ namespace MonoTorrent.IntegrationTests
 
         private async Task<TorrentManager> StartTorrent (ClientEngine clientEngine, Torrent torrent, MagnetLink magnetLink, string saveDirectory, bool explicitlyHashCheck, EventHandler<TorrentStateChangedEventArgs> handler)
         {
-            TorrentSettingsBuilder torrentSettingsBuilder = new TorrentSettingsBuilder () {
+            var settings = new TorrentSettings () with {
                 CreateContainingDirectory = false,
             };
 
             TorrentManager manager = torrent != null
-                ? await clientEngine.AddAsync (torrent, saveDirectory, torrentSettingsBuilder.ToSettings ())
-                : await clientEngine.AddAsync (magnetLink, saveDirectory, torrentSettingsBuilder.ToSettings ());
+                ? await clientEngine.AddAsync (torrent, saveDirectory, settings)
+                : await clientEngine.AddAsync (magnetLink, saveDirectory, settings);
 
             manager.TorrentStateChanged += handler;
             if (explicitlyHashCheck)

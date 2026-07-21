@@ -33,11 +33,12 @@ using System.Collections.Generic;
 using MonoTorrent.Connections;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// This class is used to send each minute a peer excahnge message to peer who have enable this protocol
+    /// This class is used to send each minute a peer exchange message to peer who have enable this protocol
     /// </summary>
     class PeerExchangeManager
     {
@@ -52,7 +53,7 @@ namespace MonoTorrent.Client
 
         // Peers are about 7 bytes each (if you include the 'dotf' data)
         // Calculate the max peers we can fit in the buffer.
-        static readonly int BufferSize = ByteBufferPool.SmallMessageBufferSize;
+        static readonly int BufferSize = MemoryPool.SmallMessageBufferSize;
         static readonly int MAX_PEERS = BufferSize / (4 + 2 + 1); // ipv4 bytes, port bytes, 'dotf' byte 
         static readonly int MAX_PEERS6 = BufferSize / (16 + 2 + 1); // ipv6 bytes, port bytes, 'dotf' byte
 
@@ -111,16 +112,15 @@ namespace MonoTorrent.Client
             ByteBufferPool.Releaser memoryReleaser = default;
             // Preferentially send ipv4 peers first until those lists are empty. Then send ipv6 peers.
             // Fix this by using a larger buffer, or randomise the order in which this happens.
-            (var message, var releaser) = PeerMessage.Rent<PeerExchangeMessage> ();
+
             if (addedPeers.Count > 0 || droppedPeers.Count > 0) {
                 (added, addedDotF, dropped, memoryReleaser) = Populate (6, MAX_PEERS, addedPeers, droppedPeers);
             } else if (added6Peers.Count > 0 || dropped6Peers.Count > 0) {
-                (added, addedDotF, dropped, memoryReleaser) = Populate (18, MAX_PEERS, addedPeers, droppedPeers);
+                (added6, added6DotF, dropped6, memoryReleaser) = Populate (18, MAX_PEERS, addedPeers, droppedPeers);
             }
 
-            // Populate it with what we have!
-            message.Initialize (new ExtensionSupports (new[] { PeerExchangeMessage.Support }), added, addedDotF, dropped, added6, added6DotF, dropped6, memoryReleaser);
-            PeerId.MessageQueue.Enqueue (message, releaser);
+            PeerId.MessageQueue.Enqueue (MessageEncoder.Extended.WritePeerExchange (PeerId.ExtensionSupports, added.Span, addedDotF.Span, dropped.Span, added6.Span, added6DotF.Span, dropped6.Span));
+            memoryReleaser.Dispose ();
         }
 
         static (Memory<byte> added, Memory<byte> addedDotF, Memory<byte> dropped, ByteBufferPool.Releaser memoryReleaser) Populate (int stride, int maxPeers, Queue<PeerId> addedPeers, Queue<PeerId> droppedPeers)

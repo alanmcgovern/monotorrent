@@ -26,8 +26,10 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
+
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -45,29 +47,26 @@ namespace MonoTorrent.Client.Modes
             zero = new BitField (manager.Bitfield.Length);
         }
 
-        protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
+        protected override void AppendBitfieldMessage (PeerId id)
         {
-            if (id.SupportsFastPeer)
-                bundle.Add (HaveNoneMessage.Instance, default);
-            else
-                bundle.Add (new BitfieldMessage (zero), default);
+            id.MessageQueue.Enqueue (id.SupportsFastPeer ? MessageEncoder.WriteHaveNone () : MessageEncoder.WriteBitfield (zero));
         }
 
-        protected override void HandleHaveMessage (PeerId id, HaveMessage message)
+        public override void HandleMessage (PeerId id, HaveMessage message)
         {
-            base.HandleHaveMessage (id, message);
+            base.HandleMessage (id, message);
             Unchoker.ReceivedHave (id, message.PieceIndex);
         }
 
-        protected override void HandleRequestMessage (PeerId id, RequestMessage message)
+        public override void HandleMessage (PeerId id, RequestMessage message)
         {
-            base.HandleRequestMessage (id, message);
+            base.HandleMessage (id, message);
             Unchoker.SentBlock (id, message.PieceIndex);
         }
 
-        protected override void HandleNotInterested (PeerId id, NotInterestedMessage message)
+        public override void HandleMessage (PeerId id, NotInterestedMessage message)
         {
-            base.HandleNotInterested (id, message);
+            base.HandleMessage (id, message);
             Unchoker.ReceivedNotInterested (id);
         }
 
@@ -87,10 +86,11 @@ namespace MonoTorrent.Client.Modes
         {
             base.Tick (counter);
             if (Unchoker.Complete) {
-                PeerMessage bitfieldMessage = new BitfieldMessage (Manager.Bitfield);
                 foreach (PeerId peer in Manager.Peers.ConnectedPeers) {
-                    PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? HaveAllMessage.Instance : bitfieldMessage;
-                    peer.MessageQueue.Enqueue (message, default);
+                    if (peer.SupportsFastPeer && Manager.Complete)
+                        peer.MessageQueue.Enqueue (MessageEncoder.WriteHaveAll ());
+                    else
+                        peer.MessageQueue.Enqueue (MessageEncoder.WriteBitfield (Manager.Bitfield));
                 }
                 Manager.Mode = new DownloadMode (Manager, DiskManager, ConnectionManager, Settings);
             }

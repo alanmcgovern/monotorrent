@@ -51,6 +51,8 @@ namespace MonoTorrent.Trackers
 
         ReusableSemaphore AnnounceLimiter { get; }
 
+        ReusableSemaphore GlobalConcurrencyLimiter { get; }
+
         Factories Factories { get; }
 
         /// <summary>
@@ -74,13 +76,15 @@ namespace MonoTorrent.Trackers
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="factories"></param>
+        /// <param name="globalConcurrencyLimiter">The limiter used to enforce the overall per-engine announce concurrency</param>
         /// <param name="requestFactory">The factory used to create tracker requests. Typically a <see cref="TorrentManager"/> instance.</param>
         /// <param name="announces">The list of tracker tiers</param>
         /// <param name="isPrivate">True if adding/removing tracker should be disallowed.</param>
-        internal TrackerManager (Factories factories, ITrackerRequestFactory requestFactory, IEnumerable<IEnumerable<string>> announces, bool isPrivate)
+        internal TrackerManager (Factories factories, ReusableSemaphore globalConcurrencyLimiter, ITrackerRequestFactory requestFactory, IEnumerable<IEnumerable<string>> announces, bool isPrivate)
         {
             AnnounceLimiter = new ReusableSemaphore (1);
             Factories = factories;
+            GlobalConcurrencyLimiter = globalConcurrencyLimiter;
             RequestFactory = requestFactory;
             Private = isPrivate;
 
@@ -167,10 +171,32 @@ namespace MonoTorrent.Trackers
             // If the user initiates an Announce we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 
+            bool isRegularAnnounce = tracker is null && clientEvent == TorrentEvent.None;
+            // Now fast-path out if we think no announces will be needed.
+            if (isRegularAnnounce) {
+                // Fast exit if no tracker tiers need an announce
+                bool shouldAnnounceToAny = false;
+                for (int i = 0; i < Tiers.Count && shouldAnnounceToAny == false; i++)
+                    shouldAnnounceToAny |= Tiers[i].CanSendAnnounce (clientEvent);
+
+                if (!shouldAnnounceToAny)
+                    return;
+            }
+
+            // There is an in-progress announce, and this is a regular recurring announce attempt, so just bail out.
+            ReusableSemaphore.Releaser globalReleaser = default;
+            if (isRegularAnnounce) {
+                if (!GlobalConcurrencyLimiter.TryEnter (out globalReleaser))
+                    return;
+            } else {
+                globalReleaser = await GlobalConcurrencyLimiter.EnterAsync ();
+            }
+
+            using var globalAutorelease = globalReleaser;
+
             // Check if there are any in-progress announce requests being handled.
             if (!AnnounceLimiter.TryEnter (out ReusableSemaphore.Releaser releaser)) {
-                // There is an in-progress announce, and this is a regular recurring announce attempt, so just bail out.
-                if (tracker is null && clientEvent == TorrentEvent.None)
+                if (isRegularAnnounce)
                     return;
 
                 // If we get here it means there's an in-progress announce *and* this is a special event. Either the user
@@ -188,10 +214,10 @@ namespace MonoTorrent.Trackers
                 var args = RequestFactory.CreateAnnounce (clientEvent);
 
                 // Capture a list of Tiers in case the user adds/removes any mid-announce.
-                var pendingTiers = new Queue<TrackerTier> (Tiers);
-                var activeAnnounces = new List<Task> ();
+                var pendingTiers = Tiers;
+                var activeAnnounces = new List<Task> (Math.Min (MaxConcurrentAnnounces, Tiers.Count));
 
-                while (pendingTiers.Count > 0) {
+                for (int i = 0; i < pendingTiers.Count; i++) {
                     if (activeAnnounces.Count == MaxConcurrentAnnounces) {
                         var completed = await Task.WhenAny (activeAnnounces);
                         activeAnnounces.Remove (completed);
@@ -200,7 +226,7 @@ namespace MonoTorrent.Trackers
 
                     // The announce *might* fast-path and exit immediately if that
                     // tracker has been announced to recently.
-                    var task = pendingTiers.Dequeue ().AnnounceAsync (args, token);
+                    var task = pendingTiers[i].AnnounceAsync (args, token);
                     if (task.IsCompleted)
                         await task;
                     else
@@ -217,6 +243,13 @@ namespace MonoTorrent.Trackers
 
         public async ReusableTask ScrapeAsync (CancellationToken token)
         {
+            // Fast exit if it's too early to send a scrape to any tier.
+            bool anyNeedsScrape = false;
+            foreach (var tier in Tiers)
+                anyNeedsScrape |= tier.CanSendScrape ();
+            if (!anyNeedsScrape)
+                return;
+
             // If the user initiates a Scrape we need to go to the correct thread to process it.
             await ClientEngine.MainLoop;
 

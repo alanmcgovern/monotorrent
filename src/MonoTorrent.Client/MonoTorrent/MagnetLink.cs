@@ -34,7 +34,7 @@ using System.Text;
 
 namespace MonoTorrent
 {
-    public class MagnetLink
+    public sealed class MagnetLink
     {
         /// <summary>
         /// The list of tracker Urls.
@@ -211,6 +211,11 @@ namespace MonoTorrent
             if (!string.IsNullOrEmpty (Name)) {
                 sb.Append ("&dn=");
                 sb.Append (Name.UrlEncodeQueryUTF8 ());
+            }
+
+            if (Size.HasValue) {
+                sb.Append ("&xl=");
+                sb.Append (Size.Value);
             }
 
             foreach (string tracker in AnnounceUrls) {

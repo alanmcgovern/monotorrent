@@ -28,9 +28,11 @@
 
 
 using System;
+using System.Collections.Frozen;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Web;
 
 namespace MonoTorrent.BEncoding
@@ -69,28 +71,37 @@ namespace MonoTorrent.BEncoding
         public static implicit operator BEncodedString? (byte[]? value)
             => value is null ? null : (value.Length == 0 ? Empty : new BEncodedString (value));
 
+        public static bool operator == (BEncodedString? left, BEncodedString? right)
+        {
+            if (left is null)
+                return right is null;
+            if (right is null)
+                return false;
+            return left.Span.SequenceEqual (right.Span);
+        }
+
+        public static bool operator != (BEncodedString? left, BEncodedString? right)
+            => !(left == right);
+
         readonly ReadOnlyMemory<byte> TextBytes;
 
         /// <summary>
         /// The value of the BEncodedString interpreted as a UTF-8 string. If the underlying bytes
         /// cannot be represented in UTF-8 then the invalid byte sequence is silently discarded.
         /// </summary>
-#if NETSTANDARD2_0 || NET472
-        public unsafe string Text {
-            get {
-                var span = Span;
-                if (span.Length == 0)
-                    return "";
-                fixed (byte* spanPtr = span)
-                    return Encoding.UTF8.GetString (spanPtr, span.Length);
-            }
-        }
-#else
         public string Text
             => Encoding.UTF8.GetString (Span);
-#endif
 
         public ReadOnlySpan<byte> Span => TextBytes.Span;
+
+        /// <summary>
+        /// Create a new BEncodedString using UTF8 encoding
+        /// </summary>
+        /// <param name="value"></param>
+        public BEncodedString (ReadOnlySpan<byte> value)
+        {
+            TextBytes = value.Length == 0 ? ReadOnlyMemory<byte>.Empty : value.ToArray ();
+        }
 
         /// <summary>
         /// Create a new BEncodedString using UTF8 encoding
@@ -142,43 +153,12 @@ namespace MonoTorrent.BEncoding
         /// <returns>The number of bytes encoded</returns>
         public override int Encode (Span<byte> buffer)
         {
-            var written = WriteLengthAsAscii (buffer, TextBytes.Length);
+            if (!TextBytes.Length.TryFormat (buffer, out int written))
+                throw new InvalidOperationException ("Could not write the length of the BEncodedString");
             buffer[written++] = (byte) ':';
             Span.CopyTo (buffer.Slice (written));
             return written + Span.Length;
         }
-
-#if NETSTANDARD2_0 || NET472
-        static int WriteLengthAsAscii (Span<byte> buffer, int asciiLength)
-        {
-            if (asciiLength == 0) {
-                buffer[0] = (byte) '0';
-                return 1;
-            }
-
-            // int32.MinValue can have at most 11 characters
-            Span<byte> printedchars = stackalloc byte[11];
-            int counter = printedchars.Length;
-            while (asciiLength > 0) {
-                printedchars[--counter] = (byte) ('0' + asciiLength % 10);
-                asciiLength /= 10;
-            }
-            printedchars.Slice (counter).CopyTo (buffer);
-            return printedchars.Length - counter;
-        }
-#else
-        static int WriteLengthAsAscii (Span<byte> buffer, int asciiLength)
-        {
-            Span<char> asciiChars = stackalloc char[16];
-            if (!asciiLength.TryFormat (asciiChars, out int written))
-                throw new InvalidOperationException ("Could not write the length of the BEncodedString");
-
-            for (int i = 0; i < written; i++)
-                buffer[i] = (byte) asciiChars[i];
-
-            return written;
-        }
-#endif
 
         public override int LengthInBytes ()
         {
@@ -209,20 +189,14 @@ namespace MonoTorrent.BEncoding
         }
 
         public bool Equals (BEncodedString? other)
-            => !(other is null) && Span.SequenceEqual (other.Span);
+            => other is not null && Span.SequenceEqual (other.Span);
 
         public override int GetHashCode ()
         {
-            if (Span.Length >= 4)
-                return MemoryMarshal.Read<int> (Span);
-            if (Span.Length > 0)
-                return Span[0];
-            return 0;
+            var hc = new HashCode ();
+            hc.AddBytes (Span);
+            return hc.ToHashCode ();
         }
-
-        [Obsolete("This wraps HttpUtility.UrlEncode which improperly encodes ' ' as '+' instead of '%20' when cencoding for a query param")]
-        public string UrlEncode ()
-            => HttpUtility.UrlEncode (Span.ToArray ());
 
         public string ToHex ()
             => BitConverter.ToString (Span.ToArray ());

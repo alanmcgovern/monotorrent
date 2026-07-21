@@ -27,51 +27,52 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MonoTorrent
 {
     public readonly struct MerkleRoot : IEquatable<MerkleRoot>
     {
-        public static MerkleRoot Empty => new MerkleRoot ();
+        const int StorageLength = 32;
+        [InlineArray (StorageLength)]
+        struct Storage
+        {
+            internal byte _element;
+        }
+        readonly Storage Hash;
+
+        public ReadOnlySpan<byte> Span
+            => MemoryMarshal.CreateReadOnlySpan (in Hash._element, StorageLength);
 
         public static MerkleRoot FromMemory (ReadOnlyMemory<byte> hash)
-            => new MerkleRoot (hash);
+            => new MerkleRoot (hash.Span);
 
-        readonly ReadOnlyMemory<byte> Hash;
-
-        public bool IsEmpty => Hash.IsEmpty;
-
-        public ReadOnlySpan<byte> Span => Hash.Span;
-
-        public MerkleRoot (Span<byte> hash)
-            : this (new ReadOnlyMemory<byte> (hash.ToArray ()))
-        {
-
-        }
-
-        private MerkleRoot (ReadOnlyMemory<byte> hash)
-        {
-            if (hash.Length != 32)
-                throw new ArgumentException ("The hash must be exactly 32 bytes long");
-            Hash = hash;
-        }
-
-        public ReadOnlyMemory<byte> AsMemory ()
-            => Hash;
+        public MerkleRoot (ReadOnlySpan<byte> hash)
+            => hash.CopyTo (Hash);
 
         public override bool Equals (object? obj)
             => obj is MerkleRoot other && Equals (other);
 
         public bool Equals (MerkleRoot other)
-            => Hash.Span.SequenceEqual (other.Hash.Span);
+            => Span.SequenceEqual (other.Hash);
 
         public override int GetHashCode ()
-            => Hash.Length == 0 ? 0 : Hash.Span[0];
+        {
+            var hashcode = new HashCode ();
+            hashcode.AddBytes (Hash);
+            return hashcode.ToHashCode ();
+        }
+
+        public override string ToString ()
+            => Convert.ToHexString (Hash);
 
         public static bool operator == (MerkleRoot left, MerkleRoot right)
-            => left.Hash.Span.SequenceEqual (right.Hash.Span);
+            => left.Span.SequenceEqual (right.Hash);
 
         public static bool operator != (MerkleRoot left, MerkleRoot right)
             => !(left == right);

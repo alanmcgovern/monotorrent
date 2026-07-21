@@ -69,7 +69,7 @@ namespace MonoTorrent.PieceWriter
             return totalRead;
         }
 
-        public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentManagerInfo manager, BlockInfo request, Memory<byte> buffer)
+        public static async ReusableTask WriteToFilesAsync (this IPieceWriter writer, ITorrentManagerInfo manager, BlockInfo request, ReadOnlyMemory<byte> buffer)
         {
             var count = request.RequestLength;
             var torrentOffset = manager.TorrentInfo!.PieceIndexToByteOffset (request.PieceIndex) + request.StartOffset;

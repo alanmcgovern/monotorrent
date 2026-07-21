@@ -38,6 +38,7 @@ using System.Threading.Tasks;
 using MonoTorrent.Logging;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages;
 
 using ReusableTasks;
 
@@ -63,8 +64,7 @@ namespace MonoTorrent.Connections.Peer
             public HttpRequestData (BlockInfo blockInfo)
             {
                 BlockInfo = blockInfo;
-                var m = new PieceMessage (BlockInfo.PieceIndex, BlockInfo.StartOffset, BlockInfo.RequestLength);
-                TotalToReceive = m.ByteLength;
+                TotalToReceive = PieceMessage.EncodedLength (BlockInfo.RequestLength);
             }
         }
         class ZeroStream : Stream
@@ -85,25 +85,24 @@ namespace MonoTorrent.Connections.Peer
                 buffer.AsSpan (offset, count).Fill (0);
                 return count;
             }
-#if !NETSTANDARD2_0 && !NET472
+
             public override int Read (Span<byte> buffer)
             {
                 buffer.Fill (0);
                 return buffer.Length;
             }
-#endif
+
             public override Task<int> ReadAsync (byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             {
                 buffer.AsSpan (offset, count).Fill (0);
                 return Task.FromResult (count);
             }
-#if !NETSTANDARD2_0 && !NET472
             public override ValueTask<int> ReadAsync (Memory<byte> buffer, CancellationToken cancellationToken = default)
             {
                 buffer.Span.Fill (0);
                 return new ValueTask<int> (buffer.Length);
             }
-#endif
+
             public override long Seek (long offset, SeekOrigin origin)
                 => throw new NotImplementedException ();
 
@@ -136,7 +135,7 @@ namespace MonoTorrent.Connections.Peer
 
         long DataStreamCount { get; set; }
 
-        WebResponse? DataStreamResponse { get; set; }
+        HttpResponseMessage? CurrentResponse { get; set; }
 
         public IPEndPoint? EndPoint { get; } = null;
 
@@ -169,9 +168,9 @@ namespace MonoTorrent.Connections.Peer
 
         #endregion Constructors
 
-        public ReusableTask ConnectAsync ()
+        public ReusableTask<bool> ConnectAsync ()
         {
-            return ReusableTask.CompletedTask;
+            return ReusableTask.FromResult (true);
         }
 
         public async ReusableTask<int> ReceiveAsync (Memory<byte> socketBuffer)
@@ -210,7 +209,7 @@ namespace MonoTorrent.Connections.Peer
 
                 // We have *only* written the messageLength to the stream
                 // Now we need to write the rest of the PieceMessage header
-                Message.Write (socketBuffer.Span.Slice (written, 1), PieceMessage.MessageId);
+                Message.Write (socketBuffer.Span.Slice (written, 1), (byte) MessageType.Piece);
                 written++;
 
                 Message.Write (socketBuffer.Span.Slice (written, 4), CurrentRequest.BlockInfo.PieceIndex);
@@ -242,10 +241,9 @@ namespace MonoTorrent.Connections.Peer
                 DataStreamCount -= result;
                 // If result is zero it means we've read the last data from the stream.
                 if (result == 0) {
-                    using (DataStreamResponse)
-                        DataStream.Dispose ();
-
-                    DataStreamResponse = null;
+                    CurrentResponse?.Dispose ();
+                    CurrentResponse = null;
+                    DataStream.Dispose ();
                     DataStream = null;
 
                     // If we requested more data (via the range header) than we were actually given, then it's a truncated
@@ -264,10 +262,9 @@ namespace MonoTorrent.Connections.Peer
                             CurrentRequest = new HttpRequestData (RequestMessages[0]);
                             RequestMessages.RemoveAt (0);
                         } else {
-                            using (DataStreamResponse)
-                                DataStream.Dispose ();
-
-                            DataStreamResponse = null;
+                            CurrentResponse?.Dispose ();
+                            CurrentResponse = null;
+                            DataStream.Dispose ();
                             DataStream = null;
 
                             CurrentRequest = null;
@@ -284,16 +281,26 @@ namespace MonoTorrent.Connections.Peer
             while (WebRequests.Count > 0) {
                 var rr = WebRequests.Dequeue ();
 
-                Requester?.Dispose ();
                 if (rr.fileUri == PaddingFileUri) {
                     DataStream = new ZeroStream ();
                     DataStreamCount = rr.count;
                 } else {
-                    Requester = RequestCreator.CreateHttpClient ();
+                    // Reuse the existing HttpClient rather than disposing and recreating it.
+                    // HttpClient is designed to be long-lived; recreating it per-request defeats
+                    // connection pooling and causes RedirectHandler to re-buffer response bodies.
+                    if (Requester == null) {
+                        Requester = RequestCreator.CreateHttpClient ();
+                        Requester.Timeout = ConnectionTimeout;
+                    }
                     var msg = new HttpRequestMessage (HttpMethod.Get, rr.fileUri);
                     msg.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue (rr.startOffset, rr.startOffset + rr.count - 1);
-                    Requester.Timeout = ConnectionTimeout;
-                    DataStream = await (await Requester.SendAsync (msg)).Content.ReadAsStreamAsync ();
+
+                    // If EnsureSuccessStatusCode raises an error then (eventually) the CurrentResponse will be
+                    // disposed anyway as Dispose will be called on this instance.
+                    CurrentResponse = await Requester.SendAsync (msg, HttpCompletionOption.ResponseHeadersRead);
+                    CurrentResponse.EnsureSuccessStatusCode ();
+
+                    DataStream = await CurrentResponse.Content.ReadAsStreamAsync ();
                     DataStreamCount = rr.count;
                 }
                 return await ReceiveAsync (socketBuffer) + written;
@@ -304,7 +311,7 @@ namespace MonoTorrent.Connections.Peer
             throw new WebException ("Unable to download the required data from the server");
         }
 
-        public async ReusableTask<int> SendAsync (Memory<byte> socketBuffer)
+        public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> socketBuffer)
         {
             SendResult = new TaskCompletionSource<object?> ();
 
@@ -330,12 +337,12 @@ namespace MonoTorrent.Connections.Peer
         static List<BlockInfo> DecodeMessages (ReadOnlySpan<byte> buffer)
         {
             var messages = new List<BlockInfo> ();
-            for (int i = 0; i < buffer.Length;) {
-                var payload = PeerMessage.DecodeMessage (buffer.Slice (i), null);
-                if (payload.message is RequestMessage msg)
+            while(buffer.Length > 0) {
+                if (MessageDispatcher.GetType(buffer) == MessageType.Request){
+                    var msg = new RequestMessage (buffer);
                     messages.Add (new BlockInfo (msg.PieceIndex, msg.StartOffset, msg.RequestLength));
-                i += payload.message.ByteLength;
-                payload.releaser.Dispose ();
+                }
+                buffer = MessageDispatcher.NextMessage (buffer);
             }
             return messages;
         }
@@ -417,11 +424,11 @@ namespace MonoTorrent.Connections.Peer
 
             Requester?.Dispose ();
             SendResult?.TrySetCanceled ();
-            DataStreamResponse?.Dispose ();
+            CurrentResponse?.Dispose ();
             DataStream?.Dispose ();
             ReceiveWaiter.Set ();
 
-            DataStreamResponse = null;
+            CurrentResponse = null;
             DataStream = null;
         }
     }

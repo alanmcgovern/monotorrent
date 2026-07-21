@@ -114,16 +114,22 @@ namespace MonoTorrent.Streaming
 
             ActiveStream = new LocalStream (Manager, file, PieceRequester);
 
-            var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
-            if (prebuffer) {
-                ActiveStream.Seek (ActiveStream.Length - Manager.Torrent!.PieceLength * 2, SeekOrigin.Begin);
-                await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
+            try {
+                var tcs = CancellationTokenSource.CreateLinkedTokenSource (Cancellation.Token, token);
+                if (prebuffer) {
+                    ActiveStream.Seek (ActiveStream.Length - Manager.Torrent!.PieceLength * 2, SeekOrigin.Begin);
+                    await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
 
+                    ActiveStream.Seek (0, SeekOrigin.Begin);
+                    await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
+                }
+
+                tcs.Token.ThrowIfCancellationRequested ();
                 ActiveStream.Seek (0, SeekOrigin.Begin);
-                await ActiveStream.ReadAsync (new byte[1], 0, 1, tcs.Token);
+            } catch {
+                ActiveStream?.Dispose ();
+                throw;
             }
-
-            ActiveStream.Seek (0, SeekOrigin.Begin);
             return ActiveStream;
         }
 

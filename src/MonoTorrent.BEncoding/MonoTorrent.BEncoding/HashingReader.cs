@@ -37,9 +37,9 @@ namespace MonoTorrent.BEncoding
     {
         readonly Stream input;
         readonly byte[] read_one_buffer;
-        readonly HashAlgorithm algorithm;
+        readonly IncrementalHash algorithm;
 
-        public HashingReader (Stream input, byte firstByte, HashAlgorithm algorithm)
+        public HashingReader (Stream input, byte firstByte, IncrementalHash algorithm)
         {
             this.input = input;
             this.algorithm = algorithm;
@@ -48,7 +48,7 @@ namespace MonoTorrent.BEncoding
             // immediately hash it. The 'd' prefix for the info dict is part of
             // the infohash calculation.
             read_one_buffer = new byte[] { firstByte };
-            algorithm.TransformBlock (read_one_buffer, 0, 1, read_one_buffer, 0);
+            algorithm.AppendData (read_one_buffer, 0, 1);
         }
 
         public override bool CanRead => input.CanRead;
@@ -71,14 +71,21 @@ namespace MonoTorrent.BEncoding
         {
             var read = input.Read (buffer, offset, count);
             if (read > 0)
-                algorithm.TransformBlock (buffer, offset, read, buffer, offset);
+                algorithm.AppendData (buffer, offset, read);
+            return read;
+        }
+
+        public override int Read (Span<byte> buffer)
+        {
+            var read = input.Read (buffer);
+            if (read > 0)
+                algorithm.AppendData (buffer);
             return read;
         }
 
         public byte[] TransformFinalBlock ()
         {
-            algorithm.TransformFinalBlock (read_one_buffer, 0, 0);
-            return algorithm.Hash ?? throw new InvalidOperationException ("The final hash was unexpectedly missing");
+            return algorithm.GetHashAndReset ();
         }
 
         public override void Flush ()

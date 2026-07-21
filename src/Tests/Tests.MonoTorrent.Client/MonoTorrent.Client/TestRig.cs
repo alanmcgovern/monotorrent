@@ -170,7 +170,8 @@ namespace MonoTorrent.Client
         public List<AnnounceRequest> AnnounceParameters = new List<AnnounceRequest> ();
         public List<DateTime> ScrapedAt = new List<DateTime> ();
 
-        public bool FailAnnounce;
+        public AnnounceResponse CustomResponse;
+        public bool FailAnnounceWithException;
         public bool FailScrape;
 
         public bool CanScrape => true;
@@ -186,8 +187,10 @@ namespace MonoTorrent.Client
         public ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest parameters, CancellationToken token)
         {
             AnnouncedAt.Add (DateTime.Now);
-            if (FailAnnounce)
+            if (FailAnnounceWithException)
                 throw new TrackerException ("Deliberately failing announce request", null);
+            if (CustomResponse is not null)
+                return ReusableTask.FromResult (CustomResponse);
 
             AnnounceParameters.Add (parameters);
             var dict = new Dictionary<InfoHash, IList<PeerInfo>> {
@@ -253,7 +256,7 @@ namespace MonoTorrent.Client
             Uri = uri ?? new Uri ("ipv4://127.0.0.1:1234");
         }
 
-        public ReusableTask ConnectAsync ()
+        public ReusableTask<bool> ConnectAsync ()
             => throw new InvalidOperationException ();
 
         public void Dispose ()
@@ -273,7 +276,7 @@ namespace MonoTorrent.Client
             return ManualBytesReceived ?? result;
         }
 
-        public async ReusableTask<int> SendAsync (Memory<byte> buffer)
+        public async ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
         {
             if (SlowConnection)
                 buffer = buffer.Slice (0, Math.Min (88, buffer.Length));
@@ -620,6 +623,16 @@ namespace MonoTorrent.Client
             var editor = new TorrentEditor (dict) {
                 CanEditSecureMetadata = true,
                 Private = true,
+            };
+            return editor.ToTorrent ();
+        }
+
+        internal static Torrent CreatePublic ()
+        {
+            var dict = CreateTorrent (16 * 1024 * 8, TorrentFile.Create (16 * 1024 * 8, ("File", 16 * 1024 * 8)), null);
+            var editor = new TorrentEditor (dict) {
+                CanEditSecureMetadata = true,
+                Private = false,
             };
             return editor.ToTorrent ();
         }

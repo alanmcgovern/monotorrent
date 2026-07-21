@@ -21,17 +21,21 @@ namespace MonoTorrent.PiecePicking
         /// <returns></returns>
         internal static PeerId CreateNull (int bitfieldLength, bool seeder, bool isChoking, bool amInterested)
         {
-            var peer = new PeerId {
+            var peer = new PeerId (new BitField (bitfieldLength).SetAll (seeder)) {
                 IsChoking = isChoking,
                 AmInterested = amInterested,
-                BitField = new BitField (bitfieldLength).SetAll (seeder)
             };
             return peer;
         }
 
+        PeerId (BitField bitfield)
+        {
+            BitField = bitfield;
+        }
+
         public bool AmInterested { get; set; }
         public int AmRequestingPiecesCount { get; set; }
-        public BitField BitField { get; private set; }
+        public readonly BitField BitField;
         public bool CanRequestMorePieces { get; set; } = true;
         public long DownloadSpeed { get; }
         public List<int> IsAllowedFastPieces { get; } = new List<int> ();

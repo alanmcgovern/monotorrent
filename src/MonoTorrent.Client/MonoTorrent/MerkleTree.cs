@@ -42,13 +42,13 @@ namespace MonoTorrent
 
         List<Memory<byte>> Layers { get; }
 
-        MerkleRoot ExpectedRoot { get; set; }
+        MerkleRoot? ExpectedRoot { get; set; }
 
         public int PieceLayerIndex { get; }
 
         public int PieceLayerHashCount => Layers[PieceLayerIndex].Length / 32;
 
-        public MerkleTree (MerkleRoot expectedRoot, int pieceLength, int pieceLayerHashCount)
+        public MerkleTree (MerkleRoot? expectedRoot, int pieceLength, int pieceLayerHashCount)
         {
             if (pieceLayerHashCount == 1)
                 throw new ArgumentException ("A merkletree must have 2 or more hashes");
@@ -92,9 +92,9 @@ namespace MonoTorrent
             using var hasher = IncrementalHash.CreateHash (HashAlgorithmName.SHA256);
             if (!MerkleTreeHasher.TryHash (hasher, hashes, baseLayer, proofs, index, length, computedHash, out int written))
                 return false;
-            if (!ExpectedRoot.IsEmpty && !computedHash.SequenceEqual (ExpectedRoot.Span))
+            if (ExpectedRoot.HasValue && !computedHash.SequenceEqual (ExpectedRoot.Value.Span))
                 return false;
-            if (ExpectedRoot.IsEmpty)
+            if (!ExpectedRoot.HasValue)
                 ExpectedRoot = new MerkleRoot (computedHash);
 
             // The internal merkle tree is sparse when working with the piece layer, or any layer closer to the 16kB block layer.
@@ -130,7 +130,7 @@ namespace MonoTorrent
                 }
             }
 
-            if (Layers[Layers.Count - 1].Span.SequenceEqual (ExpectedRoot.Span))
+            if (Layers[Layers.Count - 1].Span.SequenceEqual (ExpectedRoot!.Value.Span))
                 verifiedMerkleTree = new ReadOnlyMerkleTree (Layers.Select (t => (ReadOnlyMemory<byte>) t).ToList ().AsReadOnly (), PieceLayerIndex);
 
             return verifiedMerkleTree != null;

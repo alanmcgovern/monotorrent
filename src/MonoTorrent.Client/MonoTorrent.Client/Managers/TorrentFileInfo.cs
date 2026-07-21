@@ -37,6 +37,11 @@ namespace MonoTorrent.Client
     {
         public static string IncompleteFileSuffix => ".!mt";
 
+        /// <summary>
+        /// This is the actual size of the file on-disk, or null if the file does not exist. This is set when loading fast resume or when hashing.
+        /// </summary>
+        public long? CachedActualLength { get; set; }
+
         public string DownloadCompleteFullPath { get; private set; }
 
         public string DownloadIncompleteFullPath { get; private set; }
@@ -45,7 +50,8 @@ namespace MonoTorrent.Client
 
         ITorrentFile TorrentFile { get; }
 
-        internal BitField BitField { get; }
+        internal readonly BitField BitField;
+
         ReadOnlyBitField ITorrentManagerFile.BitField => BitField;
 
         public Priority Priority { get; set; } = Priority.DoNotDownload;
@@ -58,6 +64,9 @@ namespace MonoTorrent.Client
 
         public int EndPieceIndex => TorrentFile.EndPieceIndex;
 
+        /// <summary>
+        /// This is the expected size of the file once fully downloaded
+        /// </summary>
         public long Length => TorrentFile.Length;
 
         public long Padding => TorrentFile.Padding;
@@ -91,26 +100,6 @@ namespace MonoTorrent.Client
                 var info = infos.Single (info => info.torrentPath == t.Path);
                 return new TorrentFileInfo (t, info.fullPath);
             }).ToArray ();
-        }
-
-        internal static string PathEscape (string path)
-        {
-            foreach (var illegal in System.IO.Path.GetInvalidPathChars ())
-                path = path.Replace ($"{illegal}", Convert.ToString (illegal, 16));
-            return path;
-        }
-
-        internal static string PathAndFileNameEscape (string path)
-        {
-            var probableFilenameIndex = path.LastIndexOf (System.IO.Path.DirectorySeparatorChar);
-            var dir = probableFilenameIndex == -1 ? "" : path.Substring (0, probableFilenameIndex);
-            var filename = probableFilenameIndex == -1 ? path : path.Substring (probableFilenameIndex + 1);
-
-            dir = PathEscape (dir);
-
-            foreach (var illegal in System.IO.Path.GetInvalidFileNameChars ())
-                filename = filename.Replace ($"{illegal}", $"_{Convert.ToString (illegal, 16)}_");
-            return System.IO.Path.Combine (dir, filename);
         }
 
         internal static (string path, string completePath, string incompletePath) GetNewPaths (string newPath, bool usePartialFiles, bool isComplete)

@@ -33,6 +33,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
+using MonoTorrent.Connections;
 using MonoTorrent.Connections.Peer;
 
 using NUnit.Framework;

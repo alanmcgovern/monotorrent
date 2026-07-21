@@ -39,7 +39,13 @@ namespace MonoTorrent.Dht
 
         public NodeId LocalNodeId { get; }
 
-        public bool NeedsBootstrap => CountNodes () < 10;
+        public bool NeedsBootstrap => CountNodes () < 4;
+
+        /// <summary>
+        /// Used to ensure known bootstrap routers do not get added to the
+        /// routing table.
+        /// </summary>
+        HashSet<CompactEndPoint> NodesToIgnore { get; }
 
         public RoutingTable ()
             : this (NodeId.Create ())
@@ -51,7 +57,8 @@ namespace MonoTorrent.Dht
         {
             Buckets = new List<Bucket> ();
             LocalNodeId = localNodeId;
-            Add (new Bucket ());
+            NodesToIgnore = new HashSet<CompactEndPoint> ();
+            Add (new Bucket (NodeId.Minimum, NodeId.Maximum, 32));
         }
 
         public bool Add (Node node)
@@ -64,7 +71,10 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException (nameof (node));
 
-            Bucket bucket = Buckets.Find (b => b.CanContain (node))!;
+            if (NodesToIgnore.Contains (node.EndPoint))
+                return false;
+
+            var bucket = FindBucket (node.Id);
             if (bucket.Nodes.Contains (node))
                 return false;
 
@@ -82,6 +92,20 @@ namespace MonoTorrent.Dht
             newBuckets.Add (bucket);
             newBuckets.Sort ();
             Buckets = newBuckets;
+        }
+
+        public void AddIgnoredEndpoint (CompactEndPoint endpoint)
+        {
+            NodesToIgnore.Add (endpoint);
+        }
+
+        Bucket FindBucket (NodeId id)
+        {
+            foreach (Bucket b in Buckets)
+                if (b.CanContain (id))
+                    return b;
+
+            throw new InvalidOperationException("Every node can fit into a bucket");
         }
 
         internal Node? FindNode (NodeId id)
@@ -107,8 +131,8 @@ namespace MonoTorrent.Dht
                 return false;//to avoid infinite loop when add same node
 
             var median = NodeId.Median (bucket.Min, bucket.Max);
-            var left = new Bucket (bucket.Min, median);
-            var right = new Bucket (median, bucket.Max);
+            var left = new Bucket (bucket.Min, median, Math.Max (Bucket.MaxCapacity, bucket.Nodes.Capacity / 2));
+            var right = new Bucket (median, bucket.Max, Math.Max (Bucket.MaxCapacity, bucket.Nodes.Capacity / 2));
 
             Remove (bucket);
             Add (left);
@@ -132,28 +156,12 @@ namespace MonoTorrent.Dht
         }
 
 
-        public ICollection<Node> GetClosest (NodeId target)
+        public ClosestNodesCollection GetClosest (NodeId target)
         {
             var closestNodes = new ClosestNodesCollection (target);
-
-            // Buckets have a capacity of 8 and are split in two whenever they are
-            // full. As such we should always be able to find the 8 closest nodes
-            // by adding the nodes of the matching bucket, the bucket above, and the
-            // bucket below.
-            int firstBucketIndex = Buckets.FindIndex (t => t.CanContain (target));
-            foreach (Node node in Buckets[firstBucketIndex].Nodes)
-                closestNodes.Add (node);
-
-            // Try the bucket before this one
-            if (firstBucketIndex > 0)
-                foreach (Node node in Buckets[firstBucketIndex - 1].Nodes)
+            foreach (var bucket in Buckets)
+                foreach (var node in bucket.Nodes)
                     closestNodes.Add (node);
-
-            // Try the bucket after this one
-            if (firstBucketIndex < (Buckets.Count - 1))
-                foreach (Node node in Buckets[firstBucketIndex + 1].Nodes)
-                    closestNodes.Add (node);
-
             return closestNodes;
         }
 
@@ -162,6 +170,14 @@ namespace MonoTorrent.Dht
             Buckets = new List<Bucket> {
                 new Bucket ()
             };
+        }
+
+        internal void PreSplitBuckets (int minBucketCount)
+        {
+            while (Buckets.Count < minBucketCount) {
+                var mine = Buckets.Find (b => b.CanContain (LocalNodeId))!;
+                Split (mine);
+            }
         }
     }
 }

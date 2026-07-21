@@ -62,8 +62,8 @@ namespace MonoTorrent.PiecePicking
         readonly List<Files> files = new List<Files> ();
         readonly List<ReadOnlyBitField> prioritised = new List<ReadOnlyBitField> ();
 
-        BitField? allPrioritisedPieces;
-        BitField? temp;
+        BitField allPrioritisedPieces;
+        BitField temp;
 
         public PriorityPicker (IPiecePicker picker)
             : base (picker)
@@ -86,7 +86,7 @@ namespace MonoTorrent.PiecePicking
 
         public override bool IsInteresting (IRequester peer, ReadOnlyBitField bitfield)
         {
-            if (temp is null || allPrioritisedPieces is null)
+            if (temp.Length == 0 || allPrioritisedPieces.Length == 0)
                 return false;
 
             if (ShouldRebuildSelectors ())
@@ -107,7 +107,7 @@ namespace MonoTorrent.PiecePicking
         public override int PickPiece (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)
         {
             // Fast Path - the peer has nothing to offer
-            if (available.AllFalse || temp == null)
+            if (available.AllFalse || temp.Length == 0)
                 return 0;
 
             // Rebuild if any file changed priority

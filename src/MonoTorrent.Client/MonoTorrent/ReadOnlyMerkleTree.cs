@@ -44,7 +44,7 @@ namespace MonoTorrent
             if (pieceLength < 0 || BitOps.PopCount ((uint) pieceLength) != 1)
                 throw new ArgumentException ("Piece length must be positive and a power of 2", nameof (pieceLength));
 
-            MerkleTree layers = new MerkleTree (MerkleRoot.Empty, pieceLength, layer.Length / 32);
+            MerkleTree layers = new MerkleTree (null, pieceLength, layer.Length / 32);
             if (!layers.TryAppend (layers.PieceLayerIndex, 0, layer.Length / 32, layer))
                 throw new InvalidOperationException ("Failed to append merkle layers to the three");
             if (!layers.TryVerify (out var verifiedHashes))
@@ -54,9 +54,6 @@ namespace MonoTorrent
 
         public static ReadOnlyMerkleTree FromLayer (int pieceLength, ReadOnlySpan<byte> layer, MerkleRoot expectedRoot)
         {
-            if (expectedRoot.IsEmpty)
-                throw new ArgumentException ("The expected MerkleRoot cannot be empty", nameof (expectedRoot));
-
             var merkleTree = FromLayer (pieceLength, layer);
             if (merkleTree.Root != expectedRoot)
                 throw new ArgumentException (nameof (expectedRoot), "The root of the generated merkle tree did not match the expected root.");

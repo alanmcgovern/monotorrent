@@ -203,32 +203,6 @@ namespace MyBenchmarks
     }
 
     [MemoryDiagnoser]
-    public class MessageEncoder
-    {
-        readonly Memory<byte> Buffer;
-        readonly RequestMessage Message;
-
-        public MessageEncoder ()
-        {
-            Message = new RequestMessage (1, 2, 3);
-            Buffer = new Memory<byte> (new byte[20]);
-            Message.Encode (Buffer.Span);
-        }
-
-        [Benchmark]
-        public void Encode ()
-        {
-            Message.Encode (Buffer.Span);
-        }
-
-        [Benchmark]
-        public void Decode ()
-        {
-            Message.Decode (Buffer.Span);
-        }
-    }
-
-    [MemoryDiagnoser]
     public class BEncodingBenchmark
     {
         readonly byte[] Buffer;

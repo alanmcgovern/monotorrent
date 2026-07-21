@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -44,34 +45,40 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Represents the Settings which need to be passed to the engine
     /// </summary>
-    public sealed class EngineSettings : IEquatable<EngineSettings>
+    public sealed record class EngineSettings
     {
+        // these don't take part in equality checking
+        ImmutableArray<ImmutableArray<EncryptionType>>? outgoingConnectionEncryptionTiers;
+        string? originalCache;
+        ImmutableArray<EncryptionType> originalAllowedEncryption;
+        string? fastResumeCacheDirectory;
+        string? metadataCacheDirectory;
+        string? dhtNodeCacheFilePath;
+
         /// <summary>
         /// A prioritised list of encryption methods, including plain text, which can be used to connect to another peer.
         /// Connections will be attempted in the same order as they are in the list. Defaults to <see cref="EncryptionTypes.All"/>,
         /// which is <see cref="EncryptionType.RC4Header"/>, <see cref="EncryptionType.RC4Full"/> and <see cref="EncryptionType.PlainText"/>.
         /// </summary>
-        public IList<EncryptionType> AllowedEncryption { get; } = EncryptionTypes.All;
-
-        internal IList<IList<EncryptionType>> OutgoingConnectionEncryptionTiers { get; } = Array.Empty<IList<EncryptionType>> ();
+        public ImmutableArray<EncryptionType> AllowedEncryption { get; init; } = EncryptionTypes.All;
 
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
         /// which do not already have that piece. A peer will never request a piece they have already downloaded,
         /// so informing them that we have that piece is not beneficial. Defaults to <see langword="false" />.
         /// </summary>
-        public bool AllowHaveSuppression { get; } = false;
+        public bool AllowHaveSuppression { get; init; } = false;
 
         /// <summary>
         /// True if the engine should use LocalPeerDiscovery to search for local peers. Defaults to <see langword="true"/>.
         /// </summary>
-        public bool AllowLocalPeerDiscovery { get; } = true;
+        public bool AllowLocalPeerDiscovery { get; init; } = true;
 
         /// <summary>
         /// True if the engine should automatically forward ports using any compatible UPnP or NAT-PMP device.
         /// Defaults to <see langword="true"/>.
         /// </summary>
-        public bool AllowPortForwarding { get; } = true;
+        public bool AllowPortForwarding { get; init; } = true;
 
         /// <summary>
         /// If set to true dht nodes will be implicitly saved when there are no active <see cref="TorrentManager"/> instances in the engine.
@@ -79,7 +86,7 @@ namespace MonoTorrent.Client
         /// restarts and the <see cref="IDhtEngine"/> will have to bootstrap from scratch each time.
         /// Defaults to <see langword="true"/>.
         /// </summary>
-        public bool AutoSaveLoadDhtCache { get; } = true;
+        public bool AutoSaveLoadDhtCache { get; init; } = true;
 
         /// <summary>
         /// If set to true FastResume data will be implicitly saved after <see cref="TorrentManager.StopAsync()"/> is invoked,
@@ -88,7 +95,7 @@ namespace MonoTorrent.Client
         /// instances will have to perform a full hash check when they start.
         /// Defaults to <see langword="true"/>. 
         /// </summary>
-        public bool AutoSaveLoadFastResume { get; } = true;
+        public bool AutoSaveLoadFastResume { get; init; } = true;
 
         /// <summary>
         /// This setting affects torrents downloaded using a <see cref="MagnetLink"/>. When enabled, metadata for the torrent will be loaded
@@ -97,15 +104,18 @@ namespace MonoTorrent.Client
         /// from peers so future downloads can start immediately.
         /// Defaults to <see langword="true"/>. 
         /// </summary>
-        public bool AutoSaveLoadMagnetLinkMetadata { get; } = true;
+        public bool AutoSaveLoadMagnetLinkMetadata { get; init; } = true;
 
         /// <summary>
         /// The full path to the directory used to cache any data needed by the engine. Typically used to store a
         /// cache of the DHT table to improve bootstrapping speed, any metadata downloaded
         /// using a magnet link, or fast resume data for individual torrents.
-        /// Defaults to a sub-directory of <see cref="Environment.CurrentDirectory"/> called 'cache'
+        /// Defaults to a sub-directory of <see cref="Environment.CurrentDirectory"/> called 'cache'.
+        /// When <see cref="Create(EngineSettings)"/> is invoked the value will be converted to a full path
+        /// if it is not already a full path, or will be replaced with
+        /// <see cref="Environment.CurrentDirectory"/> if the value is null or empty.
         /// </summary>
-        public string CacheDirectory { get; } = Path.Combine (Environment.CurrentDirectory, "cache");
+        public string CacheDirectory { get; init; } = Path.Combine (Environment.CurrentDirectory, "cache");
 
         /// <summary>
         /// The delay between each retry when attempting to establish an outgoing connection attempt to a given peer.
@@ -113,7 +123,7 @@ namespace MonoTorrent.Client
         /// and four retries. If a connection cannot be established after exhausting all retries, the peer's information
         /// will be discarded.
         /// </summary>
-        public IList<TimeSpan> ConnectionRetryDelays { get; } = Array.AsReadOnly (new[] {
+        public ImmutableArray<TimeSpan> ConnectionRetryDelays { get; init; } = ImmutableArray.Create (new[] {
             TimeSpan.FromSeconds (10),
             TimeSpan.FromSeconds (30),
             TimeSpan.FromSeconds (60),
@@ -122,40 +132,42 @@ namespace MonoTorrent.Client
 
         /// <summary>
         /// If a connection attempt does not complete within the given timeout, it will be cancelled so
-        /// a connection can be attempted with a new peer. Defaults to 10 seconds. It is highly recommended
-        /// to keep this value within a range of 7-15 seconds unless absolutely necessary.
+        /// a connection can be attempted with a new peer. Defaults to 3, 6 and then 10 seconds. It is highly recommended
+        /// to keep this value within a range of 2-15 seconds to prevent stalling the engine when connecting to non-responsive peers.
         /// </summary>
-        public TimeSpan ConnectionTimeout { get; } = Debugger.IsAttached ? TimeSpan.FromSeconds (120) : TimeSpan.FromSeconds (10);
+        public ImmutableArray<TimeSpan> ConnectionTimeouts { get; init; } = ImmutableArray.Create (Debugger.IsAttached
+            ? new[] { TimeSpan.FromSeconds (120) }
+            : new[] { TimeSpan.FromSeconds (3), TimeSpan.FromSeconds (6), TimeSpan.FromSeconds (10) });
 
         /// <summary>
-        /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
-        /// Set to 0 to disable the cache.
-        /// Defaults to 5MB.
+        /// The bootstrap routers used to obtain the first set of nodes to access the BitTorrent DHT table.
         /// </summary>
-        public int DiskCacheBytes { get; } = 5 * 1024 * 1024;
+        public ImmutableArray<BootstrapRouter> DhtBootstrapRouters { get; init; } = ImmutableArray.Create (new[] {
+            new BootstrapRouter ("router.bittorrent.com", 6881),
+            new BootstrapRouter ("router.utorrent.com", 6881),
+            new BootstrapRouter ("dht.transmissionbt.com", 6881),
+            new BootstrapRouter ("dht.aelitis.com", 6881),
+            new BootstrapRouter ("router.bitcomet.com", 6881),
+            new BootstrapRouter ("dht.libtorrent.org", 25401)
+        });
 
         /// <summary>
-        /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
-        /// Set to 0 to disable the cache.
-        /// Defaults to 5MB.
-        /// </summary>
-        public CachePolicy DiskCachePolicy { get; } = CachePolicy.WritesOnly;
-
-        /// <summary>
-        /// The UDP port used for DHT communications. Set the port to 0 to choose a random available port.
+        /// The endpoint used for DHT communications. Set the port to 0 to choose a random available port.
         /// Set to null to disable DHT. Defaults to IPAddress.Any with port 0.
         /// </summary>
-        public IPEndPoint? DhtEndPoint { get; } = new IPEndPoint (IPAddress.Any, 0);
+        public IPEndPoint? DhtEndPoint { get; init; } = new IPEndPoint (IPAddress.Any, 0);
 
         /// <summary>
-        /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutoSaveLoadFastResume"/>
-        /// is enabled then fast resume data will be written to this when <see cref="TorrentManager.StopAsync"/> or
-        /// <see cref="ClientEngine.StopAllAsync"/> is invoked. If fast resume data is available, the data will be loaded
-        /// from disk as part of <see cref="ClientEngine.AddAsync"/> or <see cref="ClientEngine.AddStreamingAsync"/>. If
-        /// <see cref="TorrentManager.StartAsync"/> is invoked, any on-disk fast resume data will be deleted to eliminate
-        /// the possibility of loading stale data later.
+        /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
+        /// Set to 0 to disable the cache.
+        /// Defaults to 5MB.
         /// </summary>
-        public string FastResumeCacheDirectory => Path.Combine (CacheDirectory, "fastresume");
+        public int DiskCacheBytes { get; init; } = 5 * 1024 * 1024;
+
+        /// <summary>
+        /// Determines if writes should be cached, or if reads and writes should be cached.
+        /// </summary>
+        public CachePolicy DiskCachePolicy { get; init; } = CachePolicy.WritesOnly;
 
         /// <summary>
         /// When <see cref="EngineSettings.AutoSaveLoadFastResume"/> is true, this setting is used to control how fast
@@ -166,63 +178,63 @@ namespace MonoTorrent.Client
         /// cleanly enter the <see cref="TorrentState.Stopped"/> state.
         /// Defaults to <see cref="FastResumeMode.BestEffort"/>.
         /// </summary>
-        public FastResumeMode FastResumeMode { get; } = FastResumeMode.BestEffort;
+        public FastResumeMode FastResumeMode { get; init; } = FastResumeMode.BestEffort;
 
         /// <summary>
         /// Sets the preferred approach to creating new files.
         /// </summary>
-        public FileCreationOptions FileCreationOptions { get; } = FileCreationOptions.PreferSparse;
+        public FileCreationOptions FileCreationOptions { get; init; } = FileCreationOptions.PreferSparse;
 
         /// <summary>
         /// The list of HTTP(s) endpoints which the engine should bind to when a <see cref="TorrentManager"/> is set up
         /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
         /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
         /// </summary>
-        public string HttpStreamingPrefix { get; } = "http://127.0.0.1:5555/";
+        public string HttpStreamingPrefix { get; init; } = "http://127.0.0.1:5555/";
 
         /// <summary>
         /// The TCP port the engine should listen on for incoming connections. Set the port to 0 to use a random
         /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any and IPAddress.AnyIPv6,
         /// both with port 0.
         /// </summary>
-        public IDictionary<string, IPEndPoint> ListenEndPoints { get; } = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> {
+        public ImmutableDictionary<string, IPEndPoint> ListenEndPoints { get; init; } = new Dictionary<string, IPEndPoint> {
             {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
             {"ipv6", new IPEndPoint (IPAddress.IPv6Any, 0) }
-        });
+        }.ToImmutableDictionary ();
 
         /// <summary>
-        /// The maximum number of concurrent open connections overall. Defaults to 150.
+        /// The maximum number of concurrent open connections overall. Defaults to 200.
         /// </summary>
-        public int MaximumConnections { get; } = 150;
+        public int MaximumConnections { get; init; } = 200;
 
         /// <summary>
         /// The maximum download rate, in bytes per second, overall. A value of 0 means unlimited. Defaults to 0.
         /// </summary>
-        public int MaximumDownloadRate { get; }
+        public int MaximumDownloadRate { get; init; } = 0;
 
         /// <summary>
-        /// The maximum number of concurrent connection attempts overall. Defaults to 8.
+        /// The maximum number of concurrent connection attempts overall. Defaults to 20.
         /// </summary>
-        public int MaximumHalfOpenConnections { get; } = 8;
+        public int MaximumHalfOpenConnections { get; init; } = 20;
 
         /// <summary>
         /// The maximum upload rate, in bytes per second, overall. A value of 0 means unlimited. defaults to 0.
         /// </summary>
-        public int MaximumUploadRate { get; }
+        public int MaximumUploadRate { get; init; } = 0;
 
         /// <summary>
         /// The maximum number of files which can be opened concurrently. On platforms which limit the maximum
         /// filehandles for a process it can be beneficial to limit the number of open files to prevent
         /// running out of resources. A value of 0 means unlimited, but this is not recommended. Defaults to 196.
         /// </summary>
-        public int MaximumOpenFiles { get; } = 196;
+        public int MaximumOpenFiles { get; init; } = 196;
 
         /// <summary>
         /// The maximum disk read rate, in bytes per second. A value of 0 means unlimited. This is
         /// typically only useful for non-SSD drives to prevent the hashing process from saturating
         /// the available drive bandwidth. Defaults to 0.
         /// </summary>
-        public int MaximumDiskReadRate { get; }
+        public int MaximumDiskReadRate { get; init; } = 0;
 
         /// <summary>
         /// The maximum disk write rate, in bytes per second. A value of 0 means unlimited. This is
@@ -230,14 +242,14 @@ namespace MonoTorrent.Client
         /// the available drive bandwidth. If the download rate exceeds the max write rate then the
         /// download will be throttled. Defaults to 0.
         /// </summary>
-        public int MaximumDiskWriteRate { get; }
+        public int MaximumDiskWriteRate { get; init; } = 0;
 
         /// <summary>
         /// If the IPAddress incoming peer connections are received on differs from the IPAddress the tracker
         /// Announce or Scrape requests are sent from, specify it here. Typically this should not be set.
         /// Defaults to <see langword="null" />
         /// </summary>
-        public IDictionary<string, IPEndPoint> ReportedListenEndPoints { get; } = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> ());
+        public ImmutableDictionary<string, IPEndPoint> ReportedListenEndPoints { get; init; } = ImmutableDictionary.Create<string, IPEndPoint> ();
 
         /// <summary>
         /// When blocks have been requested from a peer, the connection to that peer will be closed and the
@@ -246,91 +258,144 @@ namespace MonoTorrent.Client
         /// considered unhealthy before their connection timeout is exceeded.
         /// Defaults to 40 seconds.
         /// </summary>
-        public TimeSpan StaleRequestTimeout { get; } = TimeSpan.FromSeconds (40);
-
-        /// <summary>
-        /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If a magnet link is used
-        /// to download a torrent, the downloaded metata will be cached here.
-        /// </summary>
-        public string MetadataCacheDirectory => Path.Combine (CacheDirectory, "metadata");
+        public TimeSpan StaleRequestTimeout { get; init; } = TimeSpan.FromSeconds (40);
 
         /// <summary>
         /// If set to <see langword="true"/> then partially downloaded files will have ".!mt" appended to their filename. When the file is fully downloaded, the ".!mt" suffix will be removed.
         /// Defaults to <see langword="false"/> as this is a pre-release feature.
         /// </summary>
-        public bool UsePartialFiles { get; } = false;
+        public bool UsePartialFiles { get; init; } = false;
 
         /// <summary>
         /// The timeout used when connecting to a WebSeed's HTTP endpoint.
         /// Defaults to 30 seconds.
         /// </summary>
-        public TimeSpan WebSeedConnectionTimeout { get; } = TimeSpan.FromSeconds (30);
+        public TimeSpan WebSeedConnectionTimeout { get; init; } = TimeSpan.FromSeconds (30);
 
         /// <summary>
         /// The delay before a torrent will start using web seeds.
         /// Defaults to 1 minute.
         /// </summary>
-        public TimeSpan WebSeedDelay { get; } = TimeSpan.FromMinutes (1);
+        public TimeSpan WebSeedDelay { get; init; } = TimeSpan.FromMinutes (1);
 
         /// <summary>
         /// The download speed under which a torrent will start using web seeds.
         /// Defaults to 15kB/sec.
         /// </summary>
-        public int WebSeedSpeedTrigger { get; } = 15 * 1024;
+        public int WebSeedSpeedTrigger { get; init; } = 15 * 1024;
+
+        #region Recomputable
+
+        internal ImmutableArray<ImmutableArray<EncryptionType>> OutgoingConnectionEncryptionTiers {
+            get {
+                if (originalAllowedEncryption != AllowedEncryption) {
+                    outgoingConnectionEncryptionTiers = UpdateEncryptionTiers (AllowedEncryption);
+                    originalAllowedEncryption = AllowedEncryption;
+                }
+                return outgoingConnectionEncryptionTiers!.Value;
+            }
+        }
+
+        #endregion
+
+        #region Computed
+        /// <summary>
+        /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If <see cref="AutoSaveLoadFastResume"/>
+        /// is enabled then fast resume data will be written to this when <see cref="TorrentManager.StopAsync"/> or
+        /// <see cref="ClientEngine.StopAllAsync"/> is invoked. If fast resume data is available, the data will be loaded
+        /// from disk as part of <see cref="ClientEngine.AddAsync"/> or <see cref="ClientEngine.AddStreamingAsync"/>. If
+        /// <see cref="TorrentManager.StartAsync"/> is invoked, any on-disk fast resume data will be deleted to eliminate
+        /// the possibility of loading stale data later.
+        /// </summary>
+        public string FastResumeCacheDirectory {
+            get {
+                RecreateCacheDirProperties ();
+                return fastResumeCacheDirectory!;
+            }
+        }
+
+        /// <summary>
+        /// This is the full path to a sub-directory of <see cref="CacheDirectory"/>. If a magnet link is used
+        /// to download a torrent, the downloaded metata will be cached here.
+        /// </summary>
+        public string MetadataCacheDirectory {
+            get {
+                RecreateCacheDirProperties ();
+                return metadataCacheDirectory!;
+            }
+        }
+
+        /// <summary>
+        /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
+        /// which do not already have that piece. A peer will never request a piece they have already downloaded,
+        /// so informing them that we have that piece is not beneficial. Defaults to <see langword="false" />.
+        /// </summary>
+        internal string DhtNodeCacheFilePath {
+            get {
+                RecreateCacheDirProperties ();
+                return dhtNodeCacheFilePath!;
+            }
+        }
+
+        void RecreateCacheDirProperties ()
+        {
+            if (!ReferenceEquals (originalCache, CacheDirectory)) {
+                originalCache = CacheDirectory;
+                dhtNodeCacheFilePath = Path.Combine (CacheDirectory, "dht_nodes.cache");
+                metadataCacheDirectory = Path.Combine (CacheDirectory, "metadata");
+                fastResumeCacheDirectory = Path.Combine (CacheDirectory, "fastresume");
+            }
+        }
+
+        #endregion
 
         public EngineSettings ()
         {
 
         }
 
-        internal EngineSettings (
-            IList<EncryptionType> allowedEncryption, bool allowHaveSuppression, bool allowLocalPeerDiscovery, bool allowPortForwarding,
-            bool autoSaveLoadDhtCache, bool autoSaveLoadFastResume, bool autoSaveLoadMagnetLinkMetadata, string cacheDirectory,
-            TimeSpan connectionTimeout, IPEndPoint? dhtEndPoint, int diskCacheBytes, CachePolicy diskCachePolicy, FastResumeMode fastResumeMode,
-            FileCreationOptions fileCreationMode, Dictionary<string, IPEndPoint> listenEndPoints,
-            int maximumConnections, int maximumDiskReadRate, int maximumDiskWriteRate, int maximumDownloadRate, int maximumHalfOpenConnections,
-            int maximumOpenFiles, int maximumUploadRate, IDictionary<string, IPEndPoint> reportedListenEndPoints, bool usePartialFiles,
-            TimeSpan webSeedConnectionTimeout, TimeSpan webSeedDelay, int webSeedSpeedTrigger, TimeSpan staleRequestTimeout,
-            string httpStreamingPrefix, IList<TimeSpan> connectionRetryDelays)
+        public static EngineSettings Create (EngineSettings settings)
         {
-            // Make sure this is immutable now
-            AllowedEncryption = EncryptionTypes.MakeReadOnly (allowedEncryption.ToArray ());
-            OutgoingConnectionEncryptionTiers = UpdateEncryptionTiers (AllowedEncryption);
+            if (settings is null)
+                throw new ArgumentNullException (nameof (settings));
 
-            AllowHaveSuppression = allowHaveSuppression;
-            AllowLocalPeerDiscovery = allowLocalPeerDiscovery;
-            AllowPortForwarding = allowPortForwarding;
-            AutoSaveLoadDhtCache = autoSaveLoadDhtCache;
-            AutoSaveLoadFastResume = autoSaveLoadFastResume;
-            AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata;
-            DhtEndPoint = dhtEndPoint;
-            DiskCacheBytes = diskCacheBytes;
-            DiskCachePolicy = diskCachePolicy;
-            CacheDirectory = cacheDirectory;
-            ConnectionRetryDelays = Array.AsReadOnly (connectionRetryDelays.ToArray ());
-            ConnectionTimeout = connectionTimeout;
-            FastResumeMode = fastResumeMode;
-            FileCreationOptions = fileCreationMode;
-            HttpStreamingPrefix = httpStreamingPrefix;
-            ListenEndPoints = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> (listenEndPoints));
-            MaximumConnections = maximumConnections;
-            MaximumDiskReadRate = maximumDiskReadRate;
-            MaximumDiskWriteRate = maximumDiskWriteRate;
-            MaximumDownloadRate = maximumDownloadRate;
-            MaximumHalfOpenConnections = maximumHalfOpenConnections;
-            MaximumOpenFiles = maximumOpenFiles;
-            MaximumUploadRate = maximumUploadRate;
-            ReportedListenEndPoints = new ReadOnlyDictionary<string, IPEndPoint> (new Dictionary<string, IPEndPoint> (reportedListenEndPoints));
-            StaleRequestTimeout = staleRequestTimeout;
-            UsePartialFiles = usePartialFiles;
-            WebSeedConnectionTimeout = webSeedConnectionTimeout;
-            WebSeedDelay = webSeedDelay;
-            WebSeedSpeedTrigger = webSeedSpeedTrigger;
+            if (settings.AllowedEncryption.Length == 0)
+                throw new ArgumentException ("At least one encryption type must be specified");
+            if (settings.AllowedEncryption.Distinct ().Count () != settings.AllowedEncryption.Length)
+                throw new ArgumentException ("Each encryption type can be specified at most once. Please verify the AllowedEncryption list contains no duplicates", "AllowedEncryption");
+
+            if (settings.ConnectionRetryDelays.Any (t => t < TimeSpan.Zero))
+                throw new ArgumentException ("ConnectionRetryDelays cannot be less than zero", nameof (ConnectionRetryDelays));
+            if (settings.ConnectionRetryDelays.Length == 0)
+                throw new ArgumentException ("At least one timeout must be specified", nameof (ConnectionRetryDelays));
+
+            if (settings.ConnectionTimeouts.Any (t => t < TimeSpan.Zero))
+                throw new ArgumentException ("ConnectionTimeouts cannot be less than zero", nameof (ConnectionTimeouts));
+            if (settings.ConnectionTimeouts.Length == 0)
+                throw new ArgumentException ("At least one connection timeout must be specified", nameof (ConnectionTimeouts));
+
+            settings = settings with {
+                CacheDirectory = string.IsNullOrEmpty (settings.CacheDirectory) ? Environment.CurrentDirectory : Path.GetFullPath (settings.CacheDirectory),
+                DiskCacheBytes = SettingsValidators.CheckZeroOrPositive (settings.DiskCacheBytes),
+                HttpStreamingPrefix = SettingsValidators.CheckHttpStreamingPrefix (settings.HttpStreamingPrefix),
+                MaximumConnections = SettingsValidators.CheckZeroOrPositive (settings.MaximumConnections),
+                MaximumDiskReadRate = SettingsValidators.CheckZeroOrPositive (settings.MaximumDiskReadRate),
+                MaximumDiskWriteRate = SettingsValidators.CheckZeroOrPositive (settings.MaximumDiskWriteRate),
+                MaximumDownloadRate = SettingsValidators.CheckZeroOrPositive (settings.MaximumDownloadRate),
+                MaximumHalfOpenConnections = SettingsValidators.CheckZeroOrPositive (settings.MaximumHalfOpenConnections),
+                MaximumOpenFiles = SettingsValidators.CheckZeroOrPositive (settings.MaximumOpenFiles),
+                MaximumUploadRate = SettingsValidators.CheckZeroOrPositive (settings.MaximumUploadRate),
+                StaleRequestTimeout = SettingsValidators.CheckZeroOrPositive (settings.StaleRequestTimeout),
+                WebSeedConnectionTimeout = SettingsValidators.CheckZeroOrPositive (settings.WebSeedConnectionTimeout),
+                WebSeedDelay = SettingsValidators.CheckZeroOrPositive (settings.WebSeedDelay),
+                WebSeedSpeedTrigger = SettingsValidators.CheckZeroOrPositive (settings.WebSeedSpeedTrigger)
+            };
+            return settings;
         }
 
-        static IList<IList<EncryptionType>> UpdateEncryptionTiers (IList<EncryptionType> allowedEncryption)
+        static ImmutableArray<ImmutableArray<EncryptionType>> UpdateEncryptionTiers (IList<EncryptionType> allowedEncryption)
         {
-            var tiers = new List<IList<EncryptionType>> ();
+            var tiers = new List<ImmutableArray<EncryptionType>> ();
             while (allowedEncryption.Count > 0) {
                 // If both encrypted methods are consecutive, create a tier consisting of both. The encrypted handshake will take the first
                 // one both sides support. Otherwise, create a tier with just that single method.
@@ -340,18 +405,15 @@ namespace MonoTorrent.Client
                 //      RC4Header, PlainText, RC4Full       [three tiers]
                 //      RC4Full, RC4Header, PlainText       [two tiers]
                 if (allowedEncryption.Count >= 2 && allowedEncryption[0] != EncryptionType.PlainText && allowedEncryption[1] != EncryptionType.PlainText) {
-                    tiers.Add (Array.AsReadOnly (new[] { allowedEncryption[0], allowedEncryption[1] }));
+                    tiers.Add (ImmutableArray.Create (new[] { allowedEncryption[0], allowedEncryption[1] }));
                     allowedEncryption = allowedEncryption.Skip (2).ToArray ();
                 } else {
-                    tiers.Add (Array.AsReadOnly (new[] { allowedEncryption[0] }));
+                    tiers.Add (ImmutableArray.Create (new[] { allowedEncryption[0] }));
                     allowedEncryption = allowedEncryption.Skip (1).ToArray ();
                 }
             }
-            return tiers;
+            return ImmutableArray.CreateRange (tiers);
         }
-
-        internal string GetDhtNodeCacheFilePath ()
-            => Path.Combine (CacheDirectory, "dht_nodes.cache");
 
         /// <summary>
         /// Returns the full path to the <see cref="FastResume"/> file for the specified torrent. This is
@@ -366,62 +428,7 @@ namespace MonoTorrent.Client
             => Path.Combine (MetadataCacheDirectory, $"{infoHashes.V1OrV2.ToHex ()}.torrent");
 
         internal string GetV2HashesPath (InfoHashes infoHashes)
-            => Path.Combine (MetadataCacheDirectory, $"{infoHashes.V2!.ToHex ()}.v2hashes");
-
-        public override bool Equals (object? obj)
-            => Equals (obj as EngineSettings);
-
-        public bool Equals (EngineSettings? other)
-        {
-            return !(other is null)
-                   && AllowedEncryption.SequenceEqual (other.AllowedEncryption)
-                   && AllowHaveSuppression == other.AllowHaveSuppression
-                   && AllowLocalPeerDiscovery == other.AllowLocalPeerDiscovery
-                   && AllowPortForwarding == other.AllowPortForwarding
-                   && AutoSaveLoadDhtCache == other.AutoSaveLoadDhtCache
-                   && AutoSaveLoadFastResume == other.AutoSaveLoadFastResume
-                   && AutoSaveLoadMagnetLinkMetadata == other.AutoSaveLoadMagnetLinkMetadata
-                   && CacheDirectory == other.CacheDirectory
-                   && Equals (DhtEndPoint, other.DhtEndPoint)
-                   && DiskCacheBytes == other.DiskCacheBytes
-                   && DiskCachePolicy == other.DiskCachePolicy
-                   && FastResumeMode == other.FastResumeMode
-                   && HttpStreamingPrefix == other.HttpStreamingPrefix
-                   && AreEquivalent (ListenEndPoints, other.ListenEndPoints)
-                   && AreEquivalent (ReportedListenEndPoints, other.ReportedListenEndPoints)
-                   && MaximumConnections == other.MaximumConnections
-                   && MaximumDiskReadRate == other.MaximumDiskReadRate
-                   && MaximumDiskWriteRate == other.MaximumDiskWriteRate
-                   && MaximumDownloadRate == other.MaximumDownloadRate
-                   && MaximumHalfOpenConnections == other.MaximumHalfOpenConnections
-                   && MaximumOpenFiles == other.MaximumOpenFiles
-                   && MaximumUploadRate == other.MaximumUploadRate
-                   && StaleRequestTimeout == other.StaleRequestTimeout
-                   && UsePartialFiles == other.UsePartialFiles
-                   && WebSeedConnectionTimeout == other.WebSeedConnectionTimeout
-                   && WebSeedDelay == other.WebSeedDelay
-                   && WebSeedSpeedTrigger == other.WebSeedSpeedTrigger
-                   ;
-        }
-
-        bool AreEquivalent (IDictionary<string, IPEndPoint> first, IDictionary<string, IPEndPoint> second)
-        {
-            if (first.Count != second.Count)
-                return false;
-            foreach (var v in first)
-                if (!second.TryGetValue (v.Key, out var value) || !v.Value.Equals (value))
-                    return false;
-            return true;
-        }
-
-        public override int GetHashCode ()
-        {
-            return MaximumConnections +
-                   MaximumDownloadRate +
-                   MaximumUploadRate +
-                   MaximumHalfOpenConnections +
-                   CacheDirectory.GetHashCode ();
-        }
+            => Path.Combine (MetadataCacheDirectory, $"{(infoHashes.V2 ?? throw new InvalidOperationException ("This InfoHashes does not contain a V2 infohash")).ToHex ()}.v2hashes");
 
         internal TimeSpan? GetConnectionRetryDelay (int failedConnectionAttempts)
         {
@@ -431,7 +438,7 @@ namespace MonoTorrent.Client
 
             // If this is the Nth retry (i.e. N previous failure) then we apply
             // the delay at array position N-1.
-            if (failedConnectionAttempts - 1 < ConnectionRetryDelays.Count)
+            if (failedConnectionAttempts - 1 < ConnectionRetryDelays.Length)
                 return ConnectionRetryDelays[failedConnectionAttempts - 1];
             return null;
         }

@@ -169,8 +169,12 @@ namespace MonoTorrent.TrackerServer
             int start = Random.Next (0, peers.Count);
 
             lock (PeersList) {
-                if (PeersList.Count != peers.Values.Count)
-                    PeersList = new List<Peer> (peers.Values);
+                // Update PeersList only if the count differs or if the address family has changed
+                if (PeersList.Count != peers.Values.Count || 
+                    (PeersList.Count > 0 && PeersList[0].ClientAddress.AddressFamily != addressFamily))
+                {
+                    PeersList = new List<Peer>(peers.Values);
+                }
             }
 
             while (total > 0) {

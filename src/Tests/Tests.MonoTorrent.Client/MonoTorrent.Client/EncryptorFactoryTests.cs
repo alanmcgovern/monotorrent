@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -37,6 +38,7 @@ using MonoTorrent.Connections;
 using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -50,7 +52,7 @@ namespace MonoTorrent.Client.Encryption
         IPeerConnection Outgoing => pair.Outgoing;
 
         InfoHash InfoHash;
-        InfoHash[] SKeys;
+        ImmutableList<InfoHash> SKeys;
 
         BEncodedString IncomingId;
         BEncodedString OutgoingId;
@@ -66,7 +68,7 @@ namespace MonoTorrent.Client.Encryption
                 new InfoHash (Enumerable.Repeat ((byte)253, 20).ToArray ()),
                 InfoHash,
                 new InfoHash (Enumerable.Repeat ((byte)252, 20).ToArray ())
-            };
+            }.ToImmutableList ();
 
             IncomingId = new BEncodedString (Enumerable.Repeat ((byte) '0', 20).ToArray ());
             OutgoingId = new BEncodedString (Enumerable.Repeat ((byte) '1', 20).ToArray ());
@@ -163,8 +165,8 @@ namespace MonoTorrent.Client.Encryption
 
         async Task Handshake (IList<EncryptionType> outgoingEncryption, IList<EncryptionType> incomingEncryption, bool appendInitialPayload)
         {
-            var handshakeIn = new HandshakeMessage (InfoHash, IncomingId, Constants.ProtocolStringV100);
-            var handshakeOut = new HandshakeMessage (InfoHash, OutgoingId, Constants.ProtocolStringV100);
+            (var handshakeIn, _) = MessageEncoder.WriteHandshake (InfoHash.Span, IncomingId.Span, true, true, false);
+            (var handshakeOut, _) = MessageEncoder.WriteHandshake (InfoHash.Span, OutgoingId.Span, true, true, false);
 
             var incomingTask = EncryptorFactory.CheckIncomingConnectionAsync (Incoming, incomingEncryption, SKeys, Factories.Default, TaskExtensions.Timeout);
             var outgoingTask = EncryptorFactory.CheckOutgoingConnectionAsync (Outgoing, outgoingEncryption, InfoHash, appendInitialPayload ? handshakeOut : null, Factories.Default, TaskExtensions.Timeout);
@@ -176,14 +178,14 @@ namespace MonoTorrent.Client.Encryption
 
             // Receive the handshake and make sure it decrypted correctly.
             var incomingCrypto = await incomingTask;
-            Assert.AreEqual (OutgoingId, incomingCrypto.Handshake.PeerId, "#1a");
+            Assert.IsTrue (OutgoingId.Span.SequenceEqual (new HandshakeMessage (incomingCrypto.Handshake).PeerId), "#1a");
 
             // Send the other handshake.
             await PeerIO.SendMessageAsync (Incoming, incomingCrypto.Encryptor, handshakeIn, null, null, null);
 
             // Receive the other handshake and make sure it decrypted ok on the other side.
-            handshakeIn = await PeerIO.ReceiveHandshakeAsync (Outgoing, outgoingCrypto.Decryptor);
-            Assert.AreEqual (IncomingId, handshakeIn.PeerId, "#1b");
+            (handshakeIn, _) = await PeerIO.ReceiveHandshakeAsync (Outgoing, outgoingCrypto.Decryptor);
+            Assert.IsTrue (IncomingId.Span.SequenceEqual (new HandshakeMessage (handshakeIn).PeerId), "#1b");
 
             if (outgoingEncryption[0] == EncryptionType.PlainText) {
                 // If the outgoing encryption is plain text, then the whole thing is plain text

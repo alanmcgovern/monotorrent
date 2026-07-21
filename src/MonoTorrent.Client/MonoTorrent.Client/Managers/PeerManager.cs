@@ -82,7 +82,8 @@ namespace MonoTorrent.Client
         internal bool Contains (Peer peer)
         {
             return ActivePeers.Contains (peer)
-                || AvailablePeers.Contains (peer);
+                || AvailablePeers.Contains (peer)
+                || ConnectingToPeers.Contains (peer);
         }
 
         internal void UpdatePeerCounts ()

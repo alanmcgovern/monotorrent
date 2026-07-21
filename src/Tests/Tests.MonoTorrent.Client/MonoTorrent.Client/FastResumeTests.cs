@@ -133,11 +133,11 @@ namespace MonoTorrent.Client
         public async Task IgnoreInvalidFastResume ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings ());
+            });
 
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
@@ -192,11 +192,11 @@ namespace MonoTorrent.Client
         public async Task DeleteAfterDownloading ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings ());
+            });
 
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
@@ -213,16 +213,16 @@ namespace MonoTorrent.Client
         public async Task RetainAfterSeeding ()
         {
             using var tmpDir = TempDir.Create ();
-            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AutoSaveLoadFastResume = true,
                 FastResumeMode = FastResumeMode.Accurate,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings ());
+            });
 
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
             Directory.CreateDirectory (Path.GetDirectoryName (path));
-            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new BitField (torrent.PieceCount).SetAll (true), new ReadOnlyBitField (torrent.PieceCount)).Encode ());
+            File.WriteAllBytes (path, new FastResume (torrent.InfoHashes, new BitField (torrent.PieceCount).SetAll (true), new BitField (torrent.PieceCount)).Encode ());
             var manager = await engine.AddAsync (torrent, Path.Combine(tmpDir.Path, "savedir"));
             Assert.IsTrue (manager.HashChecked);
             await manager.StartAsync ();
@@ -236,15 +236,14 @@ namespace MonoTorrent.Client
         {
             TestWriter testWriter = null;
             using var tmpDir = TempDir.Create ();
-            using var engine = EngineHelpers.Create (new EngineSettingsBuilder (EngineHelpers.CreateSettings ()) {
+            using var engine = EngineHelpers.Create (EngineHelpers.CreateSettings () with {
                 AutoSaveLoadFastResume = true,
                 CacheDirectory = tmpDir.Path,
-            }.ToSettings (),
+            },
                 Factories.Default.WithPieceWriterCreator (maxOpenFiles => (testWriter = new TestWriter ()))
             );
 
             var first = new TaskCompletionSource<object> ();
-            var second = new TaskCompletionSource<object> ();
 
             var torrent = TestRig.CreatePrivate ();
             var path = engine.Settings.GetFastResumePath (torrent.InfoHashes);
@@ -254,19 +253,21 @@ namespace MonoTorrent.Client
             await testWriter.CreateAsync (manager.Files);
 
             Assert.IsTrue (manager.HashChecked);
+
+            if (File.Exists (manager.Files[0].FullPath))
+                File.Delete (manager.Files[0].FullPath);
             manager.Engine.DiskManager.GetHashAsyncOverride = (torrent, pieceIndex, dest) => {
                 first.SetResult (null);
-                second.Task.Wait ();
                 new byte[20].CopyTo (dest.V1Hash);
                 return Task.FromResult (true);
             };
-            var hashCheckTask = manager.HashCheckAsync (false);
-            await first.Task.WithTimeout ();
-            Assert.IsFalse (File.Exists (path));
+            await manager.HashCheckAsync (false);
 
-            second.SetResult (null);
-            await hashCheckTask.WithTimeout ();
-            Assert.IsTrue (File.Exists (path));
+            // There are no files so we never call GetHashAsync
+            Assert.IsFalse (first.Task.IsCompleted);
+            Assert.IsTrue (manager.Bitfield.AllFalse);
+            foreach (var file in manager.Files)
+                Assert.IsTrue (file.BitField.AllFalse);
         }
     }
 }

@@ -28,12 +28,15 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Modes;
@@ -61,7 +64,7 @@ namespace MonoTorrent.Client
         public string ListenerURL;
 
         PeerId id;
-        RequestBundle requests;
+        ReadOnlyMemory<byte> requests;
         readonly int numberOfPieces = 50;
 
         [SetUp]
@@ -96,7 +99,18 @@ namespace MonoTorrent.Client
             id.MessageQueue.SetReady ();
 
             rig.Manager.PieceManager.AddPieceRequests (id);
-            requests = (RequestBundle) id.MessageQueue.TryDequeue ();
+            requests = ValidateAllAreRequests (id.MessageQueue.TryDequeue ());
+        }
+
+        static ReadOnlyMemory<byte> ValidateAllAreRequests (ReadOnlyMemory<byte> buffer)
+        {
+            var b = buffer;
+            while (b.Length > 0) {
+                if (MessageDispatcher.GetType (b) != MessageType.Request)
+                    throw new Exception ("These should all be requests");
+                b = MessageDispatcher.NextMessage (b);
+            }
+            return buffer;
         }
 
         [TearDown]
@@ -118,8 +132,8 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendFirst ()
         {
-            using var releaser = MemoryPool.Default.Rent (requests.ByteLength, out Memory<byte> sendBuffer);
-            requests.Encode (sendBuffer.Span);
+            using var releaser = MemoryPool.Default.Rent (requests.Length, out Memory<byte> sendBuffer);
+            requests.CopyTo (sendBuffer);
             var task = connection.SendAsync (sendBuffer).AsTask ();
             connection.Dispose ();
             Assert.CatchAsync<OperationCanceledException> (() => task);
@@ -128,10 +142,10 @@ namespace MonoTorrent.Client
         [Test]
         public void Cancel_SendAndReceiveFirst ()
         {
-            using var r1 = MemoryPool.Default.Rent (requests.ByteLength, out Memory<byte> sendBuffer);
+            using var r1 = MemoryPool.Default.Rent (requests.Length, out Memory<byte> sendBuffer);
             using var r2 = MemoryPool.Default.Rent (100000, out Memory<byte> receiveBuffer);
 
-            requests.Encode (sendBuffer.Span);
+            requests.CopyTo (sendBuffer);
 
             var sendTask = connection.SendAsync (sendBuffer).AsTask ();
             var receiveTask = connection.ReceiveAsync (receiveBuffer);
@@ -190,8 +204,8 @@ namespace MonoTorrent.Client
         public async Task ReceiveFirst ()
         {
             using var releaser = new MemoryPool ().Rent (1024 * 1024 * 3, out Memory<byte> buffer);
-            using var sendReleaser = new MemoryPool ().Rent (requests.ByteLength, out Memory<byte> sendBuffer);
-            requests.Encode (sendBuffer.Span);
+            using var sendReleaser = new MemoryPool ().Rent (requests.Length, out Memory<byte> sendBuffer);
+            requests.CopyTo (sendBuffer);
 
             var receiveTask = NetworkIO.ReceiveAsync (connection, buffer.Slice (0, 4), null, null, null);
             var task = Send (sendBuffer);
@@ -205,11 +219,11 @@ namespace MonoTorrent.Client
         public async Task SendFirst ()
         {
             using var r1 = MemoryPool.Default.Rent (1024 * 1024 * 3, out Memory<byte> receiveBuffer);
-            using var r2 = MemoryPool.Default.Rent (requests.ByteLength, out Memory<byte> sendBuffer);
+            using var r2 = MemoryPool.Default.Rent (requests.Length, out Memory<byte> sendBuffer);
 
-            requests.Encode (sendBuffer.Span);
+            requests.CopyTo (sendBuffer);
 
-            var task = Send (sendBuffer.Slice (0, requests.ByteLength));
+            var task = Send (sendBuffer.Slice (0, requests.Length));
             var receiveTask = connection.ReceiveAsync (receiveBuffer.Slice (0, 4));
 
             await receiveTask;
@@ -225,10 +239,10 @@ namespace MonoTorrent.Client
                 id.MessageQueue.TryDequeue ();
 
             rig.Manager.PieceManager.AddPieceRequests (id);
-            requests = (RequestBundle) id.MessageQueue.TryDequeue ();
+            requests = ValidateAllAreRequests (id.MessageQueue.TryDequeue ());
 
-            using var releaser = MemoryPool.Default.Rent (requests.ByteLength, out Memory<byte> buffer);
-            requests.Encode (buffer.Span);
+            using var releaser = MemoryPool.Default.Rent (requests.Length, out Memory<byte> buffer);
+            requests.CopyTo (buffer);
             var sendTask = Send (buffer, 1);
 
             Assert.ThrowsAsync<ArgumentException> (() => sendTask);
@@ -237,23 +251,22 @@ namespace MonoTorrent.Client
         [Test]
         public void CompleteChunkBeforeRequestNext ()
         {
-            var messages = new List<RequestMessage> ();
-            var requestsBuffer = requests.Encode ();
+            var requestsBuffer = requests;
+
             while (requestsBuffer.Length > 0) {
-                var message = (RequestMessage) PeerMessage.DecodeMessage (requestsBuffer.Span, null).message;
-                messages.Add (message);
-                requestsBuffer = requestsBuffer.Slice (message.ByteLength);
-            }
+                var message = new RequestMessage (requestsBuffer);
+                requestsBuffer = MessageDispatcher.NextMessage (requestsBuffer);
 
-            for (int i = 0; i < messages.Count - 1; i++) {
-                rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages[i].PieceIndex, messages[i].StartOffset, messages[i].RequestLength), out _, new HashSet<IRequester> ());
-                int orig = id.AmRequestingPiecesCount;
-                rig.Manager.PieceManager.AddPieceRequests (id);
-                Assert.AreEqual (orig, id.AmRequestingPiecesCount, "#1." + i);
+                if (requestsBuffer.Length > 0) {
+                    rig.Manager.PieceManager.PieceDataReceived (id, message.PieceIndex, message.StartOffset, message.RequestLength, out _, new HashSet<IRequester> ());
+                    int orig = id.AmRequestingPiecesCount;
+                    rig.Manager.PieceManager.AddPieceRequests (id);
+                    Assert.AreEqual (orig, id.AmRequestingPiecesCount, "#1.");
+                } else {
+                    rig.Manager.PieceManager.PieceDataReceived (id, message.PieceIndex, message.StartOffset, message.RequestLength, out _, new HashSet<IRequester> ());
+                    Assert.AreEqual (0, id.AmRequestingPiecesCount, "#2");
+                }
             }
-
-            rig.Manager.PieceManager.PieceDataReceived (id, new PieceMessage (messages.Last ().PieceIndex, messages.Last ().StartOffset, messages.Last ().RequestLength), out _, new HashSet<IRequester> ());
-            Assert.AreEqual (0, id.AmRequestingPiecesCount, "#2");
 
             rig.Manager.PieceManager.AddPieceRequests (id);
             Assert.AreNotEqual (0, id.AmRequestingPiecesCount, "#3");
@@ -282,32 +295,31 @@ namespace MonoTorrent.Client
 
         private async Task CompleteSendOrReceiveFirst (Memory<byte> buffer)
         {
-            var allRequests = new List<RequestMessage> ();
-            var requestsBuffer = requests.Encode ();
+            var requestsBuffer = requests;
             while (requestsBuffer.Length > 0) {
-                var message = (RequestMessage) PeerMessage.DecodeMessage (requestsBuffer.Span, null).message;
-                allRequests.Add (message);
-                requestsBuffer = requestsBuffer.Slice (message.ByteLength);
-            }
-
-            while (allRequests.Count > 0) {
-                int size = Message.ReadInt (buffer.Span);
+                int size = BinaryPrimitives.ReadInt32BigEndian (buffer.Span);
 
                 await NetworkIO.ReceiveAsync (connection, buffer.Slice (4, size), null, null, null);
 
-                PieceMessage m = (PieceMessage) PeerMessage.DecodeMessage (buffer.Span.Slice (0, size + 4), rig.Manager).message;
-                var request = allRequests[0];
-                Assert.AreEqual (request.PieceIndex, m.PieceIndex, "#1");
-                Assert.AreEqual (request.RequestLength, m.RequestLength, "#1");
-                Assert.AreEqual (request.StartOffset, m.StartOffset, "#1");
+                // Messages are 'ref struct' so can contain a Span<byte>. That means they can't be in
+                // an async method directly. Host them to a non-async method with this inner method garbage.
+                // It's only for a test :P 
+                Inner ();
+                void Inner()
+                {
+                    var m = new PieceMessage (buffer.Slice (0, size + 4));
+                    var request = new RequestMessage (requestsBuffer);
+                    Assert.AreEqual (request.PieceIndex, m.PieceIndex, "#1");
+                    Assert.AreEqual (request.RequestLength, m.RequestLength, "#1");
+                    Assert.AreEqual (request.StartOffset, m.StartOffset, "#1");
 
-                for (int i = 0; i < request.RequestLength; i++)
-                    if (buffer.Span[i + 13] != (byte) (m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))
-                        throw new Exception ("Corrupted data received");
+                    for (int i = 0; i < request.RequestLength; i++)
+                        if (buffer.Span[i + 13] != (byte) (m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))
+                            throw new Exception ("Corrupted data received");
 
-                allRequests.RemoveAt (0);
-
-                if (allRequests.Count == 0) {
+                    requestsBuffer = MessageDispatcher.NextMessage (requestsBuffer);
+                }
+                if (requestsBuffer.Length == 0) {
                     break;
                 } else {
                     await NetworkIO.ReceiveAsync (connection, buffer.Slice (0, 4), null, null, null);;
@@ -402,7 +414,7 @@ namespace MonoTorrent.Client
             id.MessageQueue.SetReady ();
 
             rig.Manager.PieceManager.AddPieceRequests (id);
-            requests = (RequestBundle) id.MessageQueue.TryDequeue ();
+            requests = ValidateAllAreRequests (id.MessageQueue.TryDequeue ());
             await ReceiveFirst ();
             Assert.AreEqual (url, requestedUrl[0]);
         }

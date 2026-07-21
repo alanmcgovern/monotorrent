@@ -207,7 +207,7 @@ namespace MonoTorrent.PieceWriter
             return ReusableTask.CompletedTask;
         }
 
-        public async ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer, bool preferSkipCache)
+        public async ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, ReadOnlyMemory<byte> buffer, bool preferSkipCache)
         {
             if (preferSkipCache || Capacity < block.RequestLength) {
                 await WriteToFilesAsync (torrent, block, buffer);
@@ -264,7 +264,7 @@ namespace MonoTorrent.PieceWriter
             return Writer.ReadFromFilesAsync (torrent, block, buffer);
         }
 
-        ReusableTask WriteToFilesAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer)
+        ReusableTask WriteToFilesAsync (ITorrentManagerInfo torrent, BlockInfo block, ReadOnlyMemory<byte> buffer)
         {
             WrittenThroughCache?.Invoke (this, block);
             return Writer.WriteToFilesAsync (torrent, block, buffer);

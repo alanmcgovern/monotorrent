@@ -34,6 +34,8 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Logging;
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -42,7 +44,6 @@ namespace MonoTorrent.Client.Modes
         static readonly Logger logger = Logger.Create (nameof (StoppingMode));
 
         public bool CanAcceptConnections => false;
-        public bool CanHandleMessages => false;
         public bool CanHashCheck => false;
         public TorrentState State => TorrentState.Stopping;
         public CancellationToken Token => Cancellation.Token;
@@ -62,9 +63,6 @@ namespace MonoTorrent.Client.Modes
         {
             // Nothing
         }
-
-        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
-            => throw new NotSupportedException ();
 
         public void HandlePeerConnected (PeerId id)
             => throw new NotSupportedException ();

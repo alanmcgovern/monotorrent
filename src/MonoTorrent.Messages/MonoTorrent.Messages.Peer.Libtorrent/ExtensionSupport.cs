@@ -27,22 +27,61 @@
 //
 
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+
 namespace MonoTorrent.Messages.Peer.Libtorrent
 {
-    public struct ExtensionSupport
+    public struct ExtensionSupport : IEquatable<ExtensionSupport>
     {
+        ReadOnlyMemory<byte> nameUtf8;
+
         public byte MessageId { get; }
+        public ReadOnlySpan<byte> NameUtf8 => nameUtf8.Span;
         public string Name { get; }
 
-        public ExtensionSupport (string name, byte messageId)
+        internal ExtensionSupport(string name, byte messageId)
         {
-            MessageId = messageId;
+            nameUtf8 = Encoding.UTF8.GetBytes (name);
             Name = name;
+            MessageId = messageId;
         }
 
-        public override string ToString ()
+        public ExtensionSupport (ReadOnlySpan<byte> name, byte messageId)
         {
-            return string.Format ("{1}: {0}", Name, MessageId);
+            MessageId = messageId;
+
+            foreach (var v in MessageEncoder.Extended.SupportedMessages) {
+                if (v.NameUtf8.SequenceEqual (name)) {
+                    Name = v.Name;
+                    nameUtf8 = v.nameUtf8;
+                    break;
+                }
+            }
+
+            if (String.IsNullOrEmpty (Name)) {
+                Name = Encoding.UTF8.GetString (name);
+                nameUtf8 = name.ToArray ();
+            }
         }
+
+        public override bool Equals ([NotNullWhen (true)] object? obj)
+            => obj is ExtensionSupport o && this == o;
+
+        public bool Equals (ExtensionSupport other)
+            => this == other;
+
+        public override int GetHashCode ()
+            => Name.GetHashCode ();
+
+        public override string ToString ()
+            => string.Format ("{1}: {0}", Name, MessageId);
+
+        public static bool operator == (ExtensionSupport left, ExtensionSupport right)
+            => left.Name == right.Name && left.MessageId == right.MessageId;
+
+        public static bool operator != (ExtensionSupport left, ExtensionSupport right)
+            => !(left == right);
     }
 }

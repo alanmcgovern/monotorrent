@@ -30,7 +30,7 @@
 using System.Threading.Tasks;
 
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -84,9 +84,11 @@ namespace MonoTorrent.Client.Modes
             Mode.HandlePeerConnected (peer);
             Mode.Tick (0);
 
-            Assert.IsTrue (Rig.Manager.Peers.ConnectedPeers[0].MessageQueue.TryDequeue () is HaveAllMessage, "#1");
-            BitfieldMessage m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].MessageQueue.TryDequeue ();
-            Assert.IsTrue (m.BitField.AllTrue, "#2");
+            Assert.AreEqual (MessageType.HaveAll, MessageDispatcher.GetType (Rig.Manager.Peers.ConnectedPeers[0].MessageQueue.TryDequeue ()), "#1");
+            var m = Rig.Manager.Peers.ConnectedPeers[1].MessageQueue.TryDequeue ();
+            Assert.AreEqual (MessageType.Bitfield, MessageDispatcher.GetType (m), "#2");
+            var msg = new BitfieldMessage (m);
+            Assert.IsTrue (new BitField (msg.BitField, Rig.Manager.Bitfield.Length).AllTrue);
         }
     }
 }

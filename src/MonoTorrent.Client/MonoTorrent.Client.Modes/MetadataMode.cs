@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,9 +40,9 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Logging;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
 using MonoTorrent.Messages.Peer.Libtorrent;
 using MonoTorrent.PiecePicking;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client.Modes
 {
@@ -97,8 +98,8 @@ namespace MonoTorrent.Client.Modes
             void IMessageEnqueuer.EnqueueRequest (IRequester wrappedPeer, PieceSegment block)
             {
                 var peer = UnwrappedPeers[(IgnoringChokeStateRequester) wrappedPeer];
-                var message = new LTMetadata (peer.ExtensionSupports, LTMetadata.MessageType.Request, block.BlockIndex);
-                peer.MessageQueue.Enqueue (message);
+                var (message, releaser) = MessageEncoder.Extended.WriteMetadata (peer.ExtensionSupports, Extended.MetadataMessage.MetadataMessageType.Request, block.BlockIndex, default);
+                peer.MessageQueue.Enqueue (message, releaser);
             }
 
             void IMessageEnqueuer.EnqueueRequests (IRequester peer, Span<PieceSegment> blocks)
@@ -154,20 +155,20 @@ namespace MonoTorrent.Client.Modes
             PreLogicTick (counter);
 
             foreach (PeerId id in Manager.Peers.ConnectedPeers)
-                if (id.SupportsLTMessages && id.ExtensionSupports.Supports (LTMetadata.Support.Name))
+                if (id.SupportsLTMessages && id.ExtensionSupports.Supports (MessageEncoder.Extended.MetadataExchangeSupport.Name))
                     RequestNextNeededPiece (id);
         }
 
-        protected override void HandleLtMetadataMessage (PeerId id, LTMetadata message)
+        public override void HandleMessage (PeerId id, Extended.MetadataMessage message)
         {
-            base.HandleLtMetadataMessage (id, message);
+            base.HandleMessage (id, message);
 
             if (Requester is null || RequesterData is null || Stream is null)
                 return;
 
-            switch (message.MetadataMessageType) {
-                case LTMetadata.MessageType.Data:
-                    if (!Requester.ValidatePiece (RequesterData.Wrap(id), new PieceSegment (0, message.Piece), out bool pieceComplete, new HashSet<IRequester> ()))
+            switch (message.MessageType) {
+                case Extended.MetadataMessage.MetadataMessageType.Data:
+                    if (!Requester.ValidatePiece (RequesterData.Wrap (id), new PieceSegment (0, message.Piece), out bool pieceComplete, new HashSet<IRequester> ()))
                         return;
 
                     // If the piece validated correctly we should indicate that this peer is healthy and is providing the data
@@ -178,7 +179,7 @@ namespace MonoTorrent.Client.Modes
                         id.LastBlockReceived.Restart ();
                     }
 
-                    message.MetadataPiece.CopyTo (Stream.AsMemory (message.Piece * LTMetadata.BlockSize));
+                    message.MetadataData.CopyTo (Stream.AsMemory (message.Piece * Extended.MetadataMessage.MetadataBlockSize));
                     if (pieceComplete) {
                         InfoHash? v1InfoHash;
                         InfoHash? v2InfoHash;
@@ -244,41 +245,40 @@ namespace MonoTorrent.Client.Modes
                     }
                     RequestNextNeededPiece (id);
                     break;
-                case LTMetadata.MessageType.Reject:
+                case Extended.MetadataMessage.MetadataMessageType.Reject:
                     //TODO
                     //Think to what we do in this situation
                     //for moment nothing ;)
                     //reject or flood?
                     break;
-                case LTMetadata.MessageType.Request://ever done in base class but needed to avoid default
+                case Extended.MetadataMessage.MetadataMessageType.Request://ever done in base class but needed to avoid default
                     break;
                 default:
-                    throw new MessageException ($"Invalid messagetype in LTMetadata: {message.MetadataMessageType}");
+                    throw new MessageException ($"Invalid messagetype in LTMetadata: {message.MessageType}");
             }
-
         }
 
-        protected override void HandleAllowedFastMessage (PeerId id, AllowedFastMessage message)
+        public override void HandleMessage (PeerId id, AllowedFastMessage message)
         {
             // Disregard these when in metadata mode as we can't request regular pieces anyway
         }
 
-        protected override void HandleHaveAllMessage (PeerId id, HaveAllMessage message)
+        public override void HandleMessage (PeerId id, HaveAllMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveMessage (PeerId id, HaveMessage message)
+        public override void HandleMessage (PeerId id, HaveMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveNoneMessage (PeerId id, HaveNoneMessage message)
+        public override void HandleMessage (PeerId id, HaveNoneMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleInterestedMessage (PeerId id, InterestedMessage message)
+        public override void HandleMessage (PeerId id, InterestedMessage message)
         {
             // Nothing
         }
@@ -291,30 +291,41 @@ namespace MonoTorrent.Client.Modes
             Requester.AddRequests (RequesterData.Wrap (id), RequesterData.AvailablePieces, Array.Empty<ReadOnlyBitField> ());
         }
 
-        protected override void AppendBitfieldMessage (PeerId id, MessageBundle bundle)
+        protected override void AppendBitfieldMessage (PeerId id)
         {
-            if (id.SupportsFastPeer)
-                bundle.Add (HaveNoneMessage.Instance, default);
+            if (id.SupportsFastPeer) {
+                id.MessageQueue.Enqueue (MessageEncoder.WriteHaveNone ());
+            }
             // If the fast peer extensions are not supported we must not send a
             // bitfield message because we don't know how many pieces the torrent
             // has. We could probably send an invalid one and force the connection
             // to close.
         }
 
-        protected override void HandleBitfieldMessage (PeerId id, BitfieldMessage message)
+        public override void HandleMessage (PeerId id, BitfieldMessage message)
         {
             // If we receive a bitfield message we should ignore it. We don't know how many
             // pieces the torrent has so we can't actually safely decode the bitfield.
-            if (message != BitfieldMessage.UnknownLength)
-                throw new InvalidOperationException ("BitfieldMessages should not be decoded normally while in metadata mode.");
+            //
+            // NOTE: We know how many bytes it has, we just don't know how many bits it has. We could
+            // store the bytes and then inflate them into a BitField after metadata has been received.
+            // Would that avoid the need to close all connections and reopen them? Maybe?
+            // What if some data is already available? We'd have to hash and send lots of have messages.
+
+            // NOTE: after moving to structs we no longer have to pre-parse the received messages and
+            // have a sentinal "illegal bitfield" value because we don't know how many bits to parse out.
+            // We can just do nothing!.
+            // FIXME: Remove this sooner or later.
+            //if (message != BitfieldMessage.UnknownLength)
+            //    throw new InvalidOperationException ("BitfieldMessages should not be decoded normally while in metadata mode.");
         }
 
-        protected override void HandleExtendedHandshakeMessage (PeerId id, ExtendedHandshakeMessage message)
+        public override void HandleMessage (PeerId id, Extended.HandshakeMessage message)
         {
-            base.HandleExtendedHandshakeMessage (id, message);
+            base.HandleMessage (id, message);
 
-            if (id.ExtensionSupports.Supports (LTMetadata.Support.Name)) {
-                var metadataSize = message.MetadataSize.GetValueOrDefault (0);
+            if (id.ExtensionSupports.Supports (MessageEncoder.Extended.MetadataExchangeSupport.Name)) {
+                var metadataSize = message.MetadataBytes.GetValueOrDefault (0);
                 if (Stream == null && metadataSize > 0) {
                     Stream = new byte[metadataSize];
                     Requester = Manager.Engine!.Factories.CreatePieceRequester (new PieceRequesterSettings (false, false, false, 3));

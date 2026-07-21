@@ -62,7 +62,7 @@ namespace MonoTorrent
             public IList<ITorrentFile> Files { get; }
             public InfoHashes InfoHashes { get; }
             public string Name => "";
-            public int PieceLength { get;}
+            public int PieceLength { get; }
             public long Size { get; }
 
             public TorrentInfo (InfoHashes infoHashes, IList<ITorrentFile> files, int pieceLength)
@@ -166,7 +166,7 @@ namespace MonoTorrent
         public TorrentCreator (TorrentType type)
             : this (type, Factories.Default)
         {
-            
+
         }
         public TorrentCreator (Factories factories)
             : this (TorrentType.V1V2Hybrid, factories)
@@ -249,10 +249,6 @@ namespace MonoTorrent
         internal async Task<BEncodedDictionary> CreateAsync (string name, ITorrentFileSource fileSource, CancellationToken token)
         {
             var source = fileSource.Files.ToList ();
-            foreach (var file in source)
-                if (file.Source.Contains (Path.AltDirectorySeparatorChar) || file.Destination.Contains (Path.AltDirectorySeparatorChar))
-                    throw new InvalidOperationException ("DERP");
-
             EnsureNoDuplicateFiles (source);
 
             if (source.All (t => t.Length == 0))
@@ -267,7 +263,7 @@ namespace MonoTorrent
             // are calculated correctly, which is needed so the files are hashed in the correct order for V1 metadata if this is a
             // hybrid torrent
             if (Type.HasV2 ())
-                source = source.OrderBy (t => t.Destination, StringComparer.Ordinal).ToList ();
+                source = source.OrderBy (t => t.Destination, PathPartComparer.Instance).ToList ();
 
             // The last non-empty file should have no padding bytes. There may be additional
             // empty files after this one depending on how the files are sorted, but they have
@@ -278,7 +274,7 @@ namespace MonoTorrent
             // Resort them before putting them in the BEncodedDictionary metadata for the torrent
             var files = TorrentFileInfo.Create (PieceLength, source.Select ((file, index) => {
                 var length = file.Length;
-                var padding =  (int) ((UsePadding && index < lastNonEmptyFileIndex && length % PieceLength > 0) ? PieceLength - (length % PieceLength) : 0);
+                var padding = (int) ((UsePadding && index < lastNonEmptyFileIndex && length % PieceLength > 0) ? PieceLength - (length % PieceLength) : 0);
                 var info = (file.Destination, length, padding, file.Source);
                 return info;
             }).ToArray ());
@@ -326,7 +322,7 @@ namespace MonoTorrent
             // re-sort these by destination path if we have BitTorrent v2 metadata. The files were sorted this way originally
             // but empty ones were popped to the front when creating ITorrentManagerFile objects.
             if (Type.HasV2 ())
-                files = files.OrderBy (t => t.Path, StringComparer.Ordinal).ToArray ();
+                files = files.OrderBy (t => t.Path, PathPartComparer.Instance).ToArray ();
 
             if (Type.HasV1 ()) {
                 if (manager.Files.Count == 1 && source[0].Destination == name)
@@ -340,7 +336,7 @@ namespace MonoTorrent
 
         void AppendFileTree (ITorrentManagerFile key, ReadOnlyMemory<byte> value, BEncodedDictionary fileTree)
         {
-            var parts = key.Path.Split (Path.DirectorySeparatorChar);
+            var parts = key.Path.Split (new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
             foreach (var part in parts) {
                 if (!fileTree.TryGetValue (part, out BEncodedValue? inner)) {
                     fileTree[part] = inner = new BEncodedDictionary ();
@@ -410,12 +406,12 @@ namespace MonoTorrent
             // Some torrents use 16kB or 32kB pieces, so allowing preloading of up to 512kB worth seems reasonable?
             int preloadPieceCount = Math.Min (Math.Max (3, (512 * 1024) / PieceLength), pieceCount);
 
-            var settings = new EngineSettingsBuilder {
+            var settings = new EngineSettings () with {
                 // If we need to calculate per-file hashes, ensure we have enough capacity in the memory cache to avoid reading
                 // data from disk twice, and ensure we cache the data after we read it rather than ditching it ~immediately.
                 DiskCacheBytes = (StoreMD5 || StoreSHA1) ? preloadPieceCount * PieceLength : Constants.BlockSize * 8,
                 DiskCachePolicy = (StoreMD5 || StoreSHA1) ? CachePolicy.ReadsAndWrites : CachePolicy.WritesOnly
-            }.ToSettings ();
+            };
 
             using var diskManager = new DiskManager (settings, Factories);
             using var releaser = MemoryPool.Default.Rent (Constants.BlockSize, out Memory<Byte> reusableBlockBuffer);
@@ -456,7 +452,7 @@ namespace MonoTorrent
 
                 if (currentFile.EndPieceIndex == piece) {
                     while (currentFile != null && currentFile.EndPieceIndex == piece) {
-                        OnHashed (new TorrentCreatorEventArgs (currentFile.FullPath, currentFile.Length, currentFile.Length, torrentInfo.PieceIndexToByteOffset(piece) + sizeOfCurrentPiece, torrentInfo.Size));
+                        OnHashed (new TorrentCreatorEventArgs (currentFile.FullPath, currentFile.Length, currentFile.Length, torrentInfo.PieceIndexToByteOffset (piece) + sizeOfCurrentPiece, torrentInfo.Size));
 
                         files = files.Slice (1);
                         currentFile = files.Length == 0 ? null : files.Span[0];
@@ -580,7 +576,7 @@ namespace MonoTorrent
             var fileDict = new BEncodedDictionary ();
 
             var filePath = new BEncodedList ();
-            string[] splittetPath = file.Path.Split (new[] { Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+            string[] splittetPath = file.Path.Split (new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string s in splittetPath)
                 filePath.Add (new BEncodedString (s));
 

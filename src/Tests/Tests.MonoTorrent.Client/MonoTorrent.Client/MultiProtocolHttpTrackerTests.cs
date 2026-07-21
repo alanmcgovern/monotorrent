@@ -48,6 +48,7 @@ using NUnit.Framework;
 namespace MonoTorrent.Trackers
 {
     [TestFixture]
+    [Platform (Include = "Win")] // Creating httplistener's on all OS's is unreliable. these fails in the azure devops pipeline as a result.
     public class MultiProtocolHttpTrackerTests
     {
         static readonly TimeSpan Timeout = Debugger.IsAttached ? TimeSpan.FromDays (10) : TimeSpan.FromSeconds (10);

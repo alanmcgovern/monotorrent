@@ -34,6 +34,8 @@ using System.Threading.Tasks;
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.PiecePicking;
 
+using ReusableTasks;
+
 namespace MonoTorrent.Client
 {
     /// <summary>
@@ -50,7 +52,7 @@ namespace MonoTorrent.Client
         bool Initialised { get; set; }
         TorrentManager Manager { get; }
         IPieceRequester Requester { get; set; }
-        BitField PendingHashCheckPieces { get; set; }
+        BitField PendingHashCheckPieces;
 
         /// <summary>
         /// Returns true when every block has been requested at least once.
@@ -64,11 +66,11 @@ namespace MonoTorrent.Client
             Requester = manager.Engine!.Factories.CreatePieceRequester ();
         }
 
-        internal bool PieceDataReceived (PeerId id, PieceMessage message, out bool pieceComplete, HashSet<IRequester> peersInvolved)
+        internal bool PieceDataReceived (PeerId id, int pieceIndex, int startOffset, int requestLength, out bool pieceComplete, HashSet<IRequester> peersInvolved)
         {
             //FIXME: Ensure piece length is correct?
-            var isValidLength = Manager.Torrent!.BytesPerBlock (message.PieceIndex, message.StartOffset / Constants.BlockSize) == message.RequestLength;
-            if (Initialised && isValidLength && Requester.ValidatePiece (id, new PieceSegment (message.PieceIndex, message.StartOffset / Constants.BlockSize), out pieceComplete, peersInvolved)) {
+            var isValidLength = Manager.Torrent!.BytesPerBlock (pieceIndex, startOffset / Constants.BlockSize) == requestLength;
+            if (Initialised && isValidLength && Requester.ValidatePiece (id, new PieceSegment (pieceIndex, startOffset / Constants.BlockSize), out pieceComplete, peersInvolved)) {
                 // If the piece validated correctly we should indicate that this peer is healthy and is providing the data
                 // we requested
                 if (id.AmRequestingPiecesCount == 0) {
@@ -77,7 +79,7 @@ namespace MonoTorrent.Client
                     id.LastBlockReceived.Restart ();
                 }
                 if (pieceComplete)
-                    PendingHashCheckPieces[message.PieceIndex] = true;
+                    PendingHashCheckPieces[pieceIndex] = true;
                 return true;
             } else {
                 pieceComplete = false;
@@ -154,7 +156,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public async Task<int> CurrentRequestCountAsync ()
+        public async ReusableTask<int> CurrentRequestCountAsync ()
         {
             if (!Initialised)
                 return 0;

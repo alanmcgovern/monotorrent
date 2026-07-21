@@ -30,98 +30,44 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Dht.Messages;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Dht.Messages
 {
     class DhtMessageFactory
     {
-        static readonly BEncodedString QueryNameKey = new BEncodedString ("q");
-        static readonly BEncodedString MessageTypeKey = new BEncodedString ("y");
-        static readonly BEncodedString TransactionIdKey = new BEncodedString ("t");
-        static readonly Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, DhtMessage>> ();
-
-        readonly Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage> ();
-
+        readonly Dictionary<(TransactionId, CompactEndPoint), ReadOnlyMemory<byte>> messages = new Dictionary<(TransactionId, CompactEndPoint), ReadOnlyMemory<byte>> ();
 
         public int RegisteredMessages => messages.Count;
 
-        static DhtMessageFactory ()
+        internal bool IsRegistered (ReadOnlySpan<byte> transactionId, CompactEndPoint endPoint)
         {
-            queryDecoders.Add (new BEncodedString ("announce_peer"), d => new AnnouncePeer (d));
-            queryDecoders.Add (new BEncodedString ("find_node"), d => new FindNode (d));
-            queryDecoders.Add (new BEncodedString ("get_peers"), d => new GetPeers (d));
-            queryDecoders.Add (new BEncodedString ("ping"), d => new Ping (d));
+            if (transactionId.Length != 2)
+                throw new NotSupportedException ();
+
+            return messages.ContainsKey ((TransactionId.From (transactionId), endPoint));
         }
 
-        internal bool IsRegistered (BEncodedValue transactionId)
+        public void RegisterSend (ReadOnlySpan<byte> transactionId, ReadOnlyMemory<byte> queryMessage, CompactEndPoint endPoint)
         {
-            return messages.ContainsKey (transactionId);
+            if (transactionId.Length != 2)
+                throw new InvalidOperationException ("Transaction ids should be 2 byte BEncodedStrings");
+
+            messages.Add ((TransactionId.From (transactionId), endPoint), queryMessage);
         }
 
-        public void RegisterSend (QueryMessage message)
+        public bool UnregisterSend (ReadOnlySpan<byte> transactionId, CompactEndPoint endPoint)
         {
-            messages.Add (message.TransactionId ?? throw new ArgumentException ("The message must have a transaction id set"), message);
-        }
-
-        public bool UnregisterSend (QueryMessage message)
-        {
-            return messages.Remove (message.TransactionId ?? throw new ArgumentException("The message must have a transaction id set"));
-        }
-
-        public DhtMessage DecodeMessage (BEncodedDictionary dictionary)
-        {
-            if (!TryDecodeMessage (dictionary, out DhtMessage? message, out string? error))
-                throw new MessageException (ErrorCode.GenericError, error!);
-
-            return message;
-        }
-
-        public bool TryDecodeMessage (BEncodedDictionary dictionary, [NotNullWhen (true)] out DhtMessage? message)
-        {
-            return TryDecodeMessage (dictionary, out message, out string? error);
-        }
-
-        public bool TryDecodeMessage (BEncodedDictionary dictionary, [NotNullWhen(true)] out DhtMessage? message, out string? error)
-        {
-            message = null;
-            error = null;
-
-            if (!dictionary.TryGetValue (MessageTypeKey, out BEncodedValue? messageType)) {
-                message = null;
-                error = "The BEncodedDictionary did not contain the 'q' key, so the message type could not be identified";
+            // Remote peers may send spoofed, or invalid, responses containing a transaction ID this
+            // library did not create. If that happens, just return false. No need to raise an exception.
+            if (transactionId.Length != 2)
                 return false;
-            }
 
-            if (messageType.Equals (QueryMessage.QueryType)) {
-                message = queryDecoders[(BEncodedString) dictionary[QueryNameKey]] (dictionary);
-            } else if (messageType.Equals (ErrorMessage.ErrorType)) {
-                message = new ErrorMessage (dictionary);
-                messages.Remove (message.TransactionId!);
-            } else {
-                var key = (BEncodedString) dictionary[TransactionIdKey];
-                if (messages.TryGetValue (key, out QueryMessage? query)) {
-                    messages.Remove (key);
-                    try {
-                        message = query.CreateResponse (dictionary);
-                    } catch {
-                        error = "Response dictionary was invalid";
-                    }
-                } else {
-                    error = "Response had bad transaction ID";
-                }
-            }
-
-            // If the transaction ID is null, or invalid, we should bail out
-            if (message != null && message.TransactionId == null)
-                error = "Response had a null transation ID";
-
-            // If the node ID is null, or invalid, we should bail out
-            if (message != null && message.Id == null)
-                error = "Response had a null node ID";
-
-            return error == null && message != null;
+            return messages.Remove ((TransactionId.From (transactionId), endPoint));
         }
     }
 }

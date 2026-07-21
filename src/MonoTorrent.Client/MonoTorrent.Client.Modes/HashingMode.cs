@@ -28,18 +28,20 @@
 
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client.Modes
 {
     class HashingMode : IMode
     {
         public bool CanAcceptConnections => false;
-        public bool CanHandleMessages => false;
         public bool CanHashCheck => false;
         public TorrentState State => PausedCompletionSource.Task.IsCompleted ? TorrentState.Hashing : TorrentState.HashingPaused;
         public CancellationToken Token => Cancellation.Token;
@@ -93,8 +95,26 @@ namespace MonoTorrent.Client.Modes
             // Delete any existing fast resume data. We will need to recreate it after hashing completes.
             await Manager.MaybeDeleteFastResumeAsync ();
 
+            // Files can only exist if their save directory exists.
+            bool anyExisted = Directory.Exists (Manager.SavePath);
+
+            // Check the size of all files first. It's easier than trying to insert it into the logic below as it'd have to be in several places.
+            if (anyExisted) {
+                // If the directory existed, it's worth checking if any files exist while we gather their sizes.
+                anyExisted = false;
+                foreach (TorrentFileInfo file in Manager.Files) {
+                    // When hash checking we should double-check everything, which means we need to recheck the
+                    // length of the file on disk even if 'CachedActualLength' has been cached before.
+                    file.CachedActualLength = await DiskManager.GetLengthAsync (file);
+                    anyExisted |= file.CachedActualLength.HasValue;
+                    // If this is a zero length file, mark it as downloaded if it exists.
+                    if (file.Length == 0)
+                        file.BitField[0] = file.CachedActualLength.HasValue && file.CachedActualLength.Value == 0;
+                }
+            }
+
             bool atLeastOneDoNotDownload = Manager.Files.Any (t => t.Priority == Priority.DoNotDownload);
-            if (await DiskManager.CheckAnyFilesExistAsync (Manager)) {
+            if (anyExisted) {
                 int piecesHashed = 0;
                 Cancellation.Token.ThrowIfCancellationRequested ();
                 // bep52: Properly support this
@@ -129,14 +149,12 @@ namespace MonoTorrent.Client.Modes
                     Manager.OnPieceHashed (i, false, i + 1, Manager.Torrent.PieceCount);
             }
 
-            await Manager.RefreshAllFilesCorrectLengthAsync ();
+            // If we successfully hashed all the files we still need to ensure they are the correct length
+            Manager.RefreshAllFilesDownloadableOrDownloaded ();
         }
 
         public void Dispose ()
             => Cancellation.Cancel ();
-
-        public void HandleMessage (PeerId id, PeerMessage message, PeerMessage.Releaser releaser)
-            => new NotSupportedException ();
 
         public void HandlePeerConnected (PeerId id)
             => throw new NotSupportedException ();

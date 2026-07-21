@@ -172,14 +172,14 @@ namespace MonoTorrent.Client
         public void MoveFileFail ()
         {
             writer.move = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFileAsync ((TorrentFileInfo) data.Files[0], ("root", "bar", "baz")));
+            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFileAsync ((TorrentFileInfo) data.Files[0], ("root", "bar", "baz")).AsTask ());
         }
 
         [Test]
         public void MoveFilesFail ()
         {
             writer.move = true;
-            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFilesAsync (data.Files, "root", true));
+            Assert.ThrowsAsync<Exception> (() => diskManager.MoveFilesAsync (data.Files, "root", true).AsTask ());
         }
 
         [Test]

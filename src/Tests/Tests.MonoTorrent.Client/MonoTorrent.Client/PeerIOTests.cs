@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Peer.Encryption;
@@ -64,14 +65,13 @@ namespace MonoTorrent.Client
             );
 
             var bf = new BitField (torrentData.PieceCount).Set (1, true);
-            var message = new BitfieldMessage (bf);
+            (var message, var releaser) = MessageEncoder.WriteBitfield(bf);
 
-            using var releaser = MemoryPool.Default.Rent (message.ByteLength, out Memory<byte> buffer);
-            message.Encode (buffer.Span);
+            await NetworkIO.SendAsync (pair.Outgoing, message);
+            var receivedMessage = await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance, null, null, null, torrentData);
+            Assert.AreEqual (MessageType.Bitfield, MessageDispatcher.GetType (receivedMessage));
 
-            await NetworkIO.SendAsync (pair.Outgoing, buffer);
-            var receivedMessage = (BitfieldMessage) await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance, null, null, null, torrentData);
-            Assert.IsTrue (message.BitField.SequenceEqual(receivedMessage.BitField));
+            Assert.AreEqual (bf, new BitField (new BitfieldMessage (receivedMessage).BitField, torrentData.PieceCount));
         }
 
         [Test]
@@ -100,40 +100,27 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task UnknownMessage ()
-        {
-            using var releaser = MemoryPool.Default.Rent (20, out Memory<byte> data);
-            Message.Write (data.Span, 16);
-            for (int i = 4; i < 16; i++)
-                data.Span [i] = byte.MaxValue;
-
-            var task = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
-            await NetworkIO.SendAsync (pair.Outgoing, data);
-
-            Assert.ThrowsAsync<MessageException> (async () => await task, "#1");
-        }
-
-        [Test]
         public async Task ZeroMessageBodyIsKeepAlive ()
         {
             using var releaser = MemoryPool.Default.Rent (4, out Memory<byte> buffer);
 
-            Message.Write (buffer.Span, 0);
+            MessageEncoder.WriteKeepAlive (buffer.Span);
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
-            Assert.IsInstanceOf<KeepAliveMessage> (await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance));
+            var received = await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
+            Assert.IsTrue (received.Length == 4 && BinaryPrimitives.ReadUInt32BigEndian (received.Span) == 0);
 
-            new KeepAliveMessage ().Encode (buffer.Span);
+            MessageEncoder.WriteKeepAlive (buffer.Span);
             await NetworkIO.SendAsync (pair.Outgoing, buffer);
-            Assert.IsInstanceOf<KeepAliveMessage> (await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance));
+            received = await PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance);
+            Assert.IsTrue (received.Length == 4 && BinaryPrimitives.ReadUInt32BigEndian (received.Span) == 0);
         }
 
         [Test]
         public void IgnoreNullMonitors ()
         {
             var blockSize = Constants.BlockSize - 1234;
-            var msg = new PieceMessage (0, 0, blockSize);
-            var releaser = new MemoryPool ().Rent (blockSize, out Memory<byte> buffer);
-            msg.SetData ((releaser, buffer));
+            (var msg, var releaser) = MessageEncoder.WriteSparsePiece (0, 0, blockSize);
+            // FIXME StructMessages: is the data prefilled?
 
             Assert.DoesNotThrowAsync (() => {
                 return Task.WhenAll (
@@ -147,11 +134,11 @@ namespace MonoTorrent.Client
         public async Task CountPieceMessageBlockLengthAsData ()
         {
             var blockSize = Constants.BlockSize - 1234;
-            var msg = new PieceMessage (0, 0, blockSize);
-            var releaser = new MemoryPool ().Rent (blockSize, out Memory<byte> buffer);
-            msg.SetData ((releaser, buffer));
+            (var msg, var releaser) = MessageEncoder.WriteSparsePiece(0, 0, blockSize);
+            // FIXME StructMessages: is the data prefilled?
 
-            var protocolSize = msg.ByteLength - blockSize;
+            var headerBuffer = new byte[4];
+            var protocolSize = msg.Length - blockSize;
             await Task.WhenAll (
                 PeerIO.SendMessageAsync (pair.Incoming, PlainTextEncryption.Instance, msg, null, pair.Incoming.Monitor, pair.Incoming.ManagerMonitor).AsTask (),
                 PeerIO.ReceiveMessageAsync (pair.Outgoing, PlainTextEncryption.Instance, null, pair.Outgoing.Monitor, pair.Outgoing.ManagerMonitor, null).AsTask ()

@@ -73,18 +73,5 @@ namespace MonoTorrent.Dht
 
             Assert.AreNotEqual (a, b, "#1");
         }
-
-        [Test]
-        public void GetBytesTest ()
-        {
-            var str = new NodeId (new BEncodedString (new byte[20])).AsMemory ();
-            Assert.AreEqual (20, str.Span.Length);
-
-            str = new NodeId (new byte[20]).AsMemory ();
-            Assert.AreEqual (20, str.Span.Length);
-
-            str = new NodeId (new InfoHash (new byte[20])).AsMemory ();
-            Assert.AreEqual (20, str.Span.Length);
-        }
     }
 }

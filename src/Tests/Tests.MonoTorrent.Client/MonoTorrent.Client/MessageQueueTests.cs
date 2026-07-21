@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -15,43 +15,16 @@ namespace MonoTorrent.Client
     public class MessageQueueTests
     {
         [Test]
-        public void RejectRequestDisposesMessage ()
-        {
-            var queue = new MessageQueue ();
-            queue.SetReady ();
-
-            var bufferReleaser = MemoryPool.Default.Rent (Constants.BlockSize, out Memory<byte> buffer);
-            (var msg, var msgReleaser) = PeerMessage.Rent<PieceMessage> ();
-            msg.Initialize (0, 0, Constants.BlockSize);
-
-            msg.SetData ((bufferReleaser, buffer));
-            queue.Enqueue (msg, msgReleaser);
-
-            Assert.IsFalse (msg.Data.IsEmpty);
-            queue.RejectRequests (false, new int[0]);
-            Assert.IsTrue (msg.Data.IsEmpty);
-
-            Assert.IsNull (queue.TryDequeue ());
-        }
-
-        [Test]
         public void RejectFastMessage ()
         {
             var queue = new MessageQueue ();
             queue.SetReady ();
 
-            var bufferReleaser = MemoryPool.Default.Rent (Constants.BlockSize, out Memory<byte> buffer);
-            (var msg, var msgReleaser) = PeerMessage.Rent<PieceMessage> ();
-            msg.Initialize (0, 0, Constants.BlockSize);
+            (var msg, var msgReleaser) = MessageEncoder.WriteSparsePiece (0, 0, Constants.BlockSize);
 
-            msg.SetData ((bufferReleaser, buffer));
             queue.Enqueue (msg, msgReleaser);
-
-            Assert.IsFalse (msg.Data.IsEmpty);
             queue.RejectRequests (true, new int[] { 0 });
-            Assert.IsFalse (msg.Data.IsEmpty);
-
-            Assert.AreSame (msg, queue.TryDequeue ());
+            Assert.IsTrue (msg.Span.SequenceEqual (queue.TryDequeue ().Span));
         }
 
         [Test]
@@ -60,38 +33,14 @@ namespace MonoTorrent.Client
             var queue = new MessageQueue ();
             queue.SetReady ();
 
-            var bufferReleaser = MemoryPool.Default.Rent (Constants.BlockSize, out Memory<byte> buffer);
-            (var msg, var msgReleaser) = PeerMessage.Rent<PieceMessage> ();
-            msg.Initialize (0, 0, Constants.BlockSize);
-
-            msg.SetData ((bufferReleaser, buffer));
+            (var msg, var msgReleaser) = MessageEncoder.WriteSparsePiece (0, 0, Constants.BlockSize);
             queue.Enqueue (msg, msgReleaser);
 
-            Assert.IsFalse (msg.Data.IsEmpty);
             queue.RejectRequests (true, new int[] { 1 });
-            Assert.IsTrue (msg.Data.IsEmpty);
+            var popped = queue.TryDequeue ();
+            Assert.IsFalse (msg.Span.SequenceEqual (popped.Span));
 
-            Assert.IsInstanceOf<RejectRequestMessage>(queue.TryDequeue ());
-        }
-
-        [Test]
-        public void CancelRequestDisposesMessage ()
-        {
-            var queue = new MessageQueue ();
-            queue.SetReady ();
-
-            var bufferReleaser = MemoryPool.Default.Rent (Constants.BlockSize, out Memory<byte> buffer);
-            (var msg, var msgReleaser) = PeerMessage.Rent<PieceMessage> ();
-            msg.Initialize(0, 0, Constants.BlockSize);
-
-            msg.SetData ((bufferReleaser, buffer));
-            queue.Enqueue (msg, msgReleaser);
-
-            Assert.IsFalse (msg.Data.IsEmpty);
-            Assert.IsTrue (queue.TryCancelRequest (0, 0, Constants.BlockSize));
-            Assert.IsTrue (msg.Data.IsEmpty);
-
-            Assert.IsNull (queue.TryDequeue ());
+            Assert.AreEqual (MessageType.RejectRequest, MessageDispatcher.GetType (popped));
         }
     }
 }

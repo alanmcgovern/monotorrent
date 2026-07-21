@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -38,17 +39,17 @@ namespace MonoTorrent.Client
             string cacheDirectory = null,
             bool usePartialFiles = false)
         {
-            return new EngineSettingsBuilder {
+            return new EngineSettings () with {
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
                 AllowPortForwarding = allowPortForwarding,
-                AllowedEncryption = (allowedEncryption ?? EncryptionTypes.All).ToList (),
+                AllowedEncryption = (allowedEncryption ?? EncryptionTypes.All).ToImmutableArray (),
                 AutoSaveLoadFastResume = automaticFastResume,
                 AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata,
-                CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettingsBuilder).Assembly.Location)!, "test_cache_dir"),
+                CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettings).Assembly.Location)!, "test_cache_dir"),
                 DhtEndPoint = dhtEndPoint,
-                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? new Dictionary<string, IPEndPoint> ()),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? new Dictionary<string, IPEndPoint> ()).ToImmutableDictionary (),
                 UsePartialFiles = usePartialFiles,
-            }.ToSettings ();
+            };
         }
     }
 }

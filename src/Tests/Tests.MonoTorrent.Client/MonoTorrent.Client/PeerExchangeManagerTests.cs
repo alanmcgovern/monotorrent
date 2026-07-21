@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -25,6 +26,7 @@ namespace MonoTorrent.Client
         public async Task TestPeerExchangeManager ()
         {
             var peer = CreatePeer ();
+            peer.ExtensionSupports.Add (MessageEncoder.Extended.PeerExchangeSupport);
             var pex = new PeerExchangeManager (new PeerExchangeSource (), peer);
 
             await ClientEngine.MainLoop;
@@ -38,10 +40,15 @@ namespace MonoTorrent.Client
 
             pex.OnTick ();
 
-            var message = (PeerExchangeMessage) peer.MessageQueue.TryDequeue ();
-            Assert.AreEqual (4 * 6, message.Added.Length);
-            Assert.AreEqual (4, message.AddedDotF.Length);
-            Assert.AreEqual (2 * 6, message.Dropped.Length);
+            Test ();
+            void Test ()
+            {
+                var message = new Extended.PeerExchangeMessage (peer.MessageQueue.TryDequeue ());
+
+                Assert.AreEqual (4 * 6, message.Added.Length);
+                Assert.AreEqual (4, message.AddedDotF.Length);
+                Assert.AreEqual (2 * 6, message.Dropped.Length);
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent.Messages.Peer;
 using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -18,12 +19,12 @@ namespace MonoTorrent.Client
             if (supportsLTMetdata) {
                 peer.SupportsFastPeer = true;
                 peer.SupportsLTMessages = true;
-                peer.ExtensionSupports.Add (LTMetadata.Support);
+                peer.ExtensionSupports.Add (MessageEncoder.Extended.MetadataExchangeSupport);
             }
             return peer;
         }
 
-        public static PeerMessage TryDequeue (this MessageQueue queue)
-            => queue.TryDequeue (out PeerMessage message, out PeerMessage.Releaser releaser) ? message : null;
+        public static ReadOnlyMemory<byte> TryDequeue (this MessageQueue queue)
+            => queue.TryDequeue (out Memory<byte> message, out ByteBufferPool.Releaser releaser) ? message : null;
     }
 }

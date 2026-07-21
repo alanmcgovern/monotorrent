@@ -11,7 +11,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void AddSameElementTwice ()
         {
-            var node = new Node (NodeId.Minimum, new IPEndPoint (IPAddress.Any, 1));
+            var node = new Node (NodeId.Minimum, new CompactEndPoint (IPAddress.Any, 1));
             var nodes = new ClosestNodesCollection (NodeId.Minimum);
 
             Assert.IsTrue (nodes.Add (node), "#1");
@@ -30,8 +30,8 @@ namespace MonoTorrent.Dht
             var farNodes = new List<Node> ();
 
             for (int i = 0; i < Bucket.MaxCapacity; i++) {
-                closeNodes.Add (new Node (new NodeId (value << i), new IPEndPoint (IPAddress.Any, i)));
-                farNodes.Add (new Node (new NodeId (value << (i + Bucket.MaxCapacity)), new IPEndPoint (IPAddress.Any, i + Bucket.MaxCapacity)));
+                closeNodes.Add (new Node (new NodeId (value << i), new CompactEndPoint (IPAddress.Any, i)));
+                farNodes.Add (new Node (new NodeId (value << (i + Bucket.MaxCapacity)), new CompactEndPoint (IPAddress.Any, i + Bucket.MaxCapacity)));
             }
 
             var nodes = new ClosestNodesCollection (NodeId.Minimum);
@@ -52,7 +52,7 @@ namespace MonoTorrent.Dht
         [Test]
         public void ContainsTest ()
         {
-            var node = new Node (NodeId.Minimum, new IPEndPoint (IPAddress.Any, 1));
+            var node = new Node (NodeId.Minimum, new CompactEndPoint (IPAddress.Any, 1));
             var nodes = new ClosestNodesCollection (NodeId.Minimum);
 
             nodes.Add (node);
@@ -62,8 +62,8 @@ namespace MonoTorrent.Dht
         [Test]
         public void RemoveOnlyElement ()
         {
-            var node = new Node (NodeId.Minimum, new IPEndPoint (IPAddress.Any, 1));
-            var otherNode = new Node (NodeId.Maximum, new IPEndPoint (IPAddress.Any, 2));
+            var node = new Node (NodeId.Minimum, new CompactEndPoint (IPAddress.Any, 1));
+            var otherNode = new Node (NodeId.Maximum, new CompactEndPoint (IPAddress.Any, 2));
 
             var nodes = new ClosestNodesCollection (NodeId.Minimum);
             Assert.IsTrue (nodes.Add (node), "#1");

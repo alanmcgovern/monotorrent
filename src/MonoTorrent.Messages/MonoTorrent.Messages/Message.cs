@@ -36,7 +36,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Messages
 {
-    public abstract class Message : IMessage
+    public abstract class Message
     {
         public abstract int ByteLength { get; }
 
@@ -51,14 +51,7 @@ namespace MonoTorrent.Messages
 
         public abstract int Encode (Span<byte> buffer);
 
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        protected T ReadBencodedValue<T> (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
-            where T : BEncodedValue
-        {
-            var value = BEncodedValue.Decode (buffer, strictDecoding);
-            buffer = buffer.Slice (value.LengthInBytes ());
-            return (T) value;
-        }
+
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static byte ReadByte (ref ReadOnlySpan<byte> buffer)
         {
@@ -66,6 +59,7 @@ namespace MonoTorrent.Messages
             buffer = buffer.Slice (1);
             return result;
         }
+
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static ReadOnlyMemory<byte> ReadBytes (ref ReadOnlySpan<byte> buffer, int length)
         {
@@ -112,14 +106,7 @@ namespace MonoTorrent.Messages
         public static string ReadString (ref ReadOnlySpan<byte> buffer, int length)
         {
             string result;
-#if NETSTANDARD2_0 || NET472
-            using (MemoryPool.Default.Rent (length, out ArraySegment<byte> segment)) {
-                buffer.Slice (0, length).CopyTo (segment.AsSpan ());
-                result = Encoding.ASCII.GetString (segment.Array, segment.Offset, segment.Count);
-            }
-#else
             result = Encoding.ASCII.GetString (buffer.Slice (0, length));
-#endif
             buffer = buffer.Slice (length);
             return result;
         }
@@ -177,13 +164,7 @@ namespace MonoTorrent.Messages
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static void WriteAscii (ref Span<byte> buffer, string value)
         {
-#if NETSTANDARD2_0 || NET472
-            for (int i = 0; i < value.Length; i++)
-                buffer[i] = (byte) value[i];
-            buffer = buffer.Slice (value.Length);
-#else
             buffer = buffer.Slice (Encoding.ASCII.GetBytes (value, buffer));
-#endif
         }
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static void Write (ref Span<byte> buffer, ushort value)

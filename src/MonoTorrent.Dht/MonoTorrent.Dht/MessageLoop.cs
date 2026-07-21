@@ -28,10 +28,14 @@
 
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
+using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
@@ -49,18 +53,21 @@ namespace MonoTorrent.Dht
 
         struct SendDetails
         {
-            public SendDetails (Node? node, IPEndPoint destination, DhtMessage message, TaskCompletionSource<SendQueryEventArgs>? tcs)
+            public SendDetails (Node? node, CompactEndPoint destination, ReadOnlyMemory<byte> message, ChannelWriter<SendQueryEventArgs>? channel)
             {
-                CompletionSource = tcs;
+                Channel = channel;
                 Destination = destination;
                 Node = node;
                 Message = message;
                 SentAt = new ValueStopwatch ();
             }
-            public readonly TaskCompletionSource<SendQueryEventArgs>? CompletionSource;
-            public readonly IPEndPoint Destination;
-            public readonly DhtMessage Message;
+
+            public readonly ChannelWriter<SendQueryEventArgs>? Channel;
+            public readonly CompactEndPoint Destination;
+            public readonly ReadOnlyMemory<byte> Message;
             public readonly Node? Node;
+            public bool IsRetry => RemainingRetries != 2;
+            public int RemainingRetries = 2;
             public ValueStopwatch SentAt;
         }
 
@@ -85,11 +92,15 @@ namespace MonoTorrent.Dht
         /// </summary>
         internal int PendingQueries => WaitingResponse.Count;
 
+        bool ProcessingSendQueue = false;
+
         /// <summary>
         /// The list of messages which have been received from the attached IDhtListener which
         /// are waiting to be processed by the engine.
         /// </summary>
-        Queue<KeyValuePair<IPEndPoint, DhtMessage>> ReceiveQueue { get; }
+        Queue<KeyValuePair<CompactEndPoint, ReadOnlyMemory<byte>>> ReceiveQueue { get; }
+
+        Memory<byte> SendBuffer { get; set; }
 
         /// <summary>
         /// The list of messages which have been queued to send.
@@ -105,7 +116,7 @@ namespace MonoTorrent.Dht
         /// This is the list of messages which have been sent but no response (or error) has
         /// been received yet. The key for the dictionary is the TransactionId for the Query.
         /// </summary>
-        Dictionary<BEncodedValue, SendDetails> WaitingResponse { get; }
+        Dictionary<(TransactionId, CompactEndPoint), SendDetails> WaitingResponse { get; }
 
         /// <summary>
         /// Temporary (re-usable) storage when cancelling timed out messages.
@@ -118,13 +129,12 @@ namespace MonoTorrent.Dht
             Monitor = monitor;
             DhtMessageFactory = new DhtMessageFactory ();
             Listener = new NullDhtListener ();
-            ReceiveQueue = new Queue<KeyValuePair<IPEndPoint, DhtMessage>> ();
+            ReceiveQueue = new Queue<KeyValuePair<CompactEndPoint, ReadOnlyMemory<byte>>> ();
             SendQueue = new Queue<SendDetails> ();
-            Timeout = TimeSpan.FromSeconds (15);
-            WaitingResponse = new Dictionary<BEncodedValue, SendDetails> ();
+            Timeout = TimeSpan.FromSeconds (2);
+            WaitingResponse = new Dictionary<(TransactionId, CompactEndPoint), SendDetails> ();
             WaitingResponseTimedOut = new List<SendDetails> ();
 
-            Task? sendTask = null;
             DhtEngine.MainLoop.QueueTimeout (TimeSpan.FromMilliseconds (5), () => {
                 monitor.ReceiveMonitor.Tick ();
                 monitor.SendMonitor.Tick ();
@@ -132,8 +142,7 @@ namespace MonoTorrent.Dht
                 if (engine.Disposed)
                     return false;
                 try {
-                    if (sendTask == null || sendTask.IsCompleted)
-                        sendTask = SendMessages ();
+                    SendMessages ();
 
                     while (ReceiveQueue.Count > 0)
                         ReceiveMessage ();
@@ -148,7 +157,7 @@ namespace MonoTorrent.Dht
             });
         }
 
-        async void MessageReceived (ReadOnlyMemory<byte> buffer, IPEndPoint endpoint)
+        async void MessageReceived (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint)
         {
             await DhtEngine.MainLoop;
 
@@ -156,14 +165,23 @@ namespace MonoTorrent.Dht
             if (Listener.Status == ListenerStatus.NotListening)
                 return;
 
-            // I should check the IP address matches as well as the transaction id
-            // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
-            // and return an error message (if that's what the spec allows)
+            Monitor.ReceiveMonitor.AddDelta (buffer.Length);
+
             try {
-                if (DhtMessageFactory.TryDecodeMessage ((BEncodedDictionary) BEncodedValue.Decode (buffer.Span, false), out DhtMessage? message)) {
-                    Monitor.ReceiveMonitor.AddDelta (buffer.Length);
-                    ReceiveQueue.Enqueue (new KeyValuePair<IPEndPoint, DhtMessage> (endpoint, message!));
+                //Console.WriteLine ("R: " + Encoding.UTF8.GetString (buffer.Span));
+
+                if (buffer.Span.Length < 1 || buffer.Span[0] != (byte) 'd') {
+                    // Definitely cannot be a BEncoded Dictionary. Drop it immediately.
+                    return;
                 }
+
+                var m = KrpcMessage.Parse (buffer);
+                if (m.MessageType == KrpcType.Response || m.MessageType == KrpcType.Error) {
+                    // If we can't unregister the corresponding query then this response message should be ignored.
+                    if (!DhtMessageFactory.UnregisterSend (m.TransactionId, endpoint))
+                        return;
+                }
+                ReceiveQueue.Enqueue (new KeyValuePair<CompactEndPoint, ReadOnlyMemory<byte>> (endpoint, buffer));
             } catch (MessageException) {
                 // Caused by bad transaction id usually - ignore
             } catch (Exception) {
@@ -171,42 +189,65 @@ namespace MonoTorrent.Dht
             }
         }
 
-        void RaiseMessageSent (Node node, IPEndPoint endpoint, QueryMessage query)
+        void RaiseMessageSent (Node node, CompactEndPoint endpoint, ReadOnlyMemory<byte> query)
         {
             QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query));
         }
 
-        void RaiseMessageSent (Node node, IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
+        void RaiseMessageSent (Node node, CompactEndPoint endpoint, ReadOnlyMemory<byte> query, ReadOnlyMemory<byte> response)
         {
             QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query, response));
         }
 
-        void RaiseMessageSent (Node node, IPEndPoint endpoint, QueryMessage query, ErrorMessage error)
+        async void SendMessages ()
         {
-            QuerySent?.Invoke (this, new SendQueryEventArgs (node, endpoint, query, error));
-        }
+            if (ProcessingSendQueue)
+                return;
 
-        async Task SendMessages ()
-        {
-            for (int i = 0; i < 5 && SendQueue.Count > 0; i++) {
-                SendDetails details = SendQueue.Dequeue ();
+            ProcessingSendQueue = true;
+            try {
+                for (int i = 0; i < 150 && SendQueue.Count > 0; i++) {
+                    SendDetails details = SendQueue.Dequeue ();
 
-                details.SentAt = ValueStopwatch.StartNew ();
-                if (details.Message is QueryMessage) {
-                    if (details.Message.TransactionId is null) {
-                        Logger.Error ("Transaction id was unexpectedly missing while sending messages");
-                        return;
+                    details.SentAt = ValueStopwatch.StartNew ();
+                    var message = KrpcMessage.Parse (details.Message);
+                    // FIXME: Don't merge message type (query, response, error) with the actual undetlying message (getpeers, findnode, ping etc)
+                    if (message.MessageType == KrpcType.Query) {
+                        if (message.TransactionId.IsEmpty) {
+                            Logger.Error ("Transaction id was unexpectedly missing while sending messages");
+                            return;
+                        }
+                        if (details.IsRetry) {
+                            // If we're still waiting for the response, update the struct we're storing
+                            if (WaitingResponse.ContainsKey ((TransactionId.From (message.TransactionId), details.Destination))) {
+                                WaitingResponse[(TransactionId.From (message.TransactionId), details.Destination)] = details;
+                            } else {
+                                // If the response has actually been received (the message was removed from 'WaitingResponse' prior the retry
+                                // bubbling to the top of the send queue, drop the message immediately. No further processing is needed.
+                                return;
+                            }
+                        } else {
+                            WaitingResponse.Add ((TransactionId.From (message.TransactionId), details.Destination), details);
+                        }
                     }
-                    WaitingResponse.Add (details.Message.TransactionId, details);
-                }
 
-                ReadOnlyMemory<byte> buffer = details.Message.Encode ();
-                try {
-                    Monitor.SendMonitor.AddDelta (buffer.Length);
-                    await Listener.SendAsync (buffer, details.Destination);
-                } catch {
-                    TimeoutMessage (details);
+                    try {
+                        Monitor.SendMonitor.AddDelta (details.Message.Length);
+                        //Console.WriteLine ("S: " + Encoding.UTF8.GetString (details.Message.Span));
+                        await Listener.SendAsync (details.Message, details.Destination);
+                    } catch (Exception ex) {
+                        Logger.Error (string.Format ("failed to send a message: {0}", ex));
+
+                        // Mark it ineligible for retries and also make it time out immediately.
+                        details.RemainingRetries = 0;
+                        details.SentAt = ValueStopwatch.WithTime (TimeSpan.FromMinutes (10));
+                        WaitingResponse[(TransactionId.From (message.TransactionId), details.Destination)] = details;
+                    }
                 }
+            } catch (Exception ex) {
+                Logger.Error (string.Format ("Unexpected error sending pending messages to peers: {0}", ex));
+            } finally {
+                ProcessingSendQueue = false;
             }
         }
 
@@ -233,98 +274,220 @@ namespace MonoTorrent.Dht
                 Listener.Stop ();
         }
 
+        bool handlingTimeouts = false;
         void TimeoutMessages ()
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            foreach (KeyValuePair<BEncodedValue, SendDetails> v in WaitingResponse) {
-                if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
-                    WaitingResponseTimedOut.Add (v.Value);
+            if (handlingTimeouts)
+                return;
+
+            handlingTimeouts = true;
+            try {
+                foreach (KeyValuePair<(TransactionId, CompactEndPoint), SendDetails> v in WaitingResponse) {
+                    if (Timeout == TimeSpan.Zero || v.Value.SentAt.Elapsed > Timeout)
+                        WaitingResponseTimedOut.Add (v.Value);
+                }
+
+                foreach (SendDetails v in WaitingResponseTimedOut)
+                    TimeoutMessage (v);
+
+                WaitingResponseTimedOut.Clear ();
+            } finally {
+                handlingTimeouts = false;
             }
-
-            foreach (SendDetails v in WaitingResponseTimedOut)
-                TimeoutMessage (v);
-
-            WaitingResponseTimedOut.Clear ();
         }
 
         void TimeoutMessage (SendDetails v)
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            DhtMessageFactory.UnregisterSend ((QueryMessage) v.Message);
-            WaitingResponse.Remove (v.Message.TransactionId!);
+            var m = KrpcMessage.Parse (v.Message);
+            v.Node!.FailedCount++;
 
-            v.CompletionSource?.TrySetResult (new SendQueryEventArgs (v.Node!, v.Destination, (QueryMessage) v.Message));
-            RaiseMessageSent (v.Node!, v.Destination, (QueryMessage) v.Message);
+            if (v.RemainingRetries > 0) {
+                v.RemainingRetries--;
+                v.SentAt = ValueStopwatch.StartNew ();
+                // Ensure we don't time it out again immediately
+                WaitingResponse[(TransactionId.From (m.TransactionId), v.Destination)] = v;
+                SendQueue.Enqueue (v);
+            } else {
+                WaitingResponse.Remove ((TransactionId.From (m.TransactionId), v.Destination));
+                DhtMessageFactory.UnregisterSend (m.TransactionId, v.Destination);
+
+                if (v.Channel is not null) {
+                    try {
+                        if (!v.Channel.TryWrite (new SendQueryEventArgs (v.Node!, v.Destination, v.Message)))
+                            Logger.Error ("Failed to write timeout result to the unbounded channel");
+                    } catch (Exception ex) {
+                        Logger.Error (string.Format ("unexpected error writing a result to the response chanenl: {0}", ex));
+                    }
+                }
+
+                RaiseMessageSent (v.Node!, v.Destination, v.Message);
+            }
         }
 
         void ReceiveMessage ()
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            KeyValuePair<IPEndPoint, DhtMessage> receive = ReceiveQueue.Dequeue ();
-            DhtMessage rawResponse = receive.Value;
-            IPEndPoint source = receive.Key;
+            KeyValuePair<CompactEndPoint, ReadOnlyMemory<byte>> receive = ReceiveQueue.Dequeue ();
+            var rawResponse = KrpcMessage.Parse(receive.Value);
+            CompactEndPoint source = receive.Key;
             SendDetails query = default;
 
             // What to do if the transaction id is empty?
-            BEncodedValue? responseTransactionId = rawResponse.TransactionId;
-            if (responseTransactionId is null) {
-                Logger.Error ("Received a Dht response with no transaction id");
+            if (rawResponse.TransactionId.IsEmpty) {
+                Logger.Error ("Received a Dht message with no transaction id");
                 return;
             }
 
             try {
-                Node? node = Engine.RoutingTable.FindNode (rawResponse.Id);
-                if (node == null) {
-                    node = new Node (rawResponse.Id, source);
-                    Engine.RoutingTable.Add (node);
-                }
-
                 // If we have received a ResponseMessage corresponding to a query we sent, we should
                 // remove it from our list before handling it as that could cause an exception to be
                 // thrown.
-                if (rawResponse is ResponseMessage || rawResponse is ErrorMessage) {
-                    if (!WaitingResponse.TryGetValue (responseTransactionId, out query))
+                if (rawResponse.MessageType == KrpcType.Response || rawResponse.MessageType == KrpcType.Error) {
+                    if (!WaitingResponse.Remove ((TransactionId.From (rawResponse.TransactionId), source), out query))
                         return;
-                    WaitingResponse.Remove (responseTransactionId);
                 }
 
+                if (rawResponse.MessageType == KrpcType.Error) {
+                    HandleError (query, source, receive.Value);
+                    return;
+                }
+
+                // Requests and responses need to have the nodeid of the queried node.
+                if (rawResponse.NodeId.IsEmpty) {
+                    Logger.Error ("Received a request or response which didn't contain a node id");
+                    return;
+                }
+                
+                Node? node = Engine.RoutingTable.FindNode (new NodeId (rawResponse.NodeId));
+                if (node == null) {
+                    node = query.Node ?? new Node (new NodeId (rawResponse.NodeId), source);
+                    Engine.RoutingTable.Add (node);
+                }
                 node.Seen ();
-                if (rawResponse is ResponseMessage response) {
-                    QueryMessage? queryMessage = query.Message as QueryMessage;
-                    if (queryMessage is null) {
-                        Logger.Error ("Received a dht response but the corresponding query message was missing");
-                        return;
-                    }
 
-                    response.Handle (Engine, node);
-                    query.CompletionSource?.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, queryMessage, response));
-                    RaiseMessageSent (node, node.EndPoint, queryMessage, response);
-                } else if (rawResponse is ErrorMessage error) {
-                    QueryMessage? queryMessage = query.Message as QueryMessage;
-                    if (queryMessage is null) {
-                        Logger.Error ("Received a dht response but the corresponding query message was missing");
-                        return;
+                if (rawResponse.MessageType == KrpcType.Response) {
+                    HandleResponse (query, node, ref rawResponse, receive.Value);
+                } else {
+                    switch (rawResponse.QueryMethod) {
+                        case QueryMethod.AnnouncePeer:
+                            HandleAnnouncePeer (node, ref rawResponse);
+                            break;
+                        case QueryMethod.FindNode:
+                            HandleFindNode (node, ref rawResponse);
+                            break;
+                        case QueryMethod.GetPeers:
+                            HandleGetPeers (node, ref rawResponse);
+                            break;
+                        case QueryMethod.Ping:
+                            HandlePing (node, ref rawResponse);
+                            break;
+                        default:
+#if DEBUG
+                            throw new NotSupportedException ("what is this?");
+#else
+                            break;
+#endif
                     }
-
-                    query.CompletionSource?.TrySetResult (new SendQueryEventArgs (node, node.EndPoint, queryMessage, error));
-                    RaiseMessageSent (node, node.EndPoint, queryMessage, error);
                 }
             } catch (MessageException) {
                 // FIXME: Is this the right thing to do?
                 // Can/should we attempt to send a response if an error occurs here? Do we have valid data for the node?
-                var error = new ErrorMessage (responseTransactionId, ErrorCode.GenericError, "Unexpected error responding to the message");
-                query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node!, query.Destination!, (QueryMessage) query.Message!, error));
-                EnqueueSend (error, null, source);
+                //var error = new ErrorMessage (BitConverter.ToUInt16(rawResponse.TransactionId), ErrorCode.GenericError, "Unexpected error responding to the message");
+                //query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node!, query.Destination!, (QueryMessage) query.Message!, error));
+                //EnqueueSend (error, null, source);
             } catch (Exception) {
                 // FIXME: Is this the right thing to do?
                 // Can/should we attempt to send a response if an error occurs here? Do we have valid data for the node?
-                var error = new ErrorMessage (responseTransactionId, ErrorCode.GenericError, "Unexpected exception responding to the message");
-                query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node!, query.Destination!, (QueryMessage) query.Message!, error));
-                EnqueueSend (error, null, source);
+                //var error = new ErrorMessage (BitConverter.ToUInt16(rawResponse.TransactionId), ErrorCode.GenericError, "Unexpected exception responding to the message");
+                //query.CompletionSource?.TrySetResult (new SendQueryEventArgs (query.Node!, query.Destination!, (QueryMessage) query.Message!, error));
+                //EnqueueSend (error, null, source);
             }
+        }
+
+        void HandleAnnouncePeer (Node node, ref KrpcMessage rawResponse)
+        {
+            ReadOnlyMemory<byte> response;
+            if (Engine.TokenManager.VerifyToken (node, rawResponse.Request.Token)) {
+                var infoHash = new NodeId (rawResponse.Request.InfoHash);
+                if (!Engine.Torrents.ContainsKey (infoHash))
+                    Engine.Torrents.Add (infoHash, new List<Node> ());
+                Engine.Torrents[infoHash].Add (node);
+                response = KrpcMessageEncoder.EncodeAnnouncePeerResponse (rawResponse.TransactionId, Engine.LocalId);
+            } else {
+                response = KrpcMessageEncoder.EncodeError (rawResponse.TransactionId, (int) ErrorCode.ProtocolError, "Invalid or expired token received"u8);
+            }
+            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint, null);
+        }
+
+        void HandleFindNode (Node node, ref KrpcMessage rawResponse)
+        {
+            var nodeId = new NodeId (rawResponse.Request.Target);
+            Node? targetNode = Engine.RoutingTable.FindNode (nodeId);
+            var nodes = !(targetNode is null)
+                ? targetNode.CompactNode ()
+                : Node.CompactNode (Engine.RoutingTable.GetClosest (nodeId));
+
+            var response = KrpcMessageEncoder.EncodeFindNodeResponse (rawResponse.TransactionId, Engine.LocalId, nodes.Span);
+            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint, null);
+        }
+
+        void HandleGetPeers (Node node, ref KrpcMessage rawResponse)
+        {
+            ReadOnlyMemory<byte> response;
+            Span<byte> token = stackalloc byte[Engine.TokenManager.TokenLength];
+            Engine.TokenManager.TryGenerateToken (node, token, out _);
+            var infoHash = new NodeId (rawResponse.Request.InfoHash);
+            if (Engine.Torrents.ContainsKey (infoHash)) {
+                var list = new BEncodedList ();
+                foreach (Node n in Engine.Torrents[infoHash])
+                    list.Add (n.CompactEndPoint ());
+                response = KrpcMessageEncoder.EncodeGetPeersResponseValues (rawResponse.TransactionId, Engine.LocalId, token, list.Encode ());
+            } else {
+                response = KrpcMessageEncoder.EncodeGetPeersResponseNodes (rawResponse.TransactionId, Engine.LocalId, token, Node.CompactNode (Engine.RoutingTable.GetClosest (infoHash)).Span);
+            }
+
+            Engine.MessageLoop.EnqueueSend (response, node, node.EndPoint, null);
+        }
+
+        void HandlePing (Node node, ref KrpcMessage rawResponse)
+        {
+            var m = KrpcMessageEncoder.EncodePingResponse (rawResponse.TransactionId, Engine.LocalId);
+            Engine.MessageLoop.EnqueueSend (m, node, node.EndPoint, null);
+        }
+
+        void HandleError (SendDetails query, CompactEndPoint source, ReadOnlyMemory<byte> errorResposne)
+        {
+            if (query.Message.IsEmpty) {
+                Logger.Error ("Received a dht response but the corresponding query message was missing");
+                return;
+            }
+
+            if (query.Channel is not null)
+                if (!query.Channel.TryWrite (new SendQueryEventArgs (query.Node!, source, query.Message, errorResposne)))
+                    Logger.Error ("Failed to write error response to response channel");
+            RaiseMessageSent (query.Node!, source, query.Message, errorResposne);
+        }
+
+        void HandleResponse (SendDetails query, Node node, ref KrpcMessage rawResponse, ReadOnlyMemory<byte> response)
+        {
+            if (query.Message.IsEmpty) {
+                Logger.Error ("Received a dht response but the corresponding query message was missing");
+                return;
+            }
+
+            node.Seen ();
+            if (!rawResponse.Response.Token.IsEmpty)
+                node.Token = new BEncodedString (rawResponse.Response.Token.ToArray ());
+            if (query.Channel is not null) {
+                if (!query.Channel.TryWrite (new SendQueryEventArgs (node, node.EndPoint, query.Message, response)))
+                    Logger.Error ("Failed to write response to response channel");
+            }
+            RaiseMessageSent (node, node.EndPoint, query.Message, response);
         }
 
         internal ReusableTask SetListener (IDhtListener listener)
@@ -337,39 +500,34 @@ namespace MonoTorrent.Dht
             return ReusableTask.CompletedTask;
         }
 
-        internal void EnqueueSend (DhtMessage message, Node? node, IPEndPoint endpoint, TaskCompletionSource<SendQueryEventArgs>? tcs = null)
+        internal void EnqueueSend (ReadOnlyMemory<byte> messageBuffer, Node? node, CompactEndPoint endPoint, ChannelWriter<SendQueryEventArgs>? channel)
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            if (message.TransactionId == null) {
-                if (message is ResponseMessage)
-                    throw new ArgumentException ("Message must have a transaction id");
-                do {
-                    message.TransactionId = TransactionId.NextId ();
-                } while (DhtMessageFactory.IsRegistered (message.TransactionId));
+            var message = KrpcMessage.Parse (messageBuffer);
+            if (message.TransactionId.IsEmpty) {
+                throw new ArgumentException ("Message must have a transaction id");
             }
 
             // We need to be able to cancel a query message if we time out waiting for a response
-            if (message is QueryMessage)
-                DhtMessageFactory.RegisterSend ((QueryMessage) message);
+            if (message.MessageType == KrpcType.Query)
+                DhtMessageFactory.RegisterSend (message.TransactionId, messageBuffer, endPoint);
 
-            SendQueue.Enqueue (new SendDetails (node, endpoint, message, tcs));
+            SendQueue.Enqueue (new SendDetails (node, endPoint, messageBuffer, channel));
         }
 
-        internal void EnqueueSend (DhtMessage message, Node node, TaskCompletionSource<SendQueryEventArgs>? tcs = null)
+        internal void EnqueueSend (ReadOnlyMemory<byte> message, Node node, ChannelWriter<SendQueryEventArgs>? channel)
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            EnqueueSend (message, node, node.EndPoint, tcs);
+            EnqueueSend (message, node, node.EndPoint, channel);
         }
 
-        public Task<SendQueryEventArgs> SendAsync (DhtMessage message, Node node)
+        public void SendAsync (ReadOnlyMemory<byte> message, Node node, ChannelWriter<SendQueryEventArgs>? channel)
         {
             DhtEngine.MainLoop.CheckThread ();
 
-            var tcs = new TaskCompletionSource<SendQueryEventArgs> ();
-            EnqueueSend (message, node, tcs);
-            return tcs.Task;
+            EnqueueSend (message, node, channel);
         }
     }
 }

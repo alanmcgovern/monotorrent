@@ -99,7 +99,7 @@ namespace MonoTorrent.Client
     {
         class RequestFactory : ITrackerRequestFactory
         {
-            public readonly InfoHashes InfoHashes = InfoHashes.FromV1 (new InfoHash (new byte[20]));
+            public static readonly InfoHashes InfoHashes = InfoHashes.FromV1 (new InfoHash (new byte[20]));
 
             public AnnounceRequest CreateAnnounce (TorrentEvent clientEvent)
             {
@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
         {
             Factories = Factories.Default
                 .WithTrackerCreator ("custom", uri => new CustomTracker (new CustomTrackerConnection (uri)));
-            trackerManager = new TrackerManager (Factories, new RequestFactory (), trackerUrls, true);
+            trackerManager = new TrackerManager (Factories, new ReusableSemaphore (0), new RequestFactory (), trackerUrls, true);
             trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
         }
 
@@ -199,7 +199,7 @@ namespace MonoTorrent.Client
 
             foreach (var tier in trackers)
                 foreach (var tracker in tier)
-                    tracker.Connection.FailAnnounce = true;
+                    tracker.Connection.FailAnnounceWithException = true;
 
             await trackerManager.AnnounceAsync (CancellationToken.None);
 
@@ -213,7 +213,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public async Task AnnounceFailed ()
+        public async Task AnnounceFailedByException ()
         {
             var tcs = new TaskCompletionSource<object> ();
             var announces = new List<AnnounceResponseEventArgs> ();
@@ -224,8 +224,8 @@ namespace MonoTorrent.Client
                         tcs.SetResult (null);
                 }
             };
-            trackers[0][0].Connection.FailAnnounce = true;
-            trackers[0][1].Connection.FailAnnounce = true;
+            trackers[0][0].Connection.FailAnnounceWithException = true;
+            trackers[0][1].Connection.FailAnnounceWithException = true;
 
             await trackerManager.AnnounceAsync (CancellationToken.None).WithTimeout ();
             await tcs.Task.WithTimeout ();
@@ -251,13 +251,56 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task AnnounceFailedByState ()
+        {
+            // Just have one tier as it's easier to reason about.
+            trackerManager = new TrackerManager (Factories, new ReusableSemaphore (0), new RequestFactory (), new List<IEnumerable<string>> { trackerUrls[0] } , true);
+            trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
+
+            var tcs = new TaskCompletionSource<object> ();
+            var announces = new List<AnnounceResponseEventArgs> ();
+            trackerManager.AnnounceComplete += (o, e) => {
+                lock (announces) {
+                    announces.Add (e);
+                    if (announces.Count == 4)
+                        tcs.SetResult (null);
+                }
+            };
+            trackers[0][0].Connection.CustomResponse = new AnnounceResponse (TrackerState.Unknown, null);
+            trackers[0][1].Connection.CustomResponse = new AnnounceResponse (TrackerState.InvalidResponse, new Dictionary<InfoHash, IList<PeerInfo>> ());
+            trackers[0][2].Connection.CustomResponse = new AnnounceResponse (TrackerState.Offline, new Dictionary<InfoHash, IList<PeerInfo>> () { { RequestFactory.InfoHashes.V1OrV2.Truncate (), new List<PeerInfo> { new PeerInfo (new Uri ("http://ignored.com:80/aasd")) } } });
+            trackers[0][3].Connection.CustomResponse = new AnnounceResponse (TrackerState.Ok, new Dictionary<InfoHash, IList<PeerInfo>> () { { RequestFactory.InfoHashes.V1OrV2.Truncate (), new List<PeerInfo> { new PeerInfo (new Uri ("http://alive.com:80/1234556")) } } });
+
+            await trackerManager.AnnounceAsync (CancellationToken.None).WithTimeout ();
+            await tcs.Task.WithTimeout ();
+            Assert.AreEqual (4, announces.Count);
+
+            Assert.AreEqual (trackerManager.Tiers[0].Trackers[3], trackerManager.Tiers[0].ActiveTracker, "#1");
+            Assert.AreEqual (1, trackers[0][0].Connection.AnnouncedAt.Count, "#2a");
+            Assert.IsFalse (announces.Single (args => args.Tracker == trackers[0][0]).Successful, "#2b");
+            Assert.AreEqual (0, announces.Single (args => args.Tracker == trackers[0][0]).Peers.Count, "#2a");
+
+            Assert.AreEqual (1, trackers[0][1].Connection.AnnouncedAt.Count, "#3a");
+            Assert.IsFalse (announces.Single (args => args.Tracker == trackers[0][1]).Successful, "#3b");
+            Assert.AreEqual (0, announces.Single (args => args.Tracker == trackers[0][1]).Peers.Count, "#3b");
+
+            Assert.AreEqual (1, trackers[0][2].Connection.AnnouncedAt.Count, "#4a");
+            Assert.IsFalse (announces.Single (args => args.Tracker == trackers[0][2]).Successful, "#4b");
+            Assert.AreEqual (0, announces.Single (args => args.Tracker == trackers[0][2]).Peers.Count, "#4b");
+
+            Assert.AreEqual (1, trackers[0][3].Connection.AnnouncedAt.Count, "#5");
+            Assert.IsTrue(announces.Single (args => args.Tracker == trackers[0][3]).Successful, "#4b");
+            Assert.AreEqual (1, announces.Single (args => args.Tracker == trackers[0][3]).Peers.Count, "#4b");
+        }
+
+        [Test]
         public async Task Announce_RateLimitedAnnounceAttempts ()
         {
             var factories = Factories.Default
                 .WithTrackerCreator ("custom", uri => new RateLimitingTracker (new RateLimitingTrackerConnection ()));
 
             var tier = new[] { new[] { $"custom://tracker/announce" } };
-            var trackerManager = new TrackerManager (factories, new RequestFactory (), tier, true);
+            var trackerManager = new TrackerManager (factories, new ReusableSemaphore (0), new RequestFactory (), tier, true);
             var trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<RateLimitingTracker> ().ToList ()).ToList ();
 
             // only 1 concurrent regular announce can run at a time. 
@@ -280,7 +323,7 @@ namespace MonoTorrent.Client
 
             // Create 100 tracker tiers.
             var urls = Enumerable.Range (0, 100).Select (t => new[] { $"custom://tracker{t}/announce" }).ToArray ();
-            var trackerManager = new TrackerManager (factories, new RequestFactory (), urls, true);
+            var trackerManager = new TrackerManager (factories, new ReusableSemaphore (0), new RequestFactory (), urls, true);
             var trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<RateLimitingTracker> ().ToList ()).ToList ();
 
             var cts = new CancellationTokenSource (TimeSpan.FromSeconds (10));
@@ -294,8 +337,8 @@ namespace MonoTorrent.Client
         [Test]
         public async Task CurrentTracker ()
         {
-            trackers[0][0].Connection.FailAnnounce = true;
-            trackers[1][0].Connection.FailAnnounce = true;
+            trackers[0][0].Connection.FailAnnounceWithException = true;
+            trackers[1][0].Connection.FailAnnounceWithException = true;
 
             foreach (var tier in trackerManager.Tiers) {
                 Assert.IsFalse (tier.LastAnnounceSucceeded);
@@ -338,6 +381,27 @@ namespace MonoTorrent.Client
             Assert.AreEqual (TimeSpan.FromMinutes (30), tracker.UpdateInterval, "#2");
             Assert.IsNotNull (tracker.WarningMessage, "#3");
             Assert.IsNotNull (tracker.FailureMessage, "#5");
+        }
+
+        [Test]
+        public async Task MinInternal ()
+        {
+            // Just have one tier as it's easier to reason about.
+            trackerManager = new TrackerManager (Factories, new ReusableSemaphore (0), new RequestFactory (), new List<IEnumerable<string>> { trackerUrls[0] }, true);
+            trackers = trackerManager.Tiers.Select (t => t.Trackers.Cast<CustomTracker> ().ToList ()).ToList ();
+
+            var tcs = new TaskCompletionSource<object> ();
+            var announces = new List<AnnounceResponseEventArgs> ();
+            trackerManager.AnnounceComplete += (o, e) => {
+                tcs.SetResult (null);
+            };
+            trackers[0][0].Connection.CustomResponse = new AnnounceResponse (TrackerState.Ok, new Dictionary<InfoHash, IList<PeerInfo>> (), TimeSpan.FromHours (1), TimeSpan.FromHours (2), null, null, null);
+
+            await trackerManager.AnnounceAsync (CancellationToken.None).WithTimeout ();
+            Assert.IsFalse (trackerManager.Tiers[0].CanSendAnnounce (TorrentEvent.None));
+            Assert.AreEqual (trackerManager.Tiers[0].ActiveTracker, trackerManager.Tiers[0].Trackers[0]);
+            Assert.AreEqual (TimeSpan.FromHours (1), trackerManager.Tiers[0].ActiveTracker.MinUpdateInterval);
+            Assert.AreEqual (TimeSpan.FromHours (2), trackerManager.Tiers[0].ActiveTracker.UpdateInterval);
         }
 
         [Test]
@@ -398,7 +462,7 @@ namespace MonoTorrent.Client
                 new List<string> { "unregistered://3.3.3.3:3331", "unregistered://3.3.3.3:3332" },
             };
 
-            var manager = new TrackerManager (Factories.Default, new RequestFactory (), tiers, false);
+            var manager = new TrackerManager (Factories.Default, new ReusableSemaphore (0), new RequestFactory (), tiers, false);
             Assert.AreEqual (0, manager.Tiers.Count, "#1");
         }
     }

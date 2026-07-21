@@ -39,8 +39,8 @@ using System.Threading.Tasks;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections.Peer.Encryption;
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages.Peer.FastPeer;
 using MonoTorrent.Messages.Peer.Libtorrent;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -87,13 +87,15 @@ namespace MonoTorrent.Client.Modes
             (var engine, var manager, var layers) = await CreateTorrent (V2OnlyTorrentPath);
             var pieceHashesMode = new PieceHashesMode (manager, engine.DiskManager, engine.ConnectionManager, engine.Settings, true);
             var peer = manager.AddConnectedPeer (supportsLTMetdata: true);
-            pieceHashesMode.HandleMessage (peer, new ExtendedHandshakeMessage (false, manager.Torrent.InfoMetadata.Length, 12345), default);
+            (var handshake, var releaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, false, manager.Torrent.InfoMetadata.Length, 12345);
+            pieceHashesMode.HandleMessage (peer, new Extended.HandshakeMessage(handshake));
             while (!manager.PendingV2PieceHashes.AllFalse && manager.PieceHashes.Count == 0 && !manager.PieceHashes.HasV2Hashes) {
                 pieceHashesMode.Tick (0);
-                PeerMessage message;
-                while ((message = peer.MessageQueue.TryDequeue ()) != null)
-                    if (message is HashRequestMessage hashRequest)
-                        pieceHashesMode.HandleMessage (peer, FulfillRequest (hashRequest, layers), default);
+                ReadOnlyMemory<byte> message;
+                while ((message = peer.MessageQueue.TryDequeue ()).Length > 0)
+                    if (MessageDispatcher.GetType (message) == MessageType.HashRequest) {
+                        pieceHashesMode.HandleMessage (peer, FulfillRequest (new HashRequestMessage(message), layers));
+                    }
             }
 
             Assert.AreEqual (manager.PieceHashes.Count, manager.Torrent.PieceCount);
@@ -118,10 +120,10 @@ namespace MonoTorrent.Client.Modes
 
             while (!manager.PendingV2PieceHashes.AllFalse && manager.PieceHashes.Count == 0 && !manager.PieceHashes.HasV2Hashes) {
                 pieceHashesMode.Tick (0);
-                PeerMessage message;
-                while ((message = peer.MessageQueue.TryDequeue ()) != null)
-                    if (message is HashRequestMessage hashRequest)
-                        pieceHashesMode.HandleMessage (peer, FulfillRequest (hashRequest, layers), default);
+                ReadOnlyMemory<byte> message;
+                while ((message = peer.MessageQueue.TryDequeue ()).Length > 0)
+                    if (MessageDispatcher.GetType (message) == MessageType.HashRequest)
+                        pieceHashesMode.HandleMessage (peer, FulfillRequest (new HashRequestMessage (message), layers));
             }
 
             Assert.AreEqual (manager.PieceHashes.Count, manager.Torrent.PieceCount);
@@ -133,8 +135,10 @@ namespace MonoTorrent.Client.Modes
         static HashesMessage FulfillRequest(HashRequestMessage hashRequest, PieceHashesV2 layers)
         {
             Memory<byte> totalBuffer = new byte[(hashRequest.Length + hashRequest.ProofLayers) * 32];
-            Assert.IsTrue (layers.TryGetV2Hashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Span, out int bytesWritten));
-            return new HashesMessage (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Slice (0, bytesWritten), default);
+            Assert.IsTrue (layers.TryGetV2Hashes (new MerkleRoot (hashRequest.PiecesRoot), hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Span, out int bytesWritten));
+
+            (var msg, var releaser) = MessageEncoder.WriteHashes (hashRequest.PiecesRoot, hashRequest.BaseLayer, hashRequest.Index, hashRequest.Length, hashRequest.ProofLayers, totalBuffer.Slice (0, bytesWritten).Span);
+            return new HashesMessage (msg);
         }
     }
 }

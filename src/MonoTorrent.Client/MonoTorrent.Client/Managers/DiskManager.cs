@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
 
             int v2BytesRemaining = 0;
             readonly IncrementalHash SHA256Hasher;
-            MemoryPool.Releaser BlockHashesReleaser { get; set; }
+            ByteBufferPool.Releaser BlockHashesReleaser { get; set; }
             Memory<byte> BlockHashes { get; set; }
 
             ITorrentManagerInfo? Manager { get; set; }
@@ -479,13 +479,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal Task MoveFileAsync (ITorrentManagerFile file, (string newPath, string downloadComplete, string downloadIncomplete) paths)
+        internal ReusableTask MoveFileAsync (ITorrentManagerFile file, (string newPath, string downloadComplete, string downloadIncomplete) paths)
             => MoveFileAsync ((TorrentFileInfo) file, paths);
 
-        internal Task MoveFileAsync (TorrentFileInfo file, (string newPath, string downloadComplete, string downloadIncomplete) paths)
+        internal ReusableTask MoveFileAsync (TorrentFileInfo file, (string newPath, string downloadComplete, string downloadIncomplete) paths)
             => MoveFileAsync (file, paths, false);
 
-        internal async Task MoveFilesAsync (IList<ITorrentManagerFile> files, string newRoot, bool overwrite)
+        internal async ReusableTask MoveFilesAsync (IList<ITorrentManagerFile> files, string newRoot, bool overwrite)
         {
             foreach (TorrentFileInfo file in files) {
                 var paths = TorrentFileInfo.GetNewPaths (Path.GetFullPath (Path.Combine (newRoot, file.Path)), Settings.UsePartialFiles, file.Path == file.DownloadCompleteFullPath);
@@ -493,12 +493,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        async Task MoveFileAsync (TorrentFileInfo file, (string newPath, string downloadCompletePath, string downloadIncompletePath) paths, bool overwrite)
+        async ReusableTask MoveFileAsync (TorrentFileInfo file, (string newPath, string downloadCompletePath, string downloadIncompletePath) paths, bool overwrite)
         {
-            await IOLoop;
-
-            if (paths.newPath != file.FullPath && await Cache.Writer.ExistsAsync (file)) {
-                await Cache.Writer.MoveAsync (file, paths.newPath, overwrite);
+           if (paths.newPath != file.FullPath) {
+                await IOLoop;
+                if (await Cache.Writer.ExistsAsync (file))
+                    await Cache.Writer.MoveAsync (file, paths.newPath, overwrite).ConfigureAwait (false);
             }
             file.UpdatePaths (paths);
         }
@@ -724,7 +724,12 @@ namespace MonoTorrent.Client
         internal async ReusableTask<bool> CreateAsync (ITorrentManagerFile file, FileCreationOptions fileCreationOptions)
         {
             await IOLoop;
-            return await Cache.Writer.CreateAsync (file, fileCreationOptions);
+            if (await Cache.Writer.CreateAsync (file, fileCreationOptions).ConfigureAwait (false)) {
+                ((TorrentFileInfo) file).CachedActualLength = 0;
+                return true;
+            }
+            ((TorrentFileInfo) file).CachedActualLength = null;
+            return false;
         }
 
         internal async ReusableTask<long?> GetLengthAsync (ITorrentManagerFile file)
@@ -736,7 +741,12 @@ namespace MonoTorrent.Client
         internal async ReusableTask<bool> SetLengthAsync (ITorrentManagerFile file, long length)
         {
             await IOLoop;
-            return await Cache.Writer.SetLengthAsync (file, length);
+            if (await Cache.Writer.SetLengthAsync (file, length).ConfigureAwait (false)) {
+                ((TorrentFileInfo) file).CachedActualLength = length;
+                return true;
+            }
+            ((TorrentFileInfo) file).CachedActualLength = null;
+            return false;
         }
     }
 }

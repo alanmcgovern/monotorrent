@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         public bool IsIncoming { get; }
         public Uri Uri { get; } = new Uri ("test://1234.com:3434");
 
-        public ReusableTask ConnectAsync ()
+        public ReusableTask<bool> ConnectAsync ()
         {
             throw new NotImplementedException ();
         }
@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
             throw new NotImplementedException ();
         }
 
-        public ReusableTask<int> SendAsync (Memory<byte> buffer)
+        public ReusableTask<int> SendAsync (ReadOnlyMemory<byte> buffer)
         {
             throw new NotImplementedException ();
         }
@@ -154,7 +154,7 @@ namespace MonoTorrent.Client
         public bool AmInterested { get; internal set; }
         public int AmRequestingPiecesCount { get; internal set; }
         public ReadOnlyBitField BitField => MutableBitField;
-        internal BitField MutableBitField { get; }
+        internal readonly BitField MutableBitField;
         public Software ClientApp { get; }
 
         public Direction ConnectionDirection => Connection.IsIncoming ? Direction.Incoming : Direction.Outgoing;
@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
         {
             Peer = peer ?? throw new ArgumentNullException (nameof (peer));
             Connection = connection ?? throw new ArgumentNullException (nameof (connection));
-            MutableBitField = bitfield ?? throw new ArgumentNullException (nameof (bitfield));
+            MutableBitField = bitfield;
             ExpectedInfoHash = expectedInfoHash ?? throw new ArgumentNullException (nameof (expectedInfoHash));
             Encryptor = encryptor ?? throw new ArgumentNullException (nameof (encryptor));
             Decryptor = decryptor ?? throw new ArgumentNullException (nameof (decryptor));

@@ -201,5 +201,23 @@ namespace MonoTorrent.Streaming
             using var stream = await manager.StreamProvider.CreateStreamAsync (manager.Files[0], false, CancellationToken.None);
             Assert.ThrowsAsync<InvalidOperationException> (() => manager.StreamProvider.CreateStreamAsync (manager.Files[0], false, CancellationToken.None));
         }
+
+        [Test]
+        public async Task CreateStream_CancelAction ([Values (true, false)] bool preBuffer)
+        {
+            var manager = await Engine.AddStreamingAsync (Torrent, "testDir");
+            await manager.LoadFastResumeAsync (new FastResume (manager.InfoHashes, new BitField (manager.Torrent.PieceCount ()).SetAll (true), new BitField (manager.Torrent.PieceCount ())));
+            await PieceWriter.CreateAsync (manager.Files);
+
+            await manager.StartAsync ();
+            await manager.WaitForState (TorrentState.Seeding);
+
+            CancellationTokenSource cts = new CancellationTokenSource ();
+            cts.Cancel ();
+            Assert.ThrowsAsync<OperationCanceledException> (() => manager.StreamProvider.CreateStreamAsync (manager.Files[0], preBuffer, cts.Token));
+
+            // Can create a stream if the token is not cancelled.
+            using var stream = await manager.StreamProvider.CreateStreamAsync (manager.Files[0], false, CancellationToken.None);
+        }
     }
 }

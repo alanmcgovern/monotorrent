@@ -37,8 +37,6 @@ namespace MonoTorrent
 {
     internal struct ThreadSwitcher : INotifyCompletion
     {
-        static readonly WaitCallback Callback = (state) => ((Action) state!).Invoke ();
-
         [EditorBrowsable(EditorBrowsableState.Never)]
         public ThreadSwitcher GetAwaiter()
         {
@@ -54,37 +52,38 @@ namespace MonoTorrent
 
         }
 
-
         [EditorBrowsable (EditorBrowsableState.Never)]
         public void OnCompleted (Action continuation)
         {
-#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+            // We never want this to execute on the current thread. It has to go to another thread.
             ThreadPool.UnsafeQueueUserWorkItem (ThreadSwitcherWorkItem.GetOrCreate (continuation), false);
-#else
-            ThreadPool.UnsafeQueueUserWorkItem (Callback, continuation);
-#endif
         }
-
-#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
 
         internal class ThreadSwitcherWorkItem : IThreadPoolWorkItem
         {
+            static ThreadSwitcherWorkItem? localCache;
+
             static readonly Action EmptyAction = () => { };
             static readonly SpinLocked<Stack<ThreadSwitcherWorkItem>> Cache = SpinLocked.Create (new Stack<ThreadSwitcherWorkItem> ());
 
-            public Action Continuation { get; private set; } = EmptyAction;
+            Action Continuation = EmptyAction;
 
             public static ThreadSwitcherWorkItem GetOrCreate (Action action)
             {
+                var c = Interlocked.Exchange (ref localCache, null);
+                if (c is not null) {
+                    c.Continuation = action;
+                    return c;
+                }
+
                 using (Cache.Enter (out var cache)) {
-                    if (cache.Count == 0) {
-                        return new ThreadSwitcherWorkItem { Continuation = action };
-                    } else {
+                    if (cache.Count > 0) {
                         var worker = cache.Pop ();
                         worker.Continuation = action;
                         return worker;
                     }
                 }
+                return new ThreadSwitcherWorkItem { Continuation = action };
             }
 
             public void Execute ()
@@ -92,11 +91,12 @@ namespace MonoTorrent
                 var continuation = Continuation;
                 Continuation = EmptyAction;
 
-                using (Cache.Enter (out var cache))
-                    cache.Push (this);
+                var maybe = Interlocked.Exchange (ref localCache, this);
+                if (maybe != null)
+                    using (Cache.Enter (out var cache))
+                        cache.Push (maybe);
                 continuation ();
             }
         }
-#endif
     }
 }

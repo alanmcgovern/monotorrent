@@ -68,8 +68,9 @@ namespace MonoTorrent.Common
                 { "info", CreateInfoDict () },
                 { "private", new BEncodedString ("1") },
                 { "url-list", new BEncodedList() {
-                    new BEncodedString ("https://example.com/8/items/"),
+                    new BEncodedString ("htTps://example.com/8/items/"),
                     new BEncodedString ("/8/items/"), // this should be ignored on loading
+                    new BEncodedString ("8/items/"), // this should be ignored on loading
                 } }
             };
             torrent = Torrent.Load (torrentInfo);
@@ -102,7 +103,6 @@ namespace MonoTorrent.Common
             BEncodedList files = new BEncodedList ();
 
             BEncodedList path = new BEncodedList {
-                new BEncodedString (""),
                 new BEncodedString ("file1.txt")
             };
 
@@ -270,7 +270,7 @@ namespace MonoTorrent.Common
         [Test]
         public void HttpSeeds ()
         {
-            Assert.IsTrue (torrent.HttpSeeds.Count == 1);
+            Assert.AreEqual (1, torrent.HttpSeeds.Count, "seed count");
             Assert.AreEqual (new Uri ("https://example.com/8/items/"), torrent.HttpSeeds[0]);
         }
 
@@ -281,6 +281,20 @@ namespace MonoTorrent.Common
 
             var newFile = new BEncodedDictionary ();
             var path = new BEncodedList (new BEncodedString[] { "test", "..", "bar" });
+            newFile["path"] = path;
+            newFile["length"] = (BEncodedNumber) 15251;
+            files.Add (newFile);
+
+            Assert.Throws<ArgumentException> (() => Torrent.Load (torrentInfo));
+        }
+
+        [Test]
+        public void InvalidPath_EmptySegments ()
+        {
+            var files = ((BEncodedDictionary) torrentInfo["info"])["files"] as BEncodedList;
+
+            var newFile = new BEncodedDictionary ();
+            var path = new BEncodedList (new BEncodedString[] { "", "bar" });
             newFile["path"] = path;
             newFile["length"] = (BEncodedNumber) 15251;
             files.Add (newFile);

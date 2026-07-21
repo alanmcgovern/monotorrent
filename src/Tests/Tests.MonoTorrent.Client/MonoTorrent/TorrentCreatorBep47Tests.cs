@@ -123,7 +123,7 @@ namespace MonoTorrent.Common
                 Assert.AreEqual (0, file.StartPieceIndex);
                 Assert.AreEqual (0, file.EndPieceIndex);
                 Assert.AreEqual (0, file.Padding);
-                Assert.IsTrue (file.PiecesRoot.IsEmpty);
+                Assert.IsTrue (new MerkleRoot ().Span.SequenceEqual (file.PiecesRoot.Span));
             }
             var expectedPadding = type == TorrentType.V1OnlyWithPaddingFiles || type == TorrentType.V1V2Hybrid ? PieceLength / 2 : 0;
             Assert.AreEqual (0, torrent.Files.Single (t => t.Path == "b").Padding);

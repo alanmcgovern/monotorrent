@@ -44,52 +44,6 @@ namespace MonoTorrent.Client
             return Calculate (hasher, addressBytes, infohashes, AllowedFastPieceCount, numberOfPieces);
         }
 
-#if NETSTANDARD2_0 || NETSTANDARD2_1
-        static ReadOnlyMemory<int> Calculate (SHA1 hasher, ReadOnlySpan<byte> addressBytes, InfoHashes infohashes, int count, uint numberOfPieces)
-        {
-            // BEP52: Support V2 torrents
-            var infohash = infohashes.V1;
-            if (infohash == null)
-                return Array.Empty<int> ();
-
-            byte[] hashBuffer = new byte[24];
-            var results = new int[count];
-
-            // 1) Convert the bytes into an int32 and make them Network order
-            int ip = IPAddress.HostToNetworkOrder (BinaryPrimitives.ReadInt32LittleEndian (addressBytes));
-
-            // 2) binary AND this value with 0xFFFFFF00 to select the three most sigificant bytes
-            int ipMostSignificant = (int) (0xFFFFFF00 & ip);
-
-            // 3) Make ipMostSignificant into NetworkOrder
-            uint ip2 = (uint) IPAddress.HostToNetworkOrder (ipMostSignificant);
-
-            // 4) Copy ip2 into the hashBuffer
-            Buffer.BlockCopy (BitConverter.GetBytes (ip2), 0, hashBuffer, 0, 4);
-
-            // 5) Copy the infohash into the hashbuffer
-            infohash.Span.CopyTo (hashBuffer.AsSpan (4, 20));
-
-            // 6) Keep hashing and cycling until we have AllowedFastPieceCount number of results
-            // Then return that result
-            int resultsCount = 0;
-            while (true) {
-                hashBuffer = hasher.ComputeHash (hashBuffer);
-
-                for (int i = 0; i < 20; i += 4) {
-                    uint result = (uint) IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (hashBuffer, i));
-
-                    result %= numberOfPieces;
-                    if (result > int.MaxValue)
-                        return results;
-
-                    results[resultsCount++] = (int) result;
-                    if (count == resultsCount)
-                        return results;
-                }
-            }
-        }
-#else
         static ReadOnlyMemory<int> Calculate (SHA1 hasher, ReadOnlySpan<byte> addressBytes, InfoHashes infohashes, int count, uint numberOfPieces)
         {
             // BEP52: Support V2 torrents
@@ -133,6 +87,5 @@ namespace MonoTorrent.Client
                 }
             }
         }
-#endif
     }
 }

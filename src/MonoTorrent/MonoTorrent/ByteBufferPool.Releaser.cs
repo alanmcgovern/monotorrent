@@ -28,17 +28,20 @@
 
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 
 namespace MonoTorrent
 {
     public partial class ByteBufferPool
     {
-        public readonly struct Releaser : IDisposable
+        public readonly struct Releaser : IMemoryOwner<byte>
         {
             readonly int Counter;
             readonly ByteBuffer Buffer;
             readonly ByteBufferPool Pool;
+
+            Memory<byte> IMemoryOwner<byte>.Memory => Buffer.Memory;
 
             internal Releaser (ByteBufferPool pool, ByteBuffer buffer)
             {
@@ -53,21 +56,14 @@ namespace MonoTorrent
                     return;
 
                 if (Counter != Buffer.Counter)
-                    throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previews free.");
+                    throw new InvalidOperationException ("This buffer has been double-freed, which implies it was used after a previous free.");
 
                 Buffer.Counter++;
-
-                var size = Buffer.Segment.Count;
-                if (size == ByteBufferPool.SmallMessageBufferSize) {
-                    using (Pool.SmallMessageBuffers.Enter (out var buffers))
-                        buffers.Push (Buffer);
-                } else if (size == ByteBufferPool.LargeMessageBufferSize) {
-                    using (Pool.LargeMessageBuffers.Enter (out var buffers))
-                        buffers.Push (Buffer);
-                } else {
-                    using (Pool.MassiveBuffers.Enter (out var buffers))
-                        buffers.Enqueue (Buffer);
-                }
+#if DEBUG
+                Buffer.Memory.Span.Fill (255);
+#endif
+                using (Pool.Buffers.Enter (out var buffers))
+                    buffers.Enqueue (Buffer);
             }
         }
     }

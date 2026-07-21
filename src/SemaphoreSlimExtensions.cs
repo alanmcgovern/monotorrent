@@ -58,7 +58,7 @@ namespace MonoTorrent
 
     class ReusableSemaphore
     {
-        static readonly Queue<ReusableTaskCompletionSource<object?>> Cache = new Queue<ReusableTaskCompletionSource<object?>> ();
+        static readonly Queue<ReusableTaskCompletionSource<object?>> Cache = new Queue<ReusableTaskCompletionSource<object?>> (200);
 
         public readonly struct Releaser : IDisposable
         {
@@ -72,17 +72,28 @@ namespace MonoTorrent
         }
 
         int activeCount;
+        int count = 0;
         Queue<ReusableTaskCompletionSource<object?>> nextWaiter;
 
         /// <summary>
         /// The maximum concurrency. A value of 0 means unlimited.
         /// </summary>
-        public int Count { get; private set; }
+        public int Count {
+            get { return count; }
+            set {
+                if (count < 0)
+                    throw new ArgumentOutOfRangeException (nameof (value));
+                int difference = value == 0 ? int.MaxValue : value - count;
+                count = value;
+                if (difference > 0)
+                    MaybeStart (difference);
+            }
+        }
 
         public ReusableSemaphore (int count)
         {
-            Count = count;
             nextWaiter = new Queue<ReusableTaskCompletionSource<object?>> ();
+            Count = count;
         }
 
         public async ReusableTask<Releaser> EnterAsync ()
@@ -98,14 +109,15 @@ namespace MonoTorrent
             }
             await task.Task.ConfigureAwait (false);
             lock (Cache)
-                Cache.Enqueue (task);
+                if (Cache.Count < 50)
+                    Cache.Enqueue (task);
             return new Releaser (this);
         }
 
         public bool TryEnter (out Releaser value)
         {
             lock (Cache) {
-                if (activeCount < Count) {
+                if (activeCount < Count || count == 0) {
                     ++activeCount;
                     value = new Releaser (this);
                     return true;
@@ -116,20 +128,14 @@ namespace MonoTorrent
             }
         }
 
-        public void ChangeCount (int newCount)
+        void MaybeStart (int count)
         {
-            if (newCount < 0)
-                throw new ArgumentOutOfRangeException (nameof (newCount));
-
-            lock (Cache) {
-                // If we have increased the number of slots, kick off the required number of pending tasks
-                // to consume the new slots.
-                if (newCount == 0 || newCount > Count) {
-                    var delta = newCount - Count;
-                    while ((newCount == 0 || delta-- > 0) && nextWaiter.Count > 0)
-                        nextWaiter.Dequeue ().SetResult (null);
+            lock(Cache) {
+                while (count > 0 && nextWaiter.Count > 0) {
+                    ++activeCount;
+                    nextWaiter.Dequeue ().SetResult (null);
+                    count--;
                 }
-                Count = newCount;
             }
         }
 

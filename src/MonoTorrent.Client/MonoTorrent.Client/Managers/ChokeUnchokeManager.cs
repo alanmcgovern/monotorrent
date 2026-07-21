@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Threading;
 
 using MonoTorrent.Messages.Peer;
+using MonoTorrent.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -87,13 +89,6 @@ namespace MonoTorrent.Client
 
         #region Private Methods
 
-        IEnumerable<PeerList> AllLists ()
-        {
-            yield return nascentPeers;
-            yield return candidatePeers;
-            yield return optimisticUnchokeCandidates;
-        }
-
         void AllocateSlots (int alreadyUnchoked)
         {
             PeerId? peer;
@@ -108,9 +103,15 @@ namespace MonoTorrent.Client
 
             // Check the peer lists (nascent, then candidate then optimistic unchoke)
             // for an interested choked peer, if one is found, unchoke it.
-            foreach (PeerList list in AllLists ())
+            for (int i = 0; i < 3; i++) {
+                var list = i switch {
+                    0 => nascentPeers,
+                    1 => candidatePeers,
+                    _ => optimisticUnchokeCandidates
+                };
                 while ((peer = list.GetFirstInterestedChokedPeer ()) != null && (availableSlots-- > 0))
                     Unchoke (peer);
+            }
 
             // In the time that has passed since the last review we might have connected to more peers
             // that don't appear in AllLists.  It's also possible we have not yet run a review in
@@ -139,7 +140,9 @@ namespace MonoTorrent.Client
 
             peer.AmChoking = true;
             Unchokeable.UploadingTo--;
-            peer.MessageQueue.EnqueueAt (0, ChokeMessage.Instance, default);
+
+            (var msg, var releaser) = MessageEncoder.WriteChoke ();
+            peer.MessageQueue.EnqueueAt (0, msg, releaser);
             RejectPendingRequests (peer);
             peer.LastUnchoked = new ValueStopwatch ();
         }
@@ -324,7 +327,8 @@ namespace MonoTorrent.Client
 
             peer.AmChoking = false;
             Unchokeable.UploadingTo++;
-            peer.MessageQueue.EnqueueAt (0, UnchokeMessage.Instance, default);
+            (var msg, var releaser) = MessageEncoder.WriteUnchoke ();
+            peer.MessageQueue.EnqueueAt (0, msg, releaser);
             peer.LastUnchoked.Restart ();
             peer.FirstReviewPeriod = true;
         }

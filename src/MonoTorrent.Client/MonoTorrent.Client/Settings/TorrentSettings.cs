@@ -33,46 +33,46 @@ using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
-    public sealed class TorrentSettings : IEquatable<TorrentSettings>
+    public sealed record class TorrentSettings : IEquatable<TorrentSettings>
     {
         /// <summary>
         /// If set to false then the <see cref="IDhtEngine"/> registered with the <see cref="ClientEngine" /> will
         /// never be used to locate additional peers. Defaults to true.
         /// </summary>
-        public bool AllowDht { get; } = true;
+        public bool AllowDht { get; init; } = true;
 
         /// <summary>
         /// If set to true, and there are no other seeders for this torrent, then Initial Seeding mode may be used to
         /// prioritise sharing pieces which are not already available in the swarm.
         /// </summary>
-        public bool AllowInitialSeeding { get; }
+        public bool AllowInitialSeeding { get; init; }
 
         /// <summary>
         /// If set to false then Peer Exchange messages will never be used to locate additional peers. Defaults to true.
         /// </summary>
-        public bool AllowPeerExchange { get; } = true;
+        public bool AllowPeerExchange { get; init; } = true;
 
         /// <summary>
         /// If set to true all files in a multi-file torrent will be placed inside a containing directory.
         /// The directory name will be derived from <see cref="MagnetLink.Name"/> or <see cref="Torrent.Name"/>.
         /// Defaults to <see langword="true"/>
         /// </summary>
-        public bool CreateContainingDirectory { get; } = true;
+        public bool CreateContainingDirectory { get; init; } = true;
 
         /// <summary>
-        /// The maximum number of concurrent open connections for this torrent. Defaults to 60.
+        /// The maximum number of concurrent open connections for this torrent. Defaults to 85.
         /// </summary>
-        public int MaximumConnections { get; } = 60;
+        public int MaximumConnections { get; init; } = 85;
 
         /// <summary>
         /// The maximum download rate, in bytes per second, for this torrent. A value of 0 means unlimited. Defaults to 0.
         /// </summary>
-        public int MaximumDownloadRate { get; }
+        public int MaximumDownloadRate { get; init; } = 0;
 
         /// <summary>
         /// The maximum upload rate, in bytes per second, for this torrent. A value of 0 means unlimited. defaults to 0.
         /// </summary>
-        public int MaximumUploadRate { get; }
+        public int MaximumUploadRate { get; init; } = 0;
 
         /// <summary>
         /// The BitTorrent specification requires that clients which initiate an outgoing connection to
@@ -81,12 +81,12 @@ namespace MonoTorrent.Client
         /// libtorrent, randomise their peer id. Additionally, if the announce request requests a compact
         /// response, the peer id will not be known anyway. Defaults to <see langword="false"/>.
         /// </summary>
-        public bool RequirePeerIdToMatch { get; }
+        public bool RequirePeerIdToMatch { get; init; } = false;
 
         /// <summary>
         /// The number of peers which can be uploaded to concurrently for this torrent. A value of 0 means unlimited. defaults to 8.
         /// </summary>
-        public int UploadSlots { get; } = 8;
+        public int UploadSlots { get; init; } = 8;
 
         /// <summary>
         /// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
@@ -98,11 +98,11 @@ namespace MonoTorrent.Client
         /// The number of peers we should maintain in our internal lists. If we are allowed maintain 100 connections,
         /// we will store 150 peer ip/port combos in memory. This should ensure we hit our maximum allowed connections.
         /// </summary>
-        internal int MaximumPeerDetails => MaximumConnections + 50;
+        internal int MaximumPeerDetails => MaximumConnections == 0 ? 1000 : MaximumConnections * 2;
 
         /// <summary>
-        /// The time, in seconds, the inactivity manager should wait until it can consider a peer eligible for disconnection.  Peers are disconnected only if they have not provided
-        /// any data.  Default is 600.  A value of 0 disables the inactivity manager.
+        /// The time the inactivity manager should wait until it can consider a peer eligible for disconnection.  Peers are disconnected only if they have not provided
+        /// any data.  Default is 10 minutes.  A value of 0 disables the inactivity manager.
         /// </summary>
         internal TimeSpan TimeToWaitUntilIdle => TimeSpan.FromMinutes (10);
 
@@ -111,43 +111,14 @@ namespace MonoTorrent.Client
 
         }
 
-        internal TorrentSettings (bool allowDht, bool allowInitialSeeding, bool allowPeerExchange, int maximumConnections, int maximumDownloadRate, int maximumUploadRate, int uploadSlots, bool createContainingDirectory, bool requirePeerIdToMatch)
+        public static TorrentSettings Create (TorrentSettings settings)
         {
-            AllowDht = allowDht;
-            AllowInitialSeeding = allowInitialSeeding;
-            AllowPeerExchange = allowPeerExchange;
-            CreateContainingDirectory = createContainingDirectory;
-            MaximumConnections = maximumConnections;
-            MaximumDownloadRate = maximumDownloadRate;
-            MaximumUploadRate = maximumUploadRate;
-            RequirePeerIdToMatch = requirePeerIdToMatch;
-            UploadSlots = uploadSlots;
-        }
-
-        public override bool Equals (object? obj)
-            => Equals (obj as TorrentSettings);
-
-        public bool Equals (TorrentSettings? other)
-        {
-            return !(other is null)
-                && AllowDht == other.AllowDht
-                && AllowInitialSeeding == other.AllowInitialSeeding
-                && AllowPeerExchange == other.AllowPeerExchange
-                && CreateContainingDirectory == other.CreateContainingDirectory
-                && MaximumConnections == other.MaximumConnections
-                && MaximumDownloadRate == other.MaximumDownloadRate
-                && MaximumUploadRate == other.MaximumUploadRate
-                && RequirePeerIdToMatch == other.RequirePeerIdToMatch
-                && UploadSlots == other.UploadSlots;
-        }
-
-        public override int GetHashCode ()
-        {
-            return AllowInitialSeeding.GetHashCode ()
-                ^ MaximumConnections
-                ^ MaximumDownloadRate
-                ^ MaximumUploadRate
-                ^ UploadSlots;
+            return settings with {
+                MaximumDownloadRate = SettingsValidators.CheckZeroOrPositive (settings.MaximumDownloadRate),
+                MaximumUploadRate = SettingsValidators.CheckZeroOrPositive (settings.MaximumUploadRate),
+                MaximumConnections = SettingsValidators.CheckZeroOrPositive (settings.MaximumConnections),
+                UploadSlots = SettingsValidators.CheckZeroOrPositive(settings.UploadSlots),
+            };
         }
     }
 }

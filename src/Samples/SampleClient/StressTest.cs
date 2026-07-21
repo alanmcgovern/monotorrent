@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -133,7 +134,7 @@ namespace ClientSample
                 throw new NotImplementedException ();
             }
 
-            public ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, Memory<byte> buffer, bool preferSkipCache)
+            public ReusableTask WriteAsync (ITorrentManagerInfo torrent, BlockInfo block, ReadOnlyMemory<byte> buffer, bool preferSkipCache)
             {
                 throw new NotImplementedException ();
             }
@@ -183,19 +184,19 @@ namespace ClientSample
             // Now create/start the seeder.
             int port = 37000;
             var seeder = new ClientEngine (
-                new EngineSettingsBuilder {
-                    AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText },
-                    ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } },
+                new EngineSettings () with {
+                    AllowedEncryption = ImmutableArray.Create<EncryptionType> (EncryptionType.PlainText),
+                    ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, port++) } }.ToImmutableDictionary (),
                     DhtEndPoint = null,
                     AllowLocalPeerDiscovery = false,
-                }.ToSettings (),
+                },
                 Factories.Default.WithBlockCacheCreator ((IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer) => {
                     SeederDataCache.Writer = writer;
                     return SeederDataCache;
                 })
             );
             ;
-            await seeder.AddAsync (Torrent.Load (metadata), DataDir, new TorrentSettingsBuilder { UploadSlots = MaxDownloaders }.ToSettings ());
+            await seeder.AddAsync (Torrent.Load (metadata), DataDir, new TorrentSettings () with { UploadSlots = MaxDownloaders });
             await seeder.Torrents[0].HashCheckAsync (false);
             await seeder.StartAllAsync ();
             await Task.Delay (500);
@@ -203,14 +204,14 @@ namespace ClientSample
             // Now create/start the leechers
             var downloaders = Enumerable.Range (port, MaxDownloaders).Select (p => {
                 return new ClientEngine (
-                    new EngineSettingsBuilder {
-                        AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText },
+                    new EngineSettings () with {
+                        AllowedEncryption = new List<EncryptionType> { EncryptionType.PlainText }.ToImmutableArray (),
                         DiskCacheBytes = DataSize,
-                        ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } },
+                        ListenEndPoints = new Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, p) } }.ToImmutableDictionary (),
                         DhtEndPoint = null,
                         AllowLocalPeerDiscovery = false,
                         CacheDirectory = Path.Combine (DataDir, "Downloader_" + port + "_CacheDirectory")
-                    }.ToSettings (),
+                    },
                     Factories.Default.WithPieceWriterCreator (maxOpenFiles => new NullWriter ())
                 );
                 ;

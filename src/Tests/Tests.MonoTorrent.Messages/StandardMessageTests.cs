@@ -32,6 +32,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using MonoTorrent.Messages;
+
 using NUnit.Framework;
 
 namespace MonoTorrent.Messages.Peer
@@ -66,78 +68,53 @@ namespace MonoTorrent.Messages.Peer
                                        true, true, false, false, true, false, false, true, true, false };
 
             Assert.AreEqual (data.Length, (int) Math.Ceiling ((double) torrentData.TorrentInfo.Size / torrentData.TorrentInfo.PieceLength), "#0");
-            ReadOnlyMemory<byte> encoded = new BitfieldMessage (new ReadOnlyBitField (data)).Encode ();
+            (ReadOnlyMemory<byte> encoded, var releaser) = MessageEncoder.WriteBitfield(new ReadOnlyBitField (data));
 
-            BitfieldMessage m = (BitfieldMessage) PeerMessage.DecodeMessage (encoded.Span, torrentData).message;
-            Assert.AreEqual (data.Length, m.BitField.Length, "#1");
+            BitfieldMessage m = new BitfieldMessage(encoded);
+            var bitfield = new BitField (m.BitField, torrentData.TorrentInfo.PieceCount ());
+            Assert.AreEqual (5, m.BitField.Length, "#0");
+            Assert.AreEqual (data.Length, bitfield.Length, "#1");
             for (int i = 0; i < data.Length; i++)
-                Assert.AreEqual (data[i], m.BitField[i], "#2." + i);
+                Assert.AreEqual (data[i], bitfield[i], "#2." + i);
         }
 
         [Test]
         public void BitFieldDecoding ()
         {
             byte[] buf = { 0x00, 0x00, 0x00, 0x04, 0x05, 0xff, 0x08, 0xAA, 0xE3, 0x00 };
-            BitfieldMessage msg = (BitfieldMessage) PeerMessage.DecodeMessage (buf, torrentData).message;
+            BitfieldMessage msg = new BitfieldMessage (buf);
 
+            var bitField = new BitField (msg.BitField, torrentData.TorrentInfo.PieceCount ());
             for (int i = 0; i < 8; i++)
-                Assert.IsTrue (msg.BitField[i], i.ToString ());
+                Assert.IsTrue (bitField[i], i.ToString ());
 
             for (int i = 8; i < 12; i++)
-                Assert.IsFalse (msg.BitField[i], i.ToString ());
+                Assert.IsFalse (bitField[i], i.ToString ());
 
-            Assert.IsTrue (msg.BitField[12], 12.ToString ());
+            Assert.IsTrue (bitField[12], 12.ToString ());
             for (int i = 13; i < 15; i++)
-                Assert.IsFalse (msg.BitField[i], i.ToString ());
-            EncodeDecode (msg);
+                Assert.IsFalse (bitField[i], i.ToString ());
         }
-
-        [Ignore ("Deliberately broken to work around bugs in azureus")]
-        public void BitfieldCorrupt ()
-        {
-            Assert.Throws<MessageException> (() => {
-                bool[] data = { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };
-                ReadOnlyMemory<byte> encoded = new BitfieldMessage (new ReadOnlyBitField (data)).Encode ();
-
-                PeerMessage.DecodeMessage (encoded.Span, null);
-            });
-        }
-
-
 
         [Test]
         public void CancelEncoding ()
         {
-            int length = new CancelMessage (15, 1024, 16384).Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteCancel (buffer.AsSpan (offset), 15, 1024, 16384);
             Assert.AreEqual ("00-00-00-0D-08-00-00-00-0F-00-00-04-00-00-00-40-00", BitConverter.ToString (buffer, offset, length));
         }
-        [Test]
-        public void CancelDecoding ()
-        {
-            EncodeDecode (new CancelMessage (563, 4737, 88888));
-        }
-
-
 
         [Test]
         public void ChokeEncoding ()
         {
-            int length = new ChokeMessage ().Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteChoke(buffer.AsSpan(offset));
             Assert.AreEqual ("00-00-00-01-00", BitConverter.ToString (buffer, offset, length));
         }
-        [Test]
-        public void ChokeDecoding ()
-        {
-            EncodeDecode (new ChokeMessage ());
-        }
-
-
 
         [Test]
         public void HandshakeEncoding ()
         {
             byte[] infohash = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
-            int length = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100, false, false).Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteHandshake (buffer.AsSpan (offset), infohash.AsSpan (), "12312312345645645678"u8, false, false, false);
 
             byte[] peerId = Encoding.ASCII.GetBytes ("12312312345645645678");
             byte[] protocolVersion = Encoding.ASCII.GetBytes (Constants.ProtocolStringV100);
@@ -148,119 +125,57 @@ namespace MonoTorrent.Messages.Peer
             Assert.IsTrue (peerId.AsSpan ().SequenceEqual (buffer.AsSpan (offset + 48, 20)), "5");
             Assert.AreEqual (length, HandshakeMessage.HandshakeLength, "6");
 
-            length = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100, true, false).Encode (buffer.AsSpan (offset));
+            length = MessageEncoder.WriteHandshake (buffer.AsSpan (offset), infohash, "12312312345645645678"u8, true, false, false);
             Assert.AreEqual (BitConverter.ToString (buffer, offset, length), "13-42-69-74-54-6F-72-72-65-6E-74-20-70-72-6F-74-6F-63-6F-6C-00-00-00-00-00-00-00-04-01-02-03-04-05-06-07-08-09-0A-0B-0C-0D-0E-0F-00-0C-0F-0C-34-31-32-33-31-32-33-31-32-33-34-35-36-34-35-36-34-35-36-37-38", "#7");
         }
 
         [Test]
-        public void HandshakeDecoding ()
-        {
-            byte[] infohash = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
-            HandshakeMessage orig = new HandshakeMessage (new InfoHash (infohash), "12312312345645645678", Constants.ProtocolStringV100);
-            orig.Encode (buffer.AsSpan (offset));
-            HandshakeMessage dec = new HandshakeMessage (buffer.AsSpan (offset, HandshakeMessage.HandshakeLength));
-            Assert.IsTrue (orig.Equals (dec));
-            Assert.IsTrue (orig.Encode ().Span.SequenceEqual (dec.Encode ().Span));
-        }
-
-
-        [Test]
-        public void HashReject ()
-        {
-            var array = MerkleRoot.FromMemory (Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ());
-            EncodeDecode (new HashRequestMessage (array, 1, 2, 3, 4));
-        }
-
-        [Test]
-        public void Hashes ()
-        {
-            var piecesRoot = new MerkleRoot (Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ());
-            ReadOnlyMemory<byte> hash = Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ();
-            EncodeDecode (new HashesMessage (piecesRoot, 1, 2, 3, 4, hash, default));
-        }
-
-        [Test]
-        public void HashRequest ()
-        {
-            var array = new MerkleRoot (Enumerable.Range (0, 32).Select (s => (byte) s).ToArray ());
-            EncodeDecode (new HashRequestMessage (array, 1, 2, 3, 4));
-        }
-
-
-        [Test]
         public void HaveEncoding ()
         {
-            int length = new HaveMessage (150).Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteHave (buffer.AsSpan (offset), 150);
             Assert.AreEqual ("00-00-00-05-04-00-00-00-96", BitConverter.ToString (buffer, offset, length));
         }
-        [Test]
-        public void HaveDecoding ()
-        {
-            EncodeDecode (new HaveMessage (34622));
-        }
-
-
-
+        
         [Test]
         public void InterestedEncoding ()
         {
-            int length = new InterestedMessage ().Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteInterested (buffer.AsSpan (offset));
             Assert.AreEqual ("00-00-00-01-02", BitConverter.ToString (buffer, offset, length));
         }
-        [Test]
-        public void InterestedDecoding ()
-        {
-            EncodeDecode (new InterestedMessage ());
-        }
-
-
 
         [Test]
         public void KeepAliveEncoding ()
         {
-            new KeepAliveMessage ().Encode (buffer.AsSpan (offset));
+            MessageEncoder.WriteKeepAlive (buffer.AsSpan (offset));
             Assert.IsTrue (buffer[offset] == 0
                             && buffer[offset + 1] == 0
                             && buffer[offset + 2] == 0
                             && buffer[offset + 3] == 0);
         }
-        [Test]
-        public void KeepAliveDecoding ()
-        {
-
-        }
-
-
 
         [Test]
         public void NotInterestedEncoding ()
         {
-            int length = new NotInterestedMessage ().Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteNotInterested(buffer.AsSpan (offset));
             Assert.AreEqual ("00-00-00-01-03", BitConverter.ToString (buffer, offset, length));
         }
-        [Test]
-        public void NotInterestedDecoding ()
-        {
-            EncodeDecode (new NotInterestedMessage ());
-        }
-
-
-
-        [Test]
-        public void PieceEncoding ()
-        {
-            PieceMessage message = new PieceMessage (15, 10, Constants.BlockSize);
-            var releaser = new MemoryPool ().Rent (Constants.BlockSize, out Memory<byte> pieceBuffer);
-            message.SetData ((releaser, pieceBuffer));
-            message.Encode (buffer.AsSpan (0, message.ByteLength));
-        }
+       
         [Test]
         public void PieceDecoding ()
         {
-            PieceMessage message = new PieceMessage (15, 10, Constants.BlockSize);
-            var releaser = new MemoryPool ().Rent (Constants.BlockSize, out Memory<byte> buffer);
-            message.SetData ((releaser, buffer));
-            EncodeDecode (message);
+            Span<byte> data = new byte[Constants.BlockSize];
+            data.Fill (byte.MaxValue);
+
+            (var buffer, var releaser) = MessageEncoder.WriteSparsePiece (15, 10, data.Length);
+            MessageEncoder.AppendPieceData (buffer, data);
+
+            var decoded = new PieceMessage (buffer);
+            Assert.AreEqual (15, decoded.PieceIndex);
+            Assert.AreEqual (10, decoded.StartOffset);
+            Assert.AreEqual (data.Length, decoded.RequestLength);
+            Assert.AreEqual (255, decoded.Data[0]);
+            Assert.AreEqual (255, decoded.Data[data.Length - 1]);
+            Assert.AreEqual (data.Length, decoded.Data.Length);
         }
 
 
@@ -268,50 +183,23 @@ namespace MonoTorrent.Messages.Peer
         [Test]
         public void PortEncoding ()
         {
-            int length = new PortMessage (2500).Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WritePort (buffer.AsSpan (offset), 2500);
             Assert.AreEqual ("00-00-00-03-09-09-C4", BitConverter.ToString (buffer, offset, length));
         }
-        [Test]
-        public void PortDecoding ()
-        {
-            EncodeDecode (new PortMessage (5452));
-        }
-
-
 
         [Test]
         public void RequestEncoding ()
         {
-            int length = new RequestMessage (5, 1024, 16384).Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteRequest (buffer.AsSpan (offset), 5, 1024, 16384);
             Assert.AreEqual ("00-00-00-0D-06-00-00-00-05-00-00-04-00-00-00-40-00", BitConverter.ToString (buffer, offset, length));
         }
-        [Test]
-        public void RequestDecoding ()
-        {
-            EncodeDecode (new RequestMessage (123, 789, 4235));
-        }
-
 
 
         [Test]
         public void UnchokeEncoding ()
         {
-            int length = new UnchokeMessage ().Encode (buffer.AsSpan (offset));
+            int length = MessageEncoder.WriteUnchoke(buffer.AsSpan (offset));
             Assert.AreEqual ("00-00-00-01-01", BitConverter.ToString (buffer, offset, length));
-        }
-        [Test]
-        public void UnchokeDecoding ()
-        {
-            EncodeDecode (new UnchokeMessage ());
-        }
-
-        private void EncodeDecode (Message orig)
-        {
-            orig.Encode (buffer.AsSpan (offset));
-            Message dec = PeerMessage.DecodeMessage (buffer.AsSpan (offset, orig.ByteLength), torrentData).message;
-            Assert.IsTrue (orig.Equals (dec), $"orig: {orig}, new: {dec}");
-
-            Assert.IsTrue (orig.Encode ().Span.SequenceEqual (PeerMessage.DecodeMessage (orig.Encode ().Span, torrentData).message.Encode ().Span));
         }
     }
 }

@@ -31,8 +31,10 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 
 using MonoTorrent.BEncoding;
@@ -42,9 +44,8 @@ namespace MonoTorrent.Dht
 {
     class Node : IEquatable<Node>
     {
-        public static readonly int MaxFailures = 4;
-
-        public IPEndPoint EndPoint { get; }
+        public static readonly int MaxFailures = 2;
+        public CompactEndPoint EndPoint { get; }
         public int FailedCount { get; set; }
         public NodeId Id { get; }
         public TimeSpan LastSeen => LastSeenTimer.Elapsed + LastSeenDelta;
@@ -63,9 +64,9 @@ namespace MonoTorrent.Dht
         }
         public BEncodedValue? Token { get; set; }
 
-        public Node (NodeId id, IPEndPoint endpoint)
+        public Node (NodeId id, CompactEndPoint endPoint)
         {
-            EndPoint = endpoint;
+            EndPoint = endPoint;
             Id = id;
 
             LastSeenDelta = TimeSpan.FromDays (1);
@@ -84,24 +85,26 @@ namespace MonoTorrent.Dht
             LastSeenTimer.Restart ();
         }
 
-        internal BEncodedString CompactPort ()
+        internal BEncodedString CompactEndPoint ()
         {
             byte[] buffer = new byte[6];
-            CompactPort (buffer);
+            if (CompactEndPoint (buffer) != buffer.Length)
+                throw new InvalidOperationException ("Couldn't write the address to the provided buffer");
             return new BEncodedString (buffer);
         }
 
-        internal void CompactPort (Span<byte> buffer)
+        internal int CompactEndPoint (Span<byte> buffer)
         {
-            Message.Write (ref buffer, EndPoint.Address.GetAddressBytes ());
-            Message.Write (ref buffer, (ushort) EndPoint.Port);
+            if (!EndPoint.TryWriteBytes (buffer, out int written))
+                throw new InvalidOperationException ("Couldn't write the address to the provided buffer");
+            return written;
         }
 
-        internal static BEncodedString CompactPort (IList<Node> peers)
+        internal static BEncodedString CompactEndPoint (IList<Node> peers)
         {
             var buffer = new byte[peers.Count * 6];
             for (int i = 0; i < peers.Count; i++)
-                peers[i].CompactPort (buffer.AsSpan (i * 6, 6));
+                peers[i].CompactEndPoint (buffer.AsSpan (i * 6, 6));
 
             return new BEncodedString (buffer);
         }
@@ -113,10 +116,10 @@ namespace MonoTorrent.Dht
             return new BEncodedString (buffer);
         }
 
-        void CompactNode (Span<byte> buffer)
+        internal int CompactNode (Span<byte> buffer)
         {
             Message.Write (ref buffer, Id.Span);
-            CompactPort (buffer);
+            return CompactEndPoint (buffer) + Id.Span.Length;
         }
 
         internal static BEncodedString CompactNode (ICollection<Node> nodes)
@@ -131,58 +134,56 @@ namespace MonoTorrent.Dht
             return new BEncodedString (buffer);
         }
 
-        internal static Node FromCompactNode (ReadOnlySpan<byte> buffer)
+        internal static Node? FromCompactNode (ReadOnlySpan<byte> buffer)
         {
             if (buffer.Length != 26)
                 throw new ArgumentException ("buffer must be exactly 26 bytes long", nameof (buffer));
 
-            byte[] id = new byte[20];
-            buffer.Slice (0, 20).CopyTo (id);
-            var address = new IPAddress (BinaryPrimitives.ReadUInt32LittleEndian (buffer.Slice (20, 4)));
-            int port = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice (24, 2));
-            return new Node (NodeId.FromMemory (id), new IPEndPoint (address, port));
+            if (IsObviouslyBad (buffer.Slice (20, 4)))
+                return null;
+
+            var endpoint = MonoTorrent.CompactEndPoint.FromCompact (buffer.Slice (20, 6), System.Net.Sockets.AddressFamily.InterNetwork);
+            return new Node (new NodeId(buffer.Slice (0, 20)), endpoint);
+        }
+
+        static bool IsObviouslyBad (ReadOnlySpan<byte> ipBytes)
+        {
+            return ipBytes[0] switch {
+                0 => true,
+                10 => true,
+                127 => true,
+                >= 224 => true, // multicast + reserved + 255.*
+                _ => false
+            };
         }
 
         internal static IEnumerable<Node> FromCompactNode (IEnumerable<ReadOnlyMemory<byte>> nodes)
         {
             foreach (var rawNode in nodes) {
-                for (int i = 0; (i + 26) <= rawNode.Length; i += 26)
-                    yield return FromCompactNode (rawNode.Span.Slice (i, 26));
-            }
-        }
-
-        internal static IEnumerable<Node> FromCompactNode (BEncodedString nodes)
-        {
-            var results = new Node[nodes.Span.Length / 26];
-            for (int i = 0; i < results.Length; i++)
-                results[i] = FromCompactNode (nodes.Span.Slice (i * 26, 26));
-            return results;
-        }
-
-        internal static IEnumerable<Node> FromCompactNode (BEncodedList nodes)
-        {
-            foreach (BEncodedValue node in nodes) {
-                //bad format!
-                if (!(node is BEncodedList))
-                    continue;
-
-                string host = string.Empty;
-                long port = 0;
-                foreach (BEncodedValue val in (BEncodedList) node) {
-                    if (val is BEncodedString)
-                        host = ((BEncodedString) val).Text;
-                    else if (val is BEncodedNumber)
-                        port = ((BEncodedNumber) val).Number;
+                for (int i = 0; (i + 26) <= rawNode.Length; i += 26) {
+                    var n = FromCompactNode (rawNode.Span.Slice (i, 26));
+                    if (n is not null)
+                        yield return n;
                 }
-
-                IPAddress.TryParse (host, out IPAddress? address);
-
-                //REM: bad design from bitcomet we do not have node id so create it...
-                //or use torrent infohash?
-                // Will messages from this node be discarded later on if the NodeId doesn't match?
-                if (address != null)
-                    yield return new Node (NodeId.Create (), new IPEndPoint (address, (int) port));
             }
+        }
+
+        internal static IEnumerable<Node> FromCompactNodes (BEncodedString nodes)
+        {
+            foreach (var v in FromCompactNodes (nodes.Span))
+                yield return v;
+        }
+
+        internal static IEnumerable<Node> FromCompactNodes (ReadOnlySpan<byte> nodes)
+        {
+            var results = new List<Node> (nodes.Length / 26);
+            while (nodes.Length >= 26) {
+                var node = FromCompactNode (nodes.Slice (0, 26));
+                if (node is not null)
+                    results.Add (node);
+                nodes = nodes.Slice (26);
+            }
+            return results;
         }
 
         public override bool Equals (object? obj)
@@ -191,9 +192,7 @@ namespace MonoTorrent.Dht
         }
 
         public bool Equals (Node? other)
-        {
-            return Id.Equals (other?.Id);
-        }
+            => other is null ? false : Id.Equals (other.Id);
 
         public override int GetHashCode ()
         {

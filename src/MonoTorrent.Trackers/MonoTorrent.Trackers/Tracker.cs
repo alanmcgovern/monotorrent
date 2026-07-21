@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -40,6 +41,7 @@ using ReusableTasks;
 
 namespace MonoTorrent.Trackers
 {
+    [DebuggerDisplay("Tracker: {Uri}")]
     public class Tracker : ITracker
     {
         static Random Random { get; } = new Random ();
@@ -47,7 +49,6 @@ namespace MonoTorrent.Trackers
         IList<ITrackerConnection> Connections { get; }
 
         ValueStopwatch LastAnnounced;
-        AnnounceResponse LastAnnounceResponse { get; set; }
         TrackerResponse LastResponse { get; set; }
 
         public int AnnounceKey { get; }
@@ -60,9 +61,8 @@ namespace MonoTorrent.Trackers
         public string FailureMessage => LastResponse.FailureMessage;
         public string WarningMessage => LastResponse.WarningMessage;
 
-
-        public TimeSpan MinUpdateInterval => LastAnnounceResponse.MinUpdateInterval;
-        public TimeSpan UpdateInterval => LastAnnounceResponse.UpdateInterval;
+        public TimeSpan MinUpdateInterval { get; private set; }
+        public TimeSpan UpdateInterval { get; private set; }
 
 
         public TrackerState Status => StatusOverride.HasValue ? StatusOverride.Value : LastResponse.State;
@@ -85,7 +85,9 @@ namespace MonoTorrent.Trackers
                 AnnounceKey = Random.Next (1, int.MaxValue);
 
             LastAnnounced = new ValueStopwatch ();
-            LastResponse = LastAnnounceResponse = new AnnounceResponse (TrackerState.Unknown);
+            LastResponse = new AnnounceResponse (TrackerState.Unknown);
+            MinUpdateInterval = TimeSpan.FromMinutes (3);
+            UpdateInterval = TimeSpan.FromMinutes (30);
         }
 
         public async ReusableTask<AnnounceResponse> AnnounceAsync (AnnounceRequest parameters, CancellationToken token)
@@ -103,6 +105,11 @@ namespace MonoTorrent.Trackers
                             response.Peers[infohash] = response.Peers[infohash].Concat (resp.Peers[infohash]).ToList ().AsReadOnly ();
                     }
                 }
+
+                if (response.MinUpdateInterval.HasValue)
+                    MinUpdateInterval = response.MinUpdateInterval.Value;
+                if (response.UpdateInterval.HasValue)
+                    UpdateInterval = response.UpdateInterval.Value;
 
                 LastResponse = response;
                 return response;

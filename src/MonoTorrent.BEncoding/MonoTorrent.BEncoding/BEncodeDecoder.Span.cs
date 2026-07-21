@@ -28,13 +28,24 @@
 
 
 using System;
+using System.Buffers;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace MonoTorrent.BEncoding
 {
     partial class BEncodeDecoder
     {
-        public static BEncodedValue Decode (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
+        internal static BEncodedValue Decode (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
+            => Decode (ref buffer, BEncodedStringPool.Instance, strictDecoding);
+
+        internal static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer)
+        {
+            using (var pool = new BEncodedStringPool (MemoryPool<byte>.Shared.Rent (128)))
+                return DecodeTorrent (ref buffer, pool);
+        }
+
+        static BEncodedValue Decode (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding)
         {
             if (buffer.Length == 0)
                 throw new BEncodingException ("Invalid BEncodedValue. The buffer was incomplete");
@@ -42,15 +53,15 @@ namespace MonoTorrent.BEncoding
             switch ((char) buffer[0]) {
                 case 'i':
                     buffer = buffer.Slice (1);
-                    return DecodeNumber (ref buffer);
+                    return DecodeNumber (ref buffer, pool);
 
                 case 'd':
                     buffer = buffer.Slice (1);
-                    return DecodeDictionary (ref buffer, strictDecoding);
+                    return DecodeDictionary (ref buffer, pool, strictDecoding);
 
                 case 'l':
                     buffer = buffer.Slice (1);
-                    return DecodeList (ref buffer, strictDecoding);
+                    return DecodeList (ref buffer, pool, strictDecoding);
 
                 case '1':
                 case '2':
@@ -62,14 +73,14 @@ namespace MonoTorrent.BEncoding
                 case '8':
                 case '9':
                 case '0':
-                    return DecodeString (ref buffer);
+                    return DecodeString (ref buffer, pool);
 
                 default:
                     throw new BEncodingException ("Could not find what value to decode");
             }
         }
 
-        public static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer)
+        static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool)
         {
             if (buffer[0] != 'd')
                 throw new BEncodingException ($"The root value was not a BEncodedDictionary");
@@ -86,15 +97,15 @@ namespace MonoTorrent.BEncoding
                     return (dictionary, new RawInfoHashes (infoHashSHA1, infoHashSHA256));
                 }
 
-                var key = DecodeString (ref buffer);
+                var key = DecodeString (ref buffer, pool);
                 if (oldkey != null && oldkey.CompareTo (key) > 0)
-                        throw new BEncodingException ($"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
+                    throw new BEncodingException ($"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
 
                 if (InfoKey.Equals (key))
                     infoBuffer = buffer;
 
                 oldkey = key;
-                var value = Decode (ref buffer, false);
+                var value = Decode (ref buffer, pool, false);
                 dictionary.Add (key, value);
 
                 if (InfoKey.Equals (key)) {
@@ -111,7 +122,7 @@ namespace MonoTorrent.BEncoding
             throw new BEncodingException ("Invalid data found. Aborting");
         }
 
-        static BEncodedDictionary DecodeDictionary (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
+        static BEncodedDictionary DecodeDictionary (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding)
         {
             BEncodedString? oldkey = null;
             var dictionary = new BEncodedDictionary ();
@@ -121,7 +132,7 @@ namespace MonoTorrent.BEncoding
                     return dictionary;
                 }
 
-                var key = DecodeString (ref buffer);
+                var key = DecodeString (ref buffer, pool);
 
                 if (oldkey != null && oldkey.CompareTo (key) > 0)
                     if (strictDecoding)
@@ -129,13 +140,13 @@ namespace MonoTorrent.BEncoding
                             $"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
 
                 oldkey = key;
-                var value = Decode (ref buffer, strictDecoding);
+                var value = Decode (ref buffer, pool, strictDecoding);
                 dictionary.Add (key, value);
             }
             throw new BEncodingException ("Invalid data found. Aborting");
         }
 
-        static BEncodedList DecodeList (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
+        static BEncodedList DecodeList (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding)
         {
             var list = new BEncodedList ();
             while (buffer.Length > 0) {
@@ -143,12 +154,12 @@ namespace MonoTorrent.BEncoding
                     buffer = buffer.Slice (1);
                     return list;
                 }
-                list.Add (Decode (ref buffer, strictDecoding));
+                list.Add (Decode (ref buffer, pool, strictDecoding));
             }
             throw new BEncodingException ("Invalid data found. Aborting");
         }
 
-        static BEncodedNumber DecodeNumber (ref ReadOnlySpan<byte> buffer)
+        static BEncodedNumber DecodeNumber (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool)
         {
             int sign = 1;
             if(buffer [0] == '-') {
@@ -166,13 +177,16 @@ namespace MonoTorrent.BEncoding
                 }
                 if (buffer[i] < '0' || buffer[i] > '9')
                     throw new BEncodingException ("Invalid number found.");
+                if ((sign == -1 || i > 0) && result == 0 && buffer[i] == '0')
+                    throw new BEncodingException ("Invalid number found. The invalid number is negative zero or negative leading zero.");
+
                 result = result * 10 + (buffer[i] - '0');
             }
 
             throw new BEncodingException ("Invalid number found.");
         }
 
-        static BEncodedString DecodeString (ref ReadOnlySpan<byte> buffer)
+        static BEncodedString DecodeString (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool)
         {
             int length = 0;
             for (int i = 0; i < buffer.Length; i++) {
@@ -184,16 +198,18 @@ namespace MonoTorrent.BEncoding
                     if (buffer.Length < (i + length))
                         throw new BEncodingException ($"Invalid BEncodedString. The buffer does not contain at least {length} bytes.");
 
-                    // Copy the data out!
-                    var bytes = new byte[length];
-                    buffer.Slice (i, length).CopyTo (bytes);
+                    var result = pool.GetInternedOrCreateNew (buffer.Slice (i, length));
                     buffer = buffer.Slice (i + length);
-                    return BEncodedString.FromMemory (bytes);
+                    return result;
                 }
 
                 if (buffer[i] < (byte) '0' || buffer[i] > (byte) '9')
                     throw new BEncodingException ($"Invalid BEncodedString. Length was '{length}' instead of a number");
+                if (length == 0 && i > 0)
+                    throw new BEncodingException ($"Invalid BEncodedString. The length was prefixed with '0'.");
                 length = length * 10 + (buffer[i] - '0');
+                if (length < 0)
+                    throw new BEncodingException ($"Invalid BEncodedString. Length overflowed the size of an int64");
             }
 
             throw new BEncodingException ($"Invalid BEncodedString. The ':' separater was not found.");

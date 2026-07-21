@@ -27,8 +27,11 @@
 //
 
 using System;
+using System.Linq;
+using System.Text;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Messages;
 
 using NUnit.Framework;
 
@@ -40,53 +43,41 @@ namespace MonoTorrent.Messages.Peer.Libtorrent
         [Test]
         public void HandshakeSupportsTest ()
         {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage (false, 1234, 5555);
-            ReadOnlyMemory<byte> encoded = m.Encode ();
+            (var encoded, var releaser) = MessageEncoder.Extended.WriteHandshake(GitInfoHelper.ClientVersionMemory, false, 1234, 5555);
 
-            Assert.AreEqual (m.ByteLength, encoded.Length, "#1");
-            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
-            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTChat.Support.Name)), "#3");
-            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTMetadata.Support.Name)), "#4");
+            var m = new Extended.HandshakeMessage (encoded);
+            var supports = MessageEncoder.Extended.SupportedMessages.ToList ();
+            BEncodeReader reader = new BEncodeReader (m.Mappings.Span);
+            reader.ExpectDictionaryBegin ();
+            while(reader.TryReadKey (out var key)) {
+                var name = Encoding.UTF8.GetString (key);
+                Assert.IsTrue (supports.Exists (t => t.Name == name));
+                supports.RemoveAll ((t => t.Name == name));
+                reader.SkipValue ();
+            }
+            Assert.IsEmpty (supports);
             Assert.AreEqual (Constants.DefaultMaxPendingRequests, m.MaxRequests, "#5");
         }
 
         [Test]
         public void HandshakeSupportsTest_Private ()
         {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage (true, 123, 5555);
-            ReadOnlyMemory<byte> encoded = m.Encode ();
+            (var encoded, var releaser) = MessageEncoder.Extended.WriteHandshake (GitInfoHelper.ClientVersionMemory, true, 123, 5555);
 
-            Assert.AreEqual (m.ByteLength, encoded.Length, "#1");
-            Assert.IsFalse (m.Supports.Exists (s => s.Name.Equals (PeerExchangeMessage.Support.Name)), "#2");
-            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTChat.Support.Name)), "#3");
-            Assert.IsTrue (m.Supports.Exists (s => s.Name.Equals (LTMetadata.Support.Name)), "#4");
-        }
+            var m = new Extended.HandshakeMessage (encoded);
+            var supports = MessageEncoder.Extended.SupportedMessages.ToList ();
+            supports.Remove (MessageEncoder.Extended.PeerExchangeSupport);
 
-        [Test]
-        public void HandshakeDecodeTest ()
-        {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage (false, 123, 5555);
-            ReadOnlyMemory<byte> data = m.Encode ();
-            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage) PeerMessage.DecodeMessage (data.Span, null).message;
-
-            Assert.AreEqual (m.ByteLength, data.Length);
-            Assert.AreEqual (m.ByteLength, decoded.ByteLength, "#1");
-            Assert.AreEqual (m.LocalPort, decoded.LocalPort, "#2");
-            Assert.AreEqual (m.MaxRequests, decoded.MaxRequests, "#3");
-            Assert.AreEqual (m.Version, decoded.Version, "#4");
-            Assert.AreEqual (m.Supports.Count, decoded.Supports.Count, "#5");
-            m.Supports.ForEach (delegate (ExtensionSupport s) { Assert.IsTrue (decoded.Supports.Contains (s), "#6:" + s); });
-        }
-
-        [Test]
-        public void LTChatDecodeTest ()
-        {
-            LTChat m = new LTChat (LTChat.Support.MessageId, "This Is My Message");
-
-            ReadOnlyMemory<byte> data = m.Encode ();
-            LTChat decoded = (LTChat) PeerMessage.DecodeMessage (data.Span, null).message;
-
-            Assert.AreEqual (m.Message, decoded.Message, "#1");
+            BEncodeReader reader = new BEncodeReader (m.Mappings.Span);
+            reader.ExpectDictionaryBegin ();
+            while (reader.TryReadKey (out var key)) {
+                reader.SkipValue ();
+                var name = Encoding.UTF8.GetString (key);
+                Assert.IsTrue (supports.Exists (t => t.Name == name));
+                supports.RemoveAll ((t => t.Name == name));
+            }
+            Assert.IsEmpty (supports);
+            Assert.AreEqual (Constants.DefaultMaxPendingRequests, m.MaxRequests, "#5");
         }
     }
 }

@@ -38,7 +38,7 @@ namespace MonoTorrent.PiecePicking
         IReadOnlyList<ReadOnlyBitField>? IgnorableBitfields { get; set; }
         Memory<PieceSegment> RequestBufferCache { get; set; }
         Memory<ReadOnlyBitField> OtherBitfieldCache { get; set; }
-        BitField? Temp { get; set; }
+        BitField Temp { get; set; }
 
         IMessageEnqueuer? Enqueuer { get; set; }
         IPieceRequesterData? TorrentData { get; set; }
@@ -72,7 +72,7 @@ namespace MonoTorrent.PiecePicking
 
         ReadOnlyBitField ApplyIgnorables (ReadOnlyBitField primary)
         {
-            Temp!.From (primary);
+            Temp.From (primary);
             for (int i = 0; i < IgnorableBitfields!.Count; i++)
                 Temp.NAnd (IgnorableBitfields[i]);
             return Temp;
@@ -119,10 +119,11 @@ namespace MonoTorrent.PiecePicking
             // a Span<T> of the expected size - so slice the reused buffer if it's too large.
             var requestBuffer = RequestBufferCache.Span.Slice (0, count);
             if (!peer.IsChoking || (peer.SupportsFastPeer && peer.IsAllowedFastPieces.Count > 0)) {
-                ReadOnlyBitField? filtered = null;
+                ReadOnlyBitField filtered = default;
 
                 while (peer.CanRequestMorePieces) {
-                    filtered ??= ApplyIgnorables (available);
+                    if (filtered.Length == 0)
+                        filtered = ApplyIgnorables (available);
 
                     int requests = Picker.PickPiece (peer, filtered, allPeers, 0, TorrentData.PieceCount - 1, requestBuffer);
                     if (requests > 0)
@@ -133,10 +134,11 @@ namespace MonoTorrent.PiecePicking
             }
 
             if (!peer.IsChoking && peer.AmRequestingPiecesCount == 0) {
-                ReadOnlyBitField? filtered = null;
+                ReadOnlyBitField filtered = default;
                 PieceSegment segment;
                 while (peer.CanRequestMorePieces) {
-                    filtered ??= ApplyIgnorables (available);
+                    if (filtered.Length == 0)
+                        filtered = ApplyIgnorables (available);
 
                     if (Picker.ContinueAnyExistingRequest (peer, filtered, 0, TorrentData.PieceCount - 1, 1, out segment)) {
                         Enqueuer.EnqueueRequest (peer, segment);

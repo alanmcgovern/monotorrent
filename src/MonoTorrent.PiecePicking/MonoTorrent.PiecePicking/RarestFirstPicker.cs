@@ -49,6 +49,8 @@ namespace MonoTorrent.PiecePicking
             base.Initialise (torrentData);
             rarest.Clear ();
             spares.Clear ();
+            rarest.TrimExcess ();
+            spares.TrimExcess ();
         }
 
         public override int PickPiece (IRequester peer, ReadOnlyBitField available, ReadOnlySpan<ReadOnlyBitField> otherPeers, int startIndex, int endIndex, Span<PieceSegment> requests)

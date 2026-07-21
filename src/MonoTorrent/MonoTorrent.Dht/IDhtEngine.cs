@@ -29,9 +29,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections.Dht;
+
+using ReusableTasks;
 
 namespace MonoTorrent.Dht
 {
@@ -64,19 +67,21 @@ namespace MonoTorrent.Dht
         event EventHandler StateChanged;
 
         TimeSpan AnnounceInterval { get; }
+        ImmutableHashSet<BootstrapRouter> BootstrapRouters { get; }
         bool Disposed { get; }
         ITransferMonitor Monitor { get; }
         TimeSpan MinimumAnnounceInterval { get; }
         int NodeCount { get; }
         DhtState State { get; }
 
-        void Add (IEnumerable<ReadOnlyMemory<byte>> nodes);
-        void Announce (InfoHash infoHash, int port);
-        void GetPeers (InfoHash infoHash);
-        Task<ReadOnlyMemory<byte>> SaveNodesAsync ();
-        Task SetListenerAsync (IDhtListener listener);
-        Task StartAsync ();
-        Task StartAsync (ReadOnlyMemory<byte> initialNodes);
-        Task StopAsync ();
+        ReusableTask AddAsync (IEnumerable<ReadOnlyMemory<byte>> nodes);
+        ReusableTask AnnounceAsync (InfoHash infoHash, int port);
+        ReusableTask GetPeersAsync (InfoHash infoHash);
+        ReusableTask<ReadOnlyMemory<byte>> SaveNodesAsync ();
+        ReusableTask SetBootstrapRoutersAsync (IEnumerable<BootstrapRouter> routers);
+        ReusableTask SetListenerAsync (IDhtListener listener);
+        ReusableTask StartAsync ();
+        ReusableTask StartAsync (ReadOnlyMemory<byte> initialNodes);
+        ReusableTask StopAsync ();
     }
 }

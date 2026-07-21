@@ -49,10 +49,5 @@ namespace MonoTorrent.BEncoding
             : base (message, innerException)
         {
         }
-
-        protected BEncodingException (SerializationInfo info, StreamingContext context)
-            : base (info, context)
-        {
-        }
     }
 }

@@ -27,53 +27,83 @@
 //
 
 
+using System;
+using System.Buffers;
+using System.Net.Sockets;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
-
-using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
     class TokenManager
     {
-        readonly byte[] currentSecret;
-        readonly byte[] previousSecret;
-        readonly RandomNumberGenerator random;
-        readonly SHA1 sha1;
+        public int TokenLength => 8;
+        Memory<byte> currentSecret;
+        Memory<byte> previousSecret;
 
         public TokenManager ()
         {
-            sha1 = SHA1.Create ();
-            random = RandomNumberGenerator.Create ();
             currentSecret = new byte[10];
             previousSecret = new byte[10];
-            random.GetNonZeroBytes (currentSecret);
-            random.GetNonZeroBytes (previousSecret);
+            RandomNumberGenerator.Fill (currentSecret.Span);
+            RandomNumberGenerator.Fill (previousSecret.Span);
         }
 
-        public BEncodedString GenerateToken (Node node)
+        public ReadOnlyMemory<byte> GenerateToken (Node node)
         {
-            return GenerateToken (node, currentSecret);
+            var token = new byte[TokenLength];
+            GenerateToken (node, currentSecret.Span, token);
+            return token;
         }
 
-        BEncodedString GenerateToken (Node node, byte[] secret)
+        public bool TryGenerateToken (Node node, Span<byte> dest, out int written)
         {
-            byte[] n = node.CompactPort ().Span.ToArray ();
-            sha1.Initialize ();
-            sha1.TransformBlock (n, 0, n.Length, n, 0);
-            sha1.TransformFinalBlock (secret, 0, secret.Length);
+            if (dest.Length < TokenLength) {
+                written = 0;
+                return false;
+            } else {
+                GenerateToken (node, currentSecret.Span, dest.Slice (0, TokenLength));
+                written = TokenLength;
+                return true;
+            }
+        }
 
-            return new BEncodedString (sha1.Hash!);
+        void GenerateToken (Node node, ReadOnlySpan<byte> secret, Span<byte> token)
+        {
+            // IPv6 compact details are 18 bytes, the secret is 10 bytes.
+            Span<byte> hashBuffer = stackalloc byte[28];
+
+            int written = node.CompactEndPoint (hashBuffer);
+            secret.CopyTo (hashBuffer.Slice (written));
+
+            if (!SHA1.TryHashData (
+                    hashBuffer.Slice (0, written + secret.Length),
+                    hashBuffer,
+                    out written) || written != 20)
+                throw new InvalidOperationException ("Could not create a 20 byte token");
+
+            hashBuffer.Slice (0, token.Length).CopyTo (token);
         }
 
         public void RefreshTokens ()
         {
-            currentSecret.CopyTo (previousSecret, 0);
-            random.GetNonZeroBytes (currentSecret);
+            (currentSecret, previousSecret) = (previousSecret, currentSecret);
+            RandomNumberGenerator.Fill (currentSecret.Span);
         }
 
-        public bool VerifyToken (Node node, BEncodedString token)
+        public bool VerifyToken (Node node, ReadOnlySpan<byte> token)
         {
-            return token.Equals (GenerateToken (node, currentSecret)) || token.Equals (GenerateToken (node, previousSecret));
+            if (token.Length != 8)
+                return false;
+
+            Span<byte> expected = stackalloc byte[8];
+
+            GenerateToken (node, currentSecret.Span, expected);
+            if (token.SequenceEqual (expected))
+                return true;
+
+            GenerateToken (node, previousSecret.Span, expected);
+            return token.SequenceEqual (expected);
         }
     }
 }

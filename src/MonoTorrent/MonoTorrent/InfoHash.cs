@@ -110,15 +110,14 @@ namespace MonoTorrent
 
         public string ToHex ()
         {
-            var span = Hash.Span;
-            var sb = new StringBuilder (40);
-            for (int i = 0; i < Hash.Length; i++) {
-                string hex = span[i].ToString ("X");
-                if (hex.Length != 2)
-                    sb.Append ("0");
-                sb.Append (hex);
-            }
-            return sb.ToString ();
+            return string.Create (Hash.Length * 2, Hash, static (dst, mem) => {
+                const string Hex = "0123456789ABCDEF";
+                int i = 0;
+                foreach (byte b in mem.Span) {
+                    dst[i++] = Hex[b >> 4];
+                    dst[i++] = Hex[b & 0xF];
+                }
+            });
         }
 
         public string UrlEncode ()

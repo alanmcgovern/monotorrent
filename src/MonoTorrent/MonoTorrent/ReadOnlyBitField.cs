@@ -39,12 +39,25 @@ using System.Text;
 
 namespace MonoTorrent
 {
-    public class ReadOnlyBitField
+    public readonly struct ReadOnlyBitField
     {
-        internal static ReadOnlyBitField From (BitFieldData data)
+        /// <summary>
+        /// Creates an immutable snapshot of the provided bitfield. If the original data is modified, the changes are not reflected in the snapshot.
+        /// </summary>
+        /// <param name="bitfield"></param>
+        /// <returns></returns>
+        public static ReadOnlyBitField Snapshot (ReadOnlyBitField bitfield)
+            => new ReadOnlyBitField (new BitFieldData (bitfield.Data));
+
+        /// <summary>
+        /// Creates a readonly wrapper around the underlying BitFieldData. If the original data is modified, the changes are reflected through the wrapper.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        internal static ReadOnlyBitField Wrap (BitFieldData data)
             => new ReadOnlyBitField (data);
 
-        BitFieldData Data { get; }
+        internal BitFieldData Data { get; }
 
         public bool AllFalse => Data.AllFalse;
 
@@ -56,22 +69,12 @@ namespace MonoTorrent
 
         public double PercentComplete => Data.PercentComplete;
 
-        internal ReadOnlySpan<ulong> Span => Data.Data;
-
         public int TrueCount => Data.TrueCount;
 
-        public bool this[int index] {
-            get => Data[index];
-        }
-
-        public ReadOnlyBitField (ReadOnlyBitField other)
-            => Data = new BitFieldData (other?.Data ?? throw new ArgumentNullException (nameof (other)));
+        public bool this[int index] => Data.Get(index);
 
         public ReadOnlyBitField (ReadOnlySpan<byte> array, int length)
             => Data = new BitFieldData (array, length);
-
-        public ReadOnlyBitField (int length)
-            => Data = new BitFieldData (length);
 
         public ReadOnlyBitField (bool[] array)
             => Data = new BitFieldData (array);
@@ -79,11 +82,11 @@ namespace MonoTorrent
         ReadOnlyBitField (BitFieldData data)
             => Data = data;
 
-        public bool SequenceEqual (ReadOnlyBitField? other)
-            => other != null && other.TrueCount == TrueCount && other.Span.SequenceEqual (Span);
+        public bool SequenceEqual (ReadOnlyBitField value)
+            => Data.SequenceEqual (value.Data);
 
         public int CountTrue (ReadOnlyBitField selector)
-            => Data.CountTrue (selector);
+            => Data.CountTrue (selector.Data);
 
         /// <summary>
         /// Returns the index of the first <see langword="false" /> bit in the bitfield.
@@ -126,5 +129,8 @@ namespace MonoTorrent
 
         public int ToBytes (Span<byte> buffer)
             => Data.ToBytes (buffer);
+
+        public override string? ToString ()
+            => Data.ToString ();
     }
 }
