@@ -1,10 +1,10 @@
-﻿//
-// NullPeerListener.cs
+//
+// UtpPeerConnectionFactory.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2026 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -30,33 +30,26 @@
 using System;
 using System.Net;
 
-using MonoTorrent.Connections;
 using MonoTorrent.Connections.Peer;
 
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.Client
 {
-    class NullPeerListener : IPeerConnectionListener
+    sealed class UtpPeerConnectionFactory
     {
-#pragma warning disable 0067
-        public event EventHandler<PeerConnectionEventArgs>? ConnectionReceived;
-        public event EventHandler<EventArgs>? StatusChanged;
-#pragma warning restore 0067
+        readonly EngineListenerBundle listeners;
 
-        public IPEndPoint PreferredLocalEndPoint { get; } = new IPEndPoint (IPAddress.None, 0);
-        public PeerTransport Protocol => PeerTransport.Tcp;
-
-        public IPEndPoint? LocalEndPoint => null;
-
-        public ListenerStatus Status => ListenerStatus.NotListening;
-
-        public void Start ()
+        public UtpPeerConnectionFactory (EngineListenerBundle listeners)
         {
-
+            this.listeners = listeners ?? throw new ArgumentNullException (nameof (listeners));
         }
 
-        public void Stop ()
+        internal IPeerConnection? CreatePeerConnection (PeerInfo peer)
         {
+            if (!IPAddress.TryParse (peer.ConnectionUri.Host, out var address))
+                return null;
 
+            var connectionIdReceive = (ushort) Random.Shared.NextInt64 (1, ushort.MaxValue);
+            return listeners.CreateUtpPeerConnection (address, peer.ConnectionUri.Port, connectionIdReceive);
         }
     }
 }

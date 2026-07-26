@@ -37,6 +37,7 @@ using System.Linq;
 using System.Net;
 
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 using MonoTorrent.Dht;
 using MonoTorrent.PieceWriter;
 
@@ -61,6 +62,11 @@ namespace MonoTorrent.Client
         /// which is <see cref="EncryptionType.RC4Header"/>, <see cref="EncryptionType.RC4Full"/> and <see cref="EncryptionType.PlainText"/>.
         /// </summary>
         public ImmutableArray<EncryptionType> AllowedEncryption { get; init; } = EncryptionTypes.All;
+
+        /// <summary>
+        /// The peer transports which can be used for outgoing connections, in priority order. Defaults to enabling all transports.
+        /// </summary>
+        public ImmutableArray<PeerTransport> AllowedTransports { get; init; } = ImmutableArray.Create (PeerTransport.Tcp);
 
         /// <summary>
         /// Have suppression reduces the number of Have messages being sent by only sending Have messages to peers
@@ -152,10 +158,9 @@ namespace MonoTorrent.Client
         });
 
         /// <summary>
-        /// The endpoint used for DHT communications. Set the port to 0 to choose a random available port.
-        /// Set to null to disable DHT. Defaults to IPAddress.Any with port 0.
+        /// True if the engine should use DHT to discover peers. Defaults to <see langword="true"/>.
         /// </summary>
-        public IPEndPoint? DhtEndPoint { get; init; } = new IPEndPoint (IPAddress.Any, 0);
+        public bool EnableDht { get; init; } = true;
 
         /// <summary>
         /// Creates a cache which buffers data before it's written to the disk, or after it's been read from disk.
@@ -188,14 +193,16 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of HTTP(s) endpoints which the engine should bind to when a <see cref="TorrentManager"/> is set up
         /// to stream data from the torrent and <see cref="TorrentManager.StreamProvider"/> is non-null. Should be of
-        /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555'.
+        /// the form "http://ip-address-or-hostname:port". Defaults to 'http://127.0.0.1:5555/'.
         /// </summary>
         public string HttpStreamingPrefix { get; init; } = "http://127.0.0.1:5555/";
 
         /// <summary>
-        /// The TCP port the engine should listen on for incoming connections. Set the port to 0 to use a random
-        /// available port, set to null to disable incoming connections. Defaults to IPAddress.Any and IPAddress.AnyIPv6,
-        /// both with port 0.
+        /// The EndPoint the engine should listen on for incoming connections. If <see cref="AllowedTransports"/>
+        /// contains <see cref="PeerTransport.Tcp"/> then a TCP socket will be bound to this port. If either <see cref="AllowedTransports"/>
+        /// contains <see cref="PeerTransport.Utp"/> or <see cref="EnableDht"/> is true then a UDP socket will be bound to
+        /// this port. Set the port to 0 to use a random available port, set to null to disable incoming connections.
+        /// Defaults to IPAddress.Any and IPAddress.AnyIPv6, both with port 0.
         /// </summary>
         public ImmutableDictionary<string, IPEndPoint> ListenEndPoints { get; init; } = new Dictionary<string, IPEndPoint> {
             {"ipv4", new IPEndPoint (IPAddress.Any, 0) },
@@ -213,7 +220,7 @@ namespace MonoTorrent.Client
         public int MaximumDownloadRate { get; init; } = 0;
 
         /// <summary>
-        /// The maximum number of concurrent connection attempts overall. Defaults to 20.
+        /// The maximum number of concurrent TCP connection attempts overall. Defaults to 20.
         /// </summary>
         public int MaximumHalfOpenConnections { get; init; } = 20;
 
@@ -363,6 +370,12 @@ namespace MonoTorrent.Client
                 throw new ArgumentException ("At least one encryption type must be specified");
             if (settings.AllowedEncryption.Distinct ().Count () != settings.AllowedEncryption.Length)
                 throw new ArgumentException ("Each encryption type can be specified at most once. Please verify the AllowedEncryption list contains no duplicates", "AllowedEncryption");
+            if (settings.AllowedTransports.Length == 0)
+                throw new ArgumentException ("At least one peer transport must be specified", nameof (AllowedTransports));
+            if (settings.AllowedTransports.Distinct ().Count () != settings.AllowedTransports.Length)
+                throw new ArgumentException ("Each peer transport can be specified at most once. Please verify the AllowedPeerTransports list contains no duplicates", nameof (AllowedTransports));
+            if ((settings.EnableDht || settings.AllowedTransports.Contains (PeerTransport.Utp)) && settings.ListenEndPoints.Count == 0)
+                throw new ArgumentException ("At least one UDP listen endpoint must be specified when DHT or uTP is enabled", nameof (ListenEndPoints));
 
             if (settings.ConnectionRetryDelays.Any (t => t < TimeSpan.Zero))
                 throw new ArgumentException ("ConnectionRetryDelays cannot be less than zero", nameof (ConnectionRetryDelays));

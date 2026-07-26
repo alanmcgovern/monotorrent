@@ -801,8 +801,7 @@ namespace MonoTorrent.Client
                 LastLocalPeerAnnounce = DateTime.Now;
                 LastLocalPeerAnnounceTimer.Restart ();
 
-                var endPoints = Engine.PeerListeners.Select (t => t.LocalEndPoint!).Where (t => t != null);
-                foreach (var endpoint in endPoints) { 
+                foreach (var endpoint in Engine.BoundPeerEndPoints) { 
                     if (InfoHashes.V1 != null)
                         await Engine.LocalPeerDiscovery.Announce (InfoHashes.V1, endpoint);
                     if (InfoHashes.V2 != null)

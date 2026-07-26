@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -8,6 +8,7 @@ using System.Net;
 using System.Threading;
 
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 
 namespace MonoTorrent.Client
 {
@@ -43,11 +44,14 @@ namespace MonoTorrent.Client
                 AllowLocalPeerDiscovery = allowLocalPeerDiscovery,
                 AllowPortForwarding = allowPortForwarding,
                 AllowedEncryption = (allowedEncryption ?? EncryptionTypes.All).ToImmutableArray (),
+                AllowedTransports = dhtEndPoint == null ? ImmutableArray.Create (PeerTransport.Tcp) : ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp),
                 AutoSaveLoadFastResume = automaticFastResume,
                 AutoSaveLoadMagnetLinkMetadata = autoSaveLoadMagnetLinkMetadata,
                 CacheDirectory = cacheDirectory ?? Path.Combine (Path.GetDirectoryName (typeof (EngineSettings).Assembly.Location)!, "test_cache_dir"),
-                DhtEndPoint = dhtEndPoint,
-                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? new Dictionary<string, IPEndPoint> ()).ToImmutableDictionary (),
+                EnableDht = dhtEndPoint != null,
+                ListenEndPoints = new Dictionary<string, IPEndPoint> (listenEndPoints ?? (dhtEndPoint is null
+                    ? new Dictionary<string, IPEndPoint> ()
+                    : new Dictionary<string, IPEndPoint> { { "ipv4", dhtEndPoint } })).ToImmutableDictionary (),
                 UsePartialFiles = usePartialFiles,
             };
         }

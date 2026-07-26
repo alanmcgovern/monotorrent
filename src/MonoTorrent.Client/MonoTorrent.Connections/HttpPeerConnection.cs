@@ -38,7 +38,6 @@ using System.Threading.Tasks;
 using MonoTorrent.Logging;
 using MonoTorrent.Messages;
 using MonoTorrent.Messages.Peer;
-using MonoTorrent.Messages;
 
 using ReusableTasks;
 

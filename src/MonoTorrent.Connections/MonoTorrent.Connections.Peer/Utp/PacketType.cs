@@ -1,10 +1,10 @@
 ﻿//
-// NullPeerListener.cs
+// PacketType.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2020 Alan McGovern
+// Copyright (C) 2026 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,37 +26,14 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-using System;
-using System.Net;
-
-using MonoTorrent.Connections;
-using MonoTorrent.Connections.Peer;
-
-namespace MonoTorrent.Client.Listeners
+namespace MonoTorrent.Connections.Peer.Utp
 {
-    class NullPeerListener : IPeerConnectionListener
+    public enum PacketType : byte
     {
-#pragma warning disable 0067
-        public event EventHandler<PeerConnectionEventArgs>? ConnectionReceived;
-        public event EventHandler<EventArgs>? StatusChanged;
-#pragma warning restore 0067
-
-        public IPEndPoint PreferredLocalEndPoint { get; } = new IPEndPoint (IPAddress.None, 0);
-        public PeerTransport Protocol => PeerTransport.Tcp;
-
-        public IPEndPoint? LocalEndPoint => null;
-
-        public ListenerStatus Status => ListenerStatus.NotListening;
-
-        public void Start ()
-        {
-
-        }
-
-        public void Stop ()
-        {
-
-        }
+        Data = 0,
+        Fin = 1,
+        State = 2,
+        Reset = 3,
+        Syn = 4
     }
 }

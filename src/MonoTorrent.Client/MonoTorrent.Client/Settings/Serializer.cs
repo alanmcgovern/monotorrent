@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Net;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Peer;
 using MonoTorrent.Dht;
 using MonoTorrent.PieceWriter;
 
@@ -22,6 +23,10 @@ namespace MonoTorrent.Client
                 AllowedEncryption = dict.TryGetValue (nameof (EngineSettings.AllowedEncryption), out var v0)
                     ? ReadEncryptionList ((BEncodedList) v0)
                     : defaults.AllowedEncryption,
+
+                AllowedTransports = dict.TryGetValue (nameof (EngineSettings.AllowedTransports), out var v31)
+                    ? ReadPeerTransportList ((BEncodedList) v31)
+                    : defaults.AllowedTransports,
 
                 AllowHaveSuppression = dict.TryGetValue (nameof (EngineSettings.AllowHaveSuppression), out var v1)
                     ? bool.Parse (v1.ToString ()!)
@@ -63,9 +68,9 @@ namespace MonoTorrent.Client
                     ? ReadBootstrapRouters ((BEncodedList) v10)
                     : defaults.DhtBootstrapRouters,
 
-                DhtEndPoint = dict.TryGetValue (nameof (EngineSettings.DhtEndPoint), out var v11)
-                    ? ReadNullableEndPoint ((BEncodedList) v11)
-                    : defaults.DhtEndPoint,
+                EnableDht = dict.TryGetValue (nameof (EngineSettings.EnableDht), out var v11)
+                    ? bool.Parse (v11.ToString ()!)
+                    : defaults.EnableDht,
 
                 DiskCacheBytes = dict.TryGetValue (nameof (EngineSettings.DiskCacheBytes), out var v12)
                     ? (int) ((BEncodedNumber) v12).Number
@@ -210,6 +215,7 @@ namespace MonoTorrent.Client
             var dict = new BEncodedDictionary ();
 
             dict[nameof (s.AllowedEncryption)] = WriteEncryptionList (s.AllowedEncryption);
+            dict[nameof (s.AllowedTransports)] = WritePeerTransportList (s.AllowedTransports);
             dict[nameof (s.AllowHaveSuppression)] = new BEncodedString (s.AllowHaveSuppression.ToString ());
             dict[nameof (s.AllowLocalPeerDiscovery)] = new BEncodedString (s.AllowLocalPeerDiscovery.ToString ());
             dict[nameof (s.AllowPortForwarding)] = new BEncodedString (s.AllowPortForwarding.ToString ());
@@ -220,7 +226,7 @@ namespace MonoTorrent.Client
             dict[nameof (s.ConnectionRetryDelays)] = WriteTimeSpanList (s.ConnectionRetryDelays);
             dict[nameof (s.ConnectionTimeouts)] = WriteTimeSpanList (s.ConnectionTimeouts);
             dict[nameof (s.DhtBootstrapRouters)] = WriteBootstrapRouters (s.DhtBootstrapRouters);
-            dict[nameof (s.DhtEndPoint)] = WriteNullableEndPoint (s.DhtEndPoint);
+            dict[nameof (s.EnableDht)] = new BEncodedString (s.EnableDht.ToString ());
             dict[nameof (s.DiskCacheBytes)] = new BEncodedNumber (s.DiskCacheBytes);
             dict[nameof (s.DiskCachePolicy)] = new BEncodedString (s.DiskCachePolicy.ToString ());
             dict[nameof (s.FastResumeMode)] = new BEncodedString (s.FastResumeMode.ToString ());
@@ -252,21 +258,20 @@ namespace MonoTorrent.Client
             return result.ToImmutableArray ();
         }
 
+        static ImmutableArray<PeerTransport> ReadPeerTransportList (BEncodedList list)
+        {
+            var result = new List<PeerTransport> (list.Count);
+            foreach (BEncodedString item in list)
+                result.Add (Enum.Parse<PeerTransport> (item.Text));
+            return result.ToImmutableArray ();
+        }
+
         static ImmutableArray<BootstrapRouter> ReadBootstrapRouters (BEncodedList list)
         {
             var result = new List<BootstrapRouter> (list.Count);
             foreach (BEncodedList router in list)
                 result.Add (new BootstrapRouter (((BEncodedString) router[0]).Text, (int) ((BEncodedNumber) router[1]).Number));
             return result.ToImmutableArray ();
-        }
-
-        static IPEndPoint? ReadNullableEndPoint (BEncodedList list)
-        {
-            if (list.Count != 2)
-                return null;
-            var address = IPAddress.Parse (((BEncodedString) list[0]).Text);
-            var port = (int) ((BEncodedNumber) list[1]).Number;
-            return new IPEndPoint (address, port);
         }
 
         static ImmutableDictionary<string, IPEndPoint> ReadEndPointDictionary (BEncodedDictionary dict)
@@ -290,6 +295,9 @@ namespace MonoTorrent.Client
         }
 
         static BEncodedList WriteEncryptionList (IList<EncryptionType> value)
+            => new BEncodedList (value.Select (v => (BEncodedValue) new BEncodedString (v.ToString ())));
+
+        static BEncodedList WritePeerTransportList (IList<PeerTransport> value)
             => new BEncodedList (value.Select (v => (BEncodedValue) new BEncodedString (v.ToString ())));
 
         static BEncodedList WriteBootstrapRouters (IList<BootstrapRouter> value)

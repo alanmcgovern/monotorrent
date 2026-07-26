@@ -28,16 +28,21 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Connections;
+using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Utp;
 using MonoTorrent.PieceWriter;
+using MonoTorrent.PortForwarding;
 
 using NUnit.Framework;
 
@@ -47,6 +52,224 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class ClientEngineTests
     {
+        [Test]
+        public void EnableDht_DefaultDoesNotCreateUdpListenersInTestHelper ()
+        {
+            var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
+                { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+            });
+
+            using var engine = new ClientEngine (settings, EngineHelpers.Factories);
+
+            Assert.IsEmpty (engine.ListenerBundle.BoundEndPoints);
+        }
+
+        [Test]
+        public void EnableUtp_CreatesUdpListeners ()
+        {
+            var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
+                { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) },
+                { "ipv6", new IPEndPoint (IPAddress.IPv6Loopback, 0) },
+            }) with {
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+            };
+
+            using var engine = new ClientEngine (settings, EngineHelpers.Factories);
+
+            Assert.IsEmpty (engine.ListenerBundle.BoundEndPoints);
+        }
+
+        [Test]
+        public void EnableDht_CreatesUdpListeners ()
+        {
+            var settings = EngineHelpers.CreateSettings (
+                dhtEndPoint: new IPEndPoint (IPAddress.Loopback, 0),
+                listenEndPoints: new Dictionary<string, IPEndPoint> {
+                    { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+                }) with {
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp)
+            };
+
+            using var engine = new ClientEngine (settings, EngineHelpers.Factories);
+
+            Assert.IsEmpty (engine.ListenerBundle.BoundEndPoints);
+        }
+
+        [Test]
+        public void SharedTcpAndUdpListeners_BindToTheSameRandomPort ()
+        {
+            var changes = new List<BoundEndPointsChangedEventArgs> ();
+            var bundle = Factories.Default.CreateListenerBundle (
+                new[] { new IPEndPoint (IPAddress.Loopback, 0) },
+                enableTcp: true,
+                enableUtp: true,
+                enableDht: true);
+            bundle.BoundEndPointsChanged += (o, e) => changes.Add (e);
+
+            try {
+                bundle.Start ();
+
+                Assert.AreEqual (2, bundle.BoundEndPoints.Length);
+                Assert.AreEqual (1, bundle.BoundEndPoints.Count (t => t.Protocol == Protocol.Tcp));
+                Assert.AreEqual (1, bundle.BoundEndPoints.Count (t => t.Protocol == Protocol.Udp));
+                Assert.AreEqual (bundle.BoundEndPoints.Single (t => t.Protocol == Protocol.Tcp).EndPoint.Port, bundle.BoundEndPoints.Single (t => t.Protocol == Protocol.Udp).EndPoint.Port);
+                Assert.AreEqual (1, changes.Count);
+                Assert.IsEmpty (changes[0].OldEndPoints);
+                CollectionAssert.AreEquivalent (bundle.BoundEndPoints, changes[0].NewEndPoints);
+            } finally {
+                bundle.Stop ();
+            }
+
+            Assert.AreEqual (2, changes.Count);
+            Assert.IsEmpty (changes[1].NewEndPoints);
+        }
+
+        [Test]
+        public void SharedTcpAndUdpListeners_RetainUdpWhenTcpCannotBind ()
+        {
+            int tcpListenerCreations = 0;
+            var factories = Factories.Default.WithPeerConnectionListenerCreator (endpoint => {
+                tcpListenerCreations++;
+                return new FailedPeerConnectionListener (endpoint);
+            });
+            var bundle = factories.CreateListenerBundle (
+                new[] { new IPEndPoint (IPAddress.Loopback, 0) },
+                enableTcp: true,
+                enableUtp: false,
+                enableDht: true);
+
+            try {
+                bundle.Start ();
+
+                Assert.Greater (tcpListenerCreations, 1);
+                Assert.IsTrue (tcpListenerCreations < 100);
+                Assert.AreEqual (1, bundle.BoundEndPoints.Length);
+                Assert.AreEqual (Protocol.Udp, bundle.BoundEndPoints[0].Protocol);
+            } finally {
+                bundle.Stop ();
+            }
+        }
+
+        [Test]
+        public void FixedPort_BindingOneTransportDoesNotPreventTheOther ()
+        {
+            using var blocker = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            blocker.Bind (new IPEndPoint (IPAddress.Loopback, 0));
+            var endPoint = (IPEndPoint) blocker.LocalEndPoint;
+            var bundle = Factories.Default.CreateListenerBundle (
+                new[] { endPoint },
+                enableTcp: true,
+                enableUtp: true,
+                enableDht: false);
+
+            try {
+                bundle.Start ();
+
+                Assert.AreEqual (1, bundle.BoundEndPoints.Length);
+                Assert.AreEqual (Protocol.Udp, bundle.BoundEndPoints[0].Protocol);
+                Assert.AreEqual (endPoint.Port, bundle.BoundEndPoints[0].EndPoint.Port);
+            } finally {
+                bundle.Stop ();
+            }
+        }
+
+        [Test]
+        public void FactoriesCreateUtpAndDhtWrappersOverTheSameUdpListener ()
+        {
+            UdpListener dhtUdpListener = null;
+            UdpListener utpUdpListener = null;
+            var factories = Factories.Default
+                .WithDhtListenerCreator (listener => {
+                    dhtUdpListener = listener;
+                    return new DhtListener (listener);
+                })
+                .WithUtpPeerConnectionListenerCreator (listener => {
+                    utpUdpListener = listener;
+                    return new UtpPeerConnectionListener (listener);
+                });
+
+            _ = factories.CreateListenerBundle (
+                new[] { new IPEndPoint (IPAddress.Loopback, 0) },
+                enableTcp: false,
+                enableUtp: true,
+                enableDht: true);
+
+            Assert.NotNull (utpUdpListener);
+            Assert.AreSame (utpUdpListener, dhtUdpListener);
+        }
+
+        [Test]
+        public void UpdatingABundleRestartsPreviouslyActiveListeners ()
+        {
+            var bundle = Factories.Default.CreateListenerBundle (
+                new[] { new IPEndPoint (IPAddress.Loopback, 0) },
+                enableTcp: true,
+                enableUtp: false,
+                enableDht: false);
+
+            try {
+                bundle.Start ();
+                Assert.AreEqual (1, bundle.BoundEndPoints.Length);
+
+                bundle.Update (
+                    new[] { new IPEndPoint (IPAddress.Loopback, 0) },
+                    enableTcp: false,
+                    enableUtp: true,
+                    enableDht: false);
+
+                Assert.AreEqual (1, bundle.BoundEndPoints.Length);
+                Assert.AreEqual (Protocol.Udp, bundle.BoundEndPoints[0].Protocol);
+            } finally {
+                bundle.Stop ();
+            }
+        }
+
+        [Test]
+        public async Task EnableUtp_UpdateSettingsRebuildsUdpListeners ()
+        {
+            var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
+                { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+            });
+
+            using var engine = new ClientEngine (settings, EngineHelpers.Factories);
+            var listenerBundle = engine.ListenerBundle;
+
+            await engine.UpdateSettingsAsync (engine.Settings with {
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+            });
+
+            Assert.AreSame (listenerBundle, engine.ListenerBundle);
+        }
+
+        [Test]
+        public void AllowedPeerTransports_CreatesConfiguredPeerConnectionTypes ()
+        {
+            var tcpPeer = new PeerInfo (new Uri ("ipv4://127.0.0.1:12345"));
+            var fake = new ConnectionManagerTests.FakeConnection (tcpPeer.ConnectionUri);
+            var utp = new ConnectionManagerTests.FakeConnection (new Uri ("utp://127.0.0.1:12345"));
+            IPeerConnectionListener utpListener = null;
+            IPEndPoint utpEndPoint = null;
+            var factories = EngineHelpers.Factories
+                .WithPeerConnectionCreator ("ipv4", uri => fake)
+                .WithUtpPeerConnectionCreator ((listener, remoteEndPoint, _) => {
+                    utpListener = listener;
+                    utpEndPoint = remoteEndPoint;
+                    return utp;
+                });
+            var settings = EngineHelpers.CreateSettings (listenEndPoints: new Dictionary<string, IPEndPoint> {
+                { "ipv4", new IPEndPoint (IPAddress.Loopback, 0) }
+            }) with {
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+            };
+
+            using var engine = new ClientEngine (settings, factories);
+
+            Assert.AreSame (fake, engine.ConnectionManager.CreatePeerConnection (tcpPeer, PeerTransport.Tcp));
+            Assert.AreSame (utp, engine.ConnectionManager.CreatePeerConnection (tcpPeer, PeerTransport.Utp));
+            Assert.NotNull (utpListener);
+            Assert.AreEqual (new IPEndPoint (IPAddress.Loopback, 12345), utpEndPoint);
+        }
+
         [Test]
         public async Task AddPeers_Dht_Public ()
         {
@@ -350,15 +573,42 @@ namespace MonoTorrent.Client
             Assert.ThrowsAsync<TorrentException> (() => engine.DownloadMetadataAsync (link, CancellationToken.None));
         }
 
-        class FakeListener : IPeerConnectionListener
+        sealed class FailedPeerConnectionListener : IPeerConnectionListener
+        {
+ #pragma warning disable 0067
+            public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
+            public event EventHandler<EventArgs> StatusChanged;
+ #pragma warning restore 0067
+
+            public IPEndPoint LocalEndPoint => null;
+            public IPEndPoint PreferredLocalEndPoint { get; }
+            public PeerTransport Protocol => PeerTransport.Tcp;
+            public ListenerStatus Status => ListenerStatus.PortNotFree;
+
+            public FailedPeerConnectionListener (IPEndPoint endPoint)
+                => PreferredLocalEndPoint = endPoint;
+
+            public void Start ()
+            {
+            }
+
+            public void Stop ()
+            {
+            }
+        }
+
+        class FakeListener : IPeerConnectionListener, MonoTorrent.Connections.Dht.IDhtListener
         {
             public IPEndPoint LocalEndPoint { get; set; }
             public IPEndPoint PreferredLocalEndPoint { get; set; }
             public ListenerStatus Status { get; }
 
+            public PeerTransport Protocol { get; set; } = PeerTransport.Tcp;
+
 #pragma warning disable 0067
             public event EventHandler<PeerConnectionEventArgs> ConnectionReceived;
             public event EventHandler<EventArgs> StatusChanged;
+            public event Action<ReadOnlyMemory<byte>, CompactEndPoint> MessageReceived;
 #pragma warning restore 0067
 
             public FakeListener (int port)
@@ -371,30 +621,29 @@ namespace MonoTorrent.Client
             public void Stop ()
             {
             }
+
+            public ReusableTasks.ReusableTask SendAsync (ReadOnlyMemory<byte> buffer, CompactEndPoint endpoint)
+                => ReusableTasks.ReusableTask.CompletedTask;
         }
 
         [Test]
-        public void GetPortFromListener_ipv4 ()
+        public async Task GetPortFromListener_ipv4 ()
         {
             var listener = new FakeListener (0);
             var settingsBuilder = EngineHelpers.CreateSettings () with { ListenEndPoints = new System.Collections.Generic.Dictionary<string, IPEndPoint> { { "ipv4", new IPEndPoint (IPAddress.Any, 0) } }.ToImmutableDictionary () };
             var engine = EngineHelpers.Create (settingsBuilder, EngineHelpers.Factories.WithPeerConnectionListenerCreator (t => listener));
-            Assert.AreSame (engine.PeerListeners.Single (), listener);
-
             // a port of zero isn't an actual listen port. The listener is not bound.
             listener.LocalEndPoint = null;
             listener.PreferredLocalEndPoint = new IPEndPoint (IPAddress.Any, 0);
             Assert.AreEqual (null, engine.GetOverrideOrActualListenPort ("ipv4"));
 
-            // The listener is unbound, but it should eventually bind to 1221
-            listener.LocalEndPoint = null;
-            listener.PreferredLocalEndPoint = new IPEndPoint (IPAddress.Any, 1221);
+            // The configured fixed port is returned before the engine is started.
+            await engine.UpdateSettingsAsync (engine.Settings with {
+                ListenEndPoints = new Dictionary<string, IPEndPoint> {
+                    { "ipv4", new IPEndPoint (IPAddress.Any, 1221) }
+                }.ToImmutableDictionary ()
+            });
             Assert.AreEqual (1221, engine.GetOverrideOrActualListenPort ("ipv4"));
-
-            // The bound port is 1423, the preferred is zero
-            listener.LocalEndPoint = new IPEndPoint (IPAddress.Any, 1425);
-            listener.PreferredLocalEndPoint = new IPEndPoint (IPAddress.Any, 0);
-            Assert.AreEqual (1425, engine.GetOverrideOrActualListenPort ("ipv4"));
         }
 
         [Test]

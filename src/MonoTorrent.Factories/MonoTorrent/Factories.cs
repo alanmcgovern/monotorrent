@@ -39,6 +39,7 @@ using System.Threading.Tasks;
 using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Connections.Peer;
+using MonoTorrent.Connections.Peer.Utp;
 using MonoTorrent.Connections.Tracker;
 using MonoTorrent.Dht;
 using MonoTorrent.PiecePicking;
@@ -52,17 +53,20 @@ namespace MonoTorrent
     {
         public delegate IBlockCache BlockCacheCreator (IPieceWriter writer, long capacity, CachePolicy policy, MemoryPool buffer);
         public delegate IDhtEngine DhtCreator ();
-        public delegate IDhtListener DhtListenerCreator (IPEndPoint endpoint);
+        public delegate IDhtListener DhtListenerCreator (UdpListener listener);
         public delegate HttpClient HttpClientCreator (AddressFamily family);
         public delegate ILocalPeerDiscovery LocalPeerDiscoveryCreator ();
         public delegate IPeerConnection PeerConnectionCreator (Uri uri);
         public delegate IPeerConnectionListener PeerConnectionListenerCreator (IPEndPoint endPoint);
+        public delegate IPeerConnection? UtpPeerConnectionCreator (IPeerConnectionListener listener, IPEndPoint remoteEndPoint, ushort connectionIdReceive);
         public delegate IPieceRequester PieceRequesterCreator (PieceRequesterSettings settings);
         public delegate IPieceWriter PieceWriterCreator (int maxOpenFiles);
         public delegate IPortForwarder PortForwarderCreator ();
         public delegate ISocketConnector SocketConnectorCreator ();
         public delegate IStreamingPieceRequester StreamingPieceRequesterCreator ();
         public delegate ITracker TrackerCreator (Uri uri);
+        public delegate UdpListener UdpListenerCreator (IPEndPoint endpoint);
+        public delegate IPeerConnectionListener UtpPeerConnectionListenerCreator (UdpListener listener);
     }
 
     public partial class Factories
@@ -76,6 +80,9 @@ namespace MonoTorrent
         HttpClientCreator HttpClientFunc { get; set; }
         ReadOnlyDictionary<string, PeerConnectionCreator> PeerConnectionFuncs { get; set; }
         PeerConnectionListenerCreator PeerConnectionListenerFunc { get; set; }
+        UdpListenerCreator UdpListenerFunc { get; set; }
+        UtpPeerConnectionListenerCreator UtpPeerConnectionListenerFunc { get; set; }
+        UtpPeerConnectionCreator UtpPeerConnectionFunc { get; set; }
         PieceRequesterCreator PieceRequesterFunc { get; set; }
         PieceWriterCreator PieceWriterFunc { get; set; }
         PortForwarderCreator PortForwarderFunc { get; set; }
@@ -88,7 +95,7 @@ namespace MonoTorrent
         {
             BlockCacheFunc = (writer, capacity, policy, buffer) => new MemoryCache (buffer, capacity, policy, writer);
             DhtFunc = () => new DhtEngine ();
-            DhtListenerFunc = endpoint => new DhtListener (endpoint);
+            DhtListenerFunc = listener => new DhtListener (listener);
 
             HttpClientFunc = HttpRequestFactory.CreateHttpClient;
 
@@ -100,6 +107,10 @@ namespace MonoTorrent
                 }
             );
             PeerConnectionListenerFunc = endPoint => new PeerConnectionListener (endPoint);
+            UdpListenerFunc = endPoint => new UdpListener (endPoint);
+            UtpPeerConnectionListenerFunc = listener => new UtpPeerConnectionListener (listener);
+            UtpPeerConnectionFunc = (listener, remoteEndPoint, connectionIdReceive) =>
+                listener is UtpPeerConnectionListener utpListener ? new UtpPeerConnection (utpListener, remoteEndPoint, connectionIdReceive) : null;
             PieceRequesterFunc = settings => new StandardPieceRequester (settings);
             PieceWriterFunc = maxOpenFiles => new DiskWriter (maxOpenFiles);
             PortForwarderFunc = () => new MonoNatPortForwarder ();
@@ -135,8 +146,8 @@ namespace MonoTorrent
             return dupe;
         }
 
-        public IDhtListener CreateDhtListener (IPEndPoint endPoint)
-            => DhtListenerFunc (endPoint);
+        public IDhtListener CreateDhtListener (UdpListener listener)
+            => DhtListenerFunc (listener);
         public Factories WithDhtListenerCreator (DhtListenerCreator creator)
         {
             var dupe = MemberwiseClone ();
@@ -196,6 +207,45 @@ namespace MonoTorrent
         {
             var dupe = MemberwiseClone ();
             dupe.PeerConnectionListenerFunc = creator ?? Default.PeerConnectionListenerFunc;
+            return dupe;
+        }
+
+        public UdpListener CreateUdpListener (IPEndPoint endPoint)
+            => UdpListenerFunc (endPoint);
+        public Factories WithUdpListenerCreator (UdpListenerCreator creator)
+        {
+            var dupe = MemberwiseClone ();
+            dupe.UdpListenerFunc = creator ?? Default.UdpListenerFunc;
+            return dupe;
+        }
+
+        public IPeerConnectionListener CreateUtpPeerConnectionListener (UdpListener listener)
+            => UtpPeerConnectionListenerFunc (listener);
+        public Factories WithUtpPeerConnectionListenerCreator (UtpPeerConnectionListenerCreator creator)
+        {
+            var dupe = MemberwiseClone ();
+            dupe.UtpPeerConnectionListenerFunc = creator ?? Default.UtpPeerConnectionListenerFunc;
+            return dupe;
+        }
+
+        /// <summary>
+        /// Creates the coordinated TCP/UDP listener set for the supplied endpoints. UDP sockets are
+        /// shared by the uTP and DHT wrappers when either feature is enabled.
+        /// </summary>
+        public EngineListenerBundle CreateListenerBundle (IEnumerable<IPEndPoint> listenEndPoints, bool enableTcp, bool enableUtp, bool enableDht)
+            => new EngineListenerBundle (
+                listenEndPoints,
+                enableTcp,
+                enableUtp,
+                enableDht,
+                this);
+
+        public IPeerConnection? CreateUtpPeerConnection (IPeerConnectionListener listener, IPEndPoint remoteEndPoint, ushort connectionIdReceive)
+            => UtpPeerConnectionFunc (listener, remoteEndPoint, connectionIdReceive);
+        public Factories WithUtpPeerConnectionCreator (UtpPeerConnectionCreator creator)
+        {
+            var dupe = MemberwiseClone ();
+            dupe.UtpPeerConnectionFunc = creator ?? Default.UtpPeerConnectionFunc;
             return dupe;
         }
 

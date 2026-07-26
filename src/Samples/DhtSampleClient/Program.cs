@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using MonoTorrent;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Connections;
 using MonoTorrent.Connections.Dht;
 using MonoTorrent.Dht;
 using MonoTorrent.Logging;
@@ -30,7 +31,7 @@ namespace ClientSample
 
             // Create a DHT engine, and register a listener on port 15000
             var engine = new DhtEngine ();
-            var listener = new DhtListener (new IPEndPoint (IPAddress.Any, 15000));
+            var listener = new DhtListener (new UdpListener (new IPEndPoint (IPAddress.Any, 15000)));
             await engine.SetListenerAsync (listener);
 
             // Load up the node cache from the prior invocation (if there is any)

@@ -88,6 +88,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.BEncoding\MonoTorrent.BEncoding.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MonoTorrent.Connections\MonoTorrent.Connections.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.Factories\MonoTorrent.Factories.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.Messages\MonoTorrent.Messages.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\MonoTorrent.PieceWriter\MonoTorrent.PieceWriter.csproj" PrivateAssets="all" />

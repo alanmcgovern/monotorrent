@@ -27,8 +27,11 @@
 //
 
 
+using System;
 using System.Collections.Immutable;
 using System.Linq;
+
+using MonoTorrent.Connections.Peer;
 
 using NUnit.Framework;
 
@@ -60,6 +63,23 @@ namespace MonoTorrent.Client
             Assert.AreEqual (2, settings.OutgoingConnectionEncryptionTiers.Length);
             Assert.AreEqual (Connections.EncryptionType.PlainText, settings.OutgoingConnectionEncryptionTiers[0].Single ());
             Assert.AreEqual (Connections.EncryptionType.RC4Header, settings.OutgoingConnectionEncryptionTiers[1].Single ());
+        }
+
+        [Test]
+        public void AllowedPeerTransports_DefaultsToTcp ()
+        {
+            CollectionAssert.AreEqual (new[] { PeerTransport.Tcp }, new EngineSettings ().AllowedTransports);
+        }
+
+        [Test]
+        public void AllowedPeerTransports_InvalidValues ()
+        {
+            Assert.Throws<ArgumentException> (() => EngineSettings.Create (new EngineSettings () with {
+                AllowedTransports = ImmutableArray<PeerTransport>.Empty
+            }));
+            Assert.Throws<ArgumentException> (() => EngineSettings.Create (new EngineSettings () with {
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Tcp)
+            }));
         }
 
         [Test]
@@ -97,6 +117,18 @@ namespace MonoTorrent.Client
             Assert.AreEqual (3, deserialised.ReportedListenEndPoints.Count);
             Assert.IsTrue (deserialised.ReportedListenEndPoints.ContainsKey ("custom"));
             Assert.IsTrue (deserialised.ReportedListenEndPoints["custom"].Equals (new System.Net.IPEndPoint (System.Net.IPAddress.Any, 12345)));
+        }
+
+        [Test]
+        public void WithAllowedPeerTransports ()
+        {
+            var settings = new EngineSettings () with {
+                AllowedTransports = ImmutableArray.Create (PeerTransport.Tcp, PeerTransport.Utp)
+            };
+
+            var deserialised = Serializer.DeserializeEngineSettings (Serializer.Serialize (settings));
+            Assert.AreEqual (Serializer.Serialize (deserialised), Serializer.Serialize (settings));
+            CollectionAssert.AreEqual (settings.AllowedTransports, deserialised.AllowedTransports);
         }
     }
 }

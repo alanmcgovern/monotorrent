@@ -118,7 +118,7 @@ namespace MonoTorrent.Client.Modes
                 successful = false;
             }
 
-            /// FIXME: StructMessages: We can now preallocate the entire message buffer and write all bytes directly to it.
+            // FIXME: StructMessages: We can now preallocate the entire message buffer and write all bytes directly to it.
             Memory<byte> buffer = default;
             ByteBufferPool.Releaser bufferReleaser = default;
             var piecesRoot = new MerkleRoot (hashRequest.PiecesRoot);

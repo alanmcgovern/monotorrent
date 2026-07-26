@@ -51,14 +51,13 @@ namespace MonoTorrent.Client
 
         ClientEngine Engine { get; set; }
 
-        IList<IPeerConnectionListener> Listeners { get; set; }
-
         ImmutableList<InfoHash> SKeys { get; set; }
 
-        internal ListenManager (ClientEngine engine)
+        internal ListenManager (ClientEngine engine, EngineListenerBundle listeners)
         {
             Engine = engine ?? throw new ArgumentNullException (nameof (engine));
-            Listeners = Array.Empty<IPeerConnectionListener> ();
+            listeners = listeners ?? throw new ArgumentNullException (nameof (listeners));
+            listeners.ConnectionReceived += ConnectionReceived;
             SKeys = ImmutableList<InfoHash>.Empty;
         }
 
@@ -76,15 +75,6 @@ namespace MonoTorrent.Client
                 SKeys = SKeys.Remove (skey.V1);
             if (skey.V2 != null)
                 SKeys = SKeys.Remove (skey.V2.Truncate ());
-        }
-
-        public void SetListeners (IList<IPeerConnectionListener> listeners)
-        {
-            foreach (var v in Listeners)
-                v.ConnectionReceived -= ConnectionReceived;
-            Listeners = Array.AsReadOnly (listeners.ToArray ());
-            foreach (var v in Listeners)
-                v.ConnectionReceived += ConnectionReceived;
         }
 
         async void ConnectionReceived (object? sender, PeerConnectionEventArgs e)

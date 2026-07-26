@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MonoTorrent.Client;
+using MonoTorrent.Connections.Peer;
 using MonoTorrent.Connections.TrackerServer;
 using MonoTorrent.Logging;
 using MonoTorrent.PieceWriter;
@@ -20,10 +21,10 @@ namespace MonoTorrent.IntegrationTests
 {
     [TestFixture]
     [Platform (Include ="Win")]
-    public class IPv4IntegrationTests : IntegrationTestsBase
+    public class IPv4TcpIntegrationTests : IntegrationTestsBase
     {
-        public IPv4IntegrationTests ()
-            : base (IPAddress.Any, IPAddress.Loopback)
+        public IPv4TcpIntegrationTests ()
+            : base (IPAddress.Any, IPAddress.Loopback, PeerTransport.Tcp)
         {
 
         }
@@ -31,10 +32,32 @@ namespace MonoTorrent.IntegrationTests
 
     [TestFixture]
     [Platform (Include ="Win")]
-    public class IPv6IntegrationTests : IntegrationTestsBase
+    public class IPv4UtpIntegrationTests : IntegrationTestsBase
     {
-        public IPv6IntegrationTests ()
-            : base (IPAddress.IPv6Any, IPAddress.IPv6Loopback)
+        public IPv4UtpIntegrationTests ()
+            : base (IPAddress.Any, IPAddress.Loopback, PeerTransport.Utp)
+        {
+
+        }
+    }
+
+    [TestFixture]
+    [Platform (Include ="Win")]
+    public class IPv6TcpIntegrationTests : IntegrationTestsBase
+    {
+        public IPv6TcpIntegrationTests ()
+            : base (IPAddress.IPv6Any, IPAddress.IPv6Loopback, PeerTransport.Tcp)
+        {
+
+        }
+    }
+
+    [TestFixture]
+    [Platform (Include ="Win")]
+    public class IPv6UtpIntegrationTests : IntegrationTestsBase
+    {
+        public IPv6UtpIntegrationTests ()
+            : base (IPAddress.IPv6Any, IPAddress.IPv6Loopback, PeerTransport.Utp)
         {
 
         }
@@ -43,13 +66,14 @@ namespace MonoTorrent.IntegrationTests
     public abstract class IntegrationTestsBase
     {
         const int PieceLength = 32768;
-        static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (60);
+        static readonly TimeSpan CancellationTimeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds (10);
 
         public IPAddress AnyAddress { get; }
         public IPAddress LoopbackAddress { get; }
+        public PeerTransport PeerTransport { get; }
 
-        protected IntegrationTestsBase (IPAddress anyAddress, IPAddress loopbackAddress)
-            => (AnyAddress, LoopbackAddress) = (anyAddress, loopbackAddress);
+        protected IntegrationTestsBase (IPAddress anyAddress, IPAddress loopbackAddress, PeerTransport peerTransport)
+            => (AnyAddress, LoopbackAddress, PeerTransport) = (anyAddress, loopbackAddress, peerTransport);
 
         protected virtual Factories LeecherFactory => Factories.Default;
         protected virtual Factories SeederFactory => Factories.Default;
@@ -75,17 +99,17 @@ namespace MonoTorrent.IntegrationTests
             _leecherDir = _directory.CreateSubdirectory ("Leecher");
 
             streams = new List<FileStream> ();
-            seederEngine = GetEngine (0, SeederFactory);
-            leecherEngine = GetEngine (0, LeecherFactory);
+            seederEngine = GetEngine (GetFreePort (), SeederFactory);
+            leecherEngine = GetEngine (GetFreePort (), LeecherFactory);
         }
 
         [TearDown]
         public async Task TearDown ()
         {
             if (seederEngine != null)
-                await seederEngine.StopAllAsync ();
+                await seederEngine.StopAllAsync ().WithTimeout ();
             if (leecherEngine != null)
-                await leecherEngine.StopAllAsync ();
+                await leecherEngine.StopAllAsync ().WithTimeout ();
 
             foreach (var stream in streams)
                 stream.Dispose ();
@@ -245,7 +269,7 @@ namespace MonoTorrent.IntegrationTests
                 torrentCreator.GetrightHttpSeeds.Add ($"http://{new IPEndPoint (LoopbackAddress, _webSeedPort)}/{_webSeedPrefix}/");
             }
 
-            var encodedTorrent = await torrentCreator.CreateAsync (fileSource);
+            var encodedTorrent = await torrentCreator.CreateAsync (fileSource).WithTimeout ();
             var torrent = Torrent.Load (encodedTorrent);
 
             var seederIsSeeding = new TaskCompletionSource<bool> ();
@@ -279,49 +303,48 @@ namespace MonoTorrent.IntegrationTests
                 var engine = seederConnectionDirection == Direction.Incoming ? leecherEngine : seederEngine;
 
                 var settings = engine.Settings with {
-                    ListenEndPoints = ImmutableDictionary.Create<string, IPEndPoint> (),
+                    ListenEndPoints = PeerTransport == PeerTransport.Utp
+                        ? engine.Settings.ListenEndPoints
+                        : ImmutableDictionary.Create<string, IPEndPoint> (),
                     ReportedListenEndPoints = new Dictionary<string, IPEndPoint> {
                         // report two fake non-routable addresses.
                         { "ipv4", new IPEndPoint (IPAddress.Parse ("127.0.0.153"), 12345) },
                         { "ipv6", new IPEndPoint (IPAddress.Parse ("127.0.0.153"), 12345) },
                     }.ToImmutableDictionary ()
                 };
-                await engine.UpdateSettingsAsync (settings);
+                await engine.UpdateSettingsAsync (settings).WithTimeout ();
             }
 
-            var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler) : null;
+            var seederManager = !useWebSeedDownload ? await StartTorrent (seederEngine, torrent, _seederDir.FullName, explitlyHashCheck, seederIsSeedingHandler).WithTimeout () : null;
             if (seederManager is null)
                 seederIsSeeding.TrySetResult (true);
 
             var magnetLink = new MagnetLink (torrent.InfoHashes, "testing", torrent.AnnounceUrls.SelectMany (t => t).ToList (), null, torrent.Size);
             var leecherManager = magnetLinkLeecher
-                ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler)
-                : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler);
+                ? await StartTorrent (leecherEngine, magnetLink, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler).WithTimeout ()
+                : await StartTorrent (leecherEngine, torrent, _leecherDir.FullName, explitlyHashCheck, leecherIsSeedingHandler).WithTimeout ();
 
             Assert.AreEqual (leecherManager.Torrent.HttpSeeds.Count, leecherManager.MagnetLink.Webseeds.Count);
             if (leecherManager.Torrent.HttpSeeds.Count > 0)
                 Assert.AreEqual (leecherManager.Torrent.HttpSeeds[0], leecherManager.MagnetLink.Webseeds[0]);
 
             // Wait for both managers to finish hashing/prepping!
-            await seederIsSeeding.Task;
-            await leecherIsReady.Task;
+            await seederIsSeeding.Task.WithTimeout ();
+            await leecherIsReady.Task.WithTimeout ();
 
             // manually add the leecher to the seeder so we aren't unintentionally dependent on annouce ordering
-            if (seederConnectionDirection == Direction.Incoming) {
-                var listenerPort = seederEngine.PeerListeners.Single ().LocalEndPoint.Port;
-                var ipAddress = new IPEndPoint (LoopbackAddress, listenerPort);
-                await leecherEngine.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{(LoopbackAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6")}://{ipAddress}")));
-            } else if (seederConnectionDirection == Direction.Outgoing) {
-                var listenerPort = leecherEngine.PeerListeners.Single ().LocalEndPoint.Port;
-                var ipAddress = new IPEndPoint (LoopbackAddress, listenerPort);
-                await seederEngine.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{(LoopbackAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6")}://{ipAddress}")));
-            }
+            if (seederConnectionDirection == Direction.Incoming)
+                await AddPeerAsync (leecherEngine, seederEngine).WithTimeout ();
+            else if (seederConnectionDirection == Direction.Outgoing)
+                await AddPeerAsync (seederEngine, leecherEngine).WithTimeout ();
+            else if (!useWebSeedDownload)
+                await AddPeerAsync (leecherEngine, seederEngine).WithTimeout ();
 
             if (!useWebSeedDownload) {
-                Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task, "Seeder should be seeding after hashcheck completes");
+                Assert.DoesNotThrowAsync (async () => await seederIsSeeding.Task.WithTimeout (), "Seeder should be seeding after hashcheck completes");
                 Assert.True (seederManager.Complete, "Seeder should have all data");
             }
-            Assert.DoesNotThrowAsync (async () => await leecherIsSeeding.Task, "Leecher should have downloaded all data");
+            Assert.DoesNotThrowAsync (async () => await leecherIsSeeding.Task.WithTimeout (), "Leecher should have downloaded all data");
 
             foreach (var file in nonEmptyFiles) {
                 var leecherNonEmptyFile = new FileInfo (Path.Combine (_leecherDir.FullName, file.Name));
@@ -357,19 +380,37 @@ namespace MonoTorrent.IntegrationTests
         {
             // Give an example of how settings can be modified for the engine.
             var type = AnyAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
+            var listenPort = PeerTransport == PeerTransport.Utp ? 0 : port;
             var settingBuilder = new EngineSettings () with {
-                // Use a fixed port to accept incoming connections from other peers for testing purposes. Production usages should use a random port, 0, if possible.
-                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, port) } }.ToImmutableDictionary (),
+                ListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (AnyAddress, listenPort) } }.ToImmutableDictionary (),
                 ReportedListenEndPoints = new Dictionary<string, IPEndPoint> { { type, new IPEndPoint (LoopbackAddress, 0) } }.ToImmutableDictionary (),
                 AutoSaveLoadFastResume = false,
                 CacheDirectory = _directory.FullName,
-                DhtEndPoint = null,
+                EnableDht = false,
                 AllowPortForwarding = false,
                 WebSeedDelay = TimeSpan.Zero,
                 AllowLocalPeerDiscovery = false,
+                AllowedTransports = ImmutableArray.Create (PeerTransport),
             };
             var engine = new ClientEngine (settingBuilder, factories);
             return engine;
+        }
+
+        private Task AddPeerAsync (ClientEngine source, ClientEngine target)
+        {
+            var protocol = PeerTransport == PeerTransport.Tcp ? PortForwarding.Protocol.Tcp : PortForwarding.Protocol.Udp;
+            var endPoint = target.ListenerBundle.BoundEndPoints.Single (t => t.Protocol == protocol).EndPoint;
+            var ipAddress = new IPEndPoint (LoopbackAddress, endPoint.Port);
+            return source.Torrents[0].AddPeerAsync (new PeerInfo (new Uri ($"{PeerUriScheme}://{ipAddress}")));
+        }
+
+        string PeerUriScheme => LoopbackAddress.AddressFamily == AddressFamily.InterNetwork ? "ipv4" : "ipv6";
+
+        int GetFreePort ()
+        {
+            using var listener = new TcpListener (LoopbackAddress, 0);
+            listener.Start ();
+            return ((IPEndPoint) listener.LocalEndpoint).Port;
         }
 
         private HttpListener CreateWebSeeder ()
@@ -458,16 +499,37 @@ namespace MonoTorrent.IntegrationTests
             };
 
             TorrentManager manager = torrent != null
-                ? await clientEngine.AddAsync (torrent, saveDirectory, settings)
-                : await clientEngine.AddAsync (magnetLink, saveDirectory, settings);
+                ? await clientEngine.AddAsync (torrent, saveDirectory, settings).WithTimeout ()
+                : await clientEngine.AddAsync (magnetLink, saveDirectory, settings).WithTimeout ();
 
             manager.TorrentStateChanged += handler;
             if (explicitlyHashCheck)
-                await manager.HashCheckAsync (true);
+                await manager.HashCheckAsync (true).WithTimeout ();
             else
-                await manager.StartAsync ();
+                await manager.StartAsync ().WithTimeout ();
 
             return manager;
+        }
+
+    }
+
+
+    static class TaskExtensions
+    {
+        public static async Task WithTimeout (this Task task)
+        {
+            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (Debugger.IsAttached ? 20 : 10)), task);
+            if (task != done)
+                throw new TimeoutException ("The supplied task did nt complete");
+            await done;
+        }
+
+        public static async Task<T> WithTimeout<T> (this Task<T> task)
+        {
+            var done = await Task.WhenAny (Task.Delay (TimeSpan.FromSeconds (Debugger.IsAttached ? 20 : 10)), task);
+            if (task != done)
+                throw new TimeoutException ("The supplied task did nt complete");
+            return await task;
         }
     }
 }
