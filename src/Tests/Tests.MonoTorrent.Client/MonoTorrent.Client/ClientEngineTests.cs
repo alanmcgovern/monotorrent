@@ -142,6 +142,7 @@ namespace MonoTorrent.Client
                 bundle.Start ();
 
                 Assert.Greater (tcpListenerCreations, 1);
+                Assert.IsTrue (tcpListenerCreations < 100);
                 Assert.AreEqual (1, bundle.BoundEndPoints.Length);
                 Assert.AreEqual (Protocol.Udp, bundle.BoundEndPoints[0].Protocol);
             } finally {

@@ -176,18 +176,36 @@ namespace MonoTorrent
                     continue;
                 }
 
+                ListenerSet? partial = null;
                 for (int attempt = 0; attempt < MaximumSharedPortAttempts; attempt++) {
                     var candidate = CreateListenerSet (WithRandomPort (configuredEndPoint));
                     candidate.Start ();
 
-                    if (IsListening (candidate.TcpListener) && IsListening (candidate.UdpListener)
-                        || attempt == MaximumSharedPortAttempts - 1) {
+                    if (IsListening (candidate.TcpListener) && IsListening (candidate.UdpListener)) {
                         current.Stop ();
+                        partial?.Stop ();
                         listenerSets[i] = candidate;
                         break;
                     }
 
-                    candidate.Stop ();
+                    if (IsListening (candidate.TcpListener) || IsListening (candidate.UdpListener)) {
+                        if (partial is not null) {
+                            candidate.Stop ();
+                            current.Stop ();
+                            listenerSets[i] = partial;
+                            break;
+                        }
+                        partial = candidate;
+                    } else {
+                        candidate.Stop ();
+                    }
+
+                    if (attempt == MaximumSharedPortAttempts - 1) {
+                        current.Stop ();
+                        listenerSets[i] = partial ?? candidate;
+                        break;
+                    }
+
                 }
             }
             UpdateBoundEndPoints ();
