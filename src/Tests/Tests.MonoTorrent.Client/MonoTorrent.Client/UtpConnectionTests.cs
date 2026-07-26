@@ -252,7 +252,7 @@ namespace MonoTorrent.Client
                 result = FindUcatExecutable (Environment.CurrentDirectory);
 
             if (result == null)
-                Assert.Fail ("Could not find ucat.exe. The executable must be available in the repository root.");
+                Assert.Inconclusive ("Could not find ucat.exe. The executable must be available in the repository root.");
 
             return result;
         }
@@ -262,6 +262,10 @@ namespace MonoTorrent.Client
             var directory = new DirectoryInfo (startDirectory);
             while (directory != null) {
                 var candidate = Path.Combine (directory.FullName, "ucat.exe");
+                if (File.Exists (candidate))
+                    return candidate;
+
+                candidate = Path.Combine (directory.FullName, "libutp", "Build", "x64", "Debug", "ucat.exe");
                 if (File.Exists (candidate))
                     return candidate;
 
