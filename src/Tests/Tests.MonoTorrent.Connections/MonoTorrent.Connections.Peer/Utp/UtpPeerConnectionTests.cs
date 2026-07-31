@@ -2570,8 +2570,13 @@ namespace MonoTorrent.Connections.Peer
             firstData.WindowSize = 1;
             connection.Receive (firstData);
 
-            var outbound = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
             Assert.AreEqual (1, await sendTask.WithTimeout (5000));
+
+            (UtpPacket packet, UtpPeerConnection? connection, IPEndPoint remoteEndPoint, Action? sendCompleted) outbound;
+            do {
+                outbound = await sendQueue.Reader.ReadAsync ().AsTask ().WithTimeout (5000);
+            } while (outbound.packet.Type == PacketType.State);
+
             Assert.AreEqual (PacketType.Data, outbound.packet.Type);
             Assert.AreEqual (1, outbound.packet.Payload.Length);
         }
