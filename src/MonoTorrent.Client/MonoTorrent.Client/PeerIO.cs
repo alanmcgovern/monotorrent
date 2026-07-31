@@ -140,17 +140,31 @@ namespace MonoTorrent.Client
             return SendMessageAsync (connection, encryptor, message, null, null, null);
         }
 
-        public static async ReusableTask SendMessageAsync (IPeerConnection connection, IEncryption encryptor, Memory<byte> msg, IRateLimiter? rateLimiter, ConnectionMonitor? peerMonitor, ConnectionMonitor? managerMonitor)
+        public static ReusableTask SendMessageAsync (IPeerConnection connection, IEncryption encryptor, Memory<byte> msg, IRateLimiter? rateLimiter, ConnectionMonitor? peerMonitor, ConnectionMonitor? managerMonitor)
         {
-            await MainLoop.SwitchToThreadpool ();
-
             // Check if it's a piece message before encrypting it, otherwise we can't tell.
             var isPieceMessage = msg.Length > 4 && MessageDispatcher.GetType (msg) == MessageType.Piece;
-            encryptor.Encrypt (msg.Span);
 
-            // Assume protocol first, then swap it to data once we successfully send the data bytes.
-            await NetworkIO.SendAsync (connection, msg, isPieceMessage ? rateLimiter : null, peerMonitor?.ProtocolUp, managerMonitor?.ProtocolUp).ConfigureAwait (false);
-            if (isPieceMessage) {
+            return isPieceMessage
+                ? SendPieceMessageAsync (connection, encryptor, msg, rateLimiter, peerMonitor, managerMonitor)
+                : SendProtocolMessageAsync (connection, encryptor, msg, peerMonitor?.ProtocolUp, managerMonitor?.ProtocolUp);
+
+            static async ReusableTask SendProtocolMessageAsync (IPeerConnection connection, IEncryption encryptor, Memory<byte> msg, SpeedMonitor? peerMonitor, SpeedMonitor? managerMonitor)
+            {
+                await MainLoop.SwitchToThreadpool ();
+
+                encryptor.Encrypt (msg.Span);
+                await NetworkIO.SendAsync (connection, msg, null, peerMonitor, managerMonitor).ConfigureAwait (false);
+            }
+
+            static async ReusableTask SendPieceMessageAsync (IPeerConnection connection, IEncryption encryptor, Memory<byte> msg, IRateLimiter? rateLimiter, ConnectionMonitor? peerMonitor, ConnectionMonitor? managerMonitor)
+            {
+                await MainLoop.SwitchToThreadpool ();
+
+                encryptor.Encrypt (msg.Span);
+                await NetworkIO.SendAsync (connection, msg, rateLimiter, peerMonitor?.ProtocolUp, managerMonitor?.ProtocolUp).ConfigureAwait (false);
+
+                // Assume protocol first, then swap it to data once we successfully send the data bytes.
                 var requestLength = new PieceMessage (msg).RequestLength;
                 peerMonitor?.ProtocolUp.AddDelta (-requestLength);
                 managerMonitor?.ProtocolUp.AddDelta (-requestLength);
