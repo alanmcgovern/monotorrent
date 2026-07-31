@@ -116,6 +116,20 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public async Task SendReceiveKeepAlive ()
+        {
+            (var message, var releaser) = MessageEncoder.WriteKeepAlive ();
+            using (releaser) {
+                var receiveTask = PeerIO.ReceiveMessageAsync (pair.Incoming, PlainTextEncryption.Instance).AsTask ();
+                await PeerIO.SendMessageAsync (pair.Outgoing, PlainTextEncryption.Instance, message);
+
+                var received = await receiveTask;
+                Assert.AreEqual (4, received.Length);
+                Assert.AreEqual (0, BinaryPrimitives.ReadUInt32BigEndian (received.Span));
+            }
+        }
+
+        [Test]
         public void IgnoreNullMonitors ()
         {
             var blockSize = Constants.BlockSize - 1234;

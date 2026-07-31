@@ -145,7 +145,7 @@ namespace MonoTorrent.Client
             await MainLoop.SwitchToThreadpool ();
 
             // Check if it's a piece message before encrypting it, otherwise we can't tell.
-            var isPieceMessage = MessageDispatcher.GetType (msg) == MessageType.Piece;
+            var isPieceMessage = msg.Length > 4 && MessageDispatcher.GetType (msg) == MessageType.Piece;
             encryptor.Encrypt (msg.Span);
 
             // Assume protocol first, then swap it to data once we successfully send the data bytes.
