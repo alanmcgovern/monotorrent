@@ -302,6 +302,46 @@ namespace MonoTorrent.Common
             Assert.Throws<ArgumentException> (() => Torrent.Load (torrentInfo));
         }
 
+        [Test]
+        public void EmptyDirectoryPlaceholder_IsIgnored ()
+        {
+            var files = ((BEncodedDictionary) torrentInfo["info"])["files"] as BEncodedList;
+
+            var path = new BEncodedList {
+                new BEncodedString ("empty-directory"),
+                BEncodedString.Empty
+            };
+
+            files.Add (new BEncodedDictionary {
+                { "length", new BEncodedNumber (0) },
+                { "path", path },
+                { "path.utf-8", path }
+            });
+
+            var loaded = Torrent.Load (torrentInfo);
+
+            Assert.AreEqual (4, loaded.Files.Count);
+        }
+
+        [Test]
+        public void NonEmptyFile_WithEmptyFilename_IsRejected ()
+        {
+            var files = ((BEncodedDictionary) torrentInfo["info"])["files"] as BEncodedList;
+
+            var path = new BEncodedList {
+                new BEncodedString ("directory"),
+                BEncodedString.Empty
+            };
+
+            files.Add (new BEncodedDictionary {
+                { "length", new BEncodedNumber (1) },
+                { "path", path },
+                { "path.utf-8", path }
+            });
+
+            Assert.Throws<ArgumentException> (() => Torrent.Load (torrentInfo));
+        }
+
         /// <summary>
         ///
         /// </summary>
