@@ -636,6 +636,9 @@ namespace MonoTorrent
 
             var files = new List<TorrentFileTuple> ();
             foreach (BEncodedDictionary dict in list) {
+                if (IsEmptyDirectoryPlaceholder (dict))
+                    continue;
+
                 var tup = new TorrentFileTuple ();
 
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict) {
@@ -675,6 +678,36 @@ namespace MonoTorrent
             }
 
             return Array.AsReadOnly<ITorrentFile> (TorrentFile.Create (pieceLength, files.ToArray ()));
+        }
+
+        static bool IsEmptyDirectoryPlaceholder (BEncodedDictionary dictionary)
+        {
+            if (!dictionary.TryGetValue (Cache.Length, out BEncodedValue? lengthValue)
+                || lengthValue is not BEncodedNumber length
+                || length.Number != 0)
+                return false;
+
+            if (!dictionary.TryGetValue (Cache.PathUtf8, out BEncodedValue? pathValue)
+                && !dictionary.TryGetValue (Cache.Path, out pathValue))
+                return false;
+
+            if (pathValue is not BEncodedList pathSegments || pathSegments.Count < 2)
+                return false;
+
+            int finalSegmentIndex = pathSegments.Count - 1;
+
+            for (int i = 0; i < finalSegmentIndex; i++) {
+                if (pathSegments[i] is not BEncodedString segment
+                    || segment == BEncodedString.Empty) {
+                    return false;
+                }
+            }
+
+            if (pathSegments[finalSegmentIndex] is not BEncodedString finalSegment) {
+                return false;
+            }
+
+            return finalSegment == BEncodedString.Empty;
         }
 
         static PieceHashesV2 LoadHashesV2 (IList<ITorrentFile> files, Dictionary<MerkleRoot, ReadOnlyMerkleTree> hashes, int pieceLength)
