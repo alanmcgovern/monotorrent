@@ -82,6 +82,19 @@ namespace MonoTorrent.BEncoding
             => BEncodeDecoder.Decode (ref buffer, strictDecoding);
 
         /// <summary>
+        /// Decode BEncoded data in the given buffer
+        /// </summary>
+        /// <param name="buffer">The byte array containing the BEncoded data</param>
+        /// <param name="strictDecoding">When true, a <see cref="BEncodingException"/> is thrown if a dictionary's keys are not in
+        /// sorted order. When false, misordered keys are accepted.</param>
+        /// <param name="enforceKeyOrdering">When true (the default) and <paramref name="strictDecoding"/> is also true, a
+        /// <see cref="BEncodingException"/> is thrown if the keys of any dictionary are not in sorted order. When false,
+        /// key ordering is never validated.</param>
+        /// <returns></returns>
+        public static BEncodedValue Decode (ReadOnlySpan<byte> buffer, bool strictDecoding, bool enforceKeyOrdering)
+            => BEncodeDecoder.Decode (ref buffer, strictDecoding, enforceKeyOrdering);
+
+        /// <summary>
         /// Decode BEncoded data in the given stream 
         /// </summary>
         /// <param name="stream">The stream containing the BEncoded data</param>
@@ -97,6 +110,19 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public static BEncodedValue Decode (Stream stream, bool strictDecoding)
             => BEncodeDecoder.Decode (stream, strictDecoding);
+
+        /// <summary>
+        /// Decode BEncoded data in the given stream 
+        /// </summary>
+        /// <param name="stream">The stream containing the BEncoded data</param>
+        /// <param name="strictDecoding">When true, a <see cref="BEncodingException"/> is thrown if a dictionary's keys are not in
+        /// sorted order. When false, misordered keys are accepted.</param>
+        /// <param name="enforceKeyOrdering">When true (the default) and <paramref name="strictDecoding"/> is also true, a
+        /// <see cref="BEncodingException"/> is thrown if the keys of any dictionary are not in sorted order. When false,
+        /// key ordering is never validated.</param>
+        /// <returns></returns>
+        public static BEncodedValue Decode (Stream stream, bool strictDecoding, bool enforceKeyOrdering)
+            => BEncodeDecoder.Decode (stream, strictDecoding, enforceKeyOrdering);
 
         /// <summary>
         /// Decode BEncoded data in the given byte array
@@ -116,6 +142,19 @@ namespace MonoTorrent.BEncoding
             => (T) BEncodeDecoder.Decode (ref buffer, strictDecoding);
 
         /// <summary>
+        /// Decode BEncoded data in the given byte array
+        /// </summary>
+        /// <param name="buffer">The byte array containing the BEncoded data</param>
+        /// <param name="strictDecoding">When true, a <see cref="BEncodingException"/> is thrown if a dictionary's keys are not in
+        /// sorted order. When false, misordered keys are accepted.</param>
+        /// <param name="enforceKeyOrdering">When true (the default) and <paramref name="strictDecoding"/> is also true, a
+        /// <see cref="BEncodingException"/> is thrown if the keys of any dictionary are not in sorted order. When false,
+        /// key ordering is never validated.</param>
+        /// <returns></returns>
+        public static T Decode<T> (ReadOnlySpan<byte> buffer, bool strictDecoding, bool enforceKeyOrdering) where T : BEncodedValue
+            => (T) BEncodeDecoder.Decode (ref buffer, strictDecoding, enforceKeyOrdering);
+
+        /// <summary>
         /// Decode BEncoded data in the given stream 
         /// </summary>
         /// <param name="stream">The stream containing the BEncoded data</param>
@@ -133,17 +172,37 @@ namespace MonoTorrent.BEncoding
              => (T) BEncodeDecoder.Decode (stream, strictDecoding);
 
         /// <summary>
+        /// Decode BEncoded data in the given stream 
+        /// </summary>
+        /// <param name="stream">The stream containing the BEncoded data</param>
+        /// <param name="strictDecoding">When true, a <see cref="BEncodingException"/> is thrown if a dictionary's keys are not in
+        /// sorted order. When false, misordered keys are accepted.</param>
+        /// <param name="enforceKeyOrdering">When true (the default) and <paramref name="strictDecoding"/> is also true, a
+        /// <see cref="BEncodingException"/> is thrown if the keys of any dictionary are not in sorted order. When false,
+        /// key ordering is never validated.</param>
+        /// <returns>BEncodedValue containing the data that was in the stream</returns>
+        public static T Decode<T> (Stream stream, bool strictDecoding, bool enforceKeyOrdering) where T : BEncodedValue
+             => (T) BEncodeDecoder.Decode (stream, strictDecoding, enforceKeyOrdering);
+
+        /// <summary>
         /// Returns the length of the BEncodedValue in bytes.
         /// </summary>
         /// <returns></returns>
         public abstract int LengthInBytes ();
 
         // Helper method for testing. Decodes the value using each parser.
-        internal static IEnumerable<T> DecodingVariants<T>(byte[] data)
+        internal static IEnumerable<T> DecodingVariants<T> (byte[] data)
             where T : BEncodedValue
         {
             yield return Decode<T> (data);
             yield return Decode<T> (new MemoryStream (data));
+        }
+
+        internal static IEnumerable<T> DecodingVariants<T> (byte[] data, bool strictDecoding, bool enforceKeyOrdering)
+            where T : BEncodedValue
+        {
+            yield return Decode<T> (data, strictDecoding, enforceKeyOrdering);
+            yield return Decode<T> (new MemoryStream (data), strictDecoding, enforceKeyOrdering);
         }
     }
 }

@@ -36,16 +36,16 @@ namespace MonoTorrent.BEncoding
 {
     partial class BEncodeDecoder
     {
-        internal static BEncodedValue Decode (ref ReadOnlySpan<byte> buffer, bool strictDecoding)
-            => Decode (ref buffer, BEncodedStringPool.Instance, strictDecoding);
+        internal static BEncodedValue Decode (ref ReadOnlySpan<byte> buffer, bool strictDecoding, bool enforceKeyOrdering = true)
+            => Decode (ref buffer, BEncodedStringPool.Instance, strictDecoding, enforceKeyOrdering);
 
-        internal static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer)
+        internal static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer, bool enforceKeyOrdering = true)
         {
             using (var pool = new BEncodedStringPool (MemoryPool<byte>.Shared.Rent (128)))
-                return DecodeTorrent (ref buffer, pool);
+                return DecodeTorrent (ref buffer, pool, enforceKeyOrdering);
         }
 
-        static BEncodedValue Decode (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding)
+        static BEncodedValue Decode (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding, bool enforceKeyOrdering)
         {
             if (buffer.Length == 0)
                 throw new BEncodingException ("Invalid BEncodedValue. The buffer was incomplete");
@@ -57,11 +57,11 @@ namespace MonoTorrent.BEncoding
 
                 case 'd':
                     buffer = buffer.Slice (1);
-                    return DecodeDictionary (ref buffer, pool, strictDecoding);
+                    return DecodeDictionary (ref buffer, pool, strictDecoding, enforceKeyOrdering);
 
                 case 'l':
                     buffer = buffer.Slice (1);
-                    return DecodeList (ref buffer, pool, strictDecoding);
+                    return DecodeList (ref buffer, pool, strictDecoding, enforceKeyOrdering);
 
                 case '1':
                 case '2':
@@ -80,7 +80,7 @@ namespace MonoTorrent.BEncoding
             }
         }
 
-        static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool)
+        static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool enforceKeyOrdering)
         {
             if (buffer[0] != 'd')
                 throw new BEncodingException ($"The root value was not a BEncodedDictionary");
@@ -98,14 +98,14 @@ namespace MonoTorrent.BEncoding
                 }
 
                 var key = DecodeString (ref buffer, pool);
-                if (oldkey != null && oldkey.CompareTo (key) > 0)
+                if (enforceKeyOrdering && oldkey != null && oldkey.CompareTo (key) > 0)
                     throw new BEncodingException ($"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
 
                 if (InfoKey.Equals (key))
                     infoBuffer = buffer;
 
                 oldkey = key;
-                var value = Decode (ref buffer, pool, false);
+                var value = Decode (ref buffer, pool, false, enforceKeyOrdering);
                 dictionary.Add (key, value);
 
                 if (InfoKey.Equals (key)) {
@@ -122,7 +122,7 @@ namespace MonoTorrent.BEncoding
             throw new BEncodingException ("Invalid data found. Aborting");
         }
 
-        static BEncodedDictionary DecodeDictionary (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding)
+        static BEncodedDictionary DecodeDictionary (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding, bool enforceKeyOrdering)
         {
             BEncodedString? oldkey = null;
             var dictionary = new BEncodedDictionary ();
@@ -134,19 +134,19 @@ namespace MonoTorrent.BEncoding
 
                 var key = DecodeString (ref buffer, pool);
 
-                if (oldkey != null && oldkey.CompareTo (key) > 0)
+                if (enforceKeyOrdering && oldkey != null && oldkey.CompareTo (key) > 0)
                     if (strictDecoding)
                         throw new BEncodingException (
                             $"Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {oldkey}, New key: {key}");
 
                 oldkey = key;
-                var value = Decode (ref buffer, pool, strictDecoding);
+                var value = Decode (ref buffer, pool, strictDecoding, enforceKeyOrdering);
                 dictionary.Add (key, value);
             }
             throw new BEncodingException ("Invalid data found. Aborting");
         }
 
-        static BEncodedList DecodeList (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding)
+        static BEncodedList DecodeList (ref ReadOnlySpan<byte> buffer, BEncodedStringPool pool, bool strictDecoding, bool enforceKeyOrdering)
         {
             var list = new BEncodedList ();
             while (buffer.Length > 0) {
@@ -154,7 +154,7 @@ namespace MonoTorrent.BEncoding
                     buffer = buffer.Slice (1);
                     return list;
                 }
-                list.Add (Decode (ref buffer, pool, strictDecoding));
+                list.Add (Decode (ref buffer, pool, strictDecoding, enforceKeyOrdering));
             }
             throw new BEncodingException ("Invalid data found. Aborting");
         }
