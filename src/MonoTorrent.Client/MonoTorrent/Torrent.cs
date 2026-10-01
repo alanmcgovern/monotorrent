@@ -48,12 +48,22 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="path">The path to load the .torrent file from</param>
         public static Torrent Load (string path)
+            => Load (path, enforceKeyOrdering: true);
+
+        /// <summary>
+        /// This method loads a .torrent file from the specified path.
+        /// </summary>
+        /// <param name="path">The path to load the .torrent file from</param>
+        /// <param name="enforceKeyOrdering">When true (the default), key ordering is compared, but the stream-based decoder never throws
+        /// for misordered keys; the parameter exists for parity with <see cref="Load(ReadOnlySpan{byte}, bool)"/>, which
+        /// validates the root dictionary. When false, key ordering is not compared at all.</param>
+        public static Torrent Load (string path, bool enforceKeyOrdering)
         {
             if (string.IsNullOrEmpty (path))
                 throw new ArgumentException ("value must not be null or empty", nameof (path));
 
             using Stream s = new FileStream (path, FileMode.Open, FileAccess.Read, FileShare.Read, 2048, FileOptions.SequentialScan);
-            return Load (s);
+            return Load (s, enforceKeyOrdering);
         }
 
         /// <summary>
@@ -62,10 +72,21 @@ namespace MonoTorrent
         /// <param name="dictionary">The BEncodedDictionary containing the torrent data</param>
         /// <returns></returns>
         public static Torrent Load (BEncodedDictionary dictionary)
+            => Load (dictionary, enforceKeyOrdering: true);
+
+        /// <summary>
+        /// Loads a torrent from the provided <see cref="BEncodedDictionary"/>
+        /// </summary>
+        /// <param name="dictionary">The BEncodedDictionary containing the torrent data</param>
+        /// <param name="enforceKeyOrdering">Has no observable effect for this overload: a <see cref="BEncodedDictionary"/> always
+        /// keeps its keys sorted, so the re-encoded data can never fail the ordering check. Accepted for symmetry with the other
+        /// Load overloads. When false, key ordering comparisons are skipped.</param>
+        /// <returns></returns>
+        public static Torrent Load (BEncodedDictionary dictionary, bool enforceKeyOrdering)
         {
             using (MemoryPool.Default.Rent (dictionary.LengthInBytes (), out Memory<byte> buffer)) {
                 dictionary.Encode (buffer.Span);
-                return Load (buffer.Span);
+                return Load (buffer.Span, enforceKeyOrdering);
             }
         }
 
@@ -75,9 +96,19 @@ namespace MonoTorrent
         /// <param name="span">The Span containing the data</param>
         /// <returns></returns>
         public static Torrent Load (ReadOnlySpan<byte> span)
+            => Load (span, enforceKeyOrdering: true);
+
+        /// <summary>
+        /// Loads a torrent from the provided Span
+        /// </summary>
+        /// <param name="span">The Span containing the data</param>
+        /// <param name="enforceKeyOrdering">When true (the default), a <see cref="TorrentException"/> is thrown if the keys of the
+        /// root dictionary are not in sorted order. When false, key ordering is not compared and the torrent is loaded as-is.</param>
+        /// <returns></returns>
+        public static Torrent Load (ReadOnlySpan<byte> span, bool enforceKeyOrdering)
         {
             try {
-                (var torrentDict, var infoHashes) = BEncodedDictionary.DecodeTorrent (span);
+                (var torrentDict, var infoHashes) = BEncodedDictionary.DecodeTorrent (span, enforceKeyOrdering);
                 return new Torrent (torrentDict, infoHashes);
             } catch (BEncodingException ex) {
                 throw new TorrentException ("Invalid torrent file specified", ex);
@@ -90,9 +121,20 @@ namespace MonoTorrent
         /// <param name="stream">The stream containing the data to load</param>
         /// <returns></returns>
         public static Torrent Load (Stream stream)
+            => Load (stream, enforceKeyOrdering: true);
+
+        /// <summary>
+        /// Loads a .torrent from the supplied stream
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <param name="enforceKeyOrdering">When true (the default), key ordering is compared, but the stream-based decoder never throws
+        /// for misordered keys; the parameter exists for parity with <see cref="Load(ReadOnlySpan{byte}, bool)"/>, which
+        /// validates the root dictionary. When false, key ordering is not compared at all.</param>
+        /// <returns></returns>
+        public static Torrent Load (Stream stream, bool enforceKeyOrdering)
         {
             try {
-                (var torrentDict, var infoHashes) = BEncodedDictionary.DecodeTorrent (stream);
+                (var torrentDict, var infoHashes) = BEncodedDictionary.DecodeTorrent (stream, enforceKeyOrdering);
                 return new Torrent (torrentDict, infoHashes);
             } catch (BEncodingException ex) {
                 throw new TorrentException ("Invalid torrent file specified", ex);
@@ -104,7 +146,17 @@ namespace MonoTorrent
         /// </summary>
         /// <param name="path">The path to load the .torrent file from</param>
         public static Task<Torrent> LoadAsync (string path)
-            => Task.Run (() => Load (path));
+            => LoadAsync (path, enforceKeyOrdering: true);
+
+        /// <summary>
+        /// This method loads a .torrent file from the specified path.
+        /// </summary>
+        /// <param name="path">The path to load the .torrent file from</param>
+        /// <param name="enforceKeyOrdering">When true (the default), key ordering is compared, but the stream-based decoder never throws
+        /// for misordered keys; the parameter exists for parity with <see cref="Load(ReadOnlySpan{byte}, bool)"/>, which
+        /// validates the root dictionary. When false, key ordering is not compared at all.</param>
+        public static Task<Torrent> LoadAsync (string path, bool enforceKeyOrdering)
+            => Task.Run (() => Load (path, enforceKeyOrdering));
 
         /// <summary>
         /// Loads a torrent from a Memory containing the bencoded data
@@ -112,7 +164,17 @@ namespace MonoTorrent
         /// <param name="memory">The Memory containing the data</param>
         /// <returns></returns>
         public static Task<Torrent> LoadAsync (Memory<byte> memory)
-            => Task.Run (() => Load (memory.Span));
+            => LoadAsync (memory, enforceKeyOrdering: true);
+
+        /// <summary>
+        /// Loads a torrent from a Memory containing the bencoded data
+        /// </summary>
+        /// <param name="memory">The Memory containing the data</param>
+        /// <param name="enforceKeyOrdering">When true (the default), a <see cref="TorrentException"/> is thrown if the keys of the
+        /// root dictionary are not in sorted order. When false, key ordering is not compared and the torrent is loaded as-is.</param>
+        /// <returns></returns>
+        public static Task<Torrent> LoadAsync (Memory<byte> memory, bool enforceKeyOrdering)
+            => Task.Run (() => Load (memory.Span, enforceKeyOrdering));
 
         /// <summary>
         /// Loads a .torrent from the supplied stream
@@ -120,7 +182,18 @@ namespace MonoTorrent
         /// <param name="stream">The stream containing the data to load</param>
         /// <returns></returns>
         public static Task<Torrent> LoadAsync (Stream stream)
-            => Task.Run (() => Load (stream));
+            => LoadAsync (stream, enforceKeyOrdering: true);
+
+        /// <summary>
+        /// Loads a .torrent from the supplied stream
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <param name="enforceKeyOrdering">When true (the default), key ordering is compared, but the stream-based decoder never throws
+        /// for misordered keys; the parameter exists for parity with <see cref="Load(ReadOnlySpan{byte}, bool)"/>, which
+        /// validates the root dictionary. When false, key ordering is not compared at all.</param>
+        /// <returns></returns>
+        public static Task<Torrent> LoadAsync (Stream stream, bool enforceKeyOrdering)
+            => Task.Run (() => Load (stream, enforceKeyOrdering));
 
         /// <summary>
         /// Loads a .torrent file from the specified URL
@@ -129,7 +202,20 @@ namespace MonoTorrent
         /// <param name="url">The URL to download the .torrent from</param>
         /// <param name="savePath">The path to download the .torrent to before it gets loaded</param>
         /// <returns></returns>
-        public static async Task<Torrent> LoadAsync (HttpClient client, Uri url, string savePath)
+        public static Task<Torrent> LoadAsync (HttpClient client, Uri url, string savePath)
+            => LoadAsync (client, url, savePath, enforceKeyOrdering: true);
+
+        /// <summary>
+        /// Loads a .torrent file from the specified URL
+        /// </summary>
+        /// <param name="client">The HttpClient used to download the url</param>
+        /// <param name="url">The URL to download the .torrent from</param>
+        /// <param name="savePath">The path to download the .torrent to before it gets loaded</param>
+        /// <param name="enforceKeyOrdering">When true (the default), key ordering is compared, but the stream-based decoder never throws
+        /// for misordered keys; the parameter exists for parity with <see cref="Load(ReadOnlySpan{byte}, bool)"/>, which
+        /// validates the root dictionary. When false, key ordering is not compared at all.</param>
+        /// <returns></returns>
+        public static async Task<Torrent> LoadAsync (HttpClient client, Uri url, string savePath, bool enforceKeyOrdering)
         {
             try {
                 File.WriteAllBytes (savePath, await client.GetByteArrayAsync (url));
@@ -138,7 +224,7 @@ namespace MonoTorrent
                 throw new TorrentException ("Could not download .torrent file from the specified url", ex);
             }
 
-            return await LoadAsync (savePath).ConfigureAwait (false);
+            return await LoadAsync (savePath, enforceKeyOrdering).ConfigureAwait (false);
         }
 
         /// <summary>
@@ -149,6 +235,19 @@ namespace MonoTorrent
         /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
         /// <returns>True if successful</returns>
         public static bool TryLoad (string path, [NotNullWhen (true)] out Torrent? torrent)
+            => TryLoad (path, enforceKeyOrdering: true, out torrent);
+
+        /// <summary>
+        /// Loads a .torrent from the specificed path. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="path">The path to load the .torrent file from</param>
+        /// <param name="enforceKeyOrdering">When true (the default), key ordering is compared, but the stream-based decoder never
+        /// fails for misordered keys; the parameter exists for parity with <see cref="TryLoad(ReadOnlySpan{byte}, bool, out Torrent)"/>,
+        /// which returns false for a misordered root dictionary. When false, key ordering is not compared at all.</param>
+        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad (string path, bool enforceKeyOrdering, [NotNullWhen (true)] out Torrent? torrent)
         {
             if (string.IsNullOrEmpty (path))
                 throw new ArgumentNullException ("Value must not be null or empty", nameof (path));
@@ -156,7 +255,7 @@ namespace MonoTorrent
             torrent = null;
             try {
                 if (File.Exists (path))
-                    torrent = Load (path);
+                    torrent = Load (path, enforceKeyOrdering);
             } catch {
                 // We will return false if an exception is thrown as 'torrent' will still
                 // be null.
@@ -173,9 +272,21 @@ namespace MonoTorrent
         /// <param name="torrent">If loading was successful, it contains the Torrent</param>
         /// <returns>True if successful</returns>
         public static bool TryLoad (ReadOnlySpan<byte> span, [NotNullWhen (true)] out Torrent? torrent)
+            => TryLoad (span, enforceKeyOrdering: true, out torrent);
+
+        /// <summary>
+        /// Loads a .torrent from the specified Span. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="span">The Span to load the .torrent from</param>
+        /// <param name="enforceKeyOrdering">When true (the default), this method returns false if the keys of the root dictionary
+        /// are not in sorted order. When false, key ordering is not compared and the torrent is loaded as-is.</param>
+        /// <param name="torrent">If loading was successful, it contains the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad (ReadOnlySpan<byte> span, bool enforceKeyOrdering, [NotNullWhen (true)] out Torrent? torrent)
         {
             try {
-                torrent = Load (span);
+                torrent = Load (span, enforceKeyOrdering);
             } catch {
                 torrent = null;
             }
@@ -191,12 +302,25 @@ namespace MonoTorrent
         /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
         /// <returns>True if successful</returns>
         public static bool TryLoad (Stream stream, [NotNullWhen (true)] out Torrent? torrent)
+            => TryLoad (stream, enforceKeyOrdering: true, out torrent);
+
+        /// <summary>
+        /// Loads a .torrent from the supplied stream. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <param name="enforceKeyOrdering">When true (the default), key ordering is compared, but the stream-based decoder never
+        /// fails for misordered keys; the parameter exists for parity with <see cref="TryLoad(ReadOnlySpan{byte}, bool, out Torrent)"/>,
+        /// which returns false for a misordered root dictionary. When false, key ordering is not compared at all.</param>
+        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad (Stream stream, bool enforceKeyOrdering, [NotNullWhen (true)] out Torrent? torrent)
         {
             if (stream is null)
                 throw new ArgumentNullException (nameof (stream));
 
             try {
-                torrent = Load (stream);
+                torrent = Load (stream, enforceKeyOrdering);
             } catch {
                 torrent = null;
             }

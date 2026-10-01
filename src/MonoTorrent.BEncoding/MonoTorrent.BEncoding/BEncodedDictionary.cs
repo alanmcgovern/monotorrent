@@ -52,9 +52,32 @@ namespace MonoTorrent.BEncoding
         /// Special decoding method for torrent files. This mode will ensure the correct infohash is generated
         /// for torrents which contain dictionaries with misordered keys.
         /// </summary>
+        /// <param name="buffer">The buffer containing the data</param>
+        /// <param name="enforceKeyOrdering">When true (the default), a <see cref="BEncodingException"/> is thrown if the keys of the
+        /// root dictionary are not in sorted order. When false, key ordering is not compared and the torrent is decoded as-is.</param>
+        /// <returns></returns>
+        public static (BEncodedDictionary torrent, RawInfoHashes infoHashes) DecodeTorrent (ReadOnlySpan<byte> buffer, bool enforceKeyOrdering)
+            => BEncodeDecoder.DecodeTorrent (ref buffer, enforceKeyOrdering);
+
+        /// <summary>
+        /// Special decoding method for torrent files. This mode will ensure the correct infohash is generated
+        /// for torrents which contain dictionaries with misordered keys.
+        /// </summary>
         /// <returns></returns>
         public static (BEncodedDictionary torrent, RawInfoHashes infohashes) DecodeTorrent (Stream stream)
             => BEncodeDecoder.DecodeTorrent (stream);
+
+        /// <summary>
+        /// Special decoding method for torrent files. This mode will ensure the correct infohash is generated
+        /// for torrents which contain dictionaries with misordered keys.
+        /// </summary>
+        /// <param name="stream">The stream containing the data</param>
+        /// <param name="enforceKeyOrdering">When true (the default), key ordering is compared, but the stream-based decoder never throws
+        /// for misordered keys; the parameter exists for parity with <see cref="DecodeTorrent(ReadOnlySpan{byte}, bool)"/>,
+        /// which validates the root dictionary. When false, key ordering is not compared at all.</param>
+        /// <returns></returns>
+        public static (BEncodedDictionary torrent, RawInfoHashes infohashes) DecodeTorrent (Stream stream, bool enforceKeyOrdering)
+            => BEncodeDecoder.DecodeTorrent (stream, enforceKeyOrdering);
 
         KeyValuePair<BEncodedString, BEncodedValue>[] items;
 

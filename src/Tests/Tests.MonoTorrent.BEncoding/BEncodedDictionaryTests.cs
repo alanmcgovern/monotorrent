@@ -29,6 +29,7 @@
 
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 using NUnit.Framework;
@@ -150,6 +151,39 @@ namespace MonoTorrent.BEncoding
             var bad_result = BEncodedDictionary.DecodeTorrent (Encoding.UTF8.GetBytes (bad));
             Assert.IsTrue (good_result.torrent.Encode ().AsSpan ().SequenceEqual (bad_result.torrent.Encode ()));
             Assert.AreNotEqual (good_result.infoHashes.SHA1, bad_result.infoHashes.SHA1);
+        }
+
+        [Test]
+        public void DecodeTorrentWithOutOfOrderRootKeys_Default_Throws ()
+        {
+            // 'publisher.utf-8' sorts after 'publisher', so the root dictionary is misordered.
+            var data = Encoding.UTF8.GetBytes ("d15:publisher.utf-83:foo9:publisher3:foo4:infod4:name1:xee");
+
+            Assert.Throws<BEncodingException> (() => BEncodedDictionary.DecodeTorrent (data));
+            Assert.Throws<BEncodingException> (() => BEncodedDictionary.DecodeTorrent (data, enforceKeyOrdering: true));
+        }
+
+        [Test]
+        public void DecodeTorrentWithOutOfOrderRootKeys_NotEnforced ()
+        {
+            // 'publisher.utf-8' sorts after 'publisher', so the root dictionary is misordered.
+            var info = "d4:name1:xe";
+            var data = Encoding.UTF8.GetBytes ($"d15:publisher.utf-83:foo9:publisher3:foo4:info{info}e");
+            var expectedSha1 = SHA1.HashData (Encoding.UTF8.GetBytes (info));
+            var expectedSha256 = SHA256.HashData (Encoding.UTF8.GetBytes (info));
+
+            var result = BEncodedDictionary.DecodeTorrent (data, enforceKeyOrdering: false);
+            Assert.IsTrue (result.torrent.ContainsKey ("publisher"));
+            Assert.IsTrue (result.torrent.ContainsKey ("publisher.utf-8"));
+            Assert.IsTrue (result.torrent.ContainsKey ("info"));
+            Assert.IsTrue (result.infoHashes.SHA1.Span.SequenceEqual (expectedSha1));
+            Assert.IsTrue (result.infoHashes.SHA256.Span.SequenceEqual (expectedSha256));
+
+            using var stream = new MemoryStream (data);
+            var streamResult = BEncodedDictionary.DecodeTorrent (stream, enforceKeyOrdering: false);
+            Assert.IsTrue (streamResult.torrent.Encode ().AsSpan ().SequenceEqual (result.torrent.Encode ()));
+            Assert.IsTrue (streamResult.infohashes.SHA1.Span.SequenceEqual (expectedSha1));
+            Assert.IsTrue (streamResult.infohashes.SHA256.Span.SequenceEqual (expectedSha256));
         }
 
         [Test]

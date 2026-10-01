@@ -117,6 +117,38 @@ namespace MonoTorrent.BEncoding
         }
 
         [Test]
+        public void DecodeDictionary_OutOfOrder_Strict_EnforceKeyOrdering ()
+        {
+            var data = Encoding.UTF8.GetBytes ("d1:b1:b1:a1:ae");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (data, strictDecoding: true, enforceKeyOrdering: true), "#1");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode (new MemoryStream (data), strictDecoding: true, enforceKeyOrdering: true), "#2");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode<BEncodedDictionary> (data, strictDecoding: true, enforceKeyOrdering: true), "#3");
+            Assert.Throws<BEncodingException> (() => BEncodedValue.Decode<BEncodedDictionary> (new MemoryStream (data), strictDecoding: true, enforceKeyOrdering: true), "#4");
+        }
+
+        [Test]
+        public void DecodeDictionary_OutOfOrder_Strict_NotEnforceKeyOrdering ()
+        {
+            var data = Encoding.UTF8.GetBytes ("d1:b1:b1:a1:ae");
+
+            var fromSpan = (BEncodedDictionary) BEncodedValue.Decode (data, strictDecoding: true, enforceKeyOrdering: false);
+            Assert.IsTrue (fromSpan.ContainsKey ("a"), "#1");
+            Assert.IsTrue (fromSpan.ContainsKey ("b"), "#2");
+
+            var fromStream = (BEncodedDictionary) BEncodedValue.Decode (new MemoryStream (data), strictDecoding: true, enforceKeyOrdering: false);
+            Assert.IsTrue (fromStream.ContainsKey ("a"), "#3");
+            Assert.IsTrue (fromStream.ContainsKey ("b"), "#4");
+
+            int variant = 0;
+            foreach (var dict in BEncodedValue.DecodingVariants<BEncodedDictionary> (data, strictDecoding: true, enforceKeyOrdering: false)) {
+                variant++;
+                Assert.IsTrue (dict.ContainsKey ("a"), $"#5.{variant}");
+                Assert.IsTrue (dict.ContainsKey ("b"), $"#6.{variant}");
+            }
+            Assert.AreEqual (2, variant, "#7");
+        }
+
+        [Test]
         public void DecodeList_MissingTrailingE ()
         {
             string benString = "l1:a";

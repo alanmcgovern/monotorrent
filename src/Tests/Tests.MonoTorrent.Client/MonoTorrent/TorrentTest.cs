@@ -29,6 +29,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
@@ -497,6 +498,106 @@ namespace MonoTorrent.Common
             info.Add ("creation date", new BEncodedString (String.Empty));
 
             Assert.DoesNotThrow (() => Torrent.Load (torrentInfo));
+        }
+
+        // 'publisher.utf-8' sorts after 'publisher', so the root dictionary is misordered.
+        static byte[] MisorderedRootTorrent ()
+            => System.Text.Encoding.UTF8.GetBytes ("d15:publisher.utf-83:foo9:publisher3:foo4:infod6:lengthi1e4:name1:x12:piece lengthi16384e6:pieces20:" + new string ('a', 20) + "ee");
+
+        [Test]
+        public void Load_MisorderedRootKeys_DefaultThrows ()
+        {
+            var data = MisorderedRootTorrent ();
+            Assert.Throws<TorrentException> (() => Torrent.Load (data), "#1");
+            Assert.Throws<TorrentException> (() => Torrent.Load (data, enforceKeyOrdering: true), "#2");
+        }
+
+        [Test]
+        public async Task LoadAsync_MisorderedRootKeys_DefaultThrows ()
+        {
+            var data = MisorderedRootTorrent ();
+            await AssertThrowsAsync<TorrentException> (() => Torrent.LoadAsync ((Memory<byte>) data), "#1");
+            await AssertThrowsAsync<TorrentException> (() => Torrent.LoadAsync ((Memory<byte>) data, enforceKeyOrdering: true), "#2");
+        }
+
+        // NUnit 3.13 has no awaitable throws-assert: Assert.ThrowsAsync blocks on the task and returns the
+        // exception, so it cannot be awaited and would leave an async test with nothing to await (CS1998).
+        static async Task AssertThrowsAsync<T> (Func<Task> action, string message)
+            where T : Exception
+        {
+            try {
+                await action ();
+            } catch (T) {
+                return;
+            }
+            Assert.Fail ($"{message}: expected {typeof (T).Name} to be thrown");
+        }
+
+        [Test]
+        public void Load_MisorderedRootKeys_NotEnforced ()
+        {
+            var data = MisorderedRootTorrent ();
+
+            var fromSpan = Torrent.Load (data, enforceKeyOrdering: false);
+            Assert.AreEqual ("x", fromSpan.Name, "#1");
+
+            var fromStream = Torrent.Load (new MemoryStream (data), enforceKeyOrdering: false);
+            Assert.AreEqual (fromSpan.InfoHashes, fromStream.InfoHashes, "#2");
+
+            var dictionary = BEncodedDictionary.DecodeTorrent (data, enforceKeyOrdering: false).torrent;
+            var fromDictionary = Torrent.Load (dictionary, enforceKeyOrdering: false);
+            Assert.AreEqual ("x", fromDictionary.Name, "#3");
+        }
+
+        [Test]
+        public async Task LoadAsync_MisorderedRootKeys_NotEnforced ()
+        {
+            var data = MisorderedRootTorrent ();
+
+            var fromMemory = await Torrent.LoadAsync ((Memory<byte>) data, enforceKeyOrdering: false);
+            Assert.AreEqual ("x", fromMemory.Name, "#1");
+
+            var fromStream = await Torrent.LoadAsync (new MemoryStream (data), enforceKeyOrdering: false);
+            Assert.AreEqual (fromMemory.InfoHashes, fromStream.InfoHashes, "#2");
+        }
+
+        [Test]
+        public void TryLoad_MisorderedRootKeys ()
+        {
+            var data = MisorderedRootTorrent ();
+
+            Assert.IsFalse (Torrent.TryLoad (data, out Torrent defaultResult), "#1");
+            Assert.IsNull (defaultResult, "#2");
+
+            Assert.IsFalse (Torrent.TryLoad (data, enforceKeyOrdering: true, out Torrent enforcedResult), "#3");
+            Assert.IsNull (enforcedResult, "#4");
+
+            Assert.IsTrue (Torrent.TryLoad (data, enforceKeyOrdering: false, out Torrent spanResult), "#5");
+            Assert.AreEqual ("x", spanResult.Name, "#6");
+
+            Assert.IsTrue (Torrent.TryLoad (new MemoryStream (data), enforceKeyOrdering: false, out Torrent streamResult), "#7");
+            Assert.AreEqual (spanResult.InfoHashes, streamResult.InfoHashes, "#8");
+        }
+
+        [Test]
+        public async Task PathOverloads_MisorderedRootKeys_NotEnforced ()
+        {
+            var data = MisorderedRootTorrent ();
+            var path = Path.GetTempFileName ();
+            try {
+                File.WriteAllBytes (path, data);
+
+                var loaded = Torrent.Load (path, enforceKeyOrdering: false);
+                Assert.AreEqual ("x", loaded.Name, "#1");
+
+                var loadedAsync = await Torrent.LoadAsync (path, enforceKeyOrdering: false);
+                Assert.AreEqual (loaded.InfoHashes, loadedAsync.InfoHashes, "#2");
+
+                Assert.IsTrue (Torrent.TryLoad (path, enforceKeyOrdering: false, out Torrent tried), "#3");
+                Assert.AreEqual (loaded.InfoHashes, tried.InfoHashes, "#4");
+            } finally {
+                File.Delete (path);
+            }
         }
     }
 }
